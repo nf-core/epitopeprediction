@@ -4,5 +4,10 @@ channels:
   - conda-forge
   - defaults
 dependencies:
-  - fastqc=0.11.7
+  - python=2.7.13
   - multiqc=1.6
+  - snpsift=4.3.1t
+  - csvtk=0.15.0
+  - fred2=2.0.2
+
+  # missing: netMHC, netMHCpan, netMHCII, netMHCIIpan

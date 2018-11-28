@@ -6,6 +6,8 @@
  nf-core/epitopeprediction Analysis Pipeline.
  #### Homepage / Documentation
  https://github.com/nf-core/epitopeprediction
+ #### Authors
+ Christopher Mohr christopher-mohr <christopher.mohr@qbic.uni-tuebingen.de> - https://github.com/christopher-mohr>
 ----------------------------------------------------------------------------------------
 */
 
@@ -19,20 +21,33 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/epitopeprediction --reads '*_R{1,2}.fastq.gz' -profile standard,docker
+    nextflow run nf-core/epitopeprediction --somatic_mutations '*.vcf.gz' --alleles '*.alleles' -profile standard,docker
 
     Mandatory arguments:
-      --reads                       Path to input data (must be surrounded with quotes)
-      --genome                      Name of iGenomes reference
+      --somatic_mutations           Path to input data (must be surrounded with quotes)
+      --alleles                     Path to the file containing the MHC alleles
       -profile                      Configuration profile to use. Can use multiple (comma separated)
                                     Available: standard, conda, docker, singularity, awsbatch, test
 
+    Alternative inputs:
+      --peptides                    Path to TSV file containing peptide sequences (minimum required: id and sequence column)
+    
     Options:
-      --singleEnd                   Specifies that the input is single end reads
+      --filter_self                 Specifies that peptides should be filtered against the specified human proteome references Default: false
+      --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
+      --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
+      --peptide_length              Specifies the maximum peptide length Default: MHC class I: 11, MHC class II: 16 
 
-    References                      If not specified in the configuration file or you wish to overwrite any of the references.
-      --fasta                       Path to Fasta reference
+    References                      If not specified in the configuration file or you wish to overwrite any of the references
+      --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
+      --reference_proteome          Specifies the reference proteome(s) used for self-filtering
 
+    Additional inputs:
+      --reference_proteome          Path to reference proteome Fastas
+      --protein_quantification      Path to protein quantification file (MaxQuant) for additional annotation
+      --gene_expression             Path to gene expression file for additional annotation
+      --ligandomics_identification  Path to ligandomics identification file for additional annotation
+       
     Other options:
       --outdir                      The output directory where the results will be saved
       --email                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
@@ -43,6 +58,7 @@ def helpMessage() {
       --awsregion                   The AWS Region for your AWS Batch job to run on
     """.stripIndent()
 }
+
 
 /*
  * SET UP CONFIGURATION VARIABLES
@@ -56,19 +72,69 @@ if (params.help){
 
 // Configurable variables
 params.name = false
-params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
 params.multiqc_config = "$baseDir/conf/multiqc_config.yaml"
 params.email = false
 params.plaintext_email = false
 
+//params.somatic_mutations = false
+//params.peptides = false
+
+params.filter_self = false
+params.wild_type = false
+params.mhc_class = 'I'
+params.reference_genome = 'GRCh37'
+params.peptide_length = (params.mhc_class == 'I') ? 11 : 16
+
+params.protein_quantification = false
+params.gene_expression = false
+params.ligandomics_identification = false
+params.reference_proteome = false
+
 multiqc_config = file(params.multiqc_config)
 output_docs = file("$baseDir/docs/output.md")
 
-// Validate inputs
-if ( params.fasta ){
-    fasta = file(params.fasta)
-    if( !fasta.exists() ) exit 1, "Fasta file not found: ${params.fasta}"
+ch_split_peptides = Channel.empty()
+ch_split_variants = Channel.empty()
+
+// List of coding genes for Ensembl ID to HGNC mapping
+gene_list = file("$baseDir/assets/all_coding_genes_GRCh_ensembl_hgnc.tsv")
+
+// Validate inputs and create channels for input data
+// if ( !params.somatic_mutations.toBoolean() ^ params.peptides.toBoolean() ) exit 1, "Please specify a peptide OR variant file."
+//params.mzmls = params.somatic_mutations ^ params.peptides ?: { log.error "No input data privided. Make sure to provide a peptide or variant file."; exit 1 }()
+
+if ( params.peptides ) {
+    Channel
+        .fromPath(params.peptides)
+        .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
+        .set { ch_split_peptides }
 }
+else {
+    Channel
+    .fromPath(params.somatic_mutations)
+    .ifEmpty { exit 1, "Variant file not found: ${params.somatic_mutations}" }
+    .set { ch_split_variants }
+}
+
+if ( !params.alleles ) {
+    exit 1, "Please specify a file containing MHC alleles."
+}
+else {
+    allele_file = file(params.alleles)
+    //Channel
+    //.fromPath(params.alleles)
+    //.ifEmpty { exit 1, "Allele file not found: ${params.alleles}" }
+    //.set { ch_alleles }
+}
+
+if ( params.mhc_class != 'I' && params.mhc_class != 'II' ){
+    exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 'I', 'II'"
+}
+
+if ( params.filter_self & !params.reference_proteome ){
+    params.reference_proteome = file("$baseDir/assets/")
+}
+
 // AWSBatch sanity checking
 if(workflow.profile == 'awsbatch'){
     if (!params.awsqueue || !params.awsregion) exit 1, "Specify correct --awsqueue and --awsregion parameters on AWSBatch!"
@@ -81,9 +147,8 @@ if(workflow.profile == 'awsbatch'){
 //   file fasta from fasta
 //
 
-
 // Has the run name been specified by the user?
-//  this has the bonus effect of catching both -name and --name
+// this has the bonus effect of catching both -name and --name
 custom_runName = params.name
 if( !(workflow.runName ==~ /[a-z]+_[a-z]+/) ){
   custom_runName = workflow.runName
@@ -94,31 +159,6 @@ if( !(workflow.runName ==~ /[a-z]+_[a-z]+/) ){
 if( workflow.profile == 'awsbatch') {
     if(!workflow.workDir.startsWith('s3:') || !params.outdir.startsWith('s3:')) exit 1, "Workdir or Outdir not on S3 - specify S3 Buckets for each to run on AWSBatch!"
 }
-
-/*
- * Create a channel for input read files
- */
- if(params.readPaths){
-     if(params.singleEnd){
-         Channel
-             .from(params.readPaths)
-             .map { row -> [ row[0], [file(row[1][0])]] }
-             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-             .into { read_files_fastqc; read_files_trimming }
-     } else {
-         Channel
-             .from(params.readPaths)
-             .map { row -> [ row[0], [file(row[1][0]), file(row[1][1])]] }
-             .ifEmpty { exit 1, "params.readPaths was empty - no input files supplied" }
-             .into { read_files_fastqc; read_files_trimming }
-     }
- } else {
-     Channel
-         .fromFilePairs( params.reads, size: params.singleEnd ? 1 : 2 )
-         .ifEmpty { exit 1, "Cannot find any reads matching: ${params.reads}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --singleEnd on the command line." }
-         .into { read_files_fastqc; read_files_trimming }
- }
-
 
 // Header log info
 log.info """=======================================================
@@ -134,16 +174,24 @@ def summary = [:]
 summary['Pipeline Name']  = 'nf-core/epitopeprediction'
 summary['Pipeline Version'] = workflow.manifest.version
 summary['Run Name']     = custom_runName ?: workflow.runName
-summary['Reads']        = params.reads
-summary['Fasta Ref']    = params.fasta
-summary['Data Type']    = params.singleEnd ? 'Single-End' : 'Paired-End'
+if ( params.somatic_mutations ) summary['Variants'] = params.somatic_mutations
+if ( params.peptides ) summary['Peptides'] = params.peptides
+if ( params.reference_proteome ) summary['Reference proteome'] = params.reference_proteome
+if ( params.protein_quantification ) summary['Protein Quantification'] = params.protein_quantification
+if ( params.gene_expression ) summary['Gene Expression'] = params.gene_expression
+if ( params.ligandomics_identification ) summary['Ligandomics Identification'] = params.ligandomics_identification
+summary['Genome Version'] = params.reference_genome
+summary['MHC Class'] = params.mhc_class
+summary['Max. Peptide Length'] = params.peptide_length
+summary['Self-Filter'] = params.filter_self
+summary['Wild-types'] = params.wild_type
 summary['Max Memory']   = params.max_memory
 summary['Max CPUs']     = params.max_cpus
 summary['Max Time']     = params.max_time
 summary['Output dir']   = params.outdir
 summary['Working dir']  = workflow.workDir
 summary['Container Engine'] = workflow.containerEngine
-if(workflow.containerEngine) summary['Container'] = workflow.container
+if( workflow.containerEngine ) summary['Container'] = workflow.container
 summary['Current home']   = "$HOME"
 summary['Current user']   = "$USER"
 summary['Current path']   = "$PWD"
@@ -151,18 +199,17 @@ summary['Working dir']    = workflow.workDir
 summary['Output dir']     = params.outdir
 summary['Script dir']     = workflow.projectDir
 summary['Config Profile'] = workflow.profile
-if(workflow.profile == 'awsbatch'){
+if( workflow.profile == 'awsbatch' ){
    summary['AWS Region'] = params.awsregion
    summary['AWS Queue'] = params.awsqueue
 }
-if(params.email) summary['E-mail Address'] = params.email
+if( params.email ) summary['E-mail Address'] = params.email
 log.info summary.collect { k,v -> "${k.padRight(15)}: $v" }.join("\n")
 log.info "========================================="
 
-
 def create_workflow_summary(summary) {
 
-    def yaml_file = workDir.resolve('workflow_summary_mqc.yaml')
+    def yaml_file = workDir.resolve('workflow_summary_epitopeprediction.yaml')
     yaml_file.text  = """
     id: 'nf-core-epitopeprediction-summary'
     description: " - this information is collected when the pipeline is started."
@@ -191,45 +238,108 @@ process get_software_versions {
     """
     echo $workflow.manifest.version > v_pipeline.txt
     echo $workflow.nextflow.version > v_nextflow.txt
-    fastqc --version > v_fastqc.txt
     multiqc --version > v_multiqc.txt
     scrape_software_versions.py > software_versions_mqc.yaml
     """
 }
 
 
-
 /*
- * STEP 1 - FastQC
+ * STEP 1 - Split variant data
  */
-process fastqc {
-    tag "$name"
-    publishDir "${params.outdir}/fastqc", mode: 'copy',
-        saveAs: {filename -> filename.indexOf(".zip") > 0 ? "zips/$filename" : "$filename"}
-
+process splitVariants {
     input:
-    set val(name), file(reads) from read_files_fastqc
+    file variants from ch_split_variants
+
+    when: !params.peptides
 
     output:
-    file "*_fastqc.{zip,html}" into fastqc_results
+    file '*chr*.vcf' optional true into ch_splitted_vcfs
+    file '*chr*.tsv' optional true into ch_splitted_tsvs
+    file '*chr*.GSvar' optional true into ch_splitted_gsvars
+
+    script:
+    if ( variants.toString().endsWith('.vcf') || variants.toString().endsWith('.vcf.gz') ) {
+        """
+        SnpSift split ${variants}
+        """
+    }
+    else {
+         """
+        sed -i.bak '/^##/d' ${variants}
+        csvtk split ${variants} -t -C '&' -f '#chr'
+        """
+    }
+}
+
+/*
+ * STEP 1 - Split peptide data
+ */
+process splitPeptides {
+    input:
+    file peptides from ch_split_peptides
+
+    when: !params.somatic_mutations
+
+    output:
+    file '*.tsv' optional true into ch_splitted_peptides
 
     script:
     """
-    fastqc -q $reads
+    csvtk split ${peptides} -t -C '&' -f '#chr'
     """
 }
 
 
+/*
+ * STEP 2 - Run epitope prediction
+ */
+process peptidePrediction {
+    input:
+    file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
+    file alleles from allele_file
+
+    output:
+    file "*.tsv" into ch_predicted_peptides
+   
+   script:
+   def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
+   def ref_prot = params.reference_proteome ? "--reference_proteome ${params.reference_proteome}" : ""
+   def wt = params.wild_type ? "--wild_type" : ""
+   def qt = params.protein_quantification ? "--protein_quantification ${params.protein_quantification}" : ""
+   def ge = params.gene_expression ? "--gene_expression ${params.gene_expression}" : ""
+   def li = params.ligandomics_identification ? "--ligandomics_identification ${params.ligandomics_identification}" : ""
+   """
+   epaa.py ${input_type} --alleles ${params.alleles} --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${li} ${wt}
+   """
+}
 
 /*
- * STEP 2 - MultiQC
+ * STEP 3 - Combine epitope prediction results
+ */
+process mergeResults {
+    input:
+    file predictions from ch_predicted_peptides.collect()
+
+    output:
+    file 'merged_prediction_results.tsv'
+
+    script:
+    """
+    csvtk concat -t $predictions > merged_prediction_results.tsv
+    """
+}
+
+
+/*
+ * STEP 4 - MultiQC
  */
 process multiqc {
     publishDir "${params.outdir}/MultiQC", mode: 'copy'
 
     input:
     file multiqc_config
-    file ('fastqc/*') from fastqc_results.collect()
+    //file ('fastqc/*') from fastqc_results.collect()
     file ('software_versions/*') from software_versions_yaml
     file workflow_summary from create_workflow_summary(summary)
 
@@ -248,7 +358,7 @@ process multiqc {
 
 
 /*
- * STEP 3 - Output Description HTML
+ * STEP 5 - Output Description HTML
  */
 process output_documentation {
     tag "$prefix"
