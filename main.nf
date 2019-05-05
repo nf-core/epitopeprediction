@@ -36,7 +36,7 @@ def helpMessage() {
       --filter_self                 Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
-      --peptide_length              Specifies the maximum peptide length Default: MHC class I: 11, MHC class II: 16 
+      --peptide_length              Specifies the maximum peptide length Default: MHC class I: 8 to 11 AA, MHC class II: 15 to 16 AA 
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
@@ -46,6 +46,7 @@ def helpMessage() {
       --reference_proteome          Path to reference proteome Fastas
       --protein_quantification      Path to protein quantification file (MaxQuant) for additional annotation
       --gene_expression             Path to gene expression file for additional annotation
+      --differential_gene_expression  Path to differential gene expression file for additional annotation
       --ligandomics_identification  Path to ligandomics identification file for additional annotation
        
     Other options:
@@ -87,6 +88,7 @@ params.peptide_length = (params.mhc_class == 'I') ? 11 : 16
 
 params.protein_quantification = false
 params.gene_expression = false
+params.differential_gene_expression = false
 params.ligandomics_identification = false
 params.reference_proteome = false
 
@@ -99,21 +101,23 @@ ch_split_variants = Channel.empty()
 // List of coding genes for Ensembl ID to HGNC mapping
 gene_list = file("$baseDir/assets/all_coding_genes_GRCh_ensembl_hgnc.tsv")
 
-// Validate inputs and create channels for input data
-// if ( !params.somatic_mutations.toBoolean() ^ params.peptides.toBoolean() ) exit 1, "Please specify a peptide OR variant file."
-//params.mzmls = params.somatic_mutations ^ params.peptides ?: { log.error "No input data privided. Make sure to provide a peptide or variant file."; exit 1 }()
-
 if ( params.peptides ) {
+    if ( params.wild_type ) {
+        exit 1, "Peptide input not compatible with wild-type sequence generation."
+    }
     Channel
         .fromPath(params.peptides)
         .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
         .set { ch_split_peptides }
 }
-else {
+else if (params.somatic_mutations) {
     Channel
-    .fromPath(params.somatic_mutations)
-    .ifEmpty { exit 1, "Variant file not found: ${params.somatic_mutations}" }
-    .set { ch_split_variants }
+        .fromPath(params.somatic_mutations)
+        .ifEmpty { exit 1, "Variant file not found: ${params.somatic_mutations}" }
+        .set { ch_split_variants }
+}
+else {
+    exit 1, "Please specify a file that contains annotated variants OR a file that contains peptide sequences."
 }
 
 if ( !params.alleles ) {
@@ -121,10 +125,6 @@ if ( !params.alleles ) {
 }
 else {
     allele_file = file(params.alleles)
-    //Channel
-    //.fromPath(params.alleles)
-    //.ifEmpty { exit 1, "Allele file not found: ${params.alleles}" }
-    //.set { ch_alleles }
 }
 
 if ( params.mhc_class != 'I' && params.mhc_class != 'II' ){
@@ -265,7 +265,7 @@ process splitVariants {
         """
     }
     else {
-         """
+        """
         sed -i.bak '/^##/d' ${variants}
         csvtk split ${variants} -t -C '&' -f '#chr'
         """
@@ -282,11 +282,13 @@ process splitPeptides {
     when: !params.somatic_mutations
 
     output:
-    file '*.tsv' optional true into ch_splitted_peptides
+    file '*.tsv' into ch_splitted_peptides
 
+    // @TODO
+    // splitting mechanism missing
     script:
     """
-    csvtk split ${peptides} -t -C '&' -f '#chr'
+    cat ${peptides} > "${peptides.fileName}.tsv"
     """
 }
 
@@ -301,6 +303,7 @@ process peptidePrediction {
 
     output:
     file "*.tsv" into ch_predicted_peptides
+    file "*.json" into ch_json_reports
    
    script:
    def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
@@ -308,9 +311,10 @@ process peptidePrediction {
    def wt = params.wild_type ? "--wild_type" : ""
    def qt = params.protein_quantification ? "--protein_quantification ${params.protein_quantification}" : ""
    def ge = params.gene_expression ? "--gene_expression ${params.gene_expression}" : ""
+   def de = params.differential_gene_expression ? "--differential_gene_expression ${params.differential_gene_expression}" : ""
    def li = params.ligandomics_identification ? "--ligandomics_identification ${params.ligandomics_identification}" : ""
    """
-   epaa.py ${input_type} --alleles ${params.alleles} --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${li} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles ${params.alleles} --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
    """
 }
 
@@ -318,21 +322,47 @@ process peptidePrediction {
  * STEP 3 - Combine epitope prediction results
  */
 process mergeResults {
+    publishDir "${params.outdir}/results", mode: 'copy'
+
     input:
     file predictions from ch_predicted_peptides.collect()
 
     output:
-    file 'merged_prediction_results.tsv'
+    file 'prediction_result.tsv'
 
     script:
+    def single = predictions instanceof Path ? 1 : predictions.size()
+    def merge = (single == 1) ? 'cat' : 'csvtk concat -t'
+
     """
-    csvtk concat -t $predictions > merged_prediction_results.tsv
+    $merge $predictions > prediction_result.tsv
     """
 }
 
+/*
+ * STEP 4 - Combine epitope prediction reports
+ */
+
+process mergeReports {
+    publishDir "${params.outdir}/results", mode: 'copy'
+
+    input:
+    file jsons from ch_json_reports.collect()
+
+    output:
+    file 'prediction_report.json'
+
+    script:
+    def single = jsons instanceof Path ? 1 : jsons.size()
+    def command = (single == 1) ? "cat ${jsons} > prediction_report.json" : "merge_jsons.py --input \$PWD"
+
+    """
+    $command
+    """
+}
 
 /*
- * STEP 4 - MultiQC
+ * STEP 5 - MultiQC
  */
 process multiqc {
     publishDir "${params.outdir}/MultiQC", mode: 'copy'
@@ -356,9 +386,8 @@ process multiqc {
 }
 
 
-
 /*
- * STEP 5 - Output Description HTML
+ * STEP 6 - Output Description HTML
  */
 process output_documentation {
     tag "$prefix"
@@ -375,7 +404,6 @@ process output_documentation {
     markdown_to_html.r $output_docs results_description.html
     """
 }
-
 
 
 /*
