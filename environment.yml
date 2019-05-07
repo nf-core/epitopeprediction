@@ -11,3 +11,4 @@ dependencies:
   - fred2=2.0.3
   - mhcflurry=1.2.4
   - mhcnuggets=2.2
+  - r-rmarkdown=1.12
