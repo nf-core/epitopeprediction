@@ -10,4 +10,4 @@ dependencies:
   - csvtk=0.17.0
   - fred2=2.0.3
   - mhcflurry=1.2.4
-  - mhcnuggets=2.2.0
+  - mhcnuggets=2.2
