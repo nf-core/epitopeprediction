@@ -6,11 +6,13 @@ import re
 regexes = {
     'nf-core/epitopeprediction': ['v_pipeline.txt', r"(\S+)"],
     'Nextflow': ['v_nextflow.txt', r"(\S+)"],
+    'FastQC': ['v_fastqc.txt', r"FastQC v(\S+)"],
     'MultiQC': ['v_multiqc.txt', r"multiqc, version (\S+)"],
 }
 results = OrderedDict()
 results['nf-core/epitopeprediction'] = '<span style="color:#999999;\">N/A</span>'
 results['Nextflow'] = '<span style="color:#999999;\">N/A</span>'
+results['FastQC'] = '<span style="color:#999999;\">N/A</span>'
 results['MultiQC'] = '<span style="color:#999999;\">N/A</span>'
 
 # Search each file using its regex
@@ -21,9 +23,14 @@ for k, v in regexes.items():
         if match:
             results[k] = "v{}".format(match.group(1))
 
+# Remove software set to false in results
+for k in results:
+    if not results[k]:
+        del(results[k])
+
 # Dump to YAML
 print ('''
-id: 'nf-core/epitopeprediction-software-versions'
+id: 'software_versions'
 section_name: 'nf-core/epitopeprediction Software Versions'
 section_href: 'https://github.com/nf-core/epitopeprediction'
 plot_type: 'html'
@@ -32,5 +39,10 @@ data: |
     <dl class="dl-horizontal">
 ''')
 for k,v in results.items():
-    print("        <dt>{}</dt><dd>{}</dd>".format(k,v))
+    print("        <dt>{}</dt><dd><samp>{}</samp></dd>".format(k,v))
 print ("    </dl>")
+
+# Write out regexes as csv file:
+with open('software_versions.csv', 'w') as f:
+    for k,v in results.items():
+        f.write("{}\t{}\n".format(k,v))

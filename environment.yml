@@ -1,13 +1,13 @@
 name: nf-core-epitopeprediction-1.0dev
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
   - python=2.7.13
-  - multiqc=1.6
+  - multiqc=1.7
   - snpsift=4.3.1t
   - csvtk=0.15.0
   - fred2=2.0.2
-
-  # missing: netMHC, netMHCpan, netMHCII, netMHCIIpan
+  - mhcflurry=1.2.4
+  - mhcnuggets=2.2.0
