@@ -248,7 +248,6 @@ process get_software_versions {
     """
     echo $workflow.manifest.version > v_pipeline.txt
     echo $workflow.nextflow.version > v_nextflow.txt
-    fastqc --version > v_fastqc.txt
     multiqc --version > v_multiqc.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
@@ -379,7 +378,6 @@ process multiqc {
 
     input:
     file multiqc_config
-    //file ('fastqc/*') from fastqc_results.collect()
     file ('software_versions/*') from software_versions_yaml
     file workflow_summary from create_workflow_summary(summary)
 
