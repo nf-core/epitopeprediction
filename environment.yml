@@ -4,7 +4,7 @@ channels:
   - bioconda
   - defaults
 dependencies:
-  - python=2.7.13 #dont upgrade, FRED2 needs python 2.7 for now
+  - python=2.7.15 #dont upgrade, FRED2 needs python 2.7 for now
   - multiqc=1.7
   - snpsift=4.3.1t
   - csvtk=0.17.0
