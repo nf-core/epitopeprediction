@@ -306,13 +306,14 @@ process splitPeptides {
  * STEP 2 - Run epitope prediction
  */
 process peptidePrediction {
-    input:
-    file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
-    file alleles from allele_file
+    
+   input:
+   file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
+   file alleles from file(params.alleles)
 
-    output:
-    file "*.tsv" into ch_predicted_peptides
-    file "*.json" into ch_json_reports
+   output:
+   file "*.tsv" into ch_predicted_peptides
+   file "*.json" into ch_json_reports
    
    script:
    def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
@@ -323,7 +324,7 @@ process peptidePrediction {
    def de = params.differential_gene_expression ? "--differential_gene_expression ${params.differential_gene_expression}" : ""
    def li = params.ligandomics_identification ? "--ligandomics_identification ${params.ligandomics_identification}" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles ${params.alleles} --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
    """
 }
 
