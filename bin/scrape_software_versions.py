@@ -7,12 +7,18 @@ regexes = {
     'nf-core/epitopeprediction': ['v_pipeline.txt', r"(\S+)"],
     'Nextflow': ['v_nextflow.txt', r"(\S+)"],
     'MultiQC': ['v_multiqc.txt', r"multiqc, version (\S+)"],
+    'CSVTK': ['v_csvtk.txt', r"csvtk v(\S+)"],
+    'SNPsift': ['v_snpsift.txt', r"SnpSift version (\S+)"],
+    'MHCFlurry': ['v_mhcflurry.txt', r"mhcflurry (\S+)"],
 }
+
 results = OrderedDict()
 results['nf-core/epitopeprediction'] = '<span style="color:#999999;\">N/A</span>'
 results['Nextflow'] = '<span style="color:#999999;\">N/A</span>'
 results['MultiQC'] = '<span style="color:#999999;\">N/A</span>'
-# TODO add other tools in here that are part of the workflow!
+results['CSVTK'] = '<span style="color:#999999;\">N/A</span>'
+results['SNPsift'] = '<span style="color:#999999;\">N/A</span>'
+results['MHCFlurry'] = '<span style="color:#999999;\">N/A</span>'
 
 # Search each file using its regex
 for k, v in regexes.items():

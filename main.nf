@@ -249,6 +249,9 @@ process get_software_versions {
     echo $workflow.manifest.version > v_pipeline.txt
     echo $workflow.nextflow.version > v_nextflow.txt
     multiqc --version > v_multiqc.txt
+    csvtk version > v_csvtk.txt
+    echo \$(SnpSift 2>&1) > v_snpsift.txt
+    echo \$(mhcflurry-predict --version 2>&1) > v_mhcflurry.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
