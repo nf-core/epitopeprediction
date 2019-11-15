@@ -36,8 +36,7 @@ def helpMessage() {
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
       --peptide_length              Specifies the maximum peptide length Default: MHC class I: 8 to 11 AA, MHC class II: 15 to 16 AA 
-      --netmhcpan                   Specifies the path to netMHCPan installation, required if using netmhcpan is desired
-      --predictor                   Specifies a list of predictor(s) to use. Available are: 'netmhc-4.0', 'syfpeithi-1.0', 'netmhcpan-3.0'. Can be combined in a list separated by comma.
+      --predictor                   Specifies a list of predictor(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets'. Can be combined in a list separated by comma.
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
@@ -68,38 +67,18 @@ if (params.help) {
     exit 0
 }
 
-// Configurable variables
-params.name = false
-params.multiqc_config = "$baseDir/conf/multiqc_config.yaml"
-params.email = false
-params.plaintext_email = false
-
-//params.somatic_mutations = false
-//params.peptides = false
-
-params.filter_self = false
-params.wild_type = false
-params.mhc_class = 'I'
-params.reference_genome = 'GRCh37'
-params.peptide_length = (params.mhc_class == 'I') ? 11 : 16
-
-params.protein_quantification = false
-params.gene_expression = false
-params.differential_gene_expression = false
-params.ligandomics_identification = false
-params.reference_proteome = false
-
+// Documentation and Reporting Output
 multiqc_config = file(params.multiqc_config)
 output_docs = file("$baseDir/docs/output.md")
 
-//Check if netmhcpan needs to be used
-if (params.netmhcpan) netmhcpan_path = file(params.netmhcpan)
+// List of coding genes for Ensembl ID to HGNC mapping
+gene_list = file(params.gene_list)
 
+//Generate empty channels for peptides and variants
 ch_split_peptides = Channel.empty()
 ch_split_variants = Channel.empty()
 
-// List of coding genes for Ensembl ID to HGNC mapping
-gene_list = file("$baseDir/assets/all_coding_genes_GRCh_ensembl_hgnc.tsv")
+
 
 if ( params.peptides ) {
     if ( params.wild_type ) {
@@ -160,6 +139,7 @@ if (workflow.profile.contains('awsbatch')) {
 }
 
 // Header log info
+//TODO UPDATE WITH ALL SETTINGS AVAILABLE
 log.info nfcoreHeader()
 def summary = [:]
 summary['Pipeline Name']  = 'nf-core/epitopeprediction'
@@ -247,30 +227,6 @@ process get_software_versions {
     echo \$(SnpSift 2>&1) > v_snpsift.txt
     echo \$(mhcflurry-predict --version 2>&1) > v_mhcflurry.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
-    """
-}
-
-
-/*
-* Prepare netmhcpan installation for running on HPC clusters properly
-*/
-
-process prepare_netmhcpan{
-
-    input:
-    file netmhcpan_path from netmhcpan_path
-
-    when: params.netmhcpan
-
-    output:
-    file(netmhcpan_path) into netmhcpan_path_for_fred2
-
-    script:
-    """
-    #Fix path to netMHCPan correctly
-    sed -i "s#setenv  NMHOME.*#setenv  NMHOME  ${netmhcpan_path}" ${netmhcpan_path}/netMHCpan
-    #Fix tmp folder to /tmp for clusters
-    sed -i "s#setenv  TMPDIR.*#setenv  TMPDIR   /tmp" ${netmhcpan_path}/netMHCpan
     """
 }
 
