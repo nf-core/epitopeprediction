@@ -2,39 +2,43 @@
 
 ## Table of contents
 
-* [Table of contents](#table-of-contents)
-* [Introduction](#introduction)
-* [Running the pipeline](#running-the-pipeline)
-  * [Updating the pipeline](#updating-the-pipeline)
-  * [Reproducibility](#reproducibility)
-* [Main arguments](#main-arguments)
-  * [`-profile`](#-profile)
-  * [`--reads`](#--reads)
-  * [`--singleEnd`](#--singleend)
-* [Reference genomes](#reference-genomes)
-  * [`--genome` (using iGenomes)](#--genome-using-igenomes)
-  * [`--fasta`](#--fasta)
-  * [`--igenomesIgnore`](#--igenomesignore)
-* [Job resources](#job-resources)
-  * [Automatic resubmission](#automatic-resubmission)
-  * [Custom resource requests](#custom-resource-requests)
-* [AWS Batch specific parameters](#aws-batch-specific-parameters)
-  * [`--awsqueue`](#--awsqueue)
-  * [`--awsregion`](#--awsregion)
-* [Other command line parameters](#other-command-line-parameters)
-  * [`--outdir`](#--outdir)
-  * [`--email`](#--email)
-  * [`-name`](#-name)
-  * [`-resume`](#-resume)
-  * [`-c`](#-c)
-  * [`--custom_config_version`](#--custom_config_version)
-  * [`--custom_config_base`](#--custom_config_base)
-  * [`--max_memory`](#--max_memory)
-  * [`--max_time`](#--max_time)
-  * [`--max_cpus`](#--max_cpus)
-  * [`--plaintext_email`](#--plaintext_email)
-  * [`--monochrome_logs`](#--monochrome_logs)
-  * [`--multiqc_config`](#--multiqc_config)
+* [nf-core/epitopeprediction: Usage](#nf-coreepitopeprediction-usage)
+  * [Table of contents](#table-of-contents)
+  * [Introduction](#introduction)
+  * [Running the pipeline](#running-the-pipeline)
+    * [Updating the pipeline](#updating-the-pipeline)
+    * [Reproducibility](#reproducibility)
+  * [Main arguments](#main-arguments)
+    * [`-profile`](#profile)
+    * [`--reads`](#reads)
+    * [`--single_end`](#singleend)
+  * [Reference genomes](#reference-genomes)
+    * [`--genome` (using iGenomes)](#genome-using-igenomes)
+    * [`--fasta`](#fasta)
+    * [`--igenomes_ignore`](#igenomesignore)
+  * [Job resources](#job-resources)
+    * [Automatic resubmission](#automatic-resubmission)
+    * [Custom resource requests](#custom-resource-requests)
+  * [AWS Batch specific parameters](#aws-batch-specific-parameters)
+    * [`--awsqueue`](#awsqueue)
+    * [`--awsregion`](#awsregion)
+  * [Other command line parameters](#other-command-line-parameters)
+    * [`--outdir`](#outdir)
+    * [`--email`](#email)
+    * [`--email_on_fail`](#emailonfail)
+    * [`--max_multiqc_email_size`](#maxmultiqcemailsize)
+    * [`-name`](#name)
+    * [`-resume`](#resume)
+    * [`-c`](#c)
+    * [`--custom_config_version`](#customconfigversion)
+    * [`--custom_config_base`](#customconfigbase)
+    * [`--max_memory`](#maxmemory)
+    * [`--max_time`](#maxtime)
+    * [`--max_cpus`](#maxcpus)
+    * [`--plaintext_email`](#plaintextemail)
+    * [`--monochrome_logs`](#monochromelogs)
+    * [`--multiqc_config`](#multiqcconfig)
+<!-- TOC END -->
 
 ## Introduction
 
@@ -120,12 +124,12 @@ Please note the following requirements:
 
 If left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`
 
-### `--singleEnd`
+### `--single_end`
 
-By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--singleEnd` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
+By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--single_end` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
 
 ```bash
---singleEnd --reads '*.fastq'
+--single_end --reads '*.fastq'
 ```
 
 It is not possible to run a mixture of single-end and paired-end files in one run.
@@ -174,7 +178,7 @@ If you prefer, you can specify the full path to your reference genome when you r
 --fasta '[path to Fasta reference]'
 ```
 
-### `--igenomesIgnore`
+### `--igenomes_ignore`
 
 Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`.
 
@@ -189,6 +193,8 @@ Each step in the pipeline has a default set of requirements for number of CPUs, 
 Wherever process-specific requirements are set in the pipeline, the default value can be changed by creating a custom config file. See the files hosted at [`nf-core/configs`](https://github.com/nf-core/configs/tree/master/conf) for examples.
 
 If you are likely to be running `nf-core` pipelines regularly it may be a good idea to request that your custom config file is uploaded to the `nf-core/configs` git repository. Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition below). You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
+
+If you have any questions or issues please send us a message on [Slack](https://nf-co.re/join/slack).
 
 ## AWS Batch specific parameters
 
@@ -213,6 +219,14 @@ The output directory where the results will be saved.
 ### `--email`
 
 Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.
+
+### `--email_on_fail`
+
+This works exactly as with `--email`, except emails are only sent if the workflow is not successful.
+
+### `--max_multiqc_email_size`
+
+Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB).
 
 ### `-name`
 
