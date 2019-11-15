@@ -38,7 +38,6 @@ nextflow run nf-core/epitopeprediction -profile test,<docker/singularity/conda/i
 
 iv. Start running your own analysis!
 
-<!-- TODO nf-core: Update the default command above used to run the pipeline -->
 ```bash
 nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
 ```

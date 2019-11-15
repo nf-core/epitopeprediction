@@ -31,11 +31,12 @@ def helpMessage() {
     Alternative inputs:
       --peptides                    Path to TSV file containing peptide sequences (minimum required: id and sequence column)
     
-    Options:
+    Pipeline options:
       --filter_self                 Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
       --peptide_length              Specifies the maximum peptide length Default: MHC class I: 8 to 11 AA, MHC class II: 15 to 16 AA 
+      --netmhcpan                   Specifies the path to netMHCPan installation 
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
@@ -90,6 +91,9 @@ params.reference_proteome = false
 multiqc_config = file(params.multiqc_config)
 output_docs = file("$baseDir/docs/output.md")
 
+//Check if netmhcpan needs to be used
+if (params.netmhcpan) netmhcpan_path = file(params.netmhcpan)
+
 ch_split_peptides = Channel.empty()
 ch_split_variants = Channel.empty()
 
@@ -130,11 +134,6 @@ if ( params.filter_self & !params.reference_proteome ){
     params.reference_proteome = file("$baseDir/assets/")
 }
 
-// AWSBatch sanity checking
-if(workflow.profile == 'awsbatch'){
-    if (!params.awsqueue || !params.awsregion) exit 1, "Specify correct --awsqueue and --awsregion parameters on AWSBatch!"
-    if (!workflow.workDir.startsWith('s3') || !params.outdir.startsWith('s3')) exit 1, "Specify S3 URLs for workDir and outdir parameters on AWSBatch!"
-}
 //
 // NOTE - THIS IS NOT USED IN THIS PIPELINE, EXAMPLE ONLY
 // If you want to use the channel below in a process, define the following:
@@ -247,6 +246,30 @@ process get_software_versions {
     echo \$(SnpSift 2>&1) > v_snpsift.txt
     echo \$(mhcflurry-predict --version 2>&1) > v_mhcflurry.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
+    """
+}
+
+
+/*
+* Prepare netmhcpan installation for running on HPC clusters properly
+*/
+
+process prepare_netmhcpan{
+
+    input:
+    file netmhcpan_path from netmhcpan_path
+
+    when: params.netmhcpan
+
+    output:
+    file(netmhcpan_path) into netmhcpan_path_for_fred2
+
+    script:
+    """
+    #Fix path to netMHCPan correctly
+    sed -i "s#setenv  NMHOME.*#setenv  NMHOME  ${netmhcpan_path}" ${netmhcpan_path}/netMHCpan
+    #Fix tmp folder to /tmp for clusters
+    sed -i "s#setenv  TMPDIR.*#setenv  TMPDIR   /tmp" ${netmhcpan_path}/netMHCpan
     """
 }
 

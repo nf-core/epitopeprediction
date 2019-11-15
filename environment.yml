@@ -7,8 +7,8 @@ dependencies:
   - python=2.7.15 #dont upgrade, FRED2 needs python 2.7 for now
   - multiqc=1.6 #cant upgrade due to Python2 fix
   - snpsift=4.3.1t
-  - csvtk=0.17.0
-  - fred2=2.0.3
-  - mhcflurry=1.2.4
+  - csvtk=0.19.1
+  - fred2=2.0.4
+  - mhcflurry=1.4.3
   - mhcnuggets=2.2
-  - conda-forge::r-markdown=0.9
+  - conda-forge::r-markdown=1.1

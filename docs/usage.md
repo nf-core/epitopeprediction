@@ -15,6 +15,7 @@
   * [Reference genomes](#reference-genomes)
     * [`--genome` (using iGenomes)](#genome-using-igenomes)
     * [`--fasta`](#fasta)
+    * [`--netmhcpan`](#netmhcpan)
     * [`--igenomes_ignore`](#igenomesignore)
   * [Job resources](#job-resources)
     * [Automatic resubmission](#automatic-resubmission)
@@ -177,6 +178,10 @@ If you prefer, you can specify the full path to your reference genome when you r
 ```bash
 --fasta '[path to Fasta reference]'
 ```
+
+### `--netmhcpan`
+
+Configure path to exported [netMHCpan](https://services.healthtech.dtu.dk/service.php?NetMHCIIpan) directory. The directory should already contain the required data for netMHCPan that needs to be installed by the user separately. 
 
 ### `--igenomes_ignore`
 
