@@ -301,7 +301,7 @@ process peptidePrediction {
    def de = params.differential_gene_expression ? "--differential_gene_expression ${params.differential_gene_expression}" : ""
    def li = params.ligandomics_identification ? "--ligandomics_identification ${params.ligandomics_identification}" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --predcitor ${params.predictor} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
    """
 }
 
@@ -356,7 +356,7 @@ process multiqc {
 
     input:
     file multiqc_config
-    file ('software_versions/*') from software_versions_yaml
+    file ('software_versions/*') from ch_software_versions_yaml
     file workflow_summary from create_workflow_summary(summary)
 
     output:
