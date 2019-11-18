@@ -36,7 +36,7 @@ def helpMessage() {
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
       --peptide_length              Specifies the maximum peptide length Default: MHC class I: 8 to 11 AA, MHC class II: 15 to 16 AA 
-      --predictor                   Specifies a list of predictor(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets'. Can be combined in a list separated by comma.
+      --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets'. Can be combined in a list separated by comma.
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
@@ -301,7 +301,7 @@ process peptidePrediction {
    def de = params.differential_gene_expression ? "--differential_gene_expression ${params.differential_gene_expression}" : ""
    def li = params.ligandomics_identification ? "--ligandomics_identification ${params.ligandomics_identification}" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --tools ${params.tools} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
    """
 }
 

@@ -900,6 +900,7 @@ def __main__():
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
     parser.add_argument('-c', "--mhcclass", default="I", help="MHC class I or II")
     parser.add_argument('-l', "--length", help="Maximum peptide length")
+    parser.add_argument('-t','--tools', help='Tools used for peptide predictions', required=True, type=str)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
@@ -968,16 +969,15 @@ def __main__():
         else:
             up_db.read_seqs(args.reference_proteome)
 
+    methods = [item for item in args.tools.split(',')]
+
     # MHC class I or II predictions
     if args.mhcclass == "I":
-        #methods = ['netmhc-4.0', 'syfpeithi-1.0', 'netmhcpan-3.0']
-        methods = ['syfpeithi-1.0']
         if args.peptides:
             pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
             pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, 8, int(args.length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
-        methods = ['netmhcII-2.2', 'syfpeithi-1.0', 'netmhcIIpan-3.1']
         if args.peptides:
             pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
