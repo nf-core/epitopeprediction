@@ -139,23 +139,27 @@ if (workflow.profile.contains('awsbatch')) {
 }
 
 // Header log info
-//TODO UPDATE WITH ALL SETTINGS AVAILABLE
 log.info nfcoreHeader()
 def summary = [:]
 summary['Pipeline Name']  = 'nf-core/epitopeprediction'
 if(workflow.revision) summary['Pipeline Release'] = workflow.revision
 summary['Run Name']         = custom_runName ?: workflow.runName
-if ( params.somatic_mutations ) summary['Variants'] = params.somatic_mutations
-if ( params.peptides ) summary['Peptides'] = params.peptides
-if ( params.reference_proteome ) summary['Reference proteome'] = params.reference_proteome
-if ( params.protein_quantification ) summary['Protein Quantification'] = params.protein_quantification
+//Pipeline Parameters
+if ( params.alleles ) summary['Alleles'] = params.alleles
 if ( params.gene_expression ) summary['Gene Expression'] = params.gene_expression
+summary['Gene List'] = params.gene_list
 if ( params.ligandomics_identification ) summary['Ligandomics Identification'] = params.ligandomics_identification
-summary['Genome Version'] = params.reference_genome
-summary['MHC Class'] = params.mhc_class
 summary['Max. Peptide Length'] = params.peptide_length
+summary['MHC Class'] = params.mhc_class
+if ( params.peptides ) summary['Peptides'] = params.peptides
+if ( params.protein_quantification ) summary['Protein Quantification'] = params.protein_quantification
+summary['Reference Genome'] = params.reference_genome
+if ( params.reference_proteome ) summary['Reference proteome'] = params.reference_proteome
 summary['Self-Filter'] = params.filter_self
+summary['Tools'] = params.tools
+if ( params.somatic_mutations ) summary['Variants'] = params.somatic_mutations
 summary['Wild-types'] = params.wild_type
+//Standard Params for nf-core pipelines
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
 summary['Output dir']       = params.outdir
