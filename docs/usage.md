@@ -2,43 +2,7 @@
 
 ## Table of contents
 
-* [nf-core/epitopeprediction: Usage](#nf-coreepitopeprediction-usage)
-  * [Table of contents](#table-of-contents)
-  * [Introduction](#introduction)
-  * [Running the pipeline](#running-the-pipeline)
-    * [Updating the pipeline](#updating-the-pipeline)
-    * [Reproducibility](#reproducibility)
-  * [Main arguments](#main-arguments)
-    * [`-profile`](#profile)
-    * [`--reads`](#reads)
-    * [`--single_end`](#singleend)
-  * [Reference genomes](#reference-genomes)
-    * [`--genome` (using iGenomes)](#genome-using-igenomes)
-    * [`--fasta`](#fasta)
-    * [`--igenomes_ignore`](#igenomesignore)
-  * [Job resources](#job-resources)
-    * [Automatic resubmission](#automatic-resubmission)
-    * [Custom resource requests](#custom-resource-requests)
-  * [AWS Batch specific parameters](#aws-batch-specific-parameters)
-    * [`--awsqueue`](#awsqueue)
-    * [`--awsregion`](#awsregion)
-  * [Other command line parameters](#other-command-line-parameters)
-    * [`--outdir`](#outdir)
-    * [`--email`](#email)
-    * [`--email_on_fail`](#emailonfail)
-    * [`--max_multiqc_email_size`](#maxmultiqcemailsize)
-    * [`-name`](#name)
-    * [`-resume`](#resume)
-    * [`-c`](#c)
-    * [`--custom_config_version`](#customconfigversion)
-    * [`--custom_config_base`](#customconfigbase)
-    * [`--max_memory`](#maxmemory)
-    * [`--max_time`](#maxtime)
-    * [`--max_cpus`](#maxcpus)
-    * [`--plaintext_email`](#plaintextemail)
-    * [`--monochrome_logs`](#monochromelogs)
-    * [`--multiqc_config`](#multiqcconfig)
-<!-- TOC END -->
+
 
 ## Introduction
 
@@ -55,7 +19,7 @@ NXF_OPTS='-Xms1g -Xmx4g'
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/epitopeprediction --reads '*_R{1,2}.fastq.gz' -profile docker
+nextflow run nf-core/epitopeprediction --somatic_mutations '*.vcf.gz' -profile docker
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
@@ -85,7 +49,7 @@ First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 
-## Main arguments
+## Generic pipeline arguments
 
 ### `-profile`
 
@@ -108,79 +72,69 @@ If `-profile` is not specified at all the pipeline will be run locally and expec
   * A profile with a complete configuration for automated testing
   * Includes links to test data so needs no other parameters
 
-### `--reads`
+## Main pipeline parameters
 
-Use this to specify the location of your input FastQ files. For example:
+### `--alleles`
 
-```bash
---reads 'path/to/data/sample_*_{1,2}.fastq'
-```
+The path to the file containing the MHC alleles.
 
-Please note the following requirements:
+### `--somatic_mutations`
 
-1. The path must be enclosed in quotes
-2. The path must have at least one `*` wildcard character
-3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.
+The path to the file containing the somatic mutations in compressed VCF format.
 
-If left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`
+### `--peptides`
 
-### `--single_end`
+The path to a TSV file containing the peptide sequences. As a minimum, the peptide ID and sequence columns are required.
 
-By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--single_end` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
+## Additional pipeline parameters
 
-```bash
---single_end --reads '*.fastq'
-```
+## `--differential_gene_expression`
 
-It is not possible to run a mixture of single-end and paired-end files in one run.
+The path to a differential gene expression file for additional annotation of results.
 
-## Reference genomes
+## `--filter_self`
 
-The pipeline config files come bundled with paths to the illumina iGenomes reference index files. If running with docker or AWS, the configuration is set up to use the [AWS-iGenomes](https://ewels.github.io/AWS-iGenomes/) resource.
+Specifies that peptides should be filtered against the specified human proteome references. By default, this is turned off.
 
-### `--genome` (using iGenomes)
+## `--gene_expression`
 
-There are 31 different species supported in the iGenomes references. To run the pipeline, you must specify which to use with the `--genome` flag.
+Specifies a path to a gene expression file for additional annotation of the obtained results.
 
-You can find the keys to specify the genomes in the [iGenomes config file](../conf/igenomes.config). Common genomes that are supported are:
+## `--ligandomics_identification`
 
-* Human
-  * `--genome GRCh37`
-* Mouse
-  * `--genome GRCm38`
-* _Drosophila_
-  * `--genome BDGP6`
-* _S. cerevisiae_
-  * `--genome 'R64-1-1'`
+Specifies a path to a ligandomics identification results matrix, to allow for additional annotation of obtained predictions.
 
-> There are numerous others - check the config file for more.
+## `--mhc_class`
 
-Note that you can use the same configuration setup to save sets of reference files for your own use, even if they are not part of the iGenomes resource. See the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) for instructions on where to save such a file.
+Specifies whether the predictions should be done for MHC class I or class II. By default, this is set to class I.
 
-The syntax for this reference configuration is as follows:
+## `--peptide_length`
 
-```nextflow
-params {
-  genomes {
-    'GRCh37' {
-      fasta   = '<path to the genome fasta file>' // Used if no star index given
-    }
-    // Any number of additional genomes, key is used with --genome
-  }
-}
-```
+Specifies the maximum peptide length. By default, for MHC Class I this is 8 to 11 amino acids. For MHC Class II this is regularly 15 to 16 amino acids.
 
-### `--fasta`
+## `--protein_quantification`
 
-If you prefer, you can specify the full path to your reference genome when you run the pipeline:
+Add a path for a MaxQuant protein quantification table to annotate predictions with protein quantification results.
 
-```bash
---fasta '[path to Fasta reference]'
-```
+### `--reference_genome`
 
-### `--igenomes_ignore`
+This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`. Available are `GRCh37` and `GRCh38`.
 
-Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`.
+## `--reference_proteome`
+
+Specifies the reference proteomes that are used for self-filtering.
+
+## `--tools`
+
+Specifies the set of tools used for performing prediction. Default is `syfpeithi`. Available are:
+
+`syfpeithi`, `mhcnuggets` and `mhcflurry`
+
+Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many more prediction methods, which we currently don't support due to legal restrictions in licencing of these methods (e.g. netMHCPan, netMHCpanII) that forbid any bundling in pipelines such as this one. We believe in open source and therefore dropped any support in an early alpha version of this pipeline due to this.
+
+## `--wild_type`
+
+Specifies that wild-type sequences of mutated peptides should be predicted as well. By default, this is turned off.
 
 ## Job resources
 
