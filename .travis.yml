@@ -44,7 +44,7 @@ script:
   # Lint the documentation
   - markdownlint ${TRAVIS_BUILD_DIR} -c ${TRAVIS_BUILD_DIR}/.github/markdownlint.yml
   # Run the pipeline with the test profiles
-  - nextflow run ${TRAVIS_BUILD_DIR} -profile test_vcf,docker -ansi-log false -name epitopeprediction-${TRAVIS_EVENT_TYPE}-${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT:0:6}-test-vcf
+  - nextflow run ${TRAVIS_BUILD_DIR} -profile test,docker -ansi-log false -name epitopeprediction-${TRAVIS_EVENT_TYPE}-${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT:0:6}-test-vcf
   - nextflow run ${TRAVIS_BUILD_DIR} -profile test_variant_tsv,docker -ansi-log false -name epitopeprediction-${TRAVIS_EVENT_TYPE}-${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT:0:6}-test-variant_tsv
   - nextflow run ${TRAVIS_BUILD_DIR} -profile test_peptides,docker -ansi-log false -name epitopeprediction-${TRAVIS_EVENT_TYPE}-${TRAVIS_PULL_REQUEST}-${TRAVIS_COMMIT:0:6}-test_peptides
 
