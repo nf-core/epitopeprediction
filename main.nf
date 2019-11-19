@@ -43,7 +43,6 @@ def helpMessage() {
       --reference_proteome          Specifies the reference proteome(s) used for self-filtering
 
     Additional inputs:
-      --reference_proteome          Path to reference proteome Fastas
       --protein_quantification      Path to protein quantification file (MaxQuant) for additional annotation
       --gene_expression             Path to gene expression file for additional annotation
       --differential_gene_expression  Path to differential gene expression file for additional annotation

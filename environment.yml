@@ -1,4 +1,4 @@
-name: nf-core-epitopeprediction-1.0dev
+name: nf-core-epitopeprediction-1.0.0
 channels:
   - conda-forge
   - bioconda
