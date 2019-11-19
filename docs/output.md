@@ -7,11 +7,10 @@ This document describes the output produced by the pipeline. Most of the plots a
 The pipeline is built using [Nextflow](https://www.nextflow.io/)
 and processes data using the following steps:
 
-
-
-* - run prediction using various methods and generating JSON and TSV report files
-* - aggregate report, describing results of the whole pipeline
-
+* [nf-core/epitopeprediction: Output](#nf-coreepitopeprediction-output)
+  * [Pipeline overview](#pipeline-overview)
+  * [MultiQC](#multiqc)
+  * [Epitope Prediction](#epitope-prediction)
 
 ## MultiQC
 
