@@ -905,7 +905,7 @@ def __main__():
     parser.add_argument('-g', "--germline_mutations", help="Germline variants")
     parser.add_argument('-i', "--identifier", help="Dataset identifier")
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
-    parser.add_argument('-c', "--mhcclass", default="I", help="MHC class I or II")
+    parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
     parser.add_argument('-l', "--length", help="Maximum peptide length")
     parser.add_argument('-t', '--tools', help='Tools used for peptide predictions', required=True, type=str)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
@@ -979,7 +979,7 @@ def __main__():
     methods = [item for item in args.tools.split(',')]
 
     # MHC class I or II predictions
-    if args.mhcclass == "I":
+    if args.mhcclass is 1:
         if args.peptides:
             pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:

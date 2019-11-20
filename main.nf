@@ -36,7 +36,7 @@ def helpMessage() {
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
       --peptide_length              Specifies the maximum peptide length Default: MHC class I: 8 to 11 AA, MHC class II: 15 to 16 AA 
-      --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets'. Can be combined in a list separated by comma.
+      --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
@@ -105,8 +105,12 @@ else {
     allele_file = file(params.alleles)
 }
 
-if ( params.mhc_class != 'I' && params.mhc_class != 'II' ){
-    exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 'I', 'II'"
+if ( params.mhc_class != 1 && params.mhc_class != 2 ){
+    exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
+}
+
+if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && params.tools.contains("mhcnuggets-class-1")) ){
+    log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
 }
 
 if ( params.filter_self & !params.reference_proteome ){

@@ -104,7 +104,7 @@ Specifies a path to a ligandomics identification results matrix, to allow for ad
 
 ## `--mhc_class`
 
-Specifies whether the predictions should be done for MHC class I or class II. By default, this is set to class I.
+Specifies whether the predictions should be done for MHC class I or class II. By default, this is set to 1 (class I).
 
 ## `--peptide_length`
 
@@ -126,7 +126,7 @@ Specifies the reference proteomes that are used for self-filtering.
 
 Specifies the set of tools used for performing prediction. Default is `syfpeithi`. Available are:
 
-`syfpeithi`, `mhcnuggets` and `mhcflurry`
+`syfpeithi`, `mhcnuggets-class-1`, `mhcnuggets-class-2` and `mhcflurry`
 
 Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many more prediction methods, which we currently don't support due to legal restrictions in licencing of these methods (e.g. netMHCPan, netMHCpanII) that forbid any bundling in pipelines such as this one. We believe in open source and therefore dropped any support in an early alpha version of this pipeline due to this.
 
