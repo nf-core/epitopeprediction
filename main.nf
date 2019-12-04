@@ -117,13 +117,6 @@ if ( params.filter_self & !params.reference_proteome ){
     params.reference_proteome = file("$baseDir/assets/")
 }
 
-//
-// NOTE - THIS IS NOT USED IN THIS PIPELINE, EXAMPLE ONLY
-// If you want to use the channel below in a process, define the following:
-//   input:
-//   file fasta from ch_fasta
-//
-
 // Has the run name been specified by the user?
 // this has the bonus effect of catching both -name and --name
 custom_runName = params.name
