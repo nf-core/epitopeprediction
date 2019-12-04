@@ -17,7 +17,7 @@ NXF_OPTS='-Xms1g -Xmx4g'
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/epitopeprediction --somatic_mutations '*.vcf.gz' -profile docker
+nextflow run nf-core/epitopeprediction --somatic_mutations "*.vcf.gz" -profile docker
 ```
 
 This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
