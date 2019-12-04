@@ -114,11 +114,11 @@ If `-profile` is not specified at all the pipeline will be run locally and expec
 
 ### `--alleles`
 
-The path to the file containing the MHC alleles.
+The path to the file containing the MHC alleles. Alleles should be provided in the format `A*01:01`, one per line.
 
 ### `--somatic_mutations`
 
-The path to the file containing the somatic mutations in compressed VCF format.
+The path to the file containing the somatic mutations in gz compressed VCF format.
 
 ### `--peptides`
 
@@ -134,9 +134,14 @@ Specifies that peptides should be filtered against the specified human proteome 
 
 Specifies whether the predictions should be done for MHC class I or class II. By default, this is set to 1 (class I).
 
-## `--peptide_length`
+## `--min_peptide_length`
 
-Specifies the maximum peptide length. By default, for MHC Class I this is 8 to 11 amino acids. For MHC Class II this is regularly 15 to 16 amino acids.
+Specifies the minimum peptide length. By default, for MHC Class I this is 8 amino acids. For MHC Class II this is 15 amino acids.
+
+## `--max_peptide_length``
+
+Specifies the maximum peptide length. By default, for MHC Class I this is 11 amino acids. For MHC Class II this is by default 16
+amino acids.
 
 ### `--reference_genome`
 

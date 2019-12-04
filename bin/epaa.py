@@ -906,7 +906,8 @@ def __main__():
     parser.add_argument('-i', "--identifier", help="Dataset identifier")
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
     parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
-    parser.add_argument('-l', "--length", help="Maximum peptide length")
+    parser.add_argument('-l', "--max_length", help="Maximum peptide length")
+    parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
     parser.add_argument('-t', '--tools', help='Tools used for peptide predictions', required=True, type=str)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
@@ -983,12 +984,12 @@ def __main__():
         if args.peptides:
             pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, 8, int(args.length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
             pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, 15, int(args.length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
     # concat dataframes for all peptide lengths
     try:
