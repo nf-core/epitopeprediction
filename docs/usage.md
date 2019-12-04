@@ -66,7 +66,7 @@ The typical command for running the pipeline is as follows:
 nextflow run nf-core/epitopeprediction --somatic_mutations '*.vcf.gz' -profile docker
 ```
 
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
+This will launch the pipeline with the `docker` configuration profile and default options (`syfpeithi` by default). See below for more information about profiles.
 
 Note that the pipeline will create the following files in your working directory:
 
@@ -162,7 +162,7 @@ Add a path for a MaxQuant protein quantification table to annotate predictions w
 
 ### `--reference_genome`
 
-This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`. Available are `GRCh37` and `GRCh38`.
+This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`, as most clinical labs still rely on `GRCh37` as the human reference genome to use. Available are `GRCh37` and `GRCh38`.
 
 ## `--reference_proteome`
 
