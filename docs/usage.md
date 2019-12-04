@@ -15,13 +15,9 @@
     * [`--somatic_mutations`](#somaticmutations)
     * [`--peptides`](#peptides)
   * [Additional pipeline parameters](#additional-pipeline-parameters)
-  * [`--differential_gene_expression`](#differentialgeneexpression)
   * [`--filter_self`](#filterself)
-  * [`--gene_expression`](#geneexpression)
-  * [`--ligandomics_identification`](#ligandomicsidentification)
   * [`--mhc_class`](#mhcclass)
   * [`--peptide_length`](#peptidelength)
-  * [`--protein_quantification`](#proteinquantification)
     * [`--reference_genome`](#referencegenome)
   * [`--reference_proteome`](#referenceproteome)
   * [`--tools`](#tools)
@@ -130,21 +126,9 @@ The path to a TSV file containing the peptide sequences. As a minimum, the pepti
 
 ## Additional pipeline parameters
 
-## `--differential_gene_expression`
-
-The path to a differential gene expression file for additional annotation of results.
-
 ## `--filter_self`
 
 Specifies that peptides should be filtered against the specified human proteome references. By default, this is turned off.
-
-## `--gene_expression`
-
-Specifies a path to a gene expression file for additional annotation of the obtained results.
-
-## `--ligandomics_identification`
-
-Specifies a path to a ligandomics identification results matrix, to allow for additional annotation of obtained predictions.
 
 ## `--mhc_class`
 
@@ -153,10 +137,6 @@ Specifies whether the predictions should be done for MHC class I or class II. By
 ## `--peptide_length`
 
 Specifies the maximum peptide length. By default, for MHC Class I this is 8 to 11 amino acids. For MHC Class II this is regularly 15 to 16 amino acids.
-
-## `--protein_quantification`
-
-Add a path for a MaxQuant protein quantification table to annotate predictions with protein quantification results. If you don't provide such a path, the results will not be annotated with protein quantification results.
 
 ### `--reference_genome`
 
