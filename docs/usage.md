@@ -174,6 +174,7 @@ Specifies the set of tools used for performing prediction. Default is `syfpeithi
 
 `syfpeithi`, `mhcnuggets-class-1`, `mhcnuggets-class-2` and `mhcflurry`
 
+You can use multiple options and concatenate these with a `,`, e.g. `syfpeithi,mhcflurry` works fine.
 Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many more prediction methods, which we currently don't support due to legal restrictions in licencing of these methods (e.g. netMHCPan, netMHCpanII) that forbid any bundling in pipelines such as this one. We believe in open source and therefore dropped any support in an early alpha version of this pipeline due to this.
 
 ## `--wild_type`
