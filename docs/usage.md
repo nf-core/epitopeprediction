@@ -120,7 +120,7 @@ This defines against which reference genome the pipeline performs the analysis. 
 
 ## `--reference_proteome`
 
-Specifies the reference proteomes that are used for self-filtering.
+Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
 
 ## `--tools`
 
