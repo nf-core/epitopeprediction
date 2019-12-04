@@ -46,4 +46,4 @@ These tests are run both with the latest available version of Nextflow and also 
 
 ## Getting help
 
-For further information/help, please consult the [nf-core/epitopeprediction documentation](https://github.com/nf-core/epitopeprediction#documentation) and don't hesitate to get in touch on the [nf-core/epitopeprediction pipeline channel](https://nfcore.slack.com/channels/epitopeprediction) on [Slack](https://nf-co.re/join/slack).
+For further information/help, please consult the [nf-core/epitopeprediction documentation](https://nf-co.re/epitopeprediction/docs) and don't hesitate to get in touch on the [nf-core/epitopeprediction pipeline channel](https://nfcore.slack.com/channels/epitopeprediction) on [Slack](https://nf-co.re/join/slack).
