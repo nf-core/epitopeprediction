@@ -155,7 +155,7 @@ Specifies the maximum peptide length. By default, for MHC Class I this is 8 to 1
 
 ## `--protein_quantification`
 
-Add a path for a MaxQuant protein quantification table to annotate predictions with protein quantification results.
+Add a path for a MaxQuant protein quantification table to annotate predictions with protein quantification results. If you don't provide such a path, the results will not be annotated with protein quantification results.
 
 ### `--reference_genome`
 
