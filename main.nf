@@ -64,8 +64,6 @@ if (params.help) {
 multiqc_config = file(params.multiqc_config)
 output_docs = file("$baseDir/docs/output.md")
 
-// List of coding genes for Ensembl ID to HGNC mapping
-gene_list = file(params.gene_list)
 
 //Generate empty channels for peptides and variants
 ch_split_peptides = Channel.empty()
