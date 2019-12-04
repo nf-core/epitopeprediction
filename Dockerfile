@@ -10,4 +10,4 @@ RUN conda env create -f /environment.yml && conda clean -a
 ENV PATH /opt/conda/envs/nf-core-epitopeprediction-1.0.0/bin:$PATH
 
 # Dump the details of the installed packages to a file for posterity
-RUN conda env export --name nf-core-epitopeprediction-1.0dev > nf-core-epitopeprediction-1.0dev.yml
+RUN conda env export --name nf-core-epitopeprediction-1.0.0 > nf-core-epitopeprediction-1.0.0.yml

@@ -41,12 +41,6 @@ def helpMessage() {
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
       --reference_proteome          Specifies the reference proteome(s) used for self-filtering
-
-    Additional inputs:
-      --protein_quantification      Path to protein quantification file (MaxQuant) for additional annotation
-      --gene_expression             Path to gene expression file for additional annotation
-      --differential_gene_expression  Path to differential gene expression file for additional annotation
-      --ligandomics_identification  Path to ligandomics identification file for additional annotation
        
     Other options:
       --outdir                      The output directory where the results will be saved
@@ -148,7 +142,6 @@ if ( params.ligandomics_identification ) summary['Ligandomics Identification'] =
 summary['Max. Peptide Length'] = params.peptide_length
 summary['MHC Class'] = params.mhc_class
 if ( params.peptides ) summary['Peptides'] = params.peptides
-if ( params.protein_quantification ) summary['Protein Quantification'] = params.protein_quantification
 summary['Reference Genome'] = params.reference_genome
 if ( params.reference_proteome ) summary['Reference proteome'] = params.reference_proteome
 summary['Self-Filter'] = params.filter_self
@@ -297,12 +290,8 @@ process peptidePrediction {
    def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.reference_proteome ? "--reference_proteome ${params.reference_proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
-   def qt = params.protein_quantification ? "--protein_quantification ${params.protein_quantification}" : ""
-   def ge = params.gene_expression ? "--gene_expression ${params.gene_expression}" : ""
-   def de = params.differential_gene_expression ? "--differential_gene_expression ${params.differential_gene_expression}" : ""
-   def li = params.ligandomics_identification ? "--ligandomics_identification ${params.ligandomics_identification}" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --tools ${params.tools} --reference ${params.reference_genome} --gene_reference ${gene_list} ${ref_prot} ${qt} ${ge} ${de} ${li} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --tools ${params.tools} --reference ${params.reference_genome} ${ref_prot} ${wt}
    """
 }
 
