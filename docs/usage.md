@@ -29,9 +29,6 @@
   * [Job resources](#job-resources)
     * [Automatic resubmission](#automatic-resubmission)
     * [Custom resource requests](#custom-resource-requests)
-  * [AWS Batch specific parameters](#aws-batch-specific-parameters)
-    * [`--awsqueue`](#awsqueue)
-    * [`--awsregion`](#awsregion)
   * [Other command line parameters](#other-command-line-parameters)
     * [`--outdir`](#outdir)
     * [`--email`](#email)
@@ -194,20 +191,6 @@ Wherever process-specific requirements are set in the pipeline, the default valu
 If you are likely to be running `nf-core` pipelines regularly it may be a good idea to request that your custom config file is uploaded to the `nf-core/configs` git repository. Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition below). You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
 
 If you have any questions or issues please send us a message on [Slack](https://nf-co.re/join/slack).
-
-## AWS Batch specific parameters
-
-Running the pipeline on AWS Batch requires a couple of specific parameters to be set according to your AWS Batch configuration. Please use the `-awsbatch` profile and then specify all of the following parameters.
-
-### `--awsqueue`
-
-The JobQueue that you intend to use on AWS Batch.
-
-### `--awsregion`
-
-The AWS region to run your job in. Default is set to `eu-west-1` but can be adjusted to your needs.
-
-Please make sure to also set the `-w/--work-dir` and `--outdir` parameters to a S3 storage bucket of your choice - you'll get an error message notifying you if you didn't.
 
 ## Other command line parameters
 
