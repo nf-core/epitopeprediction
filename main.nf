@@ -20,7 +20,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/epitopeprediction --somatic_mutations '*.vcf.gz' --alleles '*.alleles' -profile standard,docker
+    nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --somatic_mutations '*.vcf.gz' --genome 'GRCh37'
 
     Mandatory arguments:
       --somatic_mutations           Path to input data (must be surrounded with quotes)
@@ -237,12 +237,13 @@ process splitVariants {
     input:
     file variants from ch_split_variants
 
-    when: !params.peptides
-
     output:
     file '*chr*.vcf' optional true into ch_splitted_vcfs
     file '*chr*.tsv' optional true into ch_splitted_tsvs
     file '*chr*.GSvar' optional true into ch_splitted_gsvars
+
+    when: !params.peptides
+
 
     script:
     if ( variants.toString().endsWith('.vcf') || variants.toString().endsWith('.vcf.gz') ) {
@@ -265,10 +266,10 @@ process splitPeptides {
     input:
     file peptides from ch_split_peptides
 
-    when: !params.somatic_mutations
-
     output:
     file '*.tsv' into ch_splitted_peptides
+
+    when: !params.somatic_mutations
 
     // @TODO
     // splitting mechanism missing
