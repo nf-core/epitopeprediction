@@ -35,7 +35,8 @@ def helpMessage() {
       --filter_self                 Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
-      --peptide_length              Specifies the maximum peptide length Default: MHC class I: 8 to 11 AA, MHC class II: 15 to 16 AA 
+      --max_peptide_length              Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa 
+      --min_peptide_length          Specifies the minimum peptide length Default: MCH class I: 8 aa, MHC class II: 15 aa
       --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
@@ -291,7 +292,7 @@ process peptidePrediction {
    def ref_prot = params.reference_proteome ? "--reference_proteome ${params.reference_proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --length ${params.peptide_length} --tools ${params.tools} --reference ${params.reference_genome} ${ref_prot} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} --tools ${params.tools} --reference ${params.reference_genome} ${ref_prot} ${wt}
    """
 }
 
