@@ -20,7 +20,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --somatic_mutations '*.vcf.gz' --genome 'GRCh37'
+    nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --somatic_mutations "*.vcf.gz" --genome GRCh37
 
     Mandatory arguments:
       --somatic_mutations           Path to input data (must be surrounded with quotes)
