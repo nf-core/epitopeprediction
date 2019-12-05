@@ -283,7 +283,7 @@ process peptidePrediction {
    file "*.json" into ch_json_reports
    
    script:
-   def input_type = params.peptides ? "--peptides ${inputs}" : "--input ${inputs}"
+   def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
