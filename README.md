@@ -2,7 +2,7 @@
 
 **A fully reproducible and state of the art epitope prediction pipeline.**.
 
-[![Build Status](https://travis-ci.com/nf-core/epitopeprediction.svg?branch=master)](https://travis-ci.com/nf-core/epitopeprediction)
+[![GitHub Actions](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20CI/badge.svg)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
@@ -67,7 +67,6 @@ For further information or help, don't hesitate to get in touch on [Slack](https
 
 nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) and [Alexander Peltzer](https://github.com/apeltzer).
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi. -->
 <!-- If you use  nf-core/epitopeprediction for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 You can cite the `nf-core` pre-print as follows:  
