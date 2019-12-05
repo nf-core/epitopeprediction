@@ -19,7 +19,7 @@
   * [`--mhc_class`](#mhcclass)
   * [`--min_peptide_length`](#minpeptidelength)
   * [`--max_peptide_length``](#maxpeptidelength)
-    * [`--genome`](#genome)
+  * [`--genome`](#genome)
   * [`--proteome`](#proteome)
   * [`--tools`](#tools)
   * [`--wild_type`](#wildtype)
@@ -144,7 +144,7 @@ Specifies the minimum peptide length. By default, for MHC Class I this is 8 amin
 Specifies the maximum peptide length. By default, for MHC Class I this is 11 amino acids. For MHC Class II this is by default 16
 amino acids.
 
-### `--genome`
+## `--genome`
 
 This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`, as most clinical labs still rely on `GRCh37` as the human reference genome to use. Available are `GRCh37` and `GRCh38`.
 

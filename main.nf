@@ -20,10 +20,10 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --somatic_mutations "*.vcf.gz" --genome GRCh37
+    nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --input "*.vcf.gz"
 
     Mandatory arguments:
-      --somatic_mutations           Path to input data (must be surrounded with quotes)
+      --input           Path to input data (must be surrounded with quotes)
       --alleles                     Path to the file containing the MHC alleles
       -profile                      Configuration profile to use. Can use multiple (comma separated)
                                     Available: conda, docker, singularity, awsbatch, test and more
@@ -35,13 +35,13 @@ def helpMessage() {
       --filter_self                 Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
-      --max_peptide_length              Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa 
+      --max_peptide_length          Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa 
       --min_peptide_length          Specifies the minimum peptide length Default: MCH class I: 8 aa, MHC class II: 15 aa
       --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
       --genome                      Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
-      --proteome          Specifies the reference proteome(s) used for self-filtering
+      --proteome                    Specifies the reference proteome(s) used for self-filtering
        
     Other options:
       --outdir                      The output directory where the results will be saved
@@ -283,7 +283,7 @@ process peptidePrediction {
    file "*.json" into ch_json_reports
    
    script:
-   def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
+   def input_type = params.peptides ? "--peptides ${inputs}" : "--input ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
