@@ -40,8 +40,8 @@ def helpMessage() {
       --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
 
     References                      If not specified in the configuration file or you wish to overwrite any of the references
-      --reference_genome            Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
-      --reference_proteome          Specifies the reference proteome(s) used for self-filtering
+      --genome                      Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
+      --proteome          Specifies the reference proteome(s) used for self-filtering
        
     Other options:
       --outdir                      The output directory where the results will be saved
@@ -106,8 +106,8 @@ if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (
     log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
 }
 
-if ( params.filter_self & !params.reference_proteome ){
-    params.reference_proteome = file("$baseDir/assets/")
+if ( params.filter_self & !params.proteome ){
+    params.proteome = file("$baseDir/assets/")
 }
 
 // Has the run name been specified by the user?
@@ -141,8 +141,8 @@ if ( params.ligandomics_identification ) summary['Ligandomics Identification'] =
 summary['Max. Peptide Length'] = params.peptide_length
 summary['MHC Class'] = params.mhc_class
 if ( params.peptides ) summary['Peptides'] = params.peptides
-summary['Reference Genome'] = params.reference_genome
-if ( params.reference_proteome ) summary['Reference proteome'] = params.reference_proteome
+summary['Reference Genome'] = params.genome
+if ( params.proteome ) summary['Reference proteome'] = params.proteome
 summary['Self-Filter'] = params.filter_self
 summary['Tools'] = params.tools
 if ( params.somatic_mutations ) summary['Variants'] = params.somatic_mutations
@@ -287,10 +287,10 @@ process peptidePrediction {
    
    script:
    def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
-   def ref_prot = params.reference_proteome ? "--reference_proteome ${params.reference_proteome}" : ""
+   def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} --tools ${params.tools} --reference ${params.reference_genome} ${ref_prot} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} --tools ${params.tools} --reference ${params.genome} ${ref_prot} ${wt}
    """
 }
 

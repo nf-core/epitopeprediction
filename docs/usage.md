@@ -19,8 +19,8 @@
   * [`--mhc_class`](#mhcclass)
   * [`--min_peptide_length`](#minpeptidelength)
   * [`--max_peptide_length``](#maxpeptidelength)
-    * [`--reference_genome`](#referencegenome)
-  * [`--reference_proteome`](#referenceproteome)
+    * [`--genome`](#genome)
+  * [`--proteome`](#proteome)
   * [`--tools`](#tools)
   * [`--wild_type`](#wildtype)
   * [Job resources](#job-resources)
@@ -144,11 +144,11 @@ Specifies the minimum peptide length. By default, for MHC Class I this is 8 amin
 Specifies the maximum peptide length. By default, for MHC Class I this is 11 amino acids. For MHC Class II this is by default 16
 amino acids.
 
-### `--reference_genome`
+### `--genome`
 
 This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`, as most clinical labs still rely on `GRCh37` as the human reference genome to use. Available are `GRCh37` and `GRCh38`.
 
-## `--reference_proteome`
+## `--proteome`
 
 Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
 
