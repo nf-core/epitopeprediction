@@ -1,13 +1,14 @@
-name: nf-core-epitopeprediction-1.0dev
+name: nf-core-epitopeprediction-1.0.0
 channels:
-  - bioconda
   - conda-forge
+  - bioconda
   - defaults
 dependencies:
-  - python=2.7.13
-  - multiqc=1.6
+  - python=2.7.15 #dont upgrade, FRED2 needs python 2.7 for now
+  - multiqc=1.6 #cant upgrade due to Python2 fix
   - snpsift=4.3.1t
-  - csvtk=0.15.0
-  - fred2=2.0.2
-
-  # missing: netMHC, netMHCpan, netMHCII, netMHCIIpan
+  - csvtk=0.19.1
+  - fred2=2.0.5
+  - mhcflurry=1.4.3
+  - mhcnuggets=2.3.2
+  - conda-forge::r-markdown=1.1

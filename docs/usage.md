@@ -2,43 +2,49 @@
 
 ## Table of contents
 
-* [Introduction](#general-nextflow-info)
-* [Running the pipeline](#running-the-pipeline)
-* [Updating the pipeline](#updating-the-pipeline)
-* [Reproducibility](#reproducibility)
-* [Main arguments](#main-arguments)
-    * [`-profile`](#-profile-single-dash)
-        * [`docker`](#docker)
-        * [`awsbatch`](#awsbatch)
-        * [`standard`](#standard)
-        * [`none`](#none)
-    * [`--reads`](#--reads)
-    * [`--singleEnd`](#--singleend)
-* [Reference Genomes](#reference-genomes)
-    * [`--genome`](#--genome)
-    * [`--fasta`](#--fasta)
-* [Job Resources](#job-resources)
-* [Automatic resubmission](#automatic-resubmission)
-* [Custom resource requests](#custom-resource-requests)
-* [AWS batch specific parameters](#aws-batch-specific-parameters)
-    * [`-awsbatch`](#-awsbatch)
-    * [`--awsqueue`](#--awsqueue)
-    * [`--awsregion`](#--awsregion)
-* [Other command line parameters](#other-command-line-parameters)
-    * [`--outdir`](#--outdir)
-    * [`--email`](#--email)
-    * [`-name`](#-name-single-dash)
-    * [`-resume`](#-resume-single-dash)
-    * [`-c`](#-c-single-dash)
-    * [`--max_memory`](#--max_memory)
-    * [`--max_time`](#--max_time)
-    * [`--max_cpus`](#--max_cpus)
-    * [`--plaintext_emails`](#--plaintext_emails)
-    * [`--sampleLevel`](#--sampleLevel)
-    * [`--multiqc_config`](#--multiqc_config)
+* [nf-core/epitopeprediction: Usage](#nf-coreepitopeprediction-usage)
+  * [Table of contents](#table-of-contents)
+  * [Introduction](#introduction)
+  * [Running the pipeline](#running-the-pipeline)
+    * [Updating the pipeline](#updating-the-pipeline)
+    * [Reproducibility](#reproducibility)
+  * [Generic pipeline arguments](#generic-pipeline-arguments)
+    * [`-profile`](#profile)
+  * [Main pipeline parameters](#main-pipeline-parameters)
+    * [`--alleles`](#alleles)
+    * [`--somatic_mutations`](#somaticmutations)
+    * [`--peptides`](#peptides)
+  * [Additional pipeline parameters](#additional-pipeline-parameters)
+  * [`--filter_self`](#filterself)
+  * [`--mhc_class`](#mhcclass)
+  * [`--min_peptide_length`](#minpeptidelength)
+  * [`--max_peptide_length``](#maxpeptidelength)
+  * [`--genome`](#genome)
+  * [`--proteome`](#proteome)
+  * [`--tools`](#tools)
+  * [`--wild_type`](#wildtype)
+  * [Job resources](#job-resources)
+    * [Automatic resubmission](#automatic-resubmission)
+    * [Custom resource requests](#custom-resource-requests)
+  * [Other command line parameters](#other-command-line-parameters)
+    * [`--outdir`](#outdir)
+    * [`--email`](#email)
+    * [`--email_on_fail`](#emailonfail)
+    * [`--max_multiqc_email_size`](#maxmultiqcemailsize)
+    * [`-name`](#name)
+    * [`-resume`](#resume)
+    * [`-c`](#c)
+    * [`--custom_config_version`](#customconfigversion)
+    * [`--custom_config_base`](#customconfigbase)
+    * [`--max_memory`](#maxmemory)
+    * [`--max_time`](#maxtime)
+    * [`--max_cpus`](#maxcpus)
+    * [`--plaintext_email`](#plaintextemail)
+    * [`--monochrome_logs`](#monochromelogs)
+    * [`--multiqc_config`](#multiqcconfig)
 
+## Introduction
 
-## General Nextflow info
 Nextflow handles job submissions on SLURM or other environments, and supervises running the jobs. Thus the Nextflow process must run until the pipeline is finished. We recommend that you put the process running in the background through `screen` / `tmux` or similar tool. Alternatively you can run nextflow within a cluster job submitted your job scheduler.
 
 It is recommended to limit the Nextflow Java virtual machines memory. We recommend adding the following line to your environment (typically in `~/.bashrc` or `~./bash_profile`):
@@ -48,12 +54,14 @@ NXF_OPTS='-Xms1g -Xmx4g'
 ```
 
 ## Running the pipeline
+
 The typical command for running the pipeline is as follows:
+
 ```bash
-nextflow run nf-core/epitopeprediction --reads '*_R{1,2}.fastq.gz' -profile standard,docker
+nextflow run nf-core/epitopeprediction --somatic_mutations "*.vcf.gz" -profile docker
 ```
 
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
+This will launch the pipeline with the `docker` configuration profile and default options (`syfpeithi` by default). See below for more information about profiles.
 
 Note that the pipeline will create the following files in your working directory:
 
@@ -65,6 +73,7 @@ results         # Finished results (configurable, see below)
 ```
 
 ### Updating the pipeline
+
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. When running the pipeline after this, it will always use the cached version if available - even if the pipeline has been updated since. To make sure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
 
 ```bash
@@ -72,130 +81,124 @@ nextflow pull nf-core/epitopeprediction
 ```
 
 ### Reproducibility
+
 It's a good idea to specify a pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
-First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf-core/epitopeprediction/releases) and find the latest version number - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`.
+First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf-core/epitopeprediction/releases) and find the latest version number - numeric only (eg. `1.0.0`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.0.0`.
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 
-
-## Main Arguments
+## Generic pipeline arguments
 
 ### `-profile`
-Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments. Note that multiple profiles can be loaded, for example: `-profile standard,docker` - the order of arguments is important!
 
-* `standard`
-    * The default profile, used if `-profile` is not specified at all.
-    * Runs locally and expects all software to be installed and available on the `PATH`.
-* `docker`
-    * A generic configuration profile to be used with [Docker](http://docker.com/)
-    * Pulls software from dockerhub: [`nfcore/epitopeprediction`](http://hub.docker.com/r/nfcore/epitopeprediction/)
-* `singularity`
-    * A generic configuration profile to be used with [Singularity](http://singularity.lbl.gov/)
-    * Pulls software from singularity-hub
-* `conda`
-    * A generic configuration profile to be used with [conda](https://conda.io/docs/)
-    * Pulls most software from [Bioconda](https://bioconda.github.io/)
+Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments. Note that multiple profiles can be loaded, for example: `-profile docker` - the order of arguments is important!
+
+If `-profile` is not specified at all the pipeline will be run locally and expects all software to be installed and available on the `PATH`.
+
 * `awsbatch`
-    * A generic configuration profile to be used with AWS Batch.
+  * A generic configuration profile to be used with AWS Batch.
+* `conda`
+  * A generic configuration profile to be used with [conda](https://conda.io/docs/)
+  * Pulls most software from [Bioconda](https://bioconda.github.io/)
+* `docker`
+  * A generic configuration profile to be used with [Docker](http://docker.com/)
+  * Pulls software from dockerhub: [`nfcore/epitopeprediction`](http://hub.docker.com/r/nfcore/epitopeprediction/)
+* `singularity`
+  * A generic configuration profile to be used with [Singularity](http://singularity.lbl.gov/)
+  * Pulls software from DockerHub: [`nfcore/epitopeprediction`](http://hub.docker.com/r/nfcore/epitopeprediction/)
 * `test`
-    * A profile with a complete configuration for automated testing
-    * Includes links to test data so needs no other parameters
-* `none`
-    * No configuration at all. Useful if you want to build your own config from scratch and want to avoid loading in the default `base` config profile (not recommended).
+  * A profile with a complete configuration for automated testing
+  * Includes links to test data so needs no other parameters
 
-### `--reads`
-Use this to specify the location of your input FastQ files. For example:
+## Main pipeline parameters
 
-```bash
---reads 'path/to/data/sample_*_{1,2}.fastq'
-```
+### `--alleles`
 
-Please note the following requirements:
+The path to the file containing the MHC alleles. Alleles should be provided in the format `A*01:01`, one per line.
 
-1. The path must be enclosed in quotes
-2. The path must have at least one `*` wildcard character
-3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.
+### `--somatic_mutations`
 
-If left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`
+The path to the file containing the somatic mutations in gz compressed VCF format.
 
-### `--singleEnd`
-By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--singleEnd` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
+### `--peptides`
 
-```bash
---singleEnd --reads '*.fastq'
-```
+Instead of genomic variants, peptide sequences can be provided in a TSV file. In this case, MHC binding predictions will be made for the provided sequences. The TSV file has to include the following columns: `id, sequence`. All additional columns will be added to the prediction output as annotation.
 
-It is not possible to run a mixture of single-end and paired-end files in one run.
+## Additional pipeline parameters
 
+## `--filter_self`
 
-## Reference Genomes
+Specifies that peptides should be filtered against the specified human proteome references. By default, this is turned off.
 
-The pipeline config files come bundled with paths to the illumina iGenomes reference index files. If running with docker or AWS, the configuration is set up to use the [AWS-iGenomes](https://ewels.github.io/AWS-iGenomes/) resource.
+## `--mhc_class`
 
-### `--genome` (using iGenomes)
-There are 31 different species supported in the iGenomes references. To run the pipeline, you must specify which to use with the `--genome` flag.
+Specifies whether the predictions should be done for MHC class I or class II. By default, this is set to 1 (class I).
 
-You can find the keys to specify the genomes in the [iGenomes config file](../conf/igenomes.config). Common genomes that are supported are:
+## `--min_peptide_length`
 
-* Human
-  * `--genome GRCh37`
-* Mouse
-  * `--genome GRCm38`
-* _Drosophila_
-  * `--genome BDGP6`
-* _S. cerevisiae_
-  * `--genome 'R64-1-1'`
+Specifies the minimum peptide length. By default, for MHC Class I this is 8 amino acids. For MHC Class II this is 15 amino acids.
 
-> There are numerous others - check the config file for more.
+## `--max_peptide_length``
 
-Note that you can use the same configuration setup to save sets of reference files for your own use, even if they are not part of the iGenomes resource. See the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) for instructions on where to save such a file.
+Specifies the maximum peptide length. By default, for MHC Class I this is 11 amino acids. For MHC Class II this is by default 16
+amino acids.
 
-The syntax for this reference configuration is as follows:
+## `--genome`
 
-```nextflow
-params {
-  genomes {
-    'GRCh37' {
-      fasta   = '<path to the genome fasta file>' // Used if no star index given
-    }
-    // Any number of additional genomes, key is used with --genome
-  }
-}
-```
+This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`, as most clinical labs still rely on `GRCh37` as the human reference genome to use. Available are `GRCh37` and `GRCh38`.
 
-### `--fasta`
-If you prefer, you can specify the full path to your reference genome when you run the pipeline:
+## `--proteome`
 
-```bash
---fasta '[path to Fasta reference]'
-```
+Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
 
-## Job Resources
+## `--tools`
+
+Specifies the set of tools used for performing prediction. Default is `syfpeithi`. Available are:
+
+`syfpeithi`, `mhcnuggets-class-1`, `mhcnuggets-class-2` and `mhcflurry`
+
+You can use multiple options and concatenate these with a `,`, e.g. `syfpeithi,mhcflurry` works fine.
+Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many more prediction methods, which we currently don't support due to legal restrictions in licencing of these methods (e.g. netMHCPan, netMHCpanII) that forbid any bundling in pipelines such as this one. We believe in open source and therefore dropped any support in an early alpha version of this pipeline due to this.
+
+## `--wild_type`
+
+Specifies that wild-type sequences of mutated peptides should be predicted as well. By default, this is turned off.
+
+## Job resources
+
 ### Automatic resubmission
+
 Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if the job exits with an error code of `143` (exceeded requested resources) it will automatically resubmit with higher requests (2 x original, then 3 x original). If it still fails after three times then the pipeline is stopped.
 
 ### Custom resource requests
-Wherever process-specific requirements are set in the pipeline, the default value can be changed by creating a custom config file. See the files in [`conf`](../conf) for examples.
 
-## AWS Batch specific parameters
-Running the pipeline on AWS Batch requires a couple of specific parameters to be set according to your AWS Batch configuration. Please use the `-awsbatch` profile and then specify all of the following parameters.
-### `--awsqueue`
-The JobQueue that you intend to use on AWS Batch.
-### `--awsregion`
-The AWS region to run your job in. Default is set to `eu-west-1` but can be adjusted to your needs.
+Wherever process-specific requirements are set in the pipeline, the default value can be changed by creating a custom config file. See the files hosted at [`nf-core/configs`](https://github.com/nf-core/configs/tree/master/conf) for examples.
 
-Please make sure to also set the `-w/--work-dir` and `--outdir` parameters to a S3 storage bucket of your choice - you'll get an error message notifying you if you didn't.
+If you are likely to be running `nf-core` pipelines regularly it may be a good idea to request that your custom config file is uploaded to the `nf-core/configs` git repository. Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition below). You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
+
+If you have any questions or issues please send us a message on [Slack](https://nf-co.re/join/slack).
 
 ## Other command line parameters
 
 ### `--outdir`
+
 The output directory where the results will be saved.
 
 ### `--email`
-Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to speicfy this on the command line for every run.
+
+Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits. If set in your user config file (`~/.nextflow/config`) then you don't need to specify this on the command line for every run.
+
+### `--email_on_fail`
+
+This works exactly as with `--email`, except emails are only sent if the workflow is not successful.
+
+### `--max_multiqc_email_size`
+
+Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB).
 
 ### `-name`
+
 Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
 
 This is used in the MultiQC report (if not default) and in the summary HTML / e-mail (always).
@@ -203,6 +206,7 @@ This is used in the MultiQC report (if not default) and in the summary HTML / e-
 **NB:** Single hyphen (core Nextflow option)
 
 ### `-resume`
+
 Specify this when restarting a pipeline. Nextflow will used cached results from any pipeline steps where the inputs are the same, continuing from where it got to previously.
 
 You can also supply a run name to resume a specific run: `-resume [run-name]`. Use the `nextflow log` command to show previous run names.
@@ -210,30 +214,66 @@ You can also supply a run name to resume a specific run: `-resume [run-name]`. U
 **NB:** Single hyphen (core Nextflow option)
 
 ### `-c`
+
 Specify the path to a specific config file (this is a core NextFlow command).
 
 **NB:** Single hyphen (core Nextflow option)
 
-Note - you can use this to override defaults. For example, you can specify a config file using `-c` that contains the following:
+Note - you can use this to override pipeline defaults.
 
-```nextflow
-process.$multiqc.module = []
+### `--custom_config_version`
+
+Provide git commit id for custom Institutional configs hosted at `nf-core/configs`. This was implemented for reproducibility purposes. Default is set to `master`.
+
+```bash
+## Download and use config file with following git commid id
+--custom_config_version d52db660777c4bf36546ddb188ec530c3ada1b96
 ```
 
+### `--custom_config_base`
+
+If you're running offline, nextflow will not be able to fetch the institutional config files
+from the internet. If you don't need them, then this is not a problem. If you do need them,
+you should download the files from the repo and tell nextflow where to find them with the
+`custom_config_base` option. For example:
+
+```bash
+## Download and unzip the config files
+cd /path/to/my/configs
+wget https://github.com/nf-core/configs/archive/master.zip
+unzip master.zip
+
+## Run the pipeline
+cd /path/to/my/data
+nextflow run /path/to/pipeline/ --custom_config_base /path/to/my/configs/configs-master/
+```
+
+> Note that the nf-core/tools helper package has a `download` command to download all required pipeline
+> files + singularity containers + institutional configs in one go for you, to make this process easier.
+
 ### `--max_memory`
+
 Use to set a top-limit for the default memory requirement for each process.
-Should be a string in the format integer-unit. eg. `--max_memory '8.GB'``
+Should be a string in the format integer-unit. eg. `--max_memory '8.GB'`
 
 ### `--max_time`
+
 Use to set a top-limit for the default time requirement for each process.
 Should be a string in the format integer-unit. eg. `--max_time '2.h'`
 
 ### `--max_cpus`
+
 Use to set a top-limit for the default CPU requirement for each process.
 Should be a string in the format integer-unit. eg. `--max_cpus 1`
 
 ### `--plaintext_email`
+
 Set to receive plain-text e-mails instead of HTML formatted.
 
-### `--multiqc_config`
+### `--monochrome_logs`
+
+Set to disable colourful command line output and live life in monochrome.
+
+### `--multiqc_config`
+
 Specify a path to a custom MultiQC configuration file.
