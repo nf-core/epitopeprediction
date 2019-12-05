@@ -123,7 +123,7 @@ The path to the file containing the somatic mutations in gz compressed VCF forma
 
 ### `--peptides`
 
-Instead of genomic variants, peptide sequences can be provided in TSV file. In this case, MHC binding predictions will be made for the provided sequences. The TSV file has to include the following columns: `id, sequence`. All additional columns will be added to the prediction output as annotation.
+Instead of genomic variants, peptide sequences can be provided in a TSV file. In this case, MHC binding predictions will be made for the provided sequences. The TSV file has to include the following columns: `id, sequence`. All additional columns will be added to the prediction output as annotation.
 
 ## Additional pipeline parameters
 
