@@ -17,7 +17,8 @@
   * [Additional pipeline parameters](#additional-pipeline-parameters)
   * [`--filter_self`](#filterself)
   * [`--mhc_class`](#mhcclass)
-  * [`--peptide_length`](#peptidelength)
+  * [`--min_peptide_length`](#minpeptidelength)
+  * [`--max_peptide_length``](#maxpeptidelength)
     * [`--reference_genome`](#referencegenome)
   * [`--reference_proteome`](#referenceproteome)
   * [`--tools`](#tools)
@@ -122,7 +123,7 @@ The path to the file containing the somatic mutations in gz compressed VCF forma
 
 ### `--peptides`
 
-The path to a TSV file containing the peptide sequences. As a minimum, the peptide ID and sequence columns are required.
+Instead of genomic variants, peptide sequences can be provided in TSV file. In this case, MHC binding predictions will be made for the provided sequences. The TSV file has to include the following columns: `id, sequence`. All additional columns will be added to the prediction output as annotation.
 
 ## Additional pipeline parameters
 
