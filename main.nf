@@ -135,10 +135,7 @@ if(workflow.revision) summary['Pipeline Release'] = workflow.revision
 summary['Run Name']         = custom_runName ?: workflow.runName
 //Pipeline Parameters
 if ( params.alleles ) summary['Alleles'] = params.alleles
-if ( params.gene_expression ) summary['Gene Expression'] = params.gene_expression
-summary['Gene List'] = params.gene_list
-if ( params.ligandomics_identification ) summary['Ligandomics Identification'] = params.ligandomics_identification
-summary['Max. Peptide Length'] = params.peptide_length
+summary['Max. Peptide Length'] = params.max_peptide_length
 summary['MHC Class'] = params.mhc_class
 if ( params.peptides ) summary['Peptides'] = params.peptides
 summary['Reference Genome'] = params.genome
