@@ -81,10 +81,10 @@ if ( params.peptides ) {
         .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
         .set { ch_split_peptides }
 }
-else if (params.somatic_mutations) {
+else if (params.input) {
     Channel
-        .fromPath(params.somatic_mutations)
-        .ifEmpty { exit 1, "Variant file not found: ${params.somatic_mutations}" }
+        .fromPath(params.input)
+        .ifEmpty { exit 1, "Variant file not found: ${params.input}" }
         .set { ch_split_variants }
 }
 else {
@@ -142,7 +142,7 @@ summary['Reference Genome'] = params.genome
 if ( params.proteome ) summary['Reference proteome'] = params.proteome
 summary['Self-Filter'] = params.filter_self
 summary['Tools'] = params.tools
-if ( params.somatic_mutations ) summary['Variants'] = params.somatic_mutations
+if ( params.input ) summary['Variants'] = params.input
 summary['Wild-types'] = params.wild_type
 //Standard Params for nf-core pipelines
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
@@ -258,7 +258,7 @@ process splitPeptides {
     output:
     file '*.tsv' into ch_splitted_peptides
 
-    when: !params.somatic_mutations
+    when: !params.input
 
     // @TODO
     // splitting mechanism missing
