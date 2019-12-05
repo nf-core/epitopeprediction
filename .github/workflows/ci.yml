@@ -23,10 +23,10 @@ jobs:
           docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.0.0
       - name: Run VCF Test
         run: |
-          nextflow run ${GITHUB_WORKSPACE}  -profile test,docker 
+          nextflow run ${GITHUB_WORKSPACE} -profile test,docker
       - name: Run Variant TSV Test
-        run: | 
+        run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_variant_tsv,docker
       - name: Run Peptides Test
-        run: | 
+        run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_peptides,docker
