@@ -3,6 +3,8 @@
 **A fully reproducible and state of the art epitope prediction pipeline.**.
 
 [![Build Status](https://travis-ci.com/nf-core/epitopeprediction.svg?branch=master)](https://travis-ci.com/nf-core/epitopeprediction)
+[![GitHub Actions CI Status](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/epitopeprediction/actions)
+[![GitHub Actions Linting Status](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/epitopeprediction/actions)
 [![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
@@ -29,6 +31,7 @@ nextflow run nf-core/epitopeprediction -profile test,<docker/singularity/conda/i
 iv. Start running your own analysis!
 
 <!-- TODO nf-core: Update the default command above used to run the pipeline -->
+
 ```bash
 nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
 ```
