@@ -3,6 +3,7 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## nf-core/epitopeprediction V 1.0.0 - "Purple Nickel Shrimp"
+## v1.0.0dev - [date]
 
-Initial release of nf-core/epitopeprediction, created with the [nf-core](http://nf-co.re/) template.
+- Initial release of nf-core/epitopeprediction, created with the [nf-core](http://nf-co.re/) template.
+- Merge template v1.8

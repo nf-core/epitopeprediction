@@ -2,19 +2,17 @@
 
 ## Table of contents
 
-* [nf-core/epitopeprediction: Usage](#nf-coreepitopeprediction-usage)
-  * [Table of contents](#table-of-contents)
-  * [Introduction](#introduction)
-  * [Running the pipeline](#running-the-pipeline)
-    * [Updating the pipeline](#updating-the-pipeline)
-    * [Reproducibility](#reproducibility)
-  * [Generic pipeline arguments](#generic-pipeline-arguments)
-    * [`-profile`](#profile)
-  * [Main pipeline parameters](#main-pipeline-parameters)
-    * [`--alleles`](#alleles)
-    * [`--somatic_mutations`](#somaticmutations)
-    * [`--peptides`](#peptides)
-  * [Additional pipeline parameters](#additional-pipeline-parameters)
+* [Table of contents](#table-of-contents)
+* [Introduction](#introduction)
+* [Running the pipeline](#running-the-pipeline)
+  * [Updating the pipeline](#updating-the-pipeline)
+  * [Reproducibility](#reproducibility)
+* [Main arguments](#main-arguments)
+  * [`-profile`](#profile)
+  * [`--alleles`](#alleles)
+  * [`--somatic_mutations`](#somaticmutations)
+  * [`--peptides`](#peptides)
+* [Additional pipeline parameters](#additional-pipeline-parameters)
   * [`--filter_self`](#filterself)
   * [`--mhc_class`](#mhcclass)
   * [`--min_peptide_length`](#minpeptidelength)
@@ -23,25 +21,29 @@
   * [`--proteome`](#proteome)
   * [`--tools`](#tools)
   * [`--wild_type`](#wildtype)
-  * [Job resources](#job-resources)
-    * [Automatic resubmission](#automatic-resubmission)
-    * [Custom resource requests](#custom-resource-requests)
-  * [Other command line parameters](#other-command-line-parameters)
-    * [`--outdir`](#outdir)
-    * [`--email`](#email)
-    * [`--email_on_fail`](#emailonfail)
-    * [`--max_multiqc_email_size`](#maxmultiqcemailsize)
-    * [`-name`](#name)
-    * [`-resume`](#resume)
-    * [`-c`](#c)
-    * [`--custom_config_version`](#customconfigversion)
-    * [`--custom_config_base`](#customconfigbase)
-    * [`--max_memory`](#maxmemory)
-    * [`--max_time`](#maxtime)
-    * [`--max_cpus`](#maxcpus)
-    * [`--plaintext_email`](#plaintextemail)
-    * [`--monochrome_logs`](#monochromelogs)
-    * [`--multiqc_config`](#multiqcconfig)
+* [AWS Batch specific parameters](#aws-batch-specific-parameters)
+  * [`--awsqueue`](#--awsqueue)
+  * [`--awsregion`](#--awsregion)
+  * [`--awscli`](#--awscli)
+* [Job resources](#job-resources)
+  * [Automatic resubmission](#automatic-resubmission)
+  * [Custom resource requests](#custom-resource-requests)
+* [Other command line parameters](#other-command-line-parameters)
+  * [`--outdir`](#--outdir)
+  * [`--email`](#--email)
+  * [`--email_on_fail`](#--email_on_fail)
+  * [`--max_multiqc_email_size`](#--max_multiqc_email_size)
+  * [`-name`](#-name)
+  * [`-resume`](#-resume)
+  * [`-c`](#-c)
+  * [`--custom_config_version`](#--custom_config_version)
+  * [`--custom_config_base`](#--custom_config_base)
+  * [`--max_memory`](#--max_memory)
+  * [`--max_time`](#--max_time)
+  * [`--max_cpus`](#--max_cpus)
+  * [`--plaintext_email`](#--plaintext_email)
+  * [`--monochrome_logs`](#--monochrome_logs)
+  * [`--multiqc_config`](#--multiqc_config)
 
 ## Introduction
 
@@ -88,16 +90,21 @@ First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 
-## Generic pipeline arguments
+## Main arguments
 
 ### `-profile`
 
-Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments. Note that multiple profiles can be loaded, for example: `-profile docker` - the order of arguments is important!
+Use this parameter to choose a configuration profile. Profiles can give configuration presets for different compute environments.
 
-If `-profile` is not specified at all the pipeline will be run locally and expects all software to be installed and available on the `PATH`.
+Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Docker, Singularity, Conda) - see below.
 
-* `awsbatch`
-  * A generic configuration profile to be used with AWS Batch.
+The pipeline also dynamically loads configurations from [https://github.com/nf-core/configs](https://github.com/nf-core/configs) when it runs, making multiple config profiles for various institutional clusters available at run time. For more information and to see if your system is available in these configs please see the [nf-core/configs documentation](https://github.com/nf-core/configs#documentation).
+
+Note that multiple profiles can be loaded, for example: `-profile test,docker` - the order of arguments is important!
+They are loaded in sequence, so later profiles can overwrite earlier profiles.
+
+If `-profile` is not specified, the pipeline will run locally and expect all software to be installed and available on the `PATH`. This is _not_ recommended.
+
 * `conda`
   * A generic configuration profile to be used with [conda](https://conda.io/docs/)
   * Pulls most software from [Bioconda](https://bioconda.github.io/)
@@ -110,8 +117,6 @@ If `-profile` is not specified at all the pipeline will be run locally and expec
 * `test`
   * A profile with a complete configuration for automated testing
   * Includes links to test data so needs no other parameters
-
-## Main pipeline parameters
 
 ### `--alleles`
 
@@ -154,9 +159,7 @@ Specifies the reference proteome files that are used for self-filtering. Should 
 
 ## `--tools`
 
-Specifies the set of tools used for performing prediction. Default is `syfpeithi`. Available are:
-
-`syfpeithi`, `mhcnuggets-class-1`, `mhcnuggets-class-2` and `mhcflurry`
+Specifies the set of tools used for performing prediction. Default is `syfpeithi`. Available are: `syfpeithi`, `mhcnuggets-class-1`, `mhcnuggets-class-2` and `mhcflurry`
 
 You can use multiple options and concatenate these with a `,`, e.g. `syfpeithi,mhcflurry` works fine.
 Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many more prediction methods, which we currently don't support due to legal restrictions in licencing of these methods (e.g. netMHCPan, netMHCpanII) that forbid any bundling in pipelines such as this one. We believe in open source and therefore dropped any support in an early alpha version of this pipeline due to this.
@@ -164,6 +167,24 @@ Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many m
 ## `--wild_type`
 
 Specifies that wild-type sequences of mutated peptides should be predicted as well. By default, this is turned off.
+
+## AWS Batch specific parameters
+
+Running the pipeline on AWS Batch requires a couple of specific parameters to be set according to your AWS Batch configuration. Please use [`-profile awsbatch`](https://github.com/nf-core/configs/blob/master/conf/awsbatch.config) and then specify all of the following parameters.
+
+### `--awsqueue`
+
+The JobQueue that you intend to use on AWS Batch.
+
+### `--awsregion`
+
+The AWS region in which to run your job. Default is set to `eu-west-1` but can be adjusted to your needs.
+
+### `--awscli`
+
+The [AWS CLI](https://www.nextflow.io/docs/latest/awscloud.html#aws-cli-installation) path in your custom AMI. Default: `/home/ec2-user/miniconda/bin/aws`.
+
+Please make sure to also set the `-w/--work-dir` and `--outdir` parameters to a S3 storage bucket of your choice - you'll get an error message notifying you if you didn't.
 
 ## Job resources
 
@@ -223,7 +244,7 @@ Note - you can use this to override pipeline defaults.
 
 ### `--custom_config_version`
 
-Provide git commit id for custom Institutional configs hosted at `nf-core/configs`. This was implemented for reproducibility purposes. Default is set to `master`.
+Provide git commit id for custom Institutional configs hosted at `nf-core/configs`. This was implemented for reproducibility purposes. Default: `master`.
 
 ```bash
 ## Download and use config file with following git commid id
