@@ -21,7 +21,7 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Pull docker image
         run: |
-          docker pull nfcore/epitopeprediction:dev && docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.0.0
+          docker pull nfcore/epitopeprediction:dev && docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
       - name: Run vcf test
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,docker
