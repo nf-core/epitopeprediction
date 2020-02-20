@@ -21,7 +21,8 @@ jobs:
           sudo mv nextflow /usr/local/bin/
       - name: Pull docker image
         run: |
-          docker pull nfcore/epitopeprediction:dev && docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
+          docker pull nfcore/epitopeprediction:dev
+          docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
       - name: Run pipeline with test data
         run: |
           # TODO nf-core: You can customise CI pipeline run tests as required
