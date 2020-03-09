@@ -3,6 +3,9 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+- Added parameter `--mem_mode` to change between different memory modes, e.g. when using arbitrary big peptide input datasets
+- Set `maxRetries` to 3
+
 ## v1.1.0dev - [date]
 
 - Initial release of nf-core/epitopeprediction, created with the [nf-core](http://nf-co.re/) template.
