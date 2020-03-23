@@ -330,6 +330,7 @@ def read_peptide_input(filename):
 
     '''expected columns (min required): id sequence'''
     with open(filename, 'r') as peptide_input:
+        csv.field_size_limit(600000)    # enable listing of protein names for each peptide 
         reader = csv.DictReader(peptide_input, delimiter='\t')
         for row in reader:
             pep = Peptide(row['sequence'])
