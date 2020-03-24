@@ -5,10 +5,10 @@ import argparse
 
 
 parser = argparse.ArgumentParser("Split peptides input file.")
-parser.add_argument('-i', '--input', metavar='FILE', type=str, help = 'Input file contain peptides.')
+parser.add_argument('-i', '--input', metavar='FILE', type=str, help = 'Input file containing peptides.')
 parser.add_argument('-o', '--output_base', type=str, help='Base filename for output files.')
-parser.add_argument('-s', '--min_size', metavar='N', type=int, help = 'Min. number of peptides that should be into one file.')
-parser.add_argument('-c', '--max_chunks', metavar='N', type=int, help = 'Max. number of chunks that should be created.')
+parser.add_argument('-s', '--min_size', metavar='N', type=int, help = 'Minimum number of peptides that should be written into one file.')
+parser.add_argument('-c', '--max_chunks', metavar='N', type=int, help = 'Maximum number of chunks that should be created.')
 args = parser.parse_args()
 
 with open(args.input, 'r') as infile:
@@ -26,4 +26,4 @@ with open(args.input, "r") as infile:
                 try:
                     outfile.write(next(infile))
                 except StopIteration:
-                    break	
+                    break
