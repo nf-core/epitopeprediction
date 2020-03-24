@@ -12,7 +12,7 @@ parser.add_argument('-c', '--max_chunks', metavar='N', type=int, help = 'Max. nu
 args = parser.parse_args()
 
 with open(args.input, 'r') as infile:
-    tot_size = sum([1 for _ in infile])
+    tot_size = sum([1 for _ in infile]) - 1
 
 n = int(min(math.ceil(float(tot_size)/args.min_size), args.max_chunks))
 h = int(max(args.min_size, math.ceil(float(tot_size)/n)))
