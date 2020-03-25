@@ -5,12 +5,5 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## v1.1.0dev - [date]
 
-Initial release of nf-core/epitopeprediction, created with the [nf-core](http://nf-co.re/) template.
-
-### `Added`
-
-### `Fixed`
-
-### `Dependencies`
-
-### `Deprecated`
+- Initial release of nf-core/epitopeprediction, created with the [nf-core](http://nf-co.re/) template.
+- Merge template v1.8

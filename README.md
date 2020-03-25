@@ -8,8 +8,18 @@
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](http://bioconda.github.io/)
 [![Docker](https://img.shields.io/docker/automated/nfcore/epitopeprediction.svg)](https://hub.docker.com/r/nfcore/epitopeprediction)
+![Singularity Container available](
+https://img.shields.io/badge/singularity-available-7E4C74.svg)
 
 ## Introduction
+
+**nf-core/epitopeprediction** is a bioinformatics best-practice analysis pipeline for epitope prediction and annotation.
+
+### Pipeline steps
+
+* Input
+* Transcripts
+* Prediction
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It comes with docker containers making installation trivial and results highly reproducible.
 
@@ -29,10 +39,8 @@ nextflow run nf-core/epitopeprediction -profile test,<docker/singularity/conda/i
 
 iv. Start running your own analysis!
 
-<!-- TODO nf-core: Update the default command above used to run the pipeline -->
-
 ```bash
-nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --reads '*_R{1,2}.fastq.gz' --genome GRCh37
+nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --somatic_mutations '*.vcf.gz' --genome 'GRCh37'
 ```
 
 See [usage docs](docs/usage.md) for all of the available options when running the pipeline.
@@ -50,12 +58,6 @@ The nf-core/epitopeprediction pipeline comes with documentation about the pipeli
 4. [Output and how to interpret the results](docs/output.md)
 5. [Troubleshooting](https://nf-co.re/usage/troubleshooting)
 
-<!-- TODO nf-core: Add a brief overview of what the pipeline does and how it works -->
-
-## Credits
-
-nf-core/epitopeprediction was originally written by Christopher Mohr, Alexander Peltzer.
-
 ## Contributions and Support
 
 If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
@@ -64,7 +66,8 @@ For further information or help, don't hesitate to get in touch on [Slack](https
 
 ## Citation
 
-<!-- TODO nf-core: Add citation for pipeline after first release. Uncomment lines below and update Zenodo doi. -->
+nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) and [Alexander Peltzer](https://github.com/apeltzer).
+
 <!-- If you use  nf-core/epitopeprediction for your analysis, please cite it using the following doi: [10.5281/zenodo.XXXXXX](https://doi.org/10.5281/zenodo.XXXXXX) -->
 
 You can cite the `nf-core` publication as follows:

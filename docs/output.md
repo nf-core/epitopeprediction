@@ -2,30 +2,15 @@
 
 This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
 
-<!-- TODO nf-core: Write this documentation describing your workflow's output -->
-
 ## Pipeline overview
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/)
 and processes data using the following steps:
 
-* [FastQC](#fastqc) - read quality control
-* [MultiQC](#multiqc) - aggregate report, describing results of the whole pipeline
-
-## FastQC
-
-[FastQC](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/) gives general quality metrics about your reads. It provides information about the quality score distribution across your reads, the per base sequence content (%T/A/G/C). You get information about adapter contamination and other overrepresented sequences.
-
-For further reading and documentation see the [FastQC help](http://www.bioinformatics.babraham.ac.uk/projects/fastqc/Help/).
-
-> **NB:** The FastQC plots displayed in the MultiQC report shows _untrimmed_ reads. They may contain adapter sequence and potentially regions with low quality. To see how your reads look after trimming, look at the FastQC reports in the `trim_galore` directory.
-
-**Output directory: `results/fastqc`**
-
-* `sample_fastqc.html`
-  * FastQC report, containing quality metrics for your untrimmed raw fastq files
-* `zips/sample_fastqc.zip`
-  * zip file containing the FastQC report, tab-delimited data file and plot images
+* [nf-core/epitopeprediction: Output](#nf-coreepitopeprediction-output)
+  * [Pipeline overview](#pipeline-overview)
+  * [MultiQC](#multiqc)
+  * [Epitope Prediction](#epitope-prediction)
 
 ## MultiQC
 
@@ -41,3 +26,24 @@ The pipeline has special steps which allow the software versions used to be repo
   * Directory containing parsed statistics from the different tools used in the pipeline
 
 For more information about how to use MultiQC reports, see [http://multiqc.info](http://multiqc.info)
+
+## Epitope Prediction
+
+[FRED-2](https://github.com/FRED-2) is used to perform the prediction of Epitopes on the given data, independent of the chosen `tools` to perform the prediction.
+
+**Output directory: `results/`**
+
+* `prediction_report.json`
+  * The predicted epitopes in JSON format for downstream analysis tasks
+* `prediction_report.tsv`
+  * The predicted epitopes in TSV format for further processing.
+
+An example report looks like this in TSV format:
+
+```bash
+sequence length chr pos gene transcripts proteins variant type method HLA-A*01:01 score HLA-A*01:01 affinity HLA-A*01:01 binder synonymous homozygous variant details (genomic) variant details (protein)
+DSHLHTHVY 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 20.0 50.0 False False False c.173C>A p.Pro58His
+HLHTHVYLF 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 3.0 7.5 False False False c.173C>A p.Pro58His
+HTHVYLFLS 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 7.0 17.5 False False False c.173C>A p.Pro58His
+HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 0.0 0.0 False False False c.173C>A p.Pro58His
+```

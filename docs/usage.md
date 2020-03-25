@@ -8,20 +8,26 @@
   * [Updating the pipeline](#updating-the-pipeline)
   * [Reproducibility](#reproducibility)
 * [Main arguments](#main-arguments)
-  * [`-profile`](#-profile)
-  * [`--reads`](#--reads)
-  * [`--single_end`](#--single_end)
-* [Reference genomes](#reference-genomes)
-  * [`--genome` (using iGenomes)](#--genome-using-igenomes)
-  * [`--fasta`](#--fasta)
-  * [`--igenomes_ignore`](#--igenomes_ignore)
-* [Job resources](#job-resources)
-  * [Automatic resubmission](#automatic-resubmission)
-  * [Custom resource requests](#custom-resource-requests)
+  * [`-profile`](#profile)
+  * [`--alleles`](#alleles)
+  * [`--somatic_mutations`](#somaticmutations)
+  * [`--peptides`](#peptides)
+* [Additional pipeline parameters](#additional-pipeline-parameters)
+  * [`--filter_self`](#filterself)
+  * [`--mhc_class`](#mhcclass)
+  * [`--min_peptide_length`](#minpeptidelength)
+  * [`--max_peptide_length``](#maxpeptidelength)
+  * [`--genome`](#genome)
+  * [`--proteome`](#proteome)
+  * [`--tools`](#tools)
+  * [`--wild_type`](#wildtype)
 * [AWS Batch specific parameters](#aws-batch-specific-parameters)
   * [`--awsqueue`](#--awsqueue)
   * [`--awsregion`](#--awsregion)
   * [`--awscli`](#--awscli)
+* [Job resources](#job-resources)
+  * [Automatic resubmission](#automatic-resubmission)
+  * [Custom resource requests](#custom-resource-requests)
 * [Other command line parameters](#other-command-line-parameters)
   * [`--outdir`](#--outdir)
   * [`--email`](#--email)
@@ -49,17 +55,15 @@ It is recommended to limit the Nextflow Java virtual machines memory. We recomme
 NXF_OPTS='-Xms1g -Xmx4g'
 ```
 
-<!-- TODO nf-core: Document required command line parameters to run the pipeline-->
-
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/epitopeprediction --reads '*_R{1,2}.fastq.gz' -profile docker
+nextflow run nf-core/epitopeprediction --somatic_mutations "*.vcf.gz" -profile docker
 ```
 
-This will launch the pipeline with the `docker` configuration profile. See below for more information about profiles.
+This will launch the pipeline with the `docker` configuration profile and default options (`syfpeithi` by default). See below for more information about profiles.
 
 Note that the pipeline will create the following files in your working directory:
 
@@ -82,7 +86,7 @@ nextflow pull nf-core/epitopeprediction
 
 It's a good idea to specify a pipeline version when running the pipeline on your data. This ensures that a specific version of the pipeline code and software are used when you run your pipeline. If you keep using the same tag, you'll be running the same version of the pipeline, even if there have been changes to the code since.
 
-First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf-core/epitopeprediction/releases) and find the latest version number - numeric only (eg. `1.3.1`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.3.1`.
+First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf-core/epitopeprediction/releases) and find the latest version number - numeric only (eg. `1.0.0`). Then specify this when running the pipeline with `-r` (one hyphen) - eg. `-r 1.0.0`.
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future.
 
@@ -117,99 +121,55 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
   * A profile with a complete configuration for automated testing
   * Includes links to test data so needs no other parameters
 
-<!-- TODO nf-core: Document required command line parameters -->
+### `--alleles`
 
-### `--reads`
+The path to the file containing the MHC alleles. Alleles should be provided in the format `A*01:01`, one per line.
 
-Use this to specify the location of your input FastQ files. For example:
+### `--somatic_mutations`
 
-```bash
---reads 'path/to/data/sample_*_{1,2}.fastq'
-```
+The path to the file containing the somatic mutations in gz compressed VCF format.
 
-Please note the following requirements:
+### `--peptides`
 
-1. The path must be enclosed in quotes
-2. The path must have at least one `*` wildcard character
-3. When using the pipeline with paired end data, the path must use `{1,2}` notation to specify read pairs.
+Instead of genomic variants, peptide sequences can be provided in a TSV file. In this case, MHC binding predictions will be made for the provided sequences. The TSV file has to include the following columns: `id, sequence`. All additional columns will be added to the prediction output as annotation.
 
-If left unspecified, a default pattern is used: `data/*{1,2}.fastq.gz`
+## Additional pipeline parameters
 
-### `--single_end`
+## `--filter_self`
 
-By default, the pipeline expects paired-end data. If you have single-end data, you need to specify `--single_end` on the command line when you launch the pipeline. A normal glob pattern, enclosed in quotation marks, can then be used for `--reads`. For example:
+Specifies that peptides should be filtered against the specified human proteome references. By default, this is turned off.
 
-```bash
---single_end --reads '*.fastq'
-```
+## `--mhc_class`
 
-It is not possible to run a mixture of single-end and paired-end files in one run.
+Specifies whether the predictions should be done for MHC class I or class II. By default, this is set to 1 (class I).
 
-## Reference genomes
+## `--min_peptide_length`
 
-The pipeline config files come bundled with paths to the illumina iGenomes reference index files. If running with docker or AWS, the configuration is set up to use the [AWS-iGenomes](https://ewels.github.io/AWS-iGenomes/) resource.
+Specifies the minimum peptide length. By default, for MHC Class I this is 8 amino acids. For MHC Class II this is 15 amino acids.
 
-### `--genome` (using iGenomes)
+## `--max_peptide_length``
 
-There are 31 different species supported in the iGenomes references. To run the pipeline, you must specify which to use with the `--genome` flag.
+Specifies the maximum peptide length. By default, for MHC Class I this is 11 amino acids. For MHC Class II this is by default 16
+amino acids.
 
-You can find the keys to specify the genomes in the [iGenomes config file](../conf/igenomes.config). Common genomes that are supported are:
+## `--genome`
 
-* Human
-  * `--genome GRCh37`
-* Mouse
-  * `--genome GRCm38`
-* _Drosophila_
-  * `--genome BDGP6`
-* _S. cerevisiae_
-  * `--genome 'R64-1-1'`
+This defines against which reference genome the pipeline performs the analysis. The default choice is `GRCh37`, as most clinical labs still rely on `GRCh37` as the human reference genome to use. Available are `GRCh37` and `GRCh38`.
 
-> There are numerous others - check the config file for more.
+## `--proteome`
 
-Note that you can use the same configuration setup to save sets of reference files for your own use, even if they are not part of the iGenomes resource. See the [Nextflow documentation](https://www.nextflow.io/docs/latest/config.html) for instructions on where to save such a file.
+Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
 
-The syntax for this reference configuration is as follows:
+## `--tools`
 
-<!-- TODO nf-core: Update reference genome example according to what is needed -->
+Specifies the set of tools used for performing prediction. Default is `syfpeithi`. Available are: `syfpeithi`, `mhcnuggets-class-1`, `mhcnuggets-class-2` and `mhcflurry`
 
-```nextflow
-params {
-  genomes {
-    'GRCh37' {
-      fasta   = '<path to the genome fasta file>' // Used if no star index given
-    }
-    // Any number of additional genomes, key is used with --genome
-  }
-}
-```
+You can use multiple options and concatenate these with a `,`, e.g. `syfpeithi,mhcflurry` works fine.
+Note that the [FRED2](https://github.com/FRED-2/Fred2) framework supports many more prediction methods, which we currently don't support due to legal restrictions in licencing of these methods (e.g. netMHCPan, netMHCpanII) that forbid any bundling in pipelines such as this one. We believe in open source and therefore dropped any support in an early alpha version of this pipeline due to this.
 
-<!-- TODO nf-core: Describe reference path flags -->
+## `--wild_type`
 
-### `--fasta`
-
-If you prefer, you can specify the full path to your reference genome when you run the pipeline:
-
-```bash
---fasta '[path to Fasta reference]'
-```
-
-### `--igenomes_ignore`
-
-Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`.
-
-## Job resources
-
-### Automatic resubmission
-
-Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if the job exits with an error code of `143` (exceeded requested resources) it will automatically resubmit with higher requests (2 x original, then 3 x original). If it still fails after three times then the pipeline is stopped.
-
-### Custom resource requests
-
-Wherever process-specific requirements are set in the pipeline, the default value can be changed by creating a custom config file. See the files hosted at [`nf-core/configs`](https://github.com/nf-core/configs/tree/master/conf) for examples.
-
-If you are likely to be running `nf-core` pipelines regularly it may be a good idea to request that your custom config file is uploaded to the `nf-core/configs` git repository. Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition below). You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
-
-If you have any questions or issues please send us a message on [Slack](https://nf-co.re/join/slack).
+Specifies that wild-type sequences of mutated peptides should be predicted as well. By default, this is turned off.
 
 ## AWS Batch specific parameters
 
@@ -229,9 +189,21 @@ The [AWS CLI](https://www.nextflow.io/docs/latest/awscloud.html#aws-cli-installa
 
 Please make sure to also set the `-w/--work-dir` and `--outdir` parameters to a S3 storage bucket of your choice - you'll get an error message notifying you if you didn't.
 
-## Other command line parameters
+## Job resources
 
-<!-- TODO nf-core: Describe any other command line flags here -->
+### Automatic resubmission
+
+Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the steps in the pipeline, if the job exits with an error code of `143` (exceeded requested resources) it will automatically resubmit with higher requests (2 x original, then 3 x original). If it still fails after three times then the pipeline is stopped.
+
+### Custom resource requests
+
+Wherever process-specific requirements are set in the pipeline, the default value can be changed by creating a custom config file. See the files hosted at [`nf-core/configs`](https://github.com/nf-core/configs/tree/master/conf) for examples.
+
+If you are likely to be running `nf-core` pipelines regularly it may be a good idea to request that your custom config file is uploaded to the `nf-core/configs` git repository. Before you do this please can you test that the config file works with your pipeline of choice using the `-c` parameter (see definition below). You can then create a pull request to the `nf-core/configs` repository with the addition of your config file, associated documentation file (see examples in [`nf-core/configs/docs`](https://github.com/nf-core/configs/tree/master/docs)), and amending [`nfcore_custom.config`](https://github.com/nf-core/configs/blob/master/nfcore_custom.config) to include your custom profile.
+
+If you have any questions or issues please send us a message on [Slack](https://nf-co.re/join/slack).
+
+## Other command line parameters
 
 ### `--outdir`
 
