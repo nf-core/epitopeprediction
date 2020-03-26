@@ -26,7 +26,7 @@ def helpMessage() {
       --input [file]                Path to input data (must be surrounded with quotes)
       --alleles [file]              Path to the file containing the MHC alleles
       -profile [str]                Configuration profile to use. Can use multiple (comma separated)
-                                    Available: conda, docker, singularity, awsbatch, test and more
+                                    Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
     Alternative inputs:
       --peptides [file]             Path to TSV file containing peptide sequences (minimum required: id and sequence column)
@@ -61,11 +61,6 @@ if (params.help) {
     helpMessage()
     exit 0
 }
-
-// Documentation and Reporting Output
-multiqc_config = file(params.multiqc_config)
-output_docs = file("$baseDir/docs/output.md")
-
 
 //Generate empty channels for peptides and variants
 ch_split_peptides = Channel.empty()
@@ -172,8 +167,9 @@ log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 
 // Stage config files
-ch_multiqc_config = Channel.fromPath(params.multiqc_config)
-ch_output_docs = Channel.fromPath("$baseDir/docs/output.md")
+ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
+ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
+ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
 
 // Check the hostnames against configured profiles
 checkHostname()
