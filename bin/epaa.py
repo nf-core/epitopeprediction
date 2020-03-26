@@ -751,9 +751,6 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
     # list to hold dataframes for all predictions
     pred_dataframes = []
 
-    # capture version of used tools
-    tools_map = {}
-
     prots = [p for p in generator.generate_proteins_from_transcripts(generator.generate_transcripts_from_variants(variants_all, martsadapter, ID_SYSTEM_USED))]
 
     for peplen in range(minlength, maxlength):
@@ -774,13 +771,12 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         results = []
 
         if len(filtered_peptides) > 0:
-            for m in methods:
+            for method, version in methods.items():
                 try:
-                    predictor = EpitopePredictorFactory(m)
-                    tools_map[m] = '{name}-{version}'.format(name=m, version=predictor.version)
+                    predictor = EpitopePredictorFactory(method, version=version)
                     results.extend([predictor.predict(filtered_peptides, alleles=alleles)])
                 except:
-                    logger.warning("Prediction for length {length} and allele {allele} not possible with {method}.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
+                    logger.warning("Prediction for length {length} and allele {allele} not possible with {method} version {version}.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=method, version=version))
 
         if(len(results) == 0):
             continue
@@ -822,9 +818,9 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         df = df.rename(columns={'Method': 'method'})
         pred_dataframes.append(df)
 
-    statistics = {'prediction_methods': tools_map.values() ,'number_of_variants': len(variants_all), 'number_of_peptides': len(all_peptides), 'number_of_peptides_after_filtering': len(all_peptides_filtered)}
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ] ,'number_of_variants': len(variants_all), 'number_of_peptides': len(all_peptides), 'number_of_peptides_after_filtering': len(all_peptides_filtered)}
 
-    return pred_dataframes, statistics, all_peptides_filtered, tools_map
+    return pred_dataframes, statistics, all_peptides_filtered
 
 
 def make_predictions_from_peptides(peptides, methods, alleles, protein_db, identifier, metadata):
@@ -842,9 +838,6 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
     # sort peptides by length (for predictions)
     sorted_peptides = {}
 
-    # capture version of used tools
-    tools_map = {}
-
     for p in peptides_filtered:
         length = len(str(p))
         if length in sorted_peptides:
@@ -855,13 +848,12 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
     for peplen in sorted_peptides:
         all_peptides_filtered = sorted_peptides[peplen]
         results = []
-        for m in methods:
+        for method, version in methods.items():
             try:
-                predictor = EpitopePredictorFactory(m)
-                tools_map[m] = '{name}-{version}'.format(name=m, version=predictor.version)
+                predictor = EpitopePredictorFactory(method, version=version)
                 results.extend([predictor.predict(all_peptides_filtered, alleles=alleles)])
             except:
-                logger.warning("Prediction for length {length} and allele {allele} not possible with {method}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
+                logger.warning("Prediction for length {length} and allele {allele} not possible with {method} version {version}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=method, version=version))
 
         # merge dataframes of the performed predictions
         if(len(results) == 0):
@@ -901,9 +893,9 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
         pred_dataframes.append(df)
 
     # write prediction statistics
-    statistics = {'prediction_methods': tools_map.values(),'number_of_variants': '-', 'number_of_peptides': len(peptides), 'number_of_peptides_after_filtering': len(peptides_filtered)}
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],'number_of_variants': '-', 'number_of_peptides': len(peptides), 'number_of_peptides_after_filtering': len(peptides_filtered)}
 
-    return pred_dataframes, statistics, tools_map
+    return pred_dataframes, statistics
 
 
 def __main__():
@@ -916,7 +908,8 @@ def __main__():
     parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
     parser.add_argument('-l', "--max_length", help="Maximum peptide length")
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
-    parser.add_argument('-t', '--tools', help='Tools used for peptide predictions', required=True, type=str)
+    parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
+    parser.add_argument('-sv', "--versions", help="File containing parsed software version numbers.", required=True)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
@@ -971,19 +964,28 @@ def __main__():
         else:
             up_db.read_seqs(args.reference_proteome)
 
-    methods = [item for item in args.tools.split(',')]
+    selected_methods = [item for item in args.tools.split(',')]
+    with open(args.versions, 'r') as versions_file:
+        tool_version = [ (row[0], str(row[1][1:])) for row in csv.reader(versions_file, delimiter = "\t") ]
+        tool_version.append(('syfpeithi', '1.0')) # how to handle this?
+        # get for each selected method the corresponding tool version
+        methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
+
+    for method, version in methods.items():
+        if version not in EpitopePredictorFactory.available_methods()[method]:
+            raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
     # MHC class I or II predictions
     if args.mhcclass is 1:
         if args.peptides:
-            pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
-            pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
     # concat dataframes for all peptide lengths
     try:
@@ -993,7 +995,8 @@ def __main__():
         logger.error("No predictions available.")
 
     # replace method names with method names with version
-    complete_df.replace({'method': tools_map}, inplace=True)
+    # complete_df.replace({'method': methods}, inplace=True)
+    complete_df['method'] = complete_df['method'].apply(lambda x : x + '-' + methods[x] )
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
