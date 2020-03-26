@@ -216,7 +216,9 @@ process get_software_versions {
     multiqc --version > v_multiqc.txt
     csvtk version > v_csvtk.txt
     echo \$(SnpSift 2>&1) > v_snpsift.txt
+    python -c "import pkg_resources; print 'fred2 ' + pkg_resources.get_distribution('Fred2').version" > v_fred2.txt
     echo \$(mhcflurry-predict --version 2>&1) > v_mhcflurry.txt
+    python -c "import pkg_resources; print 'mhcnuggets ' + pkg_resources.get_distribution('mhcnuggets').version" > v_mhcnuggets.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }

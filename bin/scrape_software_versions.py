@@ -9,7 +9,9 @@ regexes = {
     'MultiQC': ['v_multiqc.txt', r"multiqc, version (\S+)"],
     'CSVTK': ['v_csvtk.txt', r"csvtk v(\S+)"],
     'SNPsift': ['v_snpsift.txt', r"SnpSift version (\S+)"],
+    'Fred2': ['v_fred2.txt', r"fred2 (\S+)"],
     'MHCFlurry': ['v_mhcflurry.txt', r"mhcflurry (\S+)"],
+    'MHCnuggets': ['v_mhcnuggets.txt', r"mhcnuggets (\S+)"],
 }
 
 results = OrderedDict()
@@ -18,7 +20,9 @@ results['Nextflow'] = '<span style="color:#999999;\">N/A</span>'
 results['MultiQC'] = '<span style="color:#999999;\">N/A</span>'
 results['CSVTK'] = '<span style="color:#999999;\">N/A</span>'
 results['SNPsift'] = '<span style="color:#999999;\">N/A</span>'
+results['Fred2'] = '<span style="color:#999999;\">N/A</span>'
 results['MHCFlurry'] = '<span style="color:#999999;\">N/A</span>'
+results['MHCnuggets'] = '<span style="color:#999999;\">N/A</span>'
 
 # Search each file using its regex
 for k, v in regexes.items():
