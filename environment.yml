@@ -13,4 +13,7 @@ dependencies:
   - fred2=2.0.6
   - mhcflurry=1.4.3
   - mhcnuggets=2.3.2
+  - conda-forge::markdown=3.1.1
+  - conda-forge::pymdown-extensions=6.0
+  - conda-forge::pygments=2.5.2
   - conda-forge::r-markdown=1.1

@@ -1,4 +1,4 @@
-FROM nfcore/base:1.8
+FROM nfcore/base:1.9
 LABEL authors="Christopher Mohr, Alexander Peltzer" \
       description="Docker image containing all software requirements for the nf-core/epitopeprediction pipeline"
 
