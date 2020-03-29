@@ -26,7 +26,7 @@ def helpMessage() {
       --input [file]                Path to input data (must be surrounded with quotes)
       --alleles [file]              Path to the file containing the MHC alleles
       -profile [str]                Configuration profile to use. Can use multiple (comma separated)
-                                    Available: conda, docker, singularity, awsbatch, test and more
+                                    Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
     Alternative inputs:
       --peptides [file]             Path to TSV file containing peptide sequences (minimum required: id and sequence column)
@@ -61,11 +61,6 @@ if (params.help) {
     helpMessage()
     exit 0
 }
-
-// Documentation and Reporting Output
-multiqc_config = file(params.multiqc_config)
-output_docs = file("$baseDir/docs/output.md")
-
 
 //Generate empty channels for peptides and variants
 ch_split_peptides = Channel.empty()
@@ -172,15 +167,17 @@ log.info "-\033[2m--------------------------------------------------\033[0m-"
 
 
 // Stage config files
-ch_multiqc_config = Channel.fromPath(params.multiqc_config)
-ch_output_docs = Channel.fromPath("$baseDir/docs/output.md")
+ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
+ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
+ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
 
 // Check the hostnames against configured profiles
 checkHostname()
 
-def create_workflow_summary(summary) {
-    def yaml_file = workDir.resolve('workflow_summary_mqc.yaml')
-    yaml_file.text  = """
+Channel.from(summary.collect{ [it.key, it.value] })
+    .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
+    .reduce { a, b -> return [a, b].join("\n            ") }
+    .map { x -> """
     id: 'nf-core-epitopeprediction-summary'
     description: " - this information is collected when the pipeline is started."
     section_name: 'nf-core/epitopeprediction Workflow Summary'
@@ -188,12 +185,10 @@ def create_workflow_summary(summary) {
     plot_type: 'html'
     data: |
         <dl class=\"dl-horizontal\">
-${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }.join("\n")}
+            $x
         </dl>
-    """.stripIndent()
-
-   return yaml_file
-}
+    """.stripIndent() }
+    .set { ch_workflow_summary }
 
 /*
  * Parse software version numbers
@@ -343,9 +338,11 @@ process multiqc {
     publishDir "${params.outdir}/MultiQC", mode: 'copy'
 
     input:
-    file multiqc_config
-    file ('software_versions/*') from ch_software_versions_yaml
-    file workflow_summary from create_workflow_summary(summary)
+    file (multiqc_config) from ch_multiqc_config
+    file (mqc_custom_config) from ch_multiqc_custom_config.collect().ifEmpty([])
+    // TODO nf-core: Add in log files from your new processes for MultiQC to find!
+    file ('software_versions/*') from ch_software_versions_yaml.collect()
+    file workflow_summary from ch_workflow_summary.collectFile(name: "workflow_summary_mqc.yaml")
 
     output:
     file "*multiqc_report.html" into ch_multiqc_report
@@ -355,8 +352,10 @@ process multiqc {
     script:
     rtitle = custom_runName ? "--title \"$custom_runName\"" : ''
     rfilename = custom_runName ? "--filename " + custom_runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report" : ''
+    custom_config_file = params.multiqc_config ? "--config $mqc_custom_config" : ''
+    // TODO nf-core: Specify which MultiQC modules to use with -m for a faster run time
     """
-    multiqc -f $rtitle $rfilename --config $multiqc_config .
+    multiqc -f $rtitle $rfilename $custom_config_file .
     """
 }
 
@@ -374,7 +373,7 @@ process output_documentation {
 
     script:
     """
-    markdown_to_html.r $output_docs results_description.html
+    markdown_to_html.py $output_docs -o results_description.html
     """
 }
 
