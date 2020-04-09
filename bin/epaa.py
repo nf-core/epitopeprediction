@@ -31,6 +31,12 @@ from string import Template
 __author__ = 'Christopher Mohr'
 VERSION = "1.0"
 
+# instantiate global logger object
+logger = logging.getLogger(__name__)
+# turn off passing of messages to root logger
+logger.propagate = False
+logger.setLevel(logging.DEBUG)
+
 ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
 transcriptProteinMap = {}
 transcriptSwissProtMap = {}
@@ -95,7 +101,7 @@ def read_GSvar(filename, pass_only=True):
         tsvreader = csv.DictReader((row for row in tsvfile if not row.startswith('##')), delimiter='\t')
         for row in tsvreader:
             if not check_min_req_GSvar(row):
-                logging.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
+                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
                 continue
             lines.append(row)
     for mut_id, line in enumerate(lines):
@@ -549,7 +555,7 @@ def create_expression_column_value_for_result(row, dict, deseq, gene_id_lengths)
                     values.append((10.0**9 * float(dict[t])) / (float(gene_id_lengths[t]) * sum([float(dict[k]) for k in dict.keys() if ((not k.startswith('__')) & (k in gene_id_lengths))])))
                 else:
                     values.append((10.0**9 * float(dict[t])) / (float(len(row[0].get_all_transcripts()[0])) * sum([float(dict[k]) for k in dict.keys() if ((not k.startswith('__')) & (k in gene_id_lengths))])))
-                    logging.warning("FKPM value will be based on transcript length for {gene}. Because gene could not be found in the DB".format(gene=t))
+                    logger.warning("FKPM value will be based on transcript length for {gene}. Because gene could not be found in the DB".format(gene=t))
             else:
                 values.append(np.nan)
     values = ["{0:.2f}".format(value) for value in values]
@@ -772,7 +778,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
                     tools_map[m] = '{name}-{version}'.format(name=m, version=predictor.version)
                     results.extend([predictor.predict(filtered_peptides, alleles=alleles)])
                 except:
-                    logging.warning("Prediction for length {length} and allele {allele} not possible with {method}.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
+                    logger.warning("Prediction for length {length} and allele {allele} not possible with {method}.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
 
         if(len(results) == 0):
             continue
@@ -853,7 +859,7 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
                 tools_map[m] = '{name}-{version}'.format(name=m, version=predictor.version)
                 results.extend([predictor.predict(all_peptides_filtered, alleles=alleles)])
             except:
-                logging.warning("Prediction for length {length} and allele {allele} not possible with {method}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
+                logger.warning("Prediction for length {length} and allele {allele} not possible with {method}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
 
         # merge dataframes of the performed predictions
         if(len(results) == 0):
@@ -919,28 +925,14 @@ def __main__():
     parser.add_argument('-ge', "--gene_expression", help="File with expression analysis results")
     parser.add_argument('-de', "--diff_gene_expression", help="File with differential expression analysis results (DESeq2)")
     parser.add_argument('-li', "--ligandomics_id", help="Comma separated file with peptide sequence, score and median intensity of a ligandomics identification run.")
-    parser.add_argument('-o', "--output_dir", help="All files written will be put in this directory")
-
     args = parser.parse_args()
 
     if len(sys.argv) <= 1:
         parser.print_help()
         sys.exit(1)
 
-    if args.output_dir is not None:
-        try:
-            os.chdir(args.output_dir)
-            logging.basicConfig(filename=os.path.join(args.output_dir,'{}_prediction.log'.format(args.identifier)), filemode='w+',
-                        level=logging.DEBUG)
-            logging.info("Using provided data directory: {}".format(str(args.output_dir)))
-        except:
-            logging.info("No such directory, using current.")
-    else:
-        logging.basicConfig(filename='{}_prediction.log'.format(args.identifier), filemode='w+',
-                        level=logging.DEBUG)
-        logging.info("Using current data directory.")
-
-    logging.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    logger.addHandler(logging.FileHandler('{}_prediction.log'.format(args.identifier)))
+    logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     metadata = []
     references = {'GRCh37': 'http://feb2014.archive.ensembl.org', 'GRCh38': 'http://dec2016.archive.ensembl.org'}
@@ -968,7 +960,7 @@ def __main__():
     # create protein db instance for filtering self-peptides
     up_db = UniProtDB('sp')
     if args.filter_self:
-        logging.info('Reading human proteome')
+        logger.info('Reading human proteome')
 
         if os.path.isdir(args.reference_proteome):
             for filename in os.listdir(args.reference_proteome):
@@ -996,7 +988,7 @@ def __main__():
         complete_df = pd.concat(pred_dataframes)
     except:
         complete_df = pd.DataFrame()
-        logging.error("No predictions available.")
+        logger.error("No predictions available.")
 
     # replace method names with method names with version
     complete_df.replace({'method': tools_map}, inplace=True)
