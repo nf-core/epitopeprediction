@@ -30,7 +30,8 @@ def helpMessage() {
 
     Alternative inputs:
       --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column)
-    
+      --proteins [file]                     Path to FASTA file containing protein sequences
+
     Pipeline options:
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
@@ -64,10 +65,11 @@ if (params.help) {
     exit 0
 }
 
-//Generate empty channels for peptides and variants
-ch_split_peptides = Channel.empty()
-ch_split_variants = Channel.empty()
 
+//Generate empty channels for peptides, proteins and variants
+ch_peptides = Channel.empty()
+ch_proteins = Channel.empty()
+ch_split_variants = Channel.empty()
 
 
 if ( params.peptides ) {
@@ -77,7 +79,16 @@ if ( params.peptides ) {
     Channel
         .fromPath(params.peptides)
         .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
-        .set { ch_split_peptides }
+        .set { ch_peptides }
+}
+else if ( params.proteins ) {
+    if ( params.wild_type ) {
+        exit 1, "Protein input not compatible with wild-type sequence generation."
+    }
+    Channel
+        .fromPath(params.proteins)
+        .ifEmpty { exit 1, "Protein input not found: ${params.proteins}" }
+        .set { ch_proteins }
 }
 else if (params.input) {
     Channel
@@ -86,7 +97,7 @@ else if (params.input) {
         .set { ch_split_variants }
 }
 else {
-    exit 1, "Please specify a file that contains annotated variants OR a file that contains peptide sequences."
+    exit 1, "Please specify a file that contains annotated variants, protein sequences OR peptide sequences."
 }
 
 if ( !params.alleles ) {
@@ -136,6 +147,7 @@ if ( params.alleles ) summary['Alleles'] = params.alleles
 summary['Max. Peptide Length'] = params.max_peptide_length
 summary['MHC Class'] = params.mhc_class
 if ( params.peptides ) summary['Peptides'] = params.peptides
+if ( params.proteins ) summary['Proteins'] = params.proteins
 if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome
 if ( params.proteome ) summary['Reference proteome'] = params.proteome
 summary['Self-Filter'] = params.filter_self
@@ -251,8 +263,30 @@ process splitVariants {
     }
 }
 
+
 /*
- * STEP 1b - Split peptide data
+ * STEP 0b - Process FASTA file and generate peptides
+ */
+if (params.proteins) {
+    process genPeptides {
+        input:
+        file proteins from ch_proteins
+
+        output:
+        file 'peptides.tsv' into ch_split_peptides
+
+        when: !params.peptides
+
+        script:
+        """
+        gen_peptides.py --input ${proteins} --output 'peptides.tsv' --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}
+        """
+    }
+ } else {
+    ch_peptides.set{ch_split_peptides}
+ }
+/*
+ * STEP 1b- Split peptide data
  */
 process splitPeptides {
     input:
@@ -284,7 +318,7 @@ process peptidePrediction {
    file "*.json" into ch_json_reports
    
    script:
-   def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
+   def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
