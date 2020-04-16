@@ -23,38 +23,41 @@ def helpMessage() {
     nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --input "*.vcf.gz"
 
     Mandatory arguments:
-      --input [file]                Path to input data (must be surrounded with quotes)
-      --alleles [file]              Path to the file containing the MHC alleles
-      -profile [str]                Configuration profile to use. Can use multiple (comma separated)
-                                    Available: conda, docker, singularity, test, awsbatch, <institute> and more
+      --input [file]                        Path to input data (must be surrounded with quotes)
+      --alleles [file]                      Path to the file containing the MHC alleles
+      -profile [str]                        Configuration profile to use. Can use multiple (comma separated)
+                                            Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
     Alternative inputs:
-      --peptides [file]             Path to TSV file containing peptide sequences (minimum required: id and sequence column)
-    
-    Pipeline options:
-      --filter_self [bool]          Specifies that peptides should be filtered against the specified human proteome references Default: false
-      --wild_type  [bool]           Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
-      --mhc_class [1,2]             Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
-      --max_peptide_length [int]    Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa 
-      --min_peptide_length [int]    Specifies the minimum peptide length Default: MCH class I: 8 aa, MHC class II: 15 aa
-      --tools [str]                 Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
+      --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column)
+      --proteins [file]                     Path to FASTA file containing protein sequences
 
-    References                      If not specified in the configuration file or you wish to overwrite any of the references
-      --genome [str]                Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
-      --proteome [path/file]        Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
+    Pipeline options:
+      --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
+      --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
+      --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
+      --max_peptide_length [int]            Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa
+      --min_peptide_length [int]            Specifies the minimum peptide length Default: MCH class I: 8 aa, MHC class II: 15 aa
+      --tools [str]                         Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
+      --peptides_split_maxchunks [int]      Used in combination with '--peptides' or '--proteins': maximum number of peptide chunks that will be created for parallelization. Default: 100
+      --peptides_split_minchunksize [int]   Used in combination with '--peptides' or '--proteins': minimum number of peptides that should be written into one chunk. Default: 5000
+
+    References                              If not specified in the configuration file or you wish to overwrite any of the references
+      --genome [str]                        Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
+      --proteome [path/file]                Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
        
     Other options:
-      --outdir [path]               The output directory where the results will be saved
-      --email [email]               Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
-      -name [str]                   Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
-      --max_multiqc_email_size      Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB)
-      --mem_mode [str]              Specifies which memory mode should be used for processes requiring a bit more memory, usefull e.g. when running on arbitrary big protein or peptide input data.
-                                    Available: 'low', 'intermediate', 'high' (corresponding to max. 7.GB, 40.GB, 500.GB). Default: 'low'.
+      --outdir [path]                       The output directory where the results will be saved
+      --email [email]                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
+      -name [str]                           Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
+      --max_multiqc_email_size              Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB)
+      --mem_mode [str]                      Specifies which memory mode should be used for processes requiring a bit more memory, usefull e.g. when running on arbitrary big protein or peptide input data.
+                                            Available: 'low', 'intermediate', 'high' (corresponding to max. 7.GB, 40.GB, 500.GB). Default: 'low'.
 
     AWSBatch options:
-      --awsqueue [str]                The AWSBatch JobQueue that needs to be set when running on AWSBatch
-      --awsregion [str]               The AWS Region for your AWS Batch job to run on
-      --awscli [str]                  Path to the AWS CLI tool
+      --awsqueue [str]                      The AWSBatch JobQueue that needs to be set when running on AWSBatch
+      --awsregion [str]                     The AWS Region for your AWS Batch job to run on
+      --awscli [str]                        Path to the AWS CLI tool
     """.stripIndent()
 }
 
@@ -64,10 +67,11 @@ if (params.help) {
     exit 0
 }
 
-//Generate empty channels for peptides and variants
-ch_split_peptides = Channel.empty()
-ch_split_variants = Channel.empty()
 
+//Generate empty channels for peptides, proteins and variants
+ch_peptides = Channel.empty()
+ch_proteins = Channel.empty()
+ch_split_variants = Channel.empty()
 
 
 if ( params.peptides ) {
@@ -77,7 +81,16 @@ if ( params.peptides ) {
     Channel
         .fromPath(params.peptides)
         .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
-        .set { ch_split_peptides }
+        .set { ch_peptides }
+}
+else if ( params.proteins ) {
+    if ( params.wild_type ) {
+        exit 1, "Protein input not compatible with wild-type sequence generation."
+    }
+    Channel
+        .fromPath(params.proteins)
+        .ifEmpty { exit 1, "Protein input not found: ${params.proteins}" }
+        .set { ch_proteins }
 }
 else if (params.input) {
     Channel
@@ -86,7 +99,7 @@ else if (params.input) {
         .set { ch_split_variants }
 }
 else {
-    exit 1, "Please specify a file that contains annotated variants OR a file that contains peptide sequences."
+    exit 1, "Please specify a file that contains annotated variants, protein sequences OR peptide sequences."
 }
 
 if ( !params.alleles ) {
@@ -142,12 +155,15 @@ if ( params.alleles ) summary['Alleles'] = params.alleles
 summary['Max. Peptide Length'] = params.max_peptide_length
 summary['MHC Class'] = params.mhc_class
 if ( params.peptides ) summary['Peptides'] = params.peptides
+if ( params.proteins ) summary['Proteins'] = params.proteins
 if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome
 if ( params.proteome ) summary['Reference proteome'] = params.proteome
 summary['Self-Filter'] = params.filter_self
 summary['Tools'] = params.tools
 if ( params.input ) summary['Variants'] = params.input
 summary['Wild-types'] = params.wild_type
+if ( params.peptides || params.proteins ) summary['Max. number of chunks for parallelization'] = params.peptides_split_maxchunks
+if ( params.peptides || params.proteins ) summary['Min. number of peptides in one chunk'] = params.peptides_split_minchunksize
 //Standard Params for nf-core pipelines
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
 summary['Memory mode']      = params.mem_mode
@@ -256,23 +272,43 @@ process splitVariants {
     }
 }
 
+
 /*
- * STEP 1b - Split peptide data
+ * STEP 0b - Process FASTA file and generate peptides
+ */
+if (params.proteins) {
+    process genPeptides {
+        input:
+        file proteins from ch_proteins
+
+        output:
+        file 'peptides.tsv' into ch_split_peptides
+
+        when: !params.peptides
+
+        script:
+        """
+        gen_peptides.py --input ${proteins} --output 'peptides.tsv' --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}
+        """
+    }
+ } else {
+    ch_peptides.set{ch_split_peptides}
+ }
+/*
+ * STEP 1b- Split peptide data
  */
 process splitPeptides {
     input:
     file peptides from ch_split_peptides
 
     output:
-    file '*.tsv' into ch_splitted_peptides
+    file '*.chunk_*.tsv' into ch_splitted_peptides
 
     when: !params.input
 
-    // @TODO
-    // splitting mechanism missing
     script:
     """
-    cat ${peptides} > "${peptides.fileName}.tsv"
+    split_peptides.py --input ${peptides} --output_base ${peptides.baseName} --min_size ${params.peptides_split_minchunksize} --max_chunks ${params.peptides_split_maxchunks}
     """
 }
 
@@ -291,7 +327,7 @@ process peptidePrediction {
    file "*.json" into ch_json_reports
    
    script:
-   def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
+   def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
