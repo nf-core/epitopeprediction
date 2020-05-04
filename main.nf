@@ -227,7 +227,7 @@ process get_software_versions {
 
     output:
     file 'software_versions_mqc.yaml' into ch_software_versions_yaml
-    file "software_versions.csv"
+    file "software_versions.csv" into ch_software_versions_csv
 
     script:
     """
@@ -321,6 +321,7 @@ process peptidePrediction {
    input:
    file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
    file alleles from file(params.alleles)
+   file software_versions from ch_software_versions_csv
 
    output:
    file "*.tsv" into ch_predicted_peptides
@@ -331,7 +332,7 @@ process peptidePrediction {
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} --tools ${params.tools} --reference ${params.genome} ${ref_prot} ${wt}
+   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} --tools ${params.tools} --versions ${software_versions} --reference ${params.genome} ${ref_prot} ${wt}
    """
 }
 
