@@ -804,7 +804,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         df.reset_index(inplace=True)
 
         for c in df.columns:
-            if '*' in str(c):
+            if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
@@ -882,7 +882,7 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
             df[c] = df.apply(lambda row: row[0].get_metadata(c)[0], axis=1)
 
         for c in df.columns:
-            if '*' in str(c):
+            if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))

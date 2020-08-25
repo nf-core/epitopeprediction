@@ -109,6 +109,14 @@ else {
     allele_file = file(params.alleles)
 }
 
+if ( params.input ){
+    allele_file.eachLine{line ->
+        if (line.contains("H2-")) {
+            exit 1, "Mouse allele provided: $line. Not compatible with reference ${params.genome}. Currently mouse alleles are only supported when using peptide sequences as input (--peptides)."
+        }
+    }
+}
+
 if ( params.mhc_class != 1 && params.mhc_class != 2 ){
     exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
 }

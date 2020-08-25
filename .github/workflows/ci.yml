@@ -32,6 +32,9 @@ jobs:
       - name: Run peptides test
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_peptides,docker
+      - name: Run peptides test on H2 allele
+        run: |
+          nextflow run ${GITHUB_WORKSPACE} -profile test_peptides_h2,docker
       - name: Run proteins test
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_proteins,docker
