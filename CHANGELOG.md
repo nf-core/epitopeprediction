@@ -5,6 +5,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added parameter `--mem_mode` to change between different memory modes, e.g. when using arbitrary big peptide input datasets
 - Set `maxRetries` to 3
+- Update Fred2 to version 2.0.7
 
 ## v1.1.0dev - [date]
 
