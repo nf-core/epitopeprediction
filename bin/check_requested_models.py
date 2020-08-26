@@ -103,7 +103,7 @@ def __main__():
             output.write("All selected alleles are supported by at least one of the requested tools.\n")
         if no_allele_support:
             output.write("None of the specified alleles is supported by any of the requested tools. Specify '--show_supported_models' to write out all supported models.\n")
-            raise ValueError("Something went wrong, none of the alleles is supported by any of the requested tools. Specify '--show_supported_models' to write out all supported models.")
+            raise ValueError("None of the specified alleles is supported by any of the requested tools. Specify '--show_supported_models' to write out all supported models.")
 
 
         output.write("\n")
