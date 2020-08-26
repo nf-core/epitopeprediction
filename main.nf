@@ -216,16 +216,10 @@ if (params.email || params.email_on_fail) {
 log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
 log.info "-\033[2m--------------------------------------------------\033[0m-"
 
-
-ch_multiqc_config = Channel.empty()
-ch_multiqc_custom_config = Channel.empty()
-ch_output_docs = Channel.empty()
 // Stage config files
-if (!params.show_supported_models) {
-    ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
-    ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
-}
+ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
+ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
+ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
 
 // Check the hostnames against configured profiles
 checkHostname()
@@ -295,7 +289,6 @@ process showSupportedModels {
     """
 }
 
-// TODO check and write to log.info if important
 process checkRequestedModels {
     publishDir "${params.outdir}/Reports/", mode: 'copy'
 
