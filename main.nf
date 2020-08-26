@@ -84,8 +84,7 @@ if ( params.peptides ) {
         exit 1, "Peptide input not compatible with wild-type sequence generation."
     }
     Channel
-        .fromPath(params.peptides)
-        .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
+        .fromPath(params.peptides, checkIfExists: true)
         .set { ch_peptides }
         (ch_peptides, ch_check_peptides) = ch_peptides.into(2)
 }
@@ -94,14 +93,12 @@ else if ( params.proteins ) {
         exit 1, "Protein input not compatible with wild-type sequence generation."
     }
     Channel
-        .fromPath(params.proteins)
-        .ifEmpty { exit 1, "Protein input not found: ${params.proteins}" }
+        .fromPath(params.proteins, checkIfExists: true)
         .set { ch_proteins }
 }
 else if (params.input) {
     Channel
-        .fromPath(params.input)
-        .ifEmpty { exit 1, "Variant file not found: ${params.input}" }
+        .fromPath(params.input, checkIfExists: true)
         .set { ch_split_variants }
 } 
 else if (!params.show_supported_models) {
@@ -115,13 +112,13 @@ if (!params.show_supported_models) {
         exit 1, "Please specify a file containing MHC alleles."
     }
     else {
-        ch_alleles = Channel.fromPath(params.alleles)
+        ch_alleles = Channel.fromPath(params.alleles, checkIfExists: true)
         (ch_alleles, ch_check_alleles) = ch_alleles.into(2)
     }
 }
 
 if ( params.input ){
-    allele_file = file(params.alleles)
+    allele_file = file(params.alleles, checkIfExists: true)
     allele_file.eachLine{line ->
         if (line.contains("H2-")) {
             exit 1, "Mouse allele provided: $line. Not compatible with reference ${params.genome}. Currently mouse alleles are only supported when using peptide sequences as input (--peptides)."
@@ -314,7 +311,7 @@ process checkRequestedModels {
 }
 
 ch_model_warnings.subscribe { 
-        model_log_file = file("$it")
+        model_log_file = file("$it", checkIfExists: true)
         def lines = model_log_file.readLines()
         if (lines.size() > 0) { 
             log.info "-${c_purple} Warning: ${c_reset}-"
