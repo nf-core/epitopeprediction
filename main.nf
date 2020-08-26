@@ -241,13 +241,13 @@ Channel.from(summary.collect{ [it.key, it.value] })
     .set { ch_workflow_summary }
 
 /*
-* Parse software version numbers
-*/
+ * Parse software version numbers
+ */
 process get_software_versions {
     publishDir "${params.outdir}/pipeline_info", mode: 'copy',
         saveAs: { filename ->
-                    if (filename.indexOf(".csv") > 0) filename
-                    else null
+                      if (filename.indexOf(".csv") > 0) filename
+                      else null
                 }
 
     output:
@@ -267,7 +267,6 @@ process get_software_versions {
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
-
 
 /*
  * Write out models supported by Fred2 (for installed predictor tool versions)
@@ -322,10 +321,8 @@ ch_model_warnings.subscribe {
             lines.each { String line ->
                 log.info "-${c_purple}   $line ${c_reset}-"
             }
-            
         }
     }
-
 
 /*
  * STEP 1a - Split variant data
@@ -341,7 +338,6 @@ process splitVariants {
 
     when: !params.peptides && !params.show_supported_models
 
-
     script:
     if ( variants.toString().endsWith('.vcf') || variants.toString().endsWith('.vcf.gz') ) {
         """
@@ -355,7 +351,6 @@ process splitVariants {
         """
     }
 }
-
 
 /*
  * STEP 0b - Process FASTA file and generate peptides
@@ -401,6 +396,7 @@ process splitPeptides {
  * STEP 2 - Run epitope prediction
  */
 process peptidePrediction {
+
    input:
    file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
    file alleles from ch_alleles
@@ -471,7 +467,6 @@ process mergeReports {
     """
 }
 
-
 /*
 * STEP 5 - MultiQC
 */
@@ -520,12 +515,11 @@ process output_documentation {
     """
 }
 
-
-
 /*
-* Completion e-mail notification
-*/
+ * Completion e-mail notification
+ */
 workflow.onComplete {
+
     // Set up the e-mail variables
     def subject = "[nf-core/epitopeprediction] Successful: $workflow.runName"
     if (!workflow.success) {
