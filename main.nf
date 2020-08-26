@@ -286,7 +286,7 @@ process showSupportedModels {
 }
 
 process checkRequestedModels {
-    publishDir "${params.outdir}/Reports/", mode: 'copy'
+    publishDir "${params.outdir}/reports/", mode: 'copy'
 
     input:
     file peptides from ch_check_peptides
