@@ -18,7 +18,7 @@ def convert_allele_back(allele):
 
 
 def __main__():
-    parser = argparse.ArgumentParser("Write out information about supported models by Fred2 for installed predictor tool versions.")
+    parser = argparse.ArgumentParser("Write out information about supported models by Fred2 for available predictor tool versions.")
     parser.add_argument('-v', '--versions', help='File with used software versions.', required=True)
     args = parser.parse_args()
 

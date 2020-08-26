@@ -23,17 +23,19 @@ def helpMessage() {
     nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --input "*.vcf.gz"
 
     Mandatory arguments:
-      --input [file]                        Path to input data (must be surrounded with quotes)
-      --alleles [file]                      Path to the file containing the MHC alleles
       -profile [str]                        Configuration profile to use. Can use multiple (comma separated)
                                             Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
+    Input:
+      --input [file]                        Path to input data (must be surrounded with quotes)
+      --alleles [file]                      Path to the file containing the MHC alleles
+    
     Alternative inputs:
       --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column)
       --proteins [file]                     Path to FASTA file containing protein sequences
 
     Pipeline options:
-      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Do not specify this in combination with other input files. Default: false.
+      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline (mutually exclusive with input files). Default: false.
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
@@ -613,6 +615,9 @@ workflow.onComplete {
     c_red = params.monochrome_logs ? '' : "\033[0;31m";
     c_reset = params.monochrome_logs ? '' : "\033[0m";
 
+    if (params.show_supported_models) {
+        log.info "-${c_green}The information about supported models for the avaliable predictor tool versions was written to ${params.outdir}/supported_models/  ${c_reset}-"
+    }
     if (workflow.stats.ignoredCount > 0 && workflow.success) {
         log.info "-${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}-"
         log.info "-${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCount} ${c_reset}-"
