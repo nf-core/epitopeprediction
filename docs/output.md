@@ -50,7 +50,7 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 
 ## Supported models
 
-When running hte pipeline using the `--show_supported_models` parameter, the information about supported models for the installed predictor tool versions will be written to the results folder as well.
+When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder as well.
 
 **Output directory: `results/supported_models/`**
 
