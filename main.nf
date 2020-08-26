@@ -31,9 +31,9 @@ def helpMessage() {
     Alternative inputs:
       --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column)
       --proteins [file]                     Path to FASTA file containing protein sequences
-      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Do not specify this in combination with other input files. Default: false.
 
     Pipeline options:
+      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Do not specify this in combination with other input files. Default: false.
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
