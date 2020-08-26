@@ -36,8 +36,8 @@ def helpMessage() {
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
-      --max_peptide_length [int]            Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa
-      --min_peptide_length [int]            Specifies the minimum peptide length Default: MCH class I: 8 aa, MHC class II: 15 aa
+      --max_peptide_length [int]            Specifies the maximum peptide length (not applied when '--peptides' is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa
+      --min_peptide_length [int]            Specifies the minimum peptide length (not applied when '--peptides' is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa
       --tools [str]                         Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
       --peptides_split_maxchunks [int]      Used in combination with '--peptides' or '--proteins': maximum number of peptide chunks that will be created for parallelization. Default: 100
       --peptides_split_minchunksize [int]   Used in combination with '--peptides' or '--proteins': minimum number of peptides that should be written into one chunk. Default: 5000
@@ -66,7 +66,6 @@ if (params.help) {
     helpMessage()
     exit 0
 }
-
 
 //Generate empty channels for peptides, proteins and variants
 ch_peptides = Channel.empty()
@@ -129,7 +128,6 @@ if ( params.filter_self & !params.proteome ){
     params.proteome = file("$baseDir/assets/")
 }
 
-
 if ( params.mem_mode != 'low' && params.mem_mode != 'intermediate' && params.mem_mode != 'high' )
 {
     exit 1, "Invalid memory mode parameter: ${params.mem_mode}. Valid options: 'low', 'intermediate', 'high'."
@@ -160,7 +158,10 @@ if(workflow.revision) summary['Pipeline Release'] = workflow.revision
 summary['Run Name']         = custom_runName ?: workflow.runName
 //Pipeline Parameters
 if ( params.alleles ) summary['Alleles'] = params.alleles
-summary['Max. Peptide Length'] = params.max_peptide_length
+if ( !params.peptides) {
+    summary['Min. Peptide Length'] = params.min_peptide_length
+    summary['Max. Peptide Length'] = params.max_peptide_length
+}
 summary['MHC Class'] = params.mhc_class
 if ( params.peptides ) summary['Peptides'] = params.peptides
 if ( params.proteins ) summary['Proteins'] = params.proteins
