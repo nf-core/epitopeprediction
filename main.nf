@@ -616,7 +616,7 @@ workflow.onComplete {
     c_reset = params.monochrome_logs ? '' : "\033[0m";
 
     if (params.show_supported_models) {
-        log.info "-${c_green}The information about supported models for the avaliable predictor tool versions was written to ${params.outdir}/supported_models/  ${c_reset}-"
+        log.info "-${c_green}The information about supported models of the available prediction tools was written to ${params.outdir}/supported_models/  ${c_reset}-"
     }
     if (workflow.stats.ignoredCount > 0 && workflow.success) {
         log.info "-${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}-"
