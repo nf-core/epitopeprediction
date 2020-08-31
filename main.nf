@@ -29,13 +29,13 @@ def helpMessage() {
     Input:
       --input [file]                        Path to input data (must be surrounded with quotes)
       --alleles [file]                      Path to the file containing the MHC alleles
-    
+
     Alternative inputs:
       --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column)
       --proteins [file]                     Path to FASTA file containing protein sequences
 
     Pipeline options:
-      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline (mutually exclusive with input files). Default: false.
+      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Default: false.
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
@@ -48,7 +48,7 @@ def helpMessage() {
     References                              If not specified in the configuration file or you wish to overwrite any of the references
       --genome [str]                        Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
       --proteome [path/file]                Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
-       
+
     Other options:
       --outdir [path]                       The output directory where the results will be saved
       --email [email]                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
@@ -70,46 +70,41 @@ if (params.help) {
     exit 0
 }
 
-//Generate empty channels for peptides, proteins and variants
+//Generate empty channels
 ch_peptides = Channel.empty()
 ch_check_peptides = Channel.empty()
 ch_proteins = Channel.empty()
 ch_split_variants = Channel.empty()
-
-if ( params.show_supported_models && (params.peptides || params.proteins || params.input || params.proteome)){
-    other_param = params.peptides ? "--peptides" : params.proteins ? "--proteins" : params.input ? "--input" : "--proteome"
-    exit 1, "The parameter --show_supported_models is not compatible with other input parameters, but ${other_param} was specified as well."
-}
-
-if ( params.peptides ) {
-    if ( params.wild_type ) {
-        exit 1, "Peptide input not compatible with wild-type sequence generation."
-    }
-    Channel
-        .fromPath(params.peptides, checkIfExists: true)
-        .set { ch_peptides }
-        (ch_peptides, ch_check_peptides) = ch_peptides.into(2)
-}
-else if ( params.proteins ) {
-    if ( params.wild_type ) {
-        exit 1, "Protein input not compatible with wild-type sequence generation."
-    }
-    Channel
-        .fromPath(params.proteins, checkIfExists: true)
-        .set { ch_proteins }
-}
-else if (params.input) {
-    Channel
-        .fromPath(params.input, checkIfExists: true)
-        .set { ch_split_variants }
-} 
-else if (!params.show_supported_models) {
-    exit 1, "Please specify a file that contains annotated variants, protein sequences OR peptide sequences. Alternatively, to write out all supported models specify '--show_supported_models'."
-}
-
 ch_alleles = Channel.empty()
 ch_check_alleles = Channel.empty()
-if (!params.show_supported_models) {
+
+if ( !params.show_supported_models ){
+    if ( params.peptides ) {
+        if ( params.wild_type ) {
+            exit 1, "Peptide input not compatible with wild-type sequence generation."
+        }
+        Channel
+            .fromPath(params.peptides, checkIfExists: true)
+            .set { ch_peptides }
+            (ch_peptides, ch_check_peptides) = ch_peptides.into(2)
+    }
+    else if ( params.proteins ) {
+        if ( params.wild_type ) {
+            exit 1, "Protein input not compatible with wild-type sequence generation."
+        }
+        Channel
+            .fromPath(params.proteins, checkIfExists: true)
+            .set { ch_proteins }
+    }
+    else if (params.input) {
+        Channel
+            .fromPath(params.input, checkIfExists: true)
+            .set { ch_split_variants }
+    }
+    else {
+        exit 1, "Please specify a file that contains annotated variants, protein sequences OR peptide sequences. Alternatively, to write out all supported models specify '--show_supported_models'."
+    }
+
     if ( !params.alleles ) {
         exit 1, "Please specify a file containing MHC alleles."
     }
@@ -117,32 +112,32 @@ if (!params.show_supported_models) {
         ch_alleles = Channel.fromPath(params.alleles, checkIfExists: true)
         (ch_alleles, ch_check_alleles) = ch_alleles.into(2)
     }
-}
 
-if ( params.input ){
-    allele_file = file(params.alleles, checkIfExists: true)
-    allele_file.eachLine{line ->
-        if (line.contains("H2-")) {
-            exit 1, "Mouse allele provided: $line. Not compatible with reference ${params.genome}. Currently mouse alleles are only supported when using peptide sequences as input (--peptides)."
+    if ( params.input ){
+        allele_file = file(params.alleles, checkIfExists: true)
+        allele_file.eachLine{line ->
+            if (line.contains("H2-")) {
+                exit 1, "Mouse allele provided: $line. Not compatible with reference ${params.genome}. Currently mouse alleles are only supported when using peptide sequences as input (--peptides)."
+            }
         }
     }
-}
 
-if ( params.mhc_class != 1 && params.mhc_class != 2 ){
-    exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
-}
+    if ( params.mhc_class != 1 && params.mhc_class != 2 ){
+        exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
+    }
 
-if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && params.tools.contains("mhcnuggets-class-1")) ){
-    log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
-}
+    if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && params.tools.contains("mhcnuggets-class-1")) ){
+        log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
+    }
 
-if ( params.filter_self & !params.proteome ){
-    params.proteome = file("$baseDir/assets/")
-}
+    if ( params.filter_self & !params.proteome ){
+        params.proteome = file("$baseDir/assets/")
+    }
 
-if ( params.mem_mode != 'low' && params.mem_mode != 'intermediate' && params.mem_mode != 'high' )
-{
-    exit 1, "Invalid memory mode parameter: ${params.mem_mode}. Valid options: 'low', 'intermediate', 'high'."
+    if ( params.mem_mode != 'low' && params.mem_mode != 'intermediate' && params.mem_mode != 'high' )
+    {
+        exit 1, "Invalid memory mode parameter: ${params.mem_mode}. Valid options: 'low', 'intermediate', 'high'."
+    }
 }
 
 // Has the run name been specified by the user?
@@ -312,10 +307,10 @@ process checkRequestedModels {
     """
 }
 
-ch_model_warnings.subscribe { 
+ch_model_warnings.subscribe {
         model_log_file = file("$it", checkIfExists: true)
         def lines = model_log_file.readLines()
-        if (lines.size() > 0) { 
+        if (lines.size() > 0) {
             log.info "-${c_purple} Warning: ${c_reset}-"
             lines.each { String line ->
                 log.info "-${c_purple}   $line ${c_reset}-"
@@ -467,8 +462,8 @@ process mergeReports {
 }
 
 /*
-* STEP 5 - MultiQC
-*/
+ * STEP 5 - MultiQC
+ */
 process multiqc {
     publishDir "${params.outdir}/MultiQC", mode: 'copy'
 
@@ -616,6 +611,7 @@ workflow.onComplete {
     c_reset = params.monochrome_logs ? '' : "\033[0m";
 
     if (params.show_supported_models) {
+        log.info "-${c_green}Did not run the actual epitope prediction ${c_reset}-"
         log.info "-${c_green}The information about supported models of the available prediction tools was written to ${params.outdir}/supported_models/  ${c_reset}-"
     }
     if (workflow.stats.ignoredCount > 0 && workflow.success) {
@@ -630,7 +626,7 @@ workflow.onComplete {
         checkHostname()
         log.info "-${c_purple}[nf-core/epitopeprediction]${c_red} Pipeline completed with errors${c_reset}-"
     }
-} 
+}
 
 def nfcoreHeader() {
     // Log colors ANSI codes
