@@ -47,3 +47,14 @@ HLHTHVYLF 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 HTHVYLFLS 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 7.0 17.5 False False False c.173C>A p.Pro58His
 HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 0.0 0.0 False False False c.173C>A p.Pro58His
 ```
+
+## Supported models
+
+When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder as well.
+
+**Output directory: `results/supported_models/`**
+
+* `[tool].[version].supported_alleles.txt`
+  * A list of all supported alleles by the corresponding predictor method.
+* `[tool].[version].supported_lengths.txt`
+  * A list of all supported peptide lengths by the corresponding predictor method.
