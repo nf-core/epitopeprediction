@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Update Fred2 to version 2.0.7
 - Add parameter `--show_supported_models` to write out information about supported models (alleles, peptide lengths)
 - Add check if requested models for specified tools are supported by Fred2
+- [#55](https://github.com/nf-core/epitopeprediction/pull/52) - Fix MHCflurry permission problem when run with docker profile
 
 ## v1.1.0dev - [date]
 
