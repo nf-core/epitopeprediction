@@ -405,6 +405,12 @@ process peptidePrediction {
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    """
+   # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
+   mkdir -p mhcflurry-data
+   export MHCFLURRY_DATA_DIR=./mhcflurry-data
+   # specify MHCflurry release for which to download models, need to be updated here as well when MHCflurry will be updated
+   export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
+
    epaa.py ${input_type} --identifier ${inputs.baseName} \
                          --alleles $alleles \
                          --mhcclass ${params.mhc_class} \
