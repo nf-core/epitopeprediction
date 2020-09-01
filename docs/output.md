@@ -37,7 +37,7 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 
 When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder as well.
 
-**Output directory: `results/supported_models/`**
+**Output directory: `supported_models/`**
 
 * `[tool].[version].supported_alleles.txt`
   * A list of all supported alleles by the corresponding predictor method.
