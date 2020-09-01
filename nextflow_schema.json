@@ -58,10 +58,18 @@
             "properties": {
                 "genome_version": {
                     "type": "string",
-                    "default": "GRCh37"
+                    "default": "GRCh37",
+                    "help_text": "This defines against which human reference genome the pipeline performs the analysis including the incorporation of genetic variants e.g..",
+                    "enum": [
+                        "GRCh37",
+                        "GRCh38"
+                    ],
+                    "description": "Specifies  the human reference genome version."
                 },
                 "proteome": {
-                    "type": "string"
+                    "type": "string",
+                    "help_text": "Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).",
+                    "description": "Specifies the reference proteome."
                 }
             },
             "fa_icon": "fas fa-stream"
