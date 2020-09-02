@@ -20,7 +20,6 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-<<<<<<< HEAD
     nextflow run nf-core/epitopeprediction --input '*.vcf.gz' -profile docker
 
     Mandatory arguments:
@@ -173,26 +172,24 @@ summary['Pipeline Name']  = 'nf-core/epitopeprediction'
 if(workflow.revision) summary['Pipeline Release'] = workflow.revision
 summary['Run Name']         = custom_runName ?: workflow.runName
 //Standard Params for nf-core pipelines
-summary['Input']            = params.input
-summary['Fasta Ref']        = params.fasta
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
 //Pipeline Parameters
 if ( params.show_supported_models ) {
     summary['Show supported models'] = params.show_supported_models
 } else {
+    if ( params.input ) summary['Variants'] = params.input
+    if ( params.peptides ) summary['Peptides'] = params.peptides
+    if ( params.proteins ) summary['Proteins'] = params.proteins
     if ( params.alleles ) summary['Alleles'] = params.alleles
     if ( !params.peptides) {
         summary['Min. Peptide Length'] = params.min_peptide_length
         summary['Max. Peptide Length'] = params.max_peptide_length
     }
     summary['MHC Class'] = params.mhc_class
-    if ( params.peptides ) summary['Peptides'] = params.peptides
-    if ( params.proteins ) summary['Proteins'] = params.proteins
     if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome_version
     if ( params.proteome ) summary['Reference proteome'] = params.proteome
     summary['Self-Filter'] = params.filter_self
     summary['Tools'] = params.tools
-    if ( params.input ) summary['Variants'] = params.input
     summary['Wild-types'] = params.wild_type
     if ( params.peptides || params.proteins ) summary['Max. number of chunks for parallelization'] = params.peptides_split_maxchunks
     if ( params.peptides || params.proteins ) summary['Min. number of peptides in one chunk'] = params.peptides_split_minchunksize

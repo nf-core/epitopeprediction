@@ -8,18 +8,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Added`
 
 - [#45](https://github.com/nf-core/epitopeprediction/pull/45) - Add test for FASTA input
-- [#44](https://github.com/nf-core/epitopeprediction/pull/44) - Add parameter to write out supported models in files
-- [#42](https://github.com/nf-core/epitopeprediction/pull/42) - Add support for FASTA files with protein sequences as input
+- [#44](https://github.com/nf-core/epitopeprediction/pull/44) - Add parameter (`--show_supported_models`) to write out supported models in files
+- [#44](https://github.com/nf-core/epitopeprediction/pull/44) - Add check if requested models for specified tools are supported by `FRED2`
+- [#42](https://github.com/nf-core/epitopeprediction/pull/42) - Add support for FASTA files with protein sequences as input (`--input`)
 - [#31](https://github.com/nf-core/epitopeprediction/pull/31) - Add support for mouse alleles
-- [#30](https://github.com/nf-core/epitopeprediction/pull/30) - Add parameter to change between different memory modes
+- [#30](https://github.com/nf-core/epitopeprediction/pull/30) - Add parameter (`--mem_mode`) to change between different memory modes
 - [#29](https://github.com/nf-core/epitopeprediction/pull/29) - Add parallelisation for peptide input
 
 ### `Changed`
 
-- [#50](https://github.com/nf-core/epitopeprediction/pull/50) -  Merge template updates (`v1.10.1`, and `v1.10.2`)
-- [#47](https://github.com/nf-core/epitopeprediction/pull/47)  - Update Fred2 to version 2.0.7
-- [#44](https://github.com/nf-core/epitopeprediction/pull/44)   - Check if requested models for specified tools are supported by Fred2
+- [#50](https://github.com/nf-core/epitopeprediction/pull/50) - Change parameter to specify the genome version to `--genome_version` ( `--genome` deprecated)
+- [#50](https://github.com/nf-core/epitopeprediction/pull/50) - Merge template updates (`v1.10.1`, and `v1.10.2`)
+- [#47](https://github.com/nf-core/epitopeprediction/pull/47) - Update `FRED2` to version 2.0.7
 - [#35](https://github.com/nf-core/epitopeprediction/pull/35) - Merge template updates (`v1.9`)
+- [#30](https://github.com/nf-core/epitopeprediction/pull/30) - Set `maxRetries` from 1 to 3
 
 ### `Fixed`
 
