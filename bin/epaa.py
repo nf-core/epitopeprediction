@@ -679,11 +679,32 @@ def get_matrix_max_score(allele, length):
         return np.nan
 
 
+def create_score_values(j, method):
+    if not pd.isnull(j):
+        if 'syf' in method:
+            return round(j, 4)
+        elif any(m in method for m in ['mhcnuggets','mhcflurry']):
+            # convert IC50 -> affinity score in [0,1]
+            min_ic50 = 1.0
+            return round(1.0 - math.log(max(j,min_ic50), 50000), 4)
+        else:
+            # currently not applied (for methods such as netMHC)
+            return round(j, 4)
+
+    else:
+        return np.nan
+
+
 def create_affinity_values(allele, length, j, method, max_scores, allele_strings):
     if not pd.isnull(j):
         if 'syf' in method:
             return round(((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)) / 100.0) * 100, 2)
+        elif any(m in method for m in ['mhcnuggets','mhcflurry']):
+            # mhcnuggets and mhcflurry return already IC50 affinity values
+            return round(j, 2)
         else:
+            # convert given affinity score in range [0,1] back to IC50 affinity value
+            # currently not applied (for methods such as netMHC)
             return round((50000**(1.0-float(j))), 2)
     else:
         return np.nan
@@ -809,7 +830,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
-                df['%s score' % c] = df['%s score' % c].map(lambda x: round(x, 4))
+                df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
         for c in metadata:
             df[c] = df.apply(lambda row: create_metadata_column_value(row, c), axis=1)
@@ -887,6 +908,7 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
+                df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
         df = df.rename(columns={'Seq': 'sequence'})
         df = df.rename(columns={'Method': 'method'})
