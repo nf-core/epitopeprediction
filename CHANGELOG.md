@@ -25,7 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
-- [#53](https://github.com/nf-core/epitopeprediction/pull/53) - Fix score and affinity output of MHCnuggets and MHCflurry
+- [#53](https://github.com/nf-core/epitopeprediction/pull/53) - Fix score and affinity output of MHCnuggets and MHCflurry [#32](https://github.com/nf-core/epitopeprediction/issues/32)
 - [#55](https://github.com/nf-core/epitopeprediction/pull/52) - Fix MHCflurry permission problem when run with docker profile [#51](https://github.com/nf-core/epitopeprediction/issues/51)
 - [#39](https://github.com/nf-core/epitopeprediction/pull/39) - Fix display of prediction tool version [#36](https://github.com/nf-core/epitopeprediction/issues/36)
 
