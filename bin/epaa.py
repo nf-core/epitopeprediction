@@ -29,7 +29,7 @@ from datetime import datetime
 from string import Template
 
 __author__ = 'Christopher Mohr'
-VERSION = "1.0"
+VERSION = "1.1"
 
 # instantiate global logger object
 logger = logging.getLogger(__name__)
@@ -520,9 +520,6 @@ def create_metadata_column_value(pep, c):
 
 def create_wt_seq_column_value(pep, wtseqs):
     transcripts = [x for x in set(pep[0].get_all_transcripts())]
-    variants = []
-    #for t in transcript_ids:
-    #    variants.extend([v for v in pep[0].get_variants_by_protein(t)])
     wt = set([str(wtseqs['{}_{}'.format(str(pep[0]), t.transcript_id)]) for t in transcripts if bool(t.vars) and '{}_{}'.format(str(pep[0]), t.transcript_id) in wtseqs])
     if len(wt) is 0:
         return np.nan
@@ -698,7 +695,7 @@ def create_score_values(j, method):
 def create_affinity_values(allele, length, j, method, max_scores, allele_strings):
     if not pd.isnull(j):
         if 'syf' in method:
-            return round(((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)) / 100.0) * 100, 2)
+            return max(0, round(((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)) / 100.0) * 100, 2))
         elif any(m in method for m in ['mhcnuggets','mhcflurry']):
             # mhcnuggets and mhcflurry return already IC50 affinity values
             return round(j, 2)
@@ -802,7 +799,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         if(len(results) == 0):
             continue
 
-        df = results[0].merge_results(results[1:])
+        df = pd.concat(results)
 
         for a in alleles:
             conv_allele = "%s_%s%s" % (a.locus, a.supertype, a.subtype)
@@ -828,7 +825,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
             if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
-                df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
+                df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: bool(create_binder_values(float(x['%s affinity' % c]), x['Method'])), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
                 df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
@@ -878,8 +875,9 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
 
         # merge dataframes of the performed predictions
         if(len(results) == 0):
-            continue;
-        df = results[0].merge_results(results[1:])
+            continue
+
+        df = pd.concat(results)
 
         df.insert(0, 'length', df.index.map(create_length_column_value))
 
@@ -1112,6 +1110,8 @@ def __main__():
 
     with open('{}_report.json'.format(args.identifier), 'w') as json_out:
         json.dump(statistics, json_out)
+    
+    logger.info("Finished predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
 if __name__ == "__main__":
     __main__()
