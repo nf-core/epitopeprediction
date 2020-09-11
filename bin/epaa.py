@@ -838,7 +838,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
 
     statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ] ,'number_of_variants': len(variants_all), 'number_of_peptides': len(all_peptides), 'number_of_peptides_after_filtering': len(all_peptides_filtered)}
 
-    return pred_dataframes, statistics, all_peptides_filtered
+    return pred_dataframes, statistics, all_peptides_filtered, prots
 
 
 def make_predictions_from_peptides(peptides, methods, alleles, protein_db, identifier, metadata):
@@ -934,6 +934,7 @@ def __main__():
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
     parser.add_argument('-wt', "--wild_type", help="Add wild type sequences of mutated peptides to output", required=False, action='store_true')
+    parser.add_argument('-fa', "--fasta", help="Create FASTA file with mutated protein sequences", required=False, action='store_true')
     parser.add_argument('-rp', "--reference_proteome", help="Reference proteome for self-filtering", required=False)
     parser.add_argument('-gr', "--gene_reference", help="List of gene IDs for ID mapping.", required=False)
     parser.add_argument('-pq', "--protein_quantification", help="File with protein quantification values")
@@ -1001,12 +1002,12 @@ def __main__():
         if args.peptides:
             pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
             pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
     # concat dataframes for all peptide lengths
     try:
@@ -1097,6 +1098,20 @@ def __main__():
         if args.wild_type != None:
             complete_df['wt ligand score'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 0, True), axis=1)
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
+
+    # write mutated protein sequences to fasta file
+    if args.fasta:
+        with open('{}_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
+            for p in proteins:
+                variants = []
+                for v in p.vars:
+                    variants = variants + p.vars[v]
+                c = [x.coding.values() for x in variants]
+                cf = list(itertools.chain.from_iterable(c))
+                cds = ','.join([y.cdsMutationSyntax for y in set(cf)])
+                aas = ','.join([y.aaMutationSyntax for y in set(cf)])
+                protein_outfile.write('>{}:{}:{}\n'.format(p.transcript_id, aas, cds))
+                protein_outfile.write('{}\n'.format(str(p)))
 
     # write dataframe to tsv
     complete_df.fillna('')

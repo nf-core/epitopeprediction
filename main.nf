@@ -34,8 +34,9 @@ def helpMessage() {
 
     Main options:
       --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Default: false.
-      --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
-      --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
+      --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references. Default: false
+      --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well. Default: false
+      --fasta [bool]                        Specifies that protein sequences will be written to a FASTA file. Default: false
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
       --max_peptide_length [int]            Specifies the maximum peptide length (not applied when '--peptides' is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa
       --min_peptide_length [int]            Specifies the minimum peptide length (not applied when '--peptides' is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa
@@ -191,6 +192,7 @@ if ( params.show_supported_models ) {
     summary['Self-Filter'] = params.filter_self
     summary['Tools'] = params.tools
     summary['Wild-types'] = params.wild_type
+    summary['Protein Fasta'] = params.fasta
     if ( params.peptides || params.proteins ) summary['Max. number of chunks for parallelization'] = params.peptides_split_maxchunks
     if ( params.peptides || params.proteins ) summary['Min. number of peptides in one chunk'] = params.peptides_split_minchunksize
 }
@@ -408,6 +410,7 @@ process peptidePrediction {
    def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
+   def fasta = params.fasta ? "--fasta" : ""
    """
    # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
    mkdir -p mhcflurry-data
@@ -424,7 +427,8 @@ process peptidePrediction {
                          --versions ${software_versions} \
                          --reference ${params.genome_version} \
                          ${ref_prot} \
-                         ${wt}
+                         ${wt} \
+                         ${fasta}
    """
 }
 
