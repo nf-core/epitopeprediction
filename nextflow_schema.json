@@ -141,10 +141,10 @@
                     "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
                     "description": "Specifies whether wild-type sequences should be predicted."
                 },
-                "fasta": {
+                "fasta_output": {
                     "type": "boolean",
-                    "description": "Specifies that protein sequences will be written to a FASTA file.",
-                    "help_text": "Specifies that protein sequences will be written to a FASTA file."
+                    "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
+                    "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences."
                 },
                 "show_supported_models": {
                     "type": "boolean",

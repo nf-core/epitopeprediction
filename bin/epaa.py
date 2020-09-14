@@ -934,7 +934,7 @@ def __main__():
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
     parser.add_argument('-wt', "--wild_type", help="Add wild type sequences of mutated peptides to output", required=False, action='store_true')
-    parser.add_argument('-fa', "--fasta", help="Create FASTA file with mutated protein sequences", required=False, action='store_true')
+    parser.add_argument('-fo', "--fasta_output", help="Create FASTA file with protein sequences", required=False, action='store_true')
     parser.add_argument('-rp', "--reference_proteome", help="Reference proteome for self-filtering", required=False)
     parser.add_argument('-gr', "--gene_reference", help="List of gene IDs for ID mapping.", required=False)
     parser.add_argument('-pq', "--protein_quantification", help="File with protein quantification values")
@@ -1100,7 +1100,7 @@ def __main__():
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
 
     # write mutated protein sequences to fasta file
-    if args.fasta:
+    if args.fasta_output:
         with open('{}_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
             for p in proteins:
                 variants = []

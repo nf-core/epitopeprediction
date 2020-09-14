@@ -33,6 +33,8 @@ HTHVYLFLS 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 0.0 0.0 False False False c.173C>A p.Pro58His
 ```
 
+When the parameter `--fasta_output` is specified a `FASTA` file will be generated that contains the sequences of proteins that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
+
 ### Supported models
 
 When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder as well.
