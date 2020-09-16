@@ -80,6 +80,9 @@ ch_split_variants = Channel.empty()
 ch_alleles = Channel.empty()
 ch_check_alleles = Channel.empty()
 
+// Store input base name for later
+def input_base_name = ''
+
 if ( !params.show_supported_models ){
     if ( params.peptides ) {
         if ( params.fasta_output ) {
@@ -88,6 +91,7 @@ if ( !params.show_supported_models ){
         if ( params.wild_type ) {
             exit 1, "Peptide input not compatible with wild-type sequence generation."
         }
+        input_base_name = file(params.peptides).baseName
         Channel
             .fromPath(params.peptides, checkIfExists: true)
             .set { ch_peptides }
@@ -100,11 +104,13 @@ if ( !params.show_supported_models ){
         if ( params.wild_type ) {
             exit 1, "Protein input not compatible with wild-type sequence generation."
         }
+        input_base_name = file(params.proteins).baseName
         Channel
             .fromPath(params.proteins, checkIfExists: true)
             .set { ch_proteins }
     }
     else if (params.input) {
+        input_base_name = file(params.input).baseName
         Channel
             .fromPath(params.input, checkIfExists: true)
             .set { ch_split_variants }
@@ -411,6 +417,7 @@ process peptidePrediction {
    output:
    file "*.tsv" into ch_predicted_peptides
    file "*.json" into ch_json_reports
+   file "*.fasta" optional true into ch_protein_fastas
    
    script:
    def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
@@ -442,20 +449,40 @@ process peptidePrediction {
  * STEP 3 - Combine epitope prediction results
  */
 process mergeResults {
-    publishDir "${params.outdir}/results", mode: 'copy'
+    publishDir "${params.outdir}/predictions", mode: 'copy'
 
     input:
     file predictions from ch_predicted_peptides.collect()
 
     output:
-    file 'prediction_result.tsv'
+    file "${input_base_name}_prediction_result.tsv"
 
     script:
     def single = predictions instanceof Path ? 1 : predictions.size()
     def merge = (single == 1) ? 'cat' : 'csvtk concat -t'
 
     """
-    $merge $predictions > prediction_result.tsv
+    $merge $predictions > ${input_base_name}_prediction_result.tsv
+    """
+}
+
+/*
+ * STEP 3(2) optional - Combine protein sequences
+ */
+process mergeFastas {
+    publishDir "${params.outdir}/predictions", mode: 'copy'
+
+    input:
+    file proteins from ch_protein_fastas.collect()
+
+    output:
+    file "${input_base_name}_prediction_proteins.fasta"
+
+    when:
+    params.fasta_output
+
+    """
+    cat $proteins > ${input_base_name}_prediction_proteins.fasta
     """
 }
 
@@ -464,17 +491,17 @@ process mergeResults {
  */
 
 process mergeReports {
-    publishDir "${params.outdir}/results", mode: 'copy'
+    publishDir "${params.outdir}/predictions", mode: 'copy'
 
     input:
     file jsons from ch_json_reports.collect()
 
     output:
-    file 'prediction_report.json'
+    file "${input_base_name}_prediction_report.json"
 
     script:
     def single = jsons instanceof Path ? 1 : jsons.size()
-    def command = (single == 1) ? "cat ${jsons} > prediction_report.json" : "merge_jsons.py --input \$PWD"
+    def command = (single == 1) ? "merge_jsons.py --single_input ${jsons} --prefix ${input_base_name}" : "merge_jsons.py --input \$PWD --prefix ${input_base_name}"
 
     """
     $command

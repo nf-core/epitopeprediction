@@ -16,11 +16,11 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 [FRED2](https://github.com/FRED-2) is used to perform the prediction of Epitopes on the given data, independent of the chosen `tools` to perform the prediction.
 
-**Output directory: `results/`**
+**Output directory: `predictions/`**
 
-* `prediction_report.json`
+* `${input_base_name}_prediction_report.json`
   * The predicted epitopes in JSON format for downstream analysis tasks
-* `prediction_report.tsv`
+* `${input_base_name}_prediction_results.tsv`
   * The predicted epitopes in TSV format for further processing.
 
 An example report looks like this in TSV format:
@@ -34,6 +34,11 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 ```
 
 When the parameter `--fasta_output` is specified a `FASTA` file will be generated that contains the sequences of proteins that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
+
+**Output directory: `predictions/`**
+
+* `${input_base_name}_prediction_proteins.fasta`
+  * The sequences of proteins, affected by provided variants, in FASTA format.
 
 ### Supported models
 
