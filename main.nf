@@ -34,8 +34,9 @@ def helpMessage() {
 
     Main options:
       --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Default: false.
-      --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references Default: false
-      --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
+      --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references. Default: false
+      --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well. Default: false
+      --fasta_output [bool]                 Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file. Default: false
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
       --max_peptide_length [int]            Specifies the maximum peptide length (not applied when '--peptides' is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa
       --min_peptide_length [int]            Specifies the minimum peptide length (not applied when '--peptides' is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa
@@ -79,25 +80,37 @@ ch_split_variants = Channel.empty()
 ch_alleles = Channel.empty()
 ch_check_alleles = Channel.empty()
 
+// Store input base name for later
+def input_base_name = ''
+
 if ( !params.show_supported_models ){
     if ( params.peptides ) {
+        if ( params.fasta_output ) {
+            exit 1, "Peptide input not compatible with protein sequence FASTA output."
+        }
         if ( params.wild_type ) {
             exit 1, "Peptide input not compatible with wild-type sequence generation."
         }
+        input_base_name = file(params.peptides).baseName
         Channel
             .fromPath(params.peptides, checkIfExists: true)
             .set { ch_peptides }
             (ch_peptides, ch_check_peptides) = ch_peptides.into(2)
     }
     else if ( params.proteins ) {
+        if ( params.fasta_output ) {
+            exit 1, "Protein input not compatible with protein sequence FASTA output."
+        }
         if ( params.wild_type ) {
             exit 1, "Protein input not compatible with wild-type sequence generation."
         }
+        input_base_name = file(params.proteins).baseName
         Channel
             .fromPath(params.proteins, checkIfExists: true)
             .set { ch_proteins }
     }
     else if (params.input) {
+        input_base_name = file(params.input).baseName
         Channel
             .fromPath(params.input, checkIfExists: true)
             .set { ch_split_variants }
@@ -175,7 +188,7 @@ summary['Run Name']         = custom_runName ?: workflow.runName
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
 //Pipeline Parameters
 if ( params.show_supported_models ) {
-    summary['Show supported models'] = params.show_supported_models
+    summary['Show Supported Models'] = params.show_supported_models
 } else {
     if ( params.input ) summary['Variants'] = params.input
     if ( params.peptides ) summary['Peptides'] = params.peptides
@@ -187,19 +200,20 @@ if ( params.show_supported_models ) {
     }
     summary['MHC Class'] = params.mhc_class
     if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome_version
-    if ( params.proteome ) summary['Reference proteome'] = params.proteome
+    if ( params.proteome ) summary['Reference Proteome'] = params.proteome
     summary['Self-Filter'] = params.filter_self
     summary['Tools'] = params.tools
     summary['Wild-types'] = params.wild_type
-    if ( params.peptides || params.proteins ) summary['Max. number of chunks for parallelization'] = params.peptides_split_maxchunks
-    if ( params.peptides || params.proteins ) summary['Min. number of peptides in one chunk'] = params.peptides_split_minchunksize
+    summary['Protein FASTA Output'] = params.fasta_output
+    if ( params.peptides || params.proteins ) summary['Max. Number of Chunks for Parallelization'] = params.peptides_split_maxchunks
+    if ( params.peptides || params.proteins ) summary['Min. Number of Peptides in One Chunk'] = params.peptides_split_minchunksize
 }
-summary['Memory mode']      = params.mem_mode
+summary['Memory Mode']      = params.mem_mode
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
-summary['Output dir']       = params.outdir
-summary['Launch dir']       = workflow.launchDir
-summary['Working dir']      = workflow.workDir
-summary['Script dir']       = workflow.projectDir
+summary['Output Dir']       = params.outdir
+summary['Launch Dir']       = workflow.launchDir
+summary['Working Dir']      = workflow.workDir
+summary['Script Dir']       = workflow.projectDir
 summary['User']             = workflow.userName
 if (workflow.profile.contains('awsbatch')) {
     summary['AWS Region']   = params.awsregion
@@ -403,11 +417,13 @@ process peptidePrediction {
    output:
    file "*.tsv" into ch_predicted_peptides
    file "*.json" into ch_json_reports
+   file "*.fasta" optional true into ch_protein_fastas
    
    script:
    def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
+   def fasta_output = params.fasta_output ? "--fasta_output" : ""
    """
    # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
    mkdir -p mhcflurry-data
@@ -424,7 +440,8 @@ process peptidePrediction {
                          --versions ${software_versions} \
                          --reference ${params.genome_version} \
                          ${ref_prot} \
-                         ${wt}
+                         ${wt} \
+                         ${fasta_output}
    """
 }
 
@@ -432,20 +449,40 @@ process peptidePrediction {
  * STEP 3 - Combine epitope prediction results
  */
 process mergeResults {
-    publishDir "${params.outdir}/results", mode: 'copy'
+    publishDir "${params.outdir}/predictions", mode: 'copy'
 
     input:
     file predictions from ch_predicted_peptides.collect()
 
     output:
-    file 'prediction_result.tsv'
+    file "${input_base_name}_prediction_result.tsv"
 
     script:
     def single = predictions instanceof Path ? 1 : predictions.size()
     def merge = (single == 1) ? 'cat' : 'csvtk concat -t'
 
     """
-    $merge $predictions > prediction_result.tsv
+    $merge $predictions > ${input_base_name}_prediction_result.tsv
+    """
+}
+
+/*
+ * STEP 3(2) optional - Combine protein sequences
+ */
+process mergeFastas {
+    publishDir "${params.outdir}/predictions", mode: 'copy'
+
+    input:
+    file proteins from ch_protein_fastas.collect()
+
+    output:
+    file "${input_base_name}_prediction_proteins.fasta"
+
+    when:
+    params.fasta_output
+
+    """
+    cat $proteins > ${input_base_name}_prediction_proteins.fasta
     """
 }
 
@@ -454,17 +491,17 @@ process mergeResults {
  */
 
 process mergeReports {
-    publishDir "${params.outdir}/results", mode: 'copy'
+    publishDir "${params.outdir}/predictions", mode: 'copy'
 
     input:
     file jsons from ch_json_reports.collect()
 
     output:
-    file 'prediction_report.json'
+    file "${input_base_name}_prediction_report.json"
 
     script:
     def single = jsons instanceof Path ? 1 : jsons.size()
-    def command = (single == 1) ? "cat ${jsons} > prediction_report.json" : "merge_jsons.py --input \$PWD"
+    def command = (single == 1) ? "merge_jsons.py --single_input ${jsons} --prefix ${input_base_name}" : "merge_jsons.py --input \$PWD --prefix ${input_base_name}"
 
     """
     $command

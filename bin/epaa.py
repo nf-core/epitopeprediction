@@ -224,6 +224,7 @@ def read_vcf(filename, pass_only=True):
         r = str(record.REF)
         v_list = record.ALT
         f = record.FILTER
+
         if pass_only and f:
             continue
 
@@ -587,6 +588,7 @@ def create_ligandomics_column_value_for_result(row, lig_id, val, wild_type):
     else:
         return ''
 
+
 def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference):
     result = {}
     result_swissProt = {}
@@ -836,9 +838,9 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         df = df.rename(columns={'Method': 'method'})
         pred_dataframes.append(df)
 
-    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ] ,'number_of_variants': len(variants_all), 'number_of_peptides': len(all_peptides), 'number_of_peptides_after_filtering': len(all_peptides_filtered)}
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ] ,'number_of_variants': len(variants_all), 'number_of_unique_peptides': [str(p) for p in all_peptides], 'number_of_unique_peptides_after_filtering': [str(p) for p in all_peptides_filtered]}
 
-    return pred_dataframes, statistics, all_peptides_filtered
+    return pred_dataframes, statistics, all_peptides_filtered, prots
 
 
 def make_predictions_from_peptides(peptides, methods, alleles, protein_db, identifier, metadata):
@@ -913,10 +915,8 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
         pred_dataframes.append(df)
 
     # write prediction statistics
-    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],'number_of_variants': '-', 'number_of_peptides': len(peptides), 'number_of_peptides_after_filtering': len(peptides_filtered)}
-
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],'number_of_variants': '-', 'number_of_unique_peptides': [str(p) for p in peptides], 'number_of_unique_peptides_after_filtering': [str(p) for p in peptides_filtered]}
     return pred_dataframes, statistics
-
 
 def __main__():
     parser = argparse.ArgumentParser(description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles. 
@@ -934,6 +934,7 @@ def __main__():
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
     parser.add_argument('-wt', "--wild_type", help="Add wild type sequences of mutated peptides to output", required=False, action='store_true')
+    parser.add_argument('-fo', "--fasta_output", help="Create FASTA file with protein sequences", required=False, action='store_true')
     parser.add_argument('-rp', "--reference_proteome", help="Reference proteome for self-filtering", required=False)
     parser.add_argument('-gr', "--gene_reference", help="List of gene IDs for ID mapping.", required=False)
     parser.add_argument('-pq', "--protein_quantification", help="File with protein quantification values")
@@ -1001,12 +1002,12 @@ def __main__():
         if args.peptides:
             pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
             pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
     # concat dataframes for all peptide lengths
     try:
@@ -1098,11 +1099,25 @@ def __main__():
             complete_df['wt ligand score'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 0, True), axis=1)
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
 
+    # write mutated protein sequences to fasta file
+    if args.fasta_output:
+        with open('{}_prediction_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
+            for p in proteins:
+                variants = []
+                for v in p.vars:
+                    variants = variants + p.vars[v]
+                c = [x.coding.values() for x in variants]
+                cf = list(itertools.chain.from_iterable(c))
+                cds = ','.join([y.cdsMutationSyntax for y in set(cf)])
+                aas = ','.join([y.aaMutationSyntax for y in set(cf)])
+                protein_outfile.write('>{}:{}:{}\n'.format(p.transcript_id, aas, cds))
+                protein_outfile.write('{}\n'.format(str(p)))
+
     # write dataframe to tsv
     complete_df.fillna('')
     complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
 
-    statistics['number_of_predictions'] = complete_df.shape[0]
+    statistics['number_of_predictions'] = len(complete_df)
     statistics['number_of_binders'] = len(pos_predictions)
     statistics['number_of_nonbinders'] = len(neg_predictions)
     statistics['number_of_unique_binders'] = list(set(binders))
