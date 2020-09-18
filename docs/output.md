@@ -18,9 +18,9 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 **Output directory: `predictions/`**
 
-* `${input_base_name}_prediction_report.json`
+* `[input_base_name]_prediction_report.json`
   * The predicted epitopes in JSON format for downstream analysis tasks
-* `${input_base_name}_prediction_results.tsv`
+* `[input_base_name]_prediction_results.tsv`
   * The predicted epitopes in TSV format for further processing.
 
 An example report looks like this in TSV format:
@@ -37,7 +37,7 @@ When the parameter `--fasta_output` is specified a `FASTA` file will be generate
 
 **Output directory: `predictions/`**
 
-* `${input_base_name}_prediction_proteins.fasta`
+* `[input_base_name]_prediction_proteins.fasta`
   * The sequences of proteins, affected by provided variants, in FASTA format.
 
 ### Supported models
