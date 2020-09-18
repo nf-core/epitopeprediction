@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+- [#58](https://github.com/nf-core/epitopeprediction/pull/58) - Add tests for MHCnuggets and MHCflurry
 - [#57](https://github.com/nf-core/epitopeprediction/pull/57) - Add option (`--fasta_output`) to write out FASTA file with protein sequences
 - [#45](https://github.com/nf-core/epitopeprediction/pull/45) - Add test for FASTA input
 - [#44](https://github.com/nf-core/epitopeprediction/pull/44) - Add parameter (`--show_supported_models`) to write out supported models in files
