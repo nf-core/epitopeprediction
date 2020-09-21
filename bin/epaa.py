@@ -88,7 +88,7 @@ def read_GSvar(filename, pass_only=True):
     global ID_SYSTEM_USED
     RE = re.compile("(\w+):([\w.]+):([&\w]+):\w*:exon(\d+)\D*\d*:(c.\D*([_\d]+)\D*):(p.\D*(\d+)\w*)")
 
-    metadata_list = ["vardbid", "normal_dp", "tumor_dp", "tumor_af", "normal_af", "rna_tum_freq", "rna_tum_depth"]
+    exclusion_list = ["start", "end", "#chr", "ref", "obs", "gene", "tumour_genotype", "coding_and_splicing_details", "variant_details", "variant_type", "coding_and_splicing"]
 
     list_vars = list()
     lines = list()
@@ -104,6 +104,10 @@ def read_GSvar(filename, pass_only=True):
                 logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
                 continue
             lines.append(row)
+    
+    # get list of additional metadata
+    metadata_list = set(tsvreader.fieldnames) - set(exclusion_list)
+    
     for mut_id, line in enumerate(lines):
         if "filter" in line and pass_only and line["filter"].strip():
             continue
@@ -112,16 +116,6 @@ def read_GSvar(filename, pass_only=True):
         chrom = line["#chr"]
         ref = line["ref"]
         alt = line["obs"]
-
-        # metadata
-        variation_dbid = line.get("dbSNP", '')
-        norm_depth = line.get("normal_dp", '')
-        tum_depth = line.get("tumor_dp", '')
-        tum_af = line.get("tumor_af", '')
-        normal_af = line.get("normal_af", '')
-        rna_tum_freq = line.get("rna_tum_freq", '')
-        rna_tum_dp = line.get("rna_tum_depth", '')
-
         gene = line.get("gene", '')
 
         isHomozygous = True if (('tumour_genotype' in line) and (line['tumour_genotype'].split('/')[0] == line['tumour_genotype'].split('/')[1])) else False
@@ -169,13 +163,11 @@ def read_GSvar(filename, pass_only=True):
         if coding:
             var = Variant(mut_id, vt, chrom.strip('chr'), int(genome_start), ref.upper(), alt.upper(), coding, isHomozygous, isSynonymous=isyn)
             var.gene = gene
-            var.log_metadata("vardbid", variation_dbid)
-            var.log_metadata("normal_dp", norm_depth)
-            var.log_metadata("tumor_dp", tum_depth)
-            var.log_metadata("tumor_af", tum_af)
-            var.log_metadata("normal_af", normal_af)
-            var.log_metadata("rna_tum_freq", rna_tum_freq)
-            var.log_metadata("rna_tum_depth", rna_tum_dp)
+
+            # metadata logging
+            for meta_name in metadata_list:
+                var.log_metadata(meta_name, line.get(meta_name, ''))
+
             dict_vars[var] = var
             list_vars.append(var)
 
