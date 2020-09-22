@@ -88,6 +88,7 @@ def read_GSvar(filename, pass_only=True):
     global ID_SYSTEM_USED
     RE = re.compile("(\w+):([\w.]+):([&\w]+):\w*:exon(\d+)\D*\d*:(c.\D*([_\d]+)\D*):(p.\D*(\d+)\w*)")
 
+    # list of mandatory (meta)data
     exclusion_list = ["start", "end", "#chr", "ref", "obs", "gene", "tumour_genotype", "coding_and_splicing_details", "variant_details", "variant_type", "coding_and_splicing"]
 
     list_vars = list()
@@ -107,7 +108,7 @@ def read_GSvar(filename, pass_only=True):
     
     # get list of additional metadata
     metadata_list = set(tsvreader.fieldnames) - set(exclusion_list)
-    
+
     for mut_id, line in enumerate(lines):
         if "filter" in line and pass_only and line["filter"].strip():
             continue
@@ -204,10 +205,27 @@ def read_vcf(filename, pass_only=True):
         vcf_reader = vcf.Reader(tsvfile)
         vl = [r for r in vcf_reader]
 
+    # list of mandatory (meta)data
+    exclusion_list = ["ANN"]
+
+    # DB identifier of variants
+    inclusion_list = ["vardbid"]
+
+    # get lists of additional metadata
+    metadata_list = set(vcf_reader.infos.keys()) - set(exclusion_list)
+    metadata_list.update(set(inclusion_list))
+
+    format_list = set(vcf_reader.formats.keys())
+
     dict_vars = {}
     list_vars = []
     transcript_ids = []
     genotye_dict = {"het": False, "hom": True, "ref": True}
+
+    # should we add metadata to the report?
+    #logger.info(vcf_reader.metadata.keys())
+
+    final_metadata_list = []
 
     for num, record in enumerate(vl):
         c = record.CHROM.strip('chr')
@@ -301,6 +319,11 @@ def read_vcf(filename, pass_only=True):
                     var = Variant("line" + str(num), vt, c, pos, reference, alternative, coding, isHomozygous, isSynonymous)
                     var.gene = gene
                     var.log_metadata("vardbid", variation_dbid)
+                    final_metadata_list.append("vardbid")
+                    for metadata_name in metadata_list:
+                        if metadata_name in record.INFO:
+                            final_metadata_list.append(metadata_name)
+                            var.log_metadata(metadata_name, record.INFO[metadata_name])
                     dict_vars[var] = var
                     list_vars.append(var)
 
@@ -316,11 +339,11 @@ def read_vcf(filename, pass_only=True):
             for v in vs:
                 vs_new = Variant(v.id, v.type, v.chrom, v.genomePos, v.ref, v.obs, v.coding, True, v.isSynonymous)
                 vs_new.gene = v.gene
-                for m in ["vardbid"]:
+                for m in metadata_name:
                     vs_new.log_metadata(m, v.get_metadata(m))
                 dict_vars[v] = vs_new
 
-    return dict_vars.values(), transcript_ids
+    return dict_vars.values(), transcript_ids, final_metadata_list
 
 
 def read_peptide_input(filename):
@@ -954,7 +977,7 @@ def __main__():
         if args.somatic_mutations.endswith('.GSvar') or args.somatic_mutations.endswith('.tsv'):
             vl, transcripts, metadata = read_GSvar(args.somatic_mutations)
         elif args.somatic_mutations.endswith('.vcf'):
-            vl, transcripts = read_vcf(args.somatic_mutations)
+            vl, transcripts, metadata = read_vcf(args.somatic_mutations)
 
         transcripts = list(set(transcripts))
         transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(ID_SYSTEM_USED, transcripts, references[args.reference], args.reference)
