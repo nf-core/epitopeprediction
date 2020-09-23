@@ -214,19 +214,14 @@ def read_vcf(filename, pass_only=True):
     # get lists of additional metadata
     metadata_list = set(vcf_reader.infos.keys()) - set(exclusion_list)
     metadata_list.update(set(inclusion_list))
-
     format_list = set(vcf_reader.formats.keys())
+    final_metadata_list = []
 
     dict_vars = {}
     list_vars = []
     transcript_ids = []
     genotye_dict = {"het": False, "hom": True, "ref": True}
-
-    # should we add metadata to the report?
-    #logger.info(vcf_reader.metadata.keys())
-
-    final_metadata_list = []
-
+    
     for num, record in enumerate(vl):
         c = record.CHROM.strip('chr')
         p = record.POS - 1
@@ -324,6 +319,16 @@ def read_vcf(filename, pass_only=True):
                         if metadata_name in record.INFO:
                             final_metadata_list.append(metadata_name)
                             var.log_metadata(metadata_name, record.INFO[metadata_name])
+                    
+                    for sample in record.samples:
+                        for format_key in format_list:
+                            format_header = '{}.{}'.format(sample.sample, format_key)
+                            final_metadata_list.append(format_header)
+                            if isinstance(sample[format_key], list):
+                                format_value = ','.join([str(i) for i in sample[format_key]])
+                            else:
+                                format_value = sample[format_key]
+                            var.log_metadata(format_header, format_value)
                     dict_vars[var] = var
                     list_vars.append(var)
 
