@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- [#59](https://github.com/nf-core/epitopeprediction/pull/59) - Parse and store metadata dynamically for variant data
 - [#50](https://github.com/nf-core/epitopeprediction/pull/50) - Change parameter to specify the genome version to `--genome_version` ( `--genome` deprecated)
 - [#50](https://github.com/nf-core/epitopeprediction/pull/50) - Merge template updates (`v1.10.1`, and `v1.10.2`)
 - [#47](https://github.com/nf-core/epitopeprediction/pull/47) - Update `FRED2` to version 2.0.7
