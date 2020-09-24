@@ -6,9 +6,6 @@
  nf-core/epitopeprediction Analysis Pipeline.
  #### Homepage / Documentation
  https://github.com/nf-core/epitopeprediction
- #### Authors
- Christopher Mohr christopher-mohr <christopher.mohr@qbic.uni-tuebingen.de> - https://github.com/christopher-mohr
- Alexander Peltzer apeltzer <alexander.peltzer@qbic.uni-tuebingen.de> - https://github.com/apeltzer
 ----------------------------------------------------------------------------------------
 */
 
@@ -20,7 +17,7 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/epitopeprediction --input '*.vcf.gz' -profile docker
+    nextflow run nf-core/epitopeprediction --input '*.vcf' -profile docker
 
     Mandatory arguments:
       --input [file]                        Path to input data (must be surrounded with quotes)
