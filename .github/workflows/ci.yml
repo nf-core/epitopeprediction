@@ -34,13 +34,13 @@ jobs:
 
       - name: Build new docker image
         if: env.GIT_DIFF
-        run: docker build --no-cache . -t nfcore/epitopeprediction:dev
+        run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
 
       - name: Pull docker image
         if: ${{ !env.GIT_DIFF }}
         run: |
           docker pull nfcore/epitopeprediction:dev
-          docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
+          docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
 
       - name: Install Nextflow
         run: |
@@ -73,13 +73,13 @@ jobs:
               environment.yml
         - name: Build new docker image
           if: env.GIT_DIFF
-          run: docker build --no-cache . -t nfcore/epitopeprediction:dev
+          run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
 
         - name: Pull docker image
           if: ${{ !env.GIT_DIFF }}
           run: |
             docker pull nfcore/epitopeprediction:dev
-            docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
+            docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
         - name: Install Nextflow
           run: |
             wget -qO- get.nextflow.io | bash
