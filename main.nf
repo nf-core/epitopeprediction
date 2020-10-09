@@ -30,7 +30,7 @@ def helpMessage() {
       --proteins [file]                     Path to FASTA file containing protein sequences
 
     Main options:
-      --show_supported_models [str]         Writes out supported models. Does not run actual prediction pipeline. Default: false.
+      --show_supported_models [bool]         Writes out supported models. Does not run actual prediction pipeline. Default: false.
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references. Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well. Default: false
       --fasta_output [bool]                 Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file. Default: false
@@ -293,7 +293,7 @@ process showSupportedModels {
 
     script:
     """
-    check_supp_models.py --versions ${software_versions}
+    check_supported_models.py --versions ${software_versions}
     """
 }
 
