@@ -37,7 +37,7 @@ The prediction results are given as allele-specific score and affinity values pe
 
 * `Syfpeithi`:
   * **Affinity**: Calculated as the half-max score of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
-  * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence
+  * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
 Peptides are considered binders if the affinity (half-max score) is higher than 50.
 * `MHCflurry`:
   * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
@@ -55,7 +55,7 @@ When the parameter `--fasta_output` is specified a `FASTA` file will be generate
 
 ### Supported models
 
-When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder as well.
+When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder.
 
 **Output directory: `supported_models/`**
 

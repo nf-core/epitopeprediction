@@ -20,17 +20,17 @@ def helpMessage() {
     nextflow run nf-core/epitopeprediction --input '*.vcf' -profile docker
 
     Mandatory arguments:
-      --input [file]                        Path to input data (must be surrounded with quotes)
-      --alleles [file]                      Path to the file containing the MHC alleles
+      --input [file]                        Path to input data (must be surrounded with quotes). Variants in VCF or TSV format.
+      --alleles [file]                      Path to the file containing the MHC alleles.
       -profile [str]                        Configuration profile to use. Can use multiple (comma separated)
                                             Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
     Alternative inputs:
-      --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column)
-      --proteins [file]                     Path to FASTA file containing protein sequences
+      --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column).
+      --proteins [file]                     Path to FASTA file containing protein sequences.
 
     Main options:
-      --show_supported_models [bool]         Writes out supported models. Does not run actual prediction pipeline. Default: false.
+      --show_supported_models [bool]        Writes out supported models. Does not run actual prediction pipeline. Default: false.
       --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references. Default: false
       --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well. Default: false
       --fasta_output [bool]                 Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file. Default: false
@@ -80,6 +80,7 @@ ch_check_alleles = Channel.empty()
 // Store input base name for later
 def input_base_name = ''
 
+// Validating parameters
 if ( !params.show_supported_models ){
     if ( params.peptides ) {
         if ( params.fasta_output ) {
