@@ -36,7 +36,7 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 The prediction results are given as allele-specific score and affinity values per peptide. The computation of these values depends on the applied prediction method:
 
 * [`Syfpeithi`](http://www.syfpeithi.de) :
-  * **Affinity**: Calculated for the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
+  * **Affinity**: Calculated based on the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
   * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
 Peptides are considered binders if the affinity is higher than 50.
 * [`MHCflurry`](https://github.com/openvax/mhcflurry):
