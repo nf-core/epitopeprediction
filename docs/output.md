@@ -35,16 +35,16 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 
 The prediction results are given as allele-specific score and affinity values per peptide. The computation of these values depends on the applied prediction method:
 
-* `Syfpeithi`:
-  * **Affinity**: Calculated as the half-max score of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
+* [`Syfpeithi`](http://www.syfpeithi.de) :
+  * **Affinity**: Calculated for the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
   * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
-Peptides are considered binders if the affinity (half-max score) is higher than 50.
-* `MHCflurry`:
+Peptides are considered binders if the affinity is higher than 50.
+* [`MHCflurry`](https://github.com/openvax/mhcflurry):
   * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
-  * **Score**: The provided score is calculated from the affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`. Thus, it is the log-transformed predicted binding affinity.
-* `MHCnuggets`:
+  * **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`.
+* [`MHCnuggets`](https://github.com/KarchinLab/mhcnuggets):
   * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
-  * **Score**: The provided score is calculated from the affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`. Thus, it is the log-transformed predicted binding affinity.
+  * **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`.
 
 When the parameter `--fasta_output` is specified a `FASTA` file will be generated that contains the sequences of proteins that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
 
