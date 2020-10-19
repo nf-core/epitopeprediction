@@ -717,7 +717,7 @@ def create_score_values(j, method):
 def create_affinity_values(allele, length, j, method, max_scores, allele_strings):
     if not pd.isnull(j):
         if 'syf' in method:
-            return max(0, round(((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)) / 100.0) * 100, 2))
+            return max(0, round((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)), 2))
         elif any(m in method for m in ['mhcnuggets','mhcflurry']):
             # mhcnuggets and mhcflurry return already IC50 affinity values
             return round(j, 2)
