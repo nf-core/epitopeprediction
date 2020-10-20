@@ -29,7 +29,13 @@ from datetime import datetime
 from string import Template
 
 __author__ = 'Christopher Mohr'
-VERSION = "1.0"
+VERSION = "1.1"
+
+# instantiate global logger object
+logger = logging.getLogger(__name__)
+# turn off passing of messages to root logger
+logger.propagate = False
+logger.setLevel(logging.DEBUG)
 
 ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
 transcriptProteinMap = {}
@@ -82,7 +88,8 @@ def read_GSvar(filename, pass_only=True):
     global ID_SYSTEM_USED
     RE = re.compile("(\w+):([\w.]+):([&\w]+):\w*:exon(\d+)\D*\d*:(c.\D*([_\d]+)\D*):(p.\D*(\d+)\w*)")
 
-    metadata_list = ["vardbid", "normal_dp", "tumor_dp", "tumor_af", "normal_af", "rna_tum_freq", "rna_tum_depth"]
+    # list of mandatory (meta)data
+    exclusion_list = ["start", "end", "#chr", "ref", "obs", "gene", "tumour_genotype", "coding_and_splicing_details", "variant_details", "variant_type", "coding_and_splicing"]
 
     list_vars = list()
     lines = list()
@@ -95,9 +102,13 @@ def read_GSvar(filename, pass_only=True):
         tsvreader = csv.DictReader((row for row in tsvfile if not row.startswith('##')), delimiter='\t')
         for row in tsvreader:
             if not check_min_req_GSvar(row):
-                logging.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
+                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
                 continue
             lines.append(row)
+    
+    # get list of additional metadata
+    metadata_list = set(tsvreader.fieldnames) - set(exclusion_list)
+
     for mut_id, line in enumerate(lines):
         if "filter" in line and pass_only and line["filter"].strip():
             continue
@@ -106,16 +117,6 @@ def read_GSvar(filename, pass_only=True):
         chrom = line["#chr"]
         ref = line["ref"]
         alt = line["obs"]
-
-        # metadata
-        variation_dbid = line.get("dbSNP", '')
-        norm_depth = line.get("normal_dp", '')
-        tum_depth = line.get("tumor_dp", '')
-        tum_af = line.get("tumor_af", '')
-        normal_af = line.get("normal_af", '')
-        rna_tum_freq = line.get("rna_tum_freq", '')
-        rna_tum_dp = line.get("rna_tum_depth", '')
-
         gene = line.get("gene", '')
 
         isHomozygous = True if (('tumour_genotype' in line) and (line['tumour_genotype'].split('/')[0] == line['tumour_genotype'].split('/')[1])) else False
@@ -163,13 +164,11 @@ def read_GSvar(filename, pass_only=True):
         if coding:
             var = Variant(mut_id, vt, chrom.strip('chr'), int(genome_start), ref.upper(), alt.upper(), coding, isHomozygous, isSynonymous=isyn)
             var.gene = gene
-            var.log_metadata("vardbid", variation_dbid)
-            var.log_metadata("normal_dp", norm_depth)
-            var.log_metadata("tumor_dp", tum_depth)
-            var.log_metadata("tumor_af", tum_af)
-            var.log_metadata("normal_af", normal_af)
-            var.log_metadata("rna_tum_freq", rna_tum_freq)
-            var.log_metadata("rna_tum_depth", rna_tum_dp)
+
+            # metadata logging
+            for meta_name in metadata_list:
+                var.log_metadata(meta_name, line.get(meta_name, ''))
+
             dict_vars[var] = var
             list_vars.append(var)
 
@@ -206,11 +205,23 @@ def read_vcf(filename, pass_only=True):
         vcf_reader = vcf.Reader(tsvfile)
         vl = [r for r in vcf_reader]
 
+    # list of mandatory (meta)data
+    exclusion_list = ["ANN"]
+
+    # DB identifier of variants
+    inclusion_list = ["vardbid"]
+
+    # get lists of additional metadata
+    metadata_list = set(vcf_reader.infos.keys()) - set(exclusion_list)
+    metadata_list.update(set(inclusion_list))
+    format_list = set(vcf_reader.formats.keys())
+    final_metadata_list = []
+
     dict_vars = {}
     list_vars = []
     transcript_ids = []
     genotye_dict = {"het": False, "hom": True, "ref": True}
-
+    
     for num, record in enumerate(vl):
         c = record.CHROM.strip('chr')
         p = record.POS - 1
@@ -218,6 +229,7 @@ def read_vcf(filename, pass_only=True):
         r = str(record.REF)
         v_list = record.ALT
         f = record.FILTER
+
         if pass_only and f:
             continue
 
@@ -302,6 +314,21 @@ def read_vcf(filename, pass_only=True):
                     var = Variant("line" + str(num), vt, c, pos, reference, alternative, coding, isHomozygous, isSynonymous)
                     var.gene = gene
                     var.log_metadata("vardbid", variation_dbid)
+                    final_metadata_list.append("vardbid")
+                    for metadata_name in metadata_list:
+                        if metadata_name in record.INFO:
+                            final_metadata_list.append(metadata_name)
+                            var.log_metadata(metadata_name, record.INFO[metadata_name])
+                    
+                    for sample in record.samples:
+                        for format_key in format_list:
+                            format_header = '{}.{}'.format(sample.sample, format_key)
+                            final_metadata_list.append(format_header)
+                            if isinstance(sample[format_key], list):
+                                format_value = ','.join([str(i) for i in sample[format_key]])
+                            else:
+                                format_value = sample[format_key]
+                            var.log_metadata(format_header, format_value)
                     dict_vars[var] = var
                     list_vars.append(var)
 
@@ -317,11 +344,11 @@ def read_vcf(filename, pass_only=True):
             for v in vs:
                 vs_new = Variant(v.id, v.type, v.chrom, v.genomePos, v.ref, v.obs, v.coding, True, v.isSynonymous)
                 vs_new.gene = v.gene
-                for m in ["vardbid"]:
+                for m in metadata_name:
                     vs_new.log_metadata(m, v.get_metadata(m))
                 dict_vars[v] = vs_new
 
-    return dict_vars.values(), transcript_ids
+    return dict_vars.values(), transcript_ids, final_metadata_list
 
 
 def read_peptide_input(filename):
@@ -330,6 +357,8 @@ def read_peptide_input(filename):
 
     '''expected columns (min required): id sequence'''
     with open(filename, 'r') as peptide_input:
+        # enable listing of protein names for each peptide
+        csv.field_size_limit(600000)
         reader = csv.DictReader(peptide_input, delimiter='\t')
         for row in reader:
             pep = Peptide(row['sequence'])
@@ -512,9 +541,6 @@ def create_metadata_column_value(pep, c):
 
 def create_wt_seq_column_value(pep, wtseqs):
     transcripts = [x for x in set(pep[0].get_all_transcripts())]
-    variants = []
-    #for t in transcript_ids:
-    #    variants.extend([v for v in pep[0].get_variants_by_protein(t)])
     wt = set([str(wtseqs['{}_{}'.format(str(pep[0]), t.transcript_id)]) for t in transcripts if bool(t.vars) and '{}_{}'.format(str(pep[0]), t.transcript_id) in wtseqs])
     if len(wt) is 0:
         return np.nan
@@ -549,7 +575,7 @@ def create_expression_column_value_for_result(row, dict, deseq, gene_id_lengths)
                     values.append((10.0**9 * float(dict[t])) / (float(gene_id_lengths[t]) * sum([float(dict[k]) for k in dict.keys() if ((not k.startswith('__')) & (k in gene_id_lengths))])))
                 else:
                     values.append((10.0**9 * float(dict[t])) / (float(len(row[0].get_all_transcripts()[0])) * sum([float(dict[k]) for k in dict.keys() if ((not k.startswith('__')) & (k in gene_id_lengths))])))
-                    logging.warning("FKPM value will be based on transcript length for {gene}. Because gene could not be found in the DB".format(gene=t))
+                    logger.warning("FKPM value will be based on transcript length for {gene}. Because gene could not be found in the DB".format(gene=t))
             else:
                 values.append(np.nan)
     values = ["{0:.2f}".format(value) for value in values]
@@ -581,6 +607,7 @@ def create_ligandomics_column_value_for_result(row, lig_id, val, wild_type):
         return lig_id[seq][val]
     else:
         return ''
+
 
 def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference):
     result = {}
@@ -671,11 +698,32 @@ def get_matrix_max_score(allele, length):
         return np.nan
 
 
+def create_score_values(j, method):
+    if not pd.isnull(j):
+        if 'syf' in method:
+            return round(j, 4)
+        elif any(m in method for m in ['mhcnuggets','mhcflurry']):
+            # convert IC50 -> affinity score in [0,1]
+            min_ic50 = 1.0
+            return round(1.0 - math.log(max(j,min_ic50), 50000), 4)
+        else:
+            # currently not applied (for methods such as netMHC)
+            return round(j, 4)
+
+    else:
+        return np.nan
+
+
 def create_affinity_values(allele, length, j, method, max_scores, allele_strings):
     if not pd.isnull(j):
         if 'syf' in method:
-            return round(((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)) / 100.0) * 100, 2)
+            return max(0, round((100.0 / float(max_scores[allele_strings[('%s_%s' % (str(allele), length))]]) * float(j)), 2))
+        elif any(m in method for m in ['mhcnuggets','mhcflurry']):
+            # mhcnuggets and mhcflurry return already IC50 affinity values
+            return round(j, 2)
         else:
+            # convert given affinity score in range [0,1] back to IC50 affinity value
+            # currently not applied (for methods such as netMHC)
             return round((50000**(1.0-float(j))), 2)
     else:
         return np.nan
@@ -743,9 +791,6 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
     # list to hold dataframes for all predictions
     pred_dataframes = []
 
-    # capture version of used tools
-    tools_map = {}
-
     prots = [p for p in generator.generate_proteins_from_transcripts(generator.generate_transcripts_from_variants(variants_all, martsadapter, ID_SYSTEM_USED))]
 
     for peplen in range(minlength, maxlength):
@@ -766,18 +811,17 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         results = []
 
         if len(filtered_peptides) > 0:
-            for m in methods:
+            for method, version in methods.items():
                 try:
-                    predictor = EpitopePredictorFactory(m)
-                    tools_map[m] = '{name}-{version}'.format(name=m, version=predictor.version)
+                    predictor = EpitopePredictorFactory(method, version=version)
                     results.extend([predictor.predict(filtered_peptides, alleles=alleles)])
                 except:
-                    logging.warning("Prediction for length {length} and allele {allele} not possible with {method}.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
+                    logger.warning("Prediction for length {length} and allele {allele} not possible with {method} version {version}.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=method, version=version))
 
         if(len(results) == 0):
             continue
 
-        df = results[0].merge_results(results[1:])
+        df = pd.concat(results)
 
         for a in alleles:
             conv_allele = "%s_%s%s" % (a.locus, a.supertype, a.subtype)
@@ -800,12 +844,12 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         df.reset_index(inplace=True)
 
         for c in df.columns:
-            if '*' in str(c):
+            if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
-                df['%s score' % c] = df['%s score' % c].map(lambda x: round(x, 4))
+                df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
         for c in metadata:
             df[c] = df.apply(lambda row: create_metadata_column_value(row, c), axis=1)
@@ -814,9 +858,9 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
         df = df.rename(columns={'Method': 'method'})
         pred_dataframes.append(df)
 
-    statistics = {'prediction_methods': tools_map.values() ,'number_of_variants': len(variants_all), 'number_of_peptides': len(all_peptides), 'number_of_peptides_after_filtering': len(all_peptides_filtered)}
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ] ,'number_of_variants': len(variants_all), 'number_of_unique_peptides': [str(p) for p in all_peptides], 'number_of_unique_peptides_after_filtering': [str(p) for p in all_peptides_filtered]}
 
-    return pred_dataframes, statistics, all_peptides_filtered, tools_map
+    return pred_dataframes, statistics, all_peptides_filtered, prots
 
 
 def make_predictions_from_peptides(peptides, methods, alleles, protein_db, identifier, metadata):
@@ -834,9 +878,6 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
     # sort peptides by length (for predictions)
     sorted_peptides = {}
 
-    # capture version of used tools
-    tools_map = {}
-
     for p in peptides_filtered:
         length = len(str(p))
         if length in sorted_peptides:
@@ -847,18 +888,18 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
     for peplen in sorted_peptides:
         all_peptides_filtered = sorted_peptides[peplen]
         results = []
-        for m in methods:
+        for method, version in methods.items():
             try:
-                predictor = EpitopePredictorFactory(m)
-                tools_map[m] = '{name}-{version}'.format(name=m, version=predictor.version)
+                predictor = EpitopePredictorFactory(method, version=version)
                 results.extend([predictor.predict(all_peptides_filtered, alleles=alleles)])
             except:
-                logging.warning("Prediction for length {length} and allele {allele} not possible with {method}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=m))
+                logger.warning("Prediction for length {length} and allele {allele} not possible with {method} version {version}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=method, version=version))
 
         # merge dataframes of the performed predictions
         if(len(results) == 0):
-            continue;
-        df = results[0].merge_results(results[1:])
+            continue
+
+        df = pd.concat(results)
 
         df.insert(0, 'length', df.index.map(create_length_column_value))
 
@@ -882,21 +923,20 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
             df[c] = df.apply(lambda row: row[0].get_metadata(c)[0], axis=1)
 
         for c in df.columns:
-            if '*' in str(c):
+            if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
+                df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
         df = df.rename(columns={'Seq': 'sequence'})
         df = df.rename(columns={'Method': 'method'})
         pred_dataframes.append(df)
 
     # write prediction statistics
-    statistics = {'prediction_methods': tools_map.values(),'number_of_variants': '-', 'number_of_peptides': len(peptides), 'number_of_peptides_after_filtering': len(peptides_filtered)}
-
-    return pred_dataframes, statistics, tools_map
-
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],'number_of_variants': '-', 'number_of_unique_peptides': [str(p) for p in peptides], 'number_of_unique_peptides_after_filtering': [str(p) for p in peptides_filtered]}
+    return pred_dataframes, statistics
 
 def __main__():
     parser = argparse.ArgumentParser(description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles. 
@@ -908,39 +948,27 @@ def __main__():
     parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
     parser.add_argument('-l', "--max_length", help="Maximum peptide length")
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
-    parser.add_argument('-t', '--tools', help='Tools used for peptide predictions', required=True, type=str)
+    parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
+    parser.add_argument('-sv', "--versions", help="File containing parsed software version numbers.", required=True)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
     parser.add_argument('-wt', "--wild_type", help="Add wild type sequences of mutated peptides to output", required=False, action='store_true')
+    parser.add_argument('-fo', "--fasta_output", help="Create FASTA file with protein sequences", required=False, action='store_true')
     parser.add_argument('-rp', "--reference_proteome", help="Reference proteome for self-filtering", required=False)
     parser.add_argument('-gr', "--gene_reference", help="List of gene IDs for ID mapping.", required=False)
     parser.add_argument('-pq', "--protein_quantification", help="File with protein quantification values")
     parser.add_argument('-ge', "--gene_expression", help="File with expression analysis results")
     parser.add_argument('-de', "--diff_gene_expression", help="File with differential expression analysis results (DESeq2)")
     parser.add_argument('-li', "--ligandomics_id", help="Comma separated file with peptide sequence, score and median intensity of a ligandomics identification run.")
-    parser.add_argument('-o', "--output_dir", help="All files written will be put in this directory")
-
     args = parser.parse_args()
 
     if len(sys.argv) <= 1:
         parser.print_help()
         sys.exit(1)
 
-    if args.output_dir is not None:
-        try:
-            os.chdir(args.output_dir)
-            logging.basicConfig(filename=os.path.join(args.output_dir,'{}_prediction.log'.format(args.identifier)), filemode='w+',
-                        level=logging.DEBUG)
-            logging.info("Using provided data directory: {}".format(str(args.output_dir)))
-        except:
-            logging.info("No such directory, using current.")
-    else:
-        logging.basicConfig(filename='{}_prediction.log'.format(args.identifier), filemode='w+',
-                        level=logging.DEBUG)
-        logging.info("Using current data directory.")
-
-    logging.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
+    logger.addHandler(logging.FileHandler('{}_prediction.log'.format(args.identifier)))
+    logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     metadata = []
     references = {'GRCh37': 'http://feb2014.archive.ensembl.org', 'GRCh38': 'http://dec2016.archive.ensembl.org'}
@@ -954,7 +982,7 @@ def __main__():
         if args.somatic_mutations.endswith('.GSvar') or args.somatic_mutations.endswith('.tsv'):
             vl, transcripts, metadata = read_GSvar(args.somatic_mutations)
         elif args.somatic_mutations.endswith('.vcf'):
-            vl, transcripts = read_vcf(args.somatic_mutations)
+            vl, transcripts, metadata = read_vcf(args.somatic_mutations)
 
         transcripts = list(set(transcripts))
         transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(ID_SYSTEM_USED, transcripts, references[args.reference], args.reference)
@@ -968,7 +996,7 @@ def __main__():
     # create protein db instance for filtering self-peptides
     up_db = UniProtDB('sp')
     if args.filter_self:
-        logging.info('Reading human proteome')
+        logger.info('Reading human proteome')
 
         if os.path.isdir(args.reference_proteome):
             for filename in os.listdir(args.reference_proteome):
@@ -977,29 +1005,40 @@ def __main__():
         else:
             up_db.read_seqs(args.reference_proteome)
 
-    methods = [item for item in args.tools.split(',')]
+    selected_methods = [item for item in args.tools.split(',')]
+    with open(args.versions, 'r') as versions_file:
+        tool_version = [ (row[0], str(row[1][1:])) for row in csv.reader(versions_file, delimiter = "\t") ]
+        # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
+        tool_version.append(('syfpeithi', '1.0'))
+        # get for each selected method the corresponding tool version
+        methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
+
+    for method, version in methods.items():
+        if version not in EpitopePredictorFactory.available_methods()[method]:
+            raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
     # MHC class I or II predictions
     if args.mhcclass is 1:
         if args.peptides:
-            pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
-            pred_dataframes, statistics, tools_map = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, tools_map = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
     # concat dataframes for all peptide lengths
     try:
         complete_df = pd.concat(pred_dataframes)
     except:
         complete_df = pd.DataFrame()
-        logging.error("No predictions available.")
+        logger.error("No predictions available.")
 
     # replace method names with method names with version
-    complete_df.replace({'method': tools_map}, inplace=True)
+    # complete_df.replace({'method': methods}, inplace=True)
+    complete_df['method'] = complete_df['method'].apply(lambda x : x + '-' + methods[x] )
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
@@ -1080,11 +1119,25 @@ def __main__():
             complete_df['wt ligand score'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 0, True), axis=1)
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
 
+    # write mutated protein sequences to fasta file
+    if args.fasta_output:
+        with open('{}_prediction_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
+            for p in proteins:
+                variants = []
+                for v in p.vars:
+                    variants = variants + p.vars[v]
+                c = [x.coding.values() for x in variants]
+                cf = list(itertools.chain.from_iterable(c))
+                cds = ','.join([y.cdsMutationSyntax for y in set(cf)])
+                aas = ','.join([y.aaMutationSyntax for y in set(cf)])
+                protein_outfile.write('>{}:{}:{}\n'.format(p.transcript_id, aas, cds))
+                protein_outfile.write('{}\n'.format(str(p)))
+
     # write dataframe to tsv
     complete_df.fillna('')
     complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
 
-    statistics['number_of_predictions'] = complete_df.shape[0]
+    statistics['number_of_predictions'] = len(complete_df)
     statistics['number_of_binders'] = len(pos_predictions)
     statistics['number_of_nonbinders'] = len(neg_predictions)
     statistics['number_of_unique_binders'] = list(set(binders))
@@ -1092,6 +1145,8 @@ def __main__():
 
     with open('{}_report.json'.format(args.identifier), 'w') as json_out:
         json.dump(statistics, json_out)
+    
+    logger.info("Finished predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
 if __name__ == "__main__":
     __main__()

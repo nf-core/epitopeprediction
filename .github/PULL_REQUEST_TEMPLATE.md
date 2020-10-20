@@ -1,15 +1,20 @@
+<!--
+# nf-core/epitopeprediction pull request
+
 Many thanks for contributing to nf-core/epitopeprediction!
 
-Please fill in the appropriate checklist below (delete whatever is not relevant). These are the most common things requested on pull requests (PRs).
+Please fill in the appropriate checklist below (delete whatever is not relevant).
+These are the most common things requested on pull requests (PRs).
+
+Remember that PRs should be made against the dev branch, unless you're preparing a pipeline release.
+
+Learn more about contributing: [CONTRIBUTING.md](https://github.com/nf-core/epitopeprediction/tree/master/.github/CONTRIBUTING.md)
+-->
 
 ## PR checklist
- - [ ] This comment contains a description of changes (with reason)
- - [ ] If you've fixed a bug or added code that should be tested, add tests!
- - [ ] If necessary, also make a PR on the [nf-core/epitopeprediction branch on the nf-core/test-datasets repo]( https://github.com/nf-core/test-datasets/pull/new/nf-core/epitopeprediction)
- - [ ] Ensure the test suite passes (`nextflow run . -profile test,docker`).
- - [ ] Make sure your code lints (`nf-core lint .`).
- - [ ] Documentation in `docs` is updated
- - [ ] `CHANGELOG.md` is updated
- - [ ] `README.md` is updated
 
-**Learn more about contributing:** https://github.com/nf-core/epitopeprediction/tree/master/.github/CONTRIBUTING.md
+- [ ] This comment contains a description of changes (with reason)
+- [ ] `CHANGELOG.md` is updated
+- [ ] If you've fixed a bug or added code that should be tested, add tests!
+- [ ] Documentation in `docs` is updated
+- [ ] If necessary, also make a PR on the [nf-core/epitopeprediction branch on the nf-core/test-datasets repo](https://github.com/nf-core/test-datasets/pull/new/nf-core/epitopeprediction)

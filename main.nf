@@ -6,9 +6,6 @@
  nf-core/epitopeprediction Analysis Pipeline.
  #### Homepage / Documentation
  https://github.com/nf-core/epitopeprediction
- #### Authors
- Christopher Mohr christopher-mohr <christopher.mohr@qbic.uni-tuebingen.de> - https://github.com/christopher-mohr
- Alexander Peltzer apeltzer <alexander.peltzer@qbic.uni-tuebingen.de> - https://github.com/apeltzer
 ----------------------------------------------------------------------------------------
 */
 
@@ -20,38 +17,49 @@ def helpMessage() {
 
     The typical command for running the pipeline is as follows:
 
-    nextflow run nf-core/epitopeprediction -profile <docker/singularity/conda/institute> --input "*.vcf.gz"
+    nextflow run nf-core/epitopeprediction --input '*.vcf' -profile docker
 
     Mandatory arguments:
-      --input           Path to input data (must be surrounded with quotes)
-      --alleles                     Path to the file containing the MHC alleles
-      -profile                      Configuration profile to use. Can use multiple (comma separated)
-                                    Available: conda, docker, singularity, awsbatch, test and more
+      --input [file]                        Path to input data (must be surrounded with quotes). Variants in VCF or TSV format.
+      --alleles [file]                      Path to the file containing the MHC alleles.
+      -profile [str]                        Configuration profile to use. Can use multiple (comma separated)
+                                            Available: conda, docker, singularity, test, awsbatch, <institute> and more
 
     Alternative inputs:
-      --peptides                    Path to TSV file containing peptide sequences (minimum required: id and sequence column)
-    
-    Pipeline options:
-      --filter_self                 Specifies that peptides should be filtered against the specified human proteome references Default: false
-      --wild_type                   Specifies that wild-type sequences of mutated peptides should be predicted as well Default: false
-      --mhc_class                   Specifies whether the predictions should be done for MHC class I or class II. Default: 1
-      --max_peptide_length          Specifies the maximum peptide length Default: MHC class I: 11 aa, MHC class II: 16 aa 
-      --min_peptide_length          Specifies the minimum peptide length Default: MCH class I: 8 aa, MHC class II: 15 aa
-      --tools                       Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
+      --peptides [file]                     Path to TSV file containing peptide sequences (minimum required: id and sequence column).
+      --proteins [file]                     Path to FASTA file containing protein sequences.
 
-    References                      If not specified in the configuration file or you wish to overwrite any of the references
-      --genome                      Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
-      --proteome                    Specifies the reference proteome(s) used for self-filtering
-       
+    Main options:
+      --show_supported_models [bool]        Writes out supported models. Does not run actual prediction pipeline. Default: false.
+      --filter_self [bool]                  Specifies that peptides should be filtered against the specified human proteome references. Default: false
+      --wild_type  [bool]                   Specifies that wild-type sequences of mutated peptides should be predicted as well. Default: false
+      --fasta_output [bool]                 Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file. Default: false
+      --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
+      --max_peptide_length [int]            Specifies the maximum peptide length (not applied when '--peptides' is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa
+      --min_peptide_length [int]            Specifies the minimum peptide length (not applied when '--peptides' is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa
+      --tools [str]                         Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
+      --peptides_split_maxchunks [int]      Used in combination with '--peptides' or '--proteins': maximum number of peptide chunks that will be created for parallelization. Default: 100
+      --peptides_split_minchunksize [int]   Used in combination with '--peptides' or '--proteins': minimum number of peptides that should be written into one chunk. Default: 5000
+
+    References                              If not specified in the configuration file or you wish to overwrite any of the references
+      --genome_version [str]                Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
+      --proteome [path/file]                Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).
+
+      --mem_mode [str]                      Specifies which memory mode should be used for processes requiring a bit more memory, useful e.g. when running on arbitrary big protein or peptide input data.
+                                            Available: 'low', 'intermediate', 'high' (corresponding to max. 7.GB, 40.GB, 500.GB). Default: 'low'.
+
     Other options:
-      --outdir                      The output directory where the results will be saved
-      --email                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
-      -name                         Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic.
-      --max_multiqc_email_size      Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB)
+      --outdir [file]                       The output directory where the results will be saved
+      --publish_dir_mode [str]              Mode for publishing results in the output directory. Available: symlink, rellink, link, copy, copyNoFollow, move (Default: copy)
+      --email [email]                       Set this parameter to your e-mail address to get a summary e-mail with details of the run sent to you when the workflow exits
+      --email_on_fail [email]               Same as --email, except only send mail if the workflow is not successful
+      --max_multiqc_email_size [str]        Threshold size for MultiQC report to be attached in notification email. If file generated by pipeline exceeds the threshold, it will not be attached (Default: 25MB)
+      -name [str]                           Name for the pipeline run. If not specified, Nextflow will automatically generate a random mnemonic
 
     AWSBatch options:
-      --awsqueue                    The AWSBatch JobQueue that needs to be set when running on AWSBatch
-      --awsregion                   The AWS Region for your AWS Batch job to run on
+      --awsqueue [str]                      The AWSBatch JobQueue that needs to be set when running on AWSBatch
+      --awsregion [str]                     The AWS Region for your AWS Batch job to run on
+      --awscli [str]                        Path to the AWS CLI tool
     """.stripIndent()
 }
 
@@ -61,53 +69,87 @@ if (params.help) {
     exit 0
 }
 
-// Documentation and Reporting Output
-multiqc_config = file(params.multiqc_config)
-output_docs = file("$baseDir/docs/output.md")
-
-
-//Generate empty channels for peptides and variants
-ch_split_peptides = Channel.empty()
+//Generate empty channels
+ch_peptides = Channel.empty()
+ch_check_peptides = Channel.empty()
+ch_proteins = Channel.empty()
 ch_split_variants = Channel.empty()
+ch_alleles = Channel.empty()
+ch_check_alleles = Channel.empty()
 
+// Store input base name for later
+def input_base_name = ''
 
-
-if ( params.peptides ) {
-    if ( params.wild_type ) {
-        exit 1, "Peptide input not compatible with wild-type sequence generation."
+// Validating parameters
+if ( !params.show_supported_models ){
+    if ( params.peptides ) {
+        if ( params.fasta_output ) {
+            exit 1, "Peptide input not compatible with protein sequence FASTA output."
+        }
+        if ( params.wild_type ) {
+            exit 1, "Peptide input not compatible with wild-type sequence generation."
+        }
+        input_base_name = file(params.peptides).baseName
+        Channel
+            .fromPath(params.peptides, checkIfExists: true)
+            .set { ch_peptides }
+            (ch_peptides, ch_check_peptides) = ch_peptides.into(2)
     }
-    Channel
-        .fromPath(params.peptides)
-        .ifEmpty { exit 1, "Peptide input not found: ${params.peptides}" }
-        .set { ch_split_peptides }
-}
-else if (params.input) {
-    Channel
-        .fromPath(params.input)
-        .ifEmpty { exit 1, "Variant file not found: ${params.input}" }
-        .set { ch_split_variants }
-}
-else {
-    exit 1, "Please specify a file that contains annotated variants OR a file that contains peptide sequences."
-}
+    else if ( params.proteins ) {
+        if ( params.fasta_output ) {
+            exit 1, "Protein input not compatible with protein sequence FASTA output."
+        }
+        if ( params.wild_type ) {
+            exit 1, "Protein input not compatible with wild-type sequence generation."
+        }
+        input_base_name = file(params.proteins).baseName
+        Channel
+            .fromPath(params.proteins, checkIfExists: true)
+            .set { ch_proteins }
+    }
+    else if (params.input) {
+        input_base_name = file(params.input).baseName
+        Channel
+            .fromPath(params.input, checkIfExists: true)
+            .set { ch_split_variants }
+    }
+    else {
+        exit 1, "Please specify a file that contains annotated variants, protein sequences OR peptide sequences. Alternatively, to write out all supported models specify '--show_supported_models'."
+    }
 
-if ( !params.alleles ) {
-    exit 1, "Please specify a file containing MHC alleles."
-}
-else {
-    allele_file = file(params.alleles)
-}
+    if ( !params.alleles ) {
+        exit 1, "Please specify a file containing MHC alleles."
+    }
+    else {
+        ch_alleles = Channel.fromPath(params.alleles, checkIfExists: true)
+        (ch_alleles, ch_check_alleles) = ch_alleles.into(2)
+    }
 
-if ( params.mhc_class != 1 && params.mhc_class != 2 ){
-    exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
-}
+    if ( params.input ){
+        allele_file = file(params.alleles, checkIfExists: true)
+        allele_file.eachLine{line ->
+            if (line.contains("H2-")) {
+                exit 1, "Mouse allele provided: $line. Not compatible with reference ${params.genome_version}. Currently mouse alleles are only supported when using peptide sequences as input (--peptides)."
+            }
+        }
+    }
 
-if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && params.tools.contains("mhcnuggets-class-1")) ){
-    log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
-}
+    if ( params.mhc_class != 1 && params.mhc_class != 2 ){
+        exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
+    }
 
-if ( params.filter_self & !params.proteome ){
-    params.proteome = file("$baseDir/assets/")
+    if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && params.tools.contains("mhcnuggets-class-1")) ){
+        log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
+    }
+
+    if ( params.filter_self & !params.proteome ){
+        params.proteome = file("$baseDir/assets/")
+    }
+
+    if ( params.mem_mode != 'low' && params.mem_mode != 'intermediate' && params.mem_mode != 'high' )
+    {
+        exit 1, "Invalid memory mode parameter: ${params.mem_mode}. Valid options: 'low', 'intermediate', 'high'."
+    }
 }
 
 // Has the run name been specified by the user?
@@ -117,6 +159,7 @@ if (!(workflow.runName ==~ /[a-z]+_[a-z]+/)) {
     custom_runName = workflow.runName
 }
 
+// Check AWS batch settings
 if (workflow.profile.contains('awsbatch')) {
     // AWSBatch sanity checking
     if (!params.awsqueue || !params.awsregion) exit 1, "Specify correct --awsqueue and --awsregion parameters on AWSBatch!"
@@ -127,39 +170,59 @@ if (workflow.profile.contains('awsbatch')) {
     if (params.tracedir.startsWith('s3:')) exit 1, "Specify a local tracedir or run without trace! S3 cannot be used for tracefiles."
 }
 
+// Stage config files
+ch_multiqc_config = file("$baseDir/assets/multiqc_config.yaml", checkIfExists: true)
+ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config, checkIfExists: true) : Channel.empty()
+ch_output_docs = file("$baseDir/docs/output.md", checkIfExists: true)
+ch_output_docs_images = file("$baseDir/docs/images/", checkIfExists: true)
+
 // Header log info
 log.info nfcoreHeader()
 def summary = [:]
 summary['Pipeline Name']  = 'nf-core/epitopeprediction'
 if(workflow.revision) summary['Pipeline Release'] = workflow.revision
 summary['Run Name']         = custom_runName ?: workflow.runName
-//Pipeline Parameters
-if ( params.alleles ) summary['Alleles'] = params.alleles
-summary['Max. Peptide Length'] = params.max_peptide_length
-summary['MHC Class'] = params.mhc_class
-if ( params.peptides ) summary['Peptides'] = params.peptides
-summary['Reference Genome'] = params.genome
-if ( params.proteome ) summary['Reference proteome'] = params.proteome
-summary['Self-Filter'] = params.filter_self
-summary['Tools'] = params.tools
-if ( params.input ) summary['Variants'] = params.input
-summary['Wild-types'] = params.wild_type
 //Standard Params for nf-core pipelines
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
+//Pipeline Parameters
+if ( params.show_supported_models ) {
+    summary['Show Supported Models'] = params.show_supported_models
+} else {
+    if ( params.input ) summary['Variants'] = params.input
+    if ( params.peptides ) summary['Peptides'] = params.peptides
+    if ( params.proteins ) summary['Proteins'] = params.proteins
+    if ( params.alleles ) summary['Alleles'] = params.alleles
+    if ( !params.peptides) {
+        summary['Min. Peptide Length'] = params.min_peptide_length
+        summary['Max. Peptide Length'] = params.max_peptide_length
+    }
+    summary['MHC Class'] = params.mhc_class
+    if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome_version
+    if ( params.proteome ) summary['Reference Proteome'] = params.proteome
+    summary['Self-Filter'] = params.filter_self
+    summary['Tools'] = params.tools
+    summary['Wild-types'] = params.wild_type
+    summary['Protein FASTA Output'] = params.fasta_output
+    if ( params.peptides || params.proteins ) summary['Max. Number of Chunks for Parallelization'] = params.peptides_split_maxchunks
+    if ( params.peptides || params.proteins ) summary['Min. Number of Peptides in One Chunk'] = params.peptides_split_minchunksize
+}
+summary['Memory Mode']      = params.mem_mode
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
-summary['Output dir']       = params.outdir
-summary['Launch dir']       = workflow.launchDir
-summary['Working dir']      = workflow.workDir
-summary['Script dir']       = workflow.projectDir
+summary['Output Dir']       = params.outdir
+summary['Launch Dir']       = workflow.launchDir
+summary['Working Dir']      = workflow.workDir
+summary['Script Dir']       = workflow.projectDir
 summary['User']             = workflow.userName
-if (workflow.profile == 'awsbatch') {
+if (workflow.profile.contains('awsbatch')) {
     summary['AWS Region']   = params.awsregion
     summary['AWS Queue']    = params.awsqueue
+    summary['AWS CLI']      = params.awscli
 }
 summary['Config Profile'] = workflow.profile
-if (params.config_profile_description) summary['Config Description'] = params.config_profile_description
-if (params.config_profile_contact)     summary['Config Contact']     = params.config_profile_contact
-if (params.config_profile_url)         summary['Config URL']         = params.config_profile_url
+if (params.config_profile_description) summary['Config Profile Description'] = params.config_profile_description
+if (params.config_profile_contact)     summary['Config Profile Contact']     = params.config_profile_contact
+if (params.config_profile_url)         summary['Config Profile URL']         = params.config_profile_url
+summary['Config Files'] = workflow.configFiles.join(', ')
 if (params.email || params.email_on_fail) {
     summary['E-mail Address']    = params.email
     summary['E-mail on failure'] = params.email_on_fail
@@ -168,17 +231,13 @@ if (params.email || params.email_on_fail) {
 log.info summary.collect { k,v -> "${k.padRight(18)}: $v" }.join("\n")
 log.info "-\033[2m--------------------------------------------------\033[0m-"
 
-
-// Stage config files
-ch_multiqc_config = Channel.fromPath(params.multiqc_config)
-ch_output_docs = Channel.fromPath("$baseDir/docs/output.md")
-
 // Check the hostnames against configured profiles
 checkHostname()
 
-def create_workflow_summary(summary) {
-    def yaml_file = workDir.resolve('workflow_summary_mqc.yaml')
-    yaml_file.text  = """
+Channel.from(summary.collect{ [it.key, it.value] })
+    .map { k,v -> "<dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }
+    .reduce { a, b -> return [a, b].join("\n            ") }
+    .map { x -> """
     id: 'nf-core-epitopeprediction-summary'
     description: " - this information is collected when the pipeline is started."
     section_name: 'nf-core/epitopeprediction Workflow Summary'
@@ -186,18 +245,16 @@ def create_workflow_summary(summary) {
     plot_type: 'html'
     data: |
         <dl class=\"dl-horizontal\">
-${summary.collect { k,v -> "            <dt>$k</dt><dd><samp>${v ?: '<span style=\"color:#999999;\">N/A</a>'}</samp></dd>" }.join("\n")}
+            $x
         </dl>
-    """.stripIndent()
-
-   return yaml_file
-}
+    """.stripIndent() }
+    .set { ch_workflow_summary }
 
 /*
  * Parse software version numbers
  */
 process get_software_versions {
-    publishDir "${params.outdir}/pipeline_info", mode: 'copy',
+    publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode,
         saveAs: { filename ->
                       if (filename.indexOf(".csv") > 0) filename
                       else null
@@ -205,7 +262,7 @@ process get_software_versions {
 
     output:
     file 'software_versions_mqc.yaml' into ch_software_versions_yaml
-    file "software_versions.csv"
+    file "software_versions.csv" into ch_software_versions_csv
 
     script:
     """
@@ -214,13 +271,71 @@ process get_software_versions {
     multiqc --version > v_multiqc.txt
     csvtk version > v_csvtk.txt
     echo \$(SnpSift 2>&1) > v_snpsift.txt
+    python -c "import pkg_resources; print 'fred2 ' + pkg_resources.get_distribution('Fred2').version" > v_fred2.txt
     echo \$(mhcflurry-predict --version 2>&1) > v_mhcflurry.txt
+    python -c "import pkg_resources; print 'mhcnuggets ' + pkg_resources.get_distribution('mhcnuggets').version" > v_mhcnuggets.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
 
 /*
- * STEP 1 - Split variant data
+ * Write models of predictions tools supported by FRED2 to file
+ */
+process showSupportedModels {
+    publishDir "${params.outdir}/supported_models/", mode: 'copy'
+
+    input:
+    file software_versions from ch_software_versions_csv
+
+    output:
+    file '*.txt'
+
+    when: params.show_supported_models
+
+    script:
+    """
+    check_supported_models.py --versions ${software_versions}
+    """
+}
+
+process checkRequestedModels {
+    publishDir "${params.outdir}/reports/", mode: 'copy'
+
+    input:
+    file peptides from ch_check_peptides
+    file alleles from ch_check_alleles
+    file software_versions from ch_software_versions_csv
+
+    output:
+    file 'model_report.txt'
+    file 'model_warnings.log' into ch_model_warnings
+
+    when: !params.show_supported_models
+
+    script:
+    def input_type = params.peptides ? "--peptides ${peptides}" : "--max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}"
+    """
+    check_requested_models.py ${input_type} \
+                         --alleles ${alleles} \
+                         --mhcclass ${params.mhc_class} \
+                         --tools ${params.tools} \
+                         --versions ${software_versions} > model_warnings.log
+    """
+}
+
+ch_model_warnings.subscribe {
+        model_log_file = file("$it", checkIfExists: true)
+        def lines = model_log_file.readLines()
+        if (lines.size() > 0) {
+            log.info "-${c_purple} Warning: ${c_reset}-"
+            lines.each { String line ->
+                log.info "-${c_purple}   $line ${c_reset}-"
+            }
+        }
+    }
+
+/*
+ * STEP 1a - Split variant data
  */
 process splitVariants {
     input:
@@ -231,8 +346,7 @@ process splitVariants {
     file '*chr*.tsv' optional true into ch_splitted_tsvs
     file '*chr*.GSvar' optional true into ch_splitted_gsvars
 
-    when: !params.peptides
-
+    when: !params.peptides && !params.show_supported_models
 
     script:
     if ( variants.toString().endsWith('.vcf') || variants.toString().endsWith('.vcf.gz') ) {
@@ -249,22 +363,41 @@ process splitVariants {
 }
 
 /*
- * STEP 1 - Split peptide data
+ * STEP 0b - Process FASTA file and generate peptides
+ */
+if (params.proteins) {
+    process genPeptides {
+        input:
+        file proteins from ch_proteins
+
+        output:
+        file 'peptides.tsv' into ch_split_peptides
+
+        when: !params.peptides
+
+        script:
+        """
+        gen_peptides.py --input ${proteins} --output 'peptides.tsv' --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}
+        """
+    }
+ } else {
+    ch_peptides.set{ch_split_peptides}
+ }
+/*
+ * STEP 1b- Split peptide data
  */
 process splitPeptides {
     input:
     file peptides from ch_split_peptides
 
     output:
-    file '*.tsv' into ch_splitted_peptides
+    file '*.chunk_*.tsv' into ch_splitted_peptides
 
     when: !params.input
 
-    // @TODO
-    // splitting mechanism missing
     script:
     """
-    cat ${peptides} > "${peptides.fileName}.tsv"
+    split_peptides.py --input ${peptides} --output_base ${peptides.baseName} --min_size ${params.peptides_split_minchunksize} --max_chunks ${params.peptides_split_maxchunks}
     """
 }
 
@@ -273,21 +406,40 @@ process splitPeptides {
  * STEP 2 - Run epitope prediction
  */
 process peptidePrediction {
-    
+
    input:
    file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
-   file alleles from file(params.alleles)
+   file alleles from ch_alleles
+   file software_versions from ch_software_versions_csv
 
    output:
    file "*.tsv" into ch_predicted_peptides
    file "*.json" into ch_json_reports
+   file "*.fasta" optional true into ch_protein_fastas
    
    script:
-   def input_type = params.peptides ? "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
+   def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
+   def fasta_output = params.fasta_output ? "--fasta_output" : ""
    """
-   epaa.py ${input_type} --identifier ${inputs.baseName} --alleles $alleles --mhcclass ${params.mhc_class} --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} --tools ${params.tools} --reference ${params.genome} ${ref_prot} ${wt}
+   # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
+   mkdir -p mhcflurry-data
+   export MHCFLURRY_DATA_DIR=./mhcflurry-data
+   # specify MHCflurry release for which to download models, need to be updated here as well when MHCflurry will be updated
+   export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
+
+   epaa.py ${input_type} --identifier ${inputs.baseName} \
+                         --alleles $alleles \
+                         --mhcclass ${params.mhc_class} \
+                         --max_length ${params.max_peptide_length} \
+                         --min_length ${params.min_peptide_length} \
+                         --tools ${params.tools} \
+                         --versions ${software_versions} \
+                         --reference ${params.genome_version} \
+                         ${ref_prot} \
+                         ${wt} \
+                         ${fasta_output}
    """
 }
 
@@ -295,20 +447,40 @@ process peptidePrediction {
  * STEP 3 - Combine epitope prediction results
  */
 process mergeResults {
-    publishDir "${params.outdir}/results", mode: 'copy'
+    publishDir "${params.outdir}/predictions", mode: 'copy'
 
     input:
     file predictions from ch_predicted_peptides.collect()
 
     output:
-    file 'prediction_result.tsv'
+    file "${input_base_name}_prediction_result.tsv"
 
     script:
     def single = predictions instanceof Path ? 1 : predictions.size()
     def merge = (single == 1) ? 'cat' : 'csvtk concat -t'
 
     """
-    $merge $predictions > prediction_result.tsv
+    $merge $predictions > ${input_base_name}_prediction_result.tsv
+    """
+}
+
+/*
+ * STEP 3(2) optional - Combine protein sequences
+ */
+process mergeFastas {
+    publishDir "${params.outdir}/predictions", mode: 'copy'
+
+    input:
+    file proteins from ch_protein_fastas.collect()
+
+    output:
+    file "${input_base_name}_prediction_proteins.fasta"
+
+    when:
+    params.fasta_output
+
+    """
+    cat $proteins > ${input_base_name}_prediction_proteins.fasta
     """
 }
 
@@ -317,17 +489,17 @@ process mergeResults {
  */
 
 process mergeReports {
-    publishDir "${params.outdir}/results", mode: 'copy'
+    publishDir "${params.outdir}/predictions", mode: 'copy'
 
     input:
     file jsons from ch_json_reports.collect()
 
     output:
-    file 'prediction_report.json'
+    file "${input_base_name}_prediction_report.json"
 
     script:
     def single = jsons instanceof Path ? 1 : jsons.size()
-    def command = (single == 1) ? "cat ${jsons} > prediction_report.json" : "merge_jsons.py --input \$PWD"
+    def command = (single == 1) ? "merge_jsons.py --single_input ${jsons} --prefix ${input_base_name}" : "merge_jsons.py --input \$PWD --prefix ${input_base_name}"
 
     """
     $command
@@ -338,23 +510,27 @@ process mergeReports {
  * STEP 5 - MultiQC
  */
 process multiqc {
-    publishDir "${params.outdir}/MultiQC", mode: 'copy'
+    publishDir "${params.outdir}/MultiQC", mode: params.publish_dir_mode
 
     input:
-    file multiqc_config
-    file ('software_versions/*') from ch_software_versions_yaml
-    file workflow_summary from create_workflow_summary(summary)
+    file (multiqc_config) from ch_multiqc_config
+    file (mqc_custom_config) from ch_multiqc_custom_config.collect().ifEmpty([])
+    file ('software_versions/*') from ch_software_versions_yaml.collect()
+    file workflow_summary from ch_workflow_summary.collectFile(name: "workflow_summary_mqc.yaml")
 
     output:
     file "*multiqc_report.html" into ch_multiqc_report
     file "*_data"
     file "multiqc_plots"
 
+    when: !params.show_supported_models
+
     script:
     rtitle = custom_runName ? "--title \"$custom_runName\"" : ''
     rfilename = custom_runName ? "--filename " + custom_runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report" : ''
+    custom_config_file = params.multiqc_config ? "--config $mqc_custom_config" : ''
     """
-    multiqc -f $rtitle $rfilename --config $multiqc_config .
+    multiqc -f $rtitle $rfilename $custom_config_file .
     """
 }
 
@@ -362,17 +538,18 @@ process multiqc {
  * STEP 3 - Output Description HTML
  */
 process output_documentation {
-    publishDir "${params.outdir}/pipeline_info", mode: 'copy'
+    publishDir "${params.outdir}/pipeline_info", mode: params.publish_dir_mode
 
     input:
     file output_docs from ch_output_docs
+    file images from ch_output_docs_images
 
     output:
     file "results_description.html"
 
     script:
     """
-    markdown_to_html.r $output_docs results_description.html
+    markdown_to_html.py $output_docs -o results_description.html
     """
 }
 
@@ -411,16 +588,18 @@ workflow.onComplete {
 
     // On success try attach the multiqc report
     def mqc_report = null
-    try {
-        if (workflow.success) {
-            mqc_report = ch_multiqc_report.getVal()
-            if (mqc_report.getClass() == ArrayList) {
-                log.warn "[nf-core/epitopeprediction] Found multiple reports from process 'multiqc', will use only one"
-                mqc_report = mqc_report[0]
+    if (!params.show_supported_models) {
+        try {
+            if (workflow.success) {
+                mqc_report = ch_multiqc_report.getVal()
+                if (mqc_report.getClass() == ArrayList) {
+                    log.warn "[nf-core/epitopeprediction] Found multiple reports from process 'multiqc', will use only one"
+                    mqc_report = mqc_report[0]
+                }
             }
+        } catch (all) {
+            log.warn "[nf-core/epitopeprediction] Could not attach MultiQC report to summary email"
         }
-    } catch (all) {
-        log.warn "[nf-core/epitopeprediction] Could not attach MultiQC report to summary email"
     }
 
     // Check if we are only sending emails on failure
@@ -455,7 +634,11 @@ workflow.onComplete {
             log.info "[nf-core/epitopeprediction] Sent summary e-mail to $email_address (sendmail)"
         } catch (all) {
             // Catch failures and try with plaintext
-            [ 'mail', '-s', subject, email_address ].execute() << email_txt
+            def mail_cmd = [ 'mail', '-s', subject, '--content-type=text/html', email_address ]
+            if ( mqc_report.size() <= params.max_multiqc_email_size.toBytes() ) {
+              mail_cmd += [ '-A', mqc_report ]
+            }
+            mail_cmd.execute() << email_html
             log.info "[nf-core/epitopeprediction] Sent summary e-mail to $email_address (mail)"
         }
     }
@@ -470,37 +653,40 @@ workflow.onComplete {
     def output_tf = new File(output_d, "pipeline_report.txt")
     output_tf.withWriter { w -> w << email_txt }
 
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
-    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
     c_green = params.monochrome_logs ? '' : "\033[0;32m";
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
     c_red = params.monochrome_logs ? '' : "\033[0;31m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
 
+    if (params.show_supported_models) {
+        log.info "-${c_green}Did not run the actual epitope prediction ${c_reset}-"
+        log.info "-${c_green}The information about supported models of the available prediction tools was written to ${params.outdir}/supported_models/  ${c_reset}-"
+    }
     if (workflow.stats.ignoredCount > 0 && workflow.success) {
-        log.info "${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}"
-        log.info "${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCount} ${c_reset}"
-        log.info "${c_green}Number of successfully ran process(es) : ${workflow.stats.succeedCount} ${c_reset}"
+        log.info "-${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}-"
+        log.info "-${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCount} ${c_reset}-"
+        log.info "-${c_green}Number of successfully ran process(es) : ${workflow.stats.succeedCount} ${c_reset}-"
     }
 
     if (workflow.success) {
-        log.info "${c_purple}[nf-core/epitopeprediction]${c_green} Pipeline completed successfully${c_reset}"
+        log.info "-${c_purple}[nf-core/epitopeprediction]${c_green} Pipeline completed successfully${c_reset}-"
     } else {
         checkHostname()
-        log.info "${c_purple}[nf-core/epitopeprediction]${c_red} Pipeline completed with errors${c_reset}"
+        log.info "-${c_purple}[nf-core/epitopeprediction]${c_red} Pipeline completed with errors${c_reset}-"
     }
-
 }
 
 def nfcoreHeader() {
     // Log colors ANSI codes
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
-    c_dim = params.monochrome_logs ? '' : "\033[2m";
     c_black = params.monochrome_logs ? '' : "\033[0;30m";
-    c_green = params.monochrome_logs ? '' : "\033[0;32m";
-    c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
     c_blue = params.monochrome_logs ? '' : "\033[0;34m";
-    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
     c_cyan = params.monochrome_logs ? '' : "\033[0;36m";
+    c_dim = params.monochrome_logs ? '' : "\033[2m";
+    c_green = params.monochrome_logs ? '' : "\033[0;32m";
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
     c_white = params.monochrome_logs ? '' : "\033[0;37m";
+    c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
 
     return """    -${c_dim}--------------------------------------------------${c_reset}-
                                             ${c_green},--.${c_black}/${c_green},-.${c_reset}
