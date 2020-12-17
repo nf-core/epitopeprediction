@@ -20,29 +20,31 @@ jobs:
     strategy:
       matrix:
         # Nextflow versions: check pipeline minimum and current latest
-        nxf_ver: ['19.10.0', '']
+        nxf_ver: ['20.04.0', '']
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
 
       - name: Check if Dockerfile or Conda environment changed
-        uses: technote-space/get-diff-action@v1
+        uses: technote-space/get-diff-action@v4
         with:
-          PREFIX_FILTER: |
+          FILES: |
             Dockerfile
             environment.yml
 
       - name: Build new docker image
-        if: env.GIT_DIFF
+        if: env.MATCHED_FILES
         run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
 
       - name: Pull docker image
-        if: ${{ !env.GIT_DIFF }}
+        if: ${{ !env.MATCHED_FILES }}
         run: |
           docker pull nfcore/epitopeprediction:dev
           docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
 
       - name: Install Nextflow
+        env:
+          CAPSULE_LOG: none
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
@@ -50,13 +52,13 @@ jobs:
       - name: Run pipeline with test data
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,docker
-          
+
   profile:
       name: Run profile tests
       if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}
       runs-on: ubuntu-latest
       env:
-        NXF_VER: '19.10.0'
+        NXF_VER: '20.04.0'
         NXF_ANSI_LOG: false
       strategy:
         matrix:
@@ -64,19 +66,19 @@ jobs:
       steps:
         - name: Check out pipeline code
           uses: actions/checkout@v2
-        
+
         - name: Check if Dockerfile or Conda environment changed
-          uses: technote-space/get-diff-action@v1
+          uses: technote-space/get-diff-action@v4
           with:
-            PREFIX_FILTER: |
+            FILES: |
               Dockerfile
               environment.yml
         - name: Build new docker image
-          if: env.GIT_DIFF
+          if: env.MATCHED_FILES
           run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
 
         - name: Pull docker image
-          if: ${{ !env.GIT_DIFF }}
+          if: ${{ !env.MATCHED_FILES }}
           run: |
             docker pull nfcore/epitopeprediction:dev
             docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
