@@ -121,8 +121,7 @@ if ( !params.show_supported_models ){
         exit 1, "Please specify a file containing MHC alleles."
     }
     else {
-        ch_alleles = Channel.fromPath(params.alleles, checkIfExists: true)
-        (ch_alleles, ch_check_alleles) = ch_alleles.into(2)
+        Channel.value(file(params.alleles, checkIfExists: true)).into{ch_alleles; ch_check_alleles}
     }
 
     if ( params.input ){
