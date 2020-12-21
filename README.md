@@ -2,7 +2,7 @@
 
 [![GitHub Actions CI Status](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/epitopeprediction/actions)
 [![GitHub Actions Linting Status](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/epitopeprediction/actions)
-[![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A519.10.0-brightgreen.svg)](https://www.nextflow.io/)
+[![Nextflow](https://img.shields.io/badge/nextflow-%E2%89%A520.04.0-brightgreen.svg)](https://www.nextflow.io/)
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3564666.svg)](https://doi.org/10.5281/zenodo.3564666)
 
 [![install with bioconda](https://img.shields.io/badge/install%20with-bioconda-brightgreen.svg)](https://bioconda.github.io/)
@@ -19,12 +19,12 @@ The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool
 
 1. Install [`nextflow`](https://nf-co.re/usage/installation)
 
-2. Install either [`Docker`](https://docs.docker.com/engine/installation/) or [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) for full pipeline reproducibility _(please only use [`Conda`](https://conda.io/miniconda.html) as a last resort; see [docs](https://nf-co.re/usage/configuration#basic-configuration-profiles))_
+2. Install any of [`Docker`](https://docs.docker.com/engine/installation/), [`Singularity`](https://www.sylabs.io/guides/3.0/user-guide/) or [`Podman`](https://podman.io/) for full pipeline reproducibility _(please only use [`Conda`](https://conda.io/miniconda.html) as a last resort; see [docs](https://nf-co.re/usage/configuration#basic-configuration-profiles))_
 
 3. Download the pipeline and test it on a minimal dataset with a single command:
 
     ```bash
-    nextflow run nf-core/epitopeprediction -profile test,<docker/singularity/conda/institute>
+    nextflow run nf-core/epitopeprediction -profile test,<docker/singularity/podman/conda/institute>
     ```
 
     > Please check [nf-core/configs](https://github.com/nf-core/configs#documentation) to see if a custom config file to run nf-core pipelines already exists for your Institute. If so, you can simply use `-profile <institute>` in your command. This will enable either `docker` or `singularity` and set the appropriate execution settings for your local compute environment.
@@ -39,7 +39,9 @@ See [usage docs](https://nf-co.re/epitopeprediction/usage) for all of the availa
 
 ## Documentation
 
-The nf-core/epitopeprediction pipeline comes with documentation about the pipeline which you can read at [https://nf-co.re/epitopeprediction](https://nf-co.re/epitopeprediction).
+The nf-core/epitopeprediction pipeline comes with documentation about the pipeline: [usage](https://nf-co.re/epitopeprediction/usage) and [output](https://nf-co.re/epitopeprediction/output).
+
+<!-- TODO nf-core: Add a brief overview of what the pipeline does and how it works -->
 
 ## Credits
 
@@ -51,7 +53,7 @@ If you would like to contribute to this pipeline, please see the [contributing g
 
 For further information or help, don't hesitate to get in touch on the [Slack `#epitopeprediction` channel](https://nfcore.slack.com/channels/epitopeprediction) (you can join with [this invite](https://nf-co.re/join/slack)).
 
-## Citation
+## Citations
 
 If you use  nf-core/epitopeprediction for your analysis, please cite it using the following doi: [10.5281/zenodo.3564666](https://doi.org/10.5281/zenodo.3564666)
 
@@ -63,3 +65,25 @@ You can cite the `nf-core` publication as follows:
 >
 > _Nat Biotechnol._ 2020 Feb 13. doi: [10.1038/s41587-020-0439-x](https://dx.doi.org/10.1038/s41587-020-0439-x).
 > ReadCube: [Full Access Link](https://rdcu.be/b1GjZ)
+
+In addition, references of tools and data used in this pipeline are as follows:
+
+* **MultiQC: summarize analysis results for multiple tools and samples in a single report.**\
+    Philip Ewels, Måns Magnusson, Sverker Lundin, Max Käller\
+    _Bioinformatics_ 32(19), 3047-3048 (2016). doi: [10.1093/bioinformatics/btw354](https://dx.doi.org/10.1093/bioinformatics/btw354).
+
+* **Using Drosophila melanogaster as a model for genotoxic chemical mutational studies with a new program, SnpSift.**\
+    Pablo Cingolani, Viral M. Patel, Melissa Coon, Tung Nguyen, Susan J. Land, Douglas M. Ruden and Xiangyi Lu1\
+    _Frontiers in Genetics_ 3, 35 (2012). doi: [10.3389/fgene.2012.00035](https://dx.doi.org/10.3389/fgene.2012.00035).
+
+* **FRED 2: an immunoinformatics framework for Python.**\
+    Benjamin Schubert, Mathias Walzer, Hans-Philipp Brachvogel, András Szolek, Christopher Mohr, Oliver Kohlbacher\
+    _Bioinformatics_ 32(13), 2044-2046 (2016). doi: [10.1093/bioinformatics/btw113](https://dx.doi.org/10.1093/bioinformatics/btw113).
+
+* **MHCflurry: open-source class I MHC binding affinity prediction.**\
+    Timothy J. O’Donnell, Alex Rubinsteyn, Maria Bonsack, Angelika B. Riemer, Uri Laserson, Jeff Hammerbacher\
+    _Cell systems_ 7(1), 129-132 (2018). doi: [10.1016/j.cels.2018.05.014](https://dx.doi.org/10.1016/j.cels.2018.05.014).
+
+* **High-throughput prediction of MHC class i and ii neoantigens with MHCnuggets.**\
+    Xiaoshan M. Shao, Rohit Bhattacharya, Justin Huang, I.K. Ashok Sivakumar, Collin Tokheim, Lily Zheng, Dylan Hirsch, Benjamin Kaminow, Ashton Omdahl, Maria Bonsack, Angelika B. Riemer, Victor E. Velculescu, Valsamo Anagnostou, Kymberleigh A. Pagel and Rachel Karchin\
+    _Cancer Immunology Research_ 8(3), 396-408 (2020). doi: [10.1158/2326-6066.CIR-19-0464](https://dx.doi.org/10.1158/2326-6066.CIR-19-0464).
