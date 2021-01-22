@@ -45,7 +45,7 @@ The nf-core/epitopeprediction pipeline comes with documentation about the pipeli
 
 ## Credits
 
-nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) from [Institute for Translational Bioinformatics](https://kohlbacherlab.org/team_tbi/) and [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/) and [Alexander Peltzer](https://github.com/apeltzer) from [Böhringer Ingelheim](https://www.boehringer-ingelheim.de). Further contributions were made by [Sabrina Krakau](https://github.com/skrakau) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/).
+nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) from [Institute for Translational Bioinformatics](https://kohlbacherlab.org/team_tbi/) and [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/) and [Alexander Peltzer](https://github.com/apeltzer) from [Böhringer Ingelheim](https://www.boehringer-ingelheim.de). Further contributions were made by [Sabrina Krakau](https://github.com/skrakau) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/) and [Leon Kuchenbecker](https://github.com/lkuchenb) from the [Kohlbacher Lab](https://kohlbacherlab.org/).
 
 ## Contributions and Support
 
