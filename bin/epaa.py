@@ -1011,7 +1011,7 @@ def __main__():
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0'))
         # get for each selected method the corresponding tool version
-        methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
+        methods = { method.lower() : version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
 
     for method, version in methods.items():
         if version not in EpitopePredictorFactory.available_methods()[method]:
@@ -1038,7 +1038,7 @@ def __main__():
 
     # replace method names with method names with version
     # complete_df.replace({'method': methods}, inplace=True)
-    complete_df['method'] = complete_df['method'].apply(lambda x : x + '-' + methods[x] )
+    complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
