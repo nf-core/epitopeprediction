@@ -52,17 +52,51 @@ jobs:
       - name: Run pipeline with test data
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test,docker
-
-  profile:
-      name: Run profile tests
+#
+#  profile:
+#      name: Run profile tests
+#      if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}
+#      runs-on: ubuntu-latest
+#      env:
+#        NXF_VER: '20.04.0'
+#        NXF_ANSI_LOG: false
+#      strategy:
+#        matrix:
+#          tests: ['test_variant_tsv', 'test_peptides', 'test_peptides_h2', 'test_proteins', 'test_mhcnuggets', 'test_mhcflurry']
+#      steps:
+#        - name: Check out pipeline code
+#          uses: actions/checkout@v2
+#
+#        - name: Check if Dockerfile or Conda environment changed
+#          uses: technote-space/get-diff-action@v4
+#          with:
+#            FILES: |
+#              Dockerfile
+#              environment.yml
+#        - name: Build new docker image
+#          if: env.MATCHED_FILES
+#          run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
+#
+#        - name: Pull docker image
+#          if: ${{ !env.MATCHED_FILES }}
+#          run: |
+#            docker pull nfcore/epitopeprediction:dev
+#            docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
+#        - name: Install Nextflow
+#          run: |
+#            wget -qO- get.nextflow.io | bash
+#            sudo mv nextflow /usr/local/bin/
+#        - name: Run pipeline with profile ${{ matrix.tests }}
+#          run: |
+#            nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.tests }},docker
+#
+  nonfree:
+      name: Run non-free tests
       if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}
       runs-on: ubuntu-latest
       env:
         NXF_VER: '20.04.0'
         NXF_ANSI_LOG: false
-      strategy:
-        matrix:
-          tests: ['test_variant_tsv', 'test_peptides', 'test_peptides_h2', 'test_proteins', 'test_mhcnuggets', 'test_mhcflurry']
       steps:
         - name: Check out pipeline code
           uses: actions/checkout@v2
@@ -73,6 +107,14 @@ jobs:
             FILES: |
               Dockerfile
               environment.yml
+        - name: Install non-free software
+          env:
+            DECRYPT_PASSPHRASE: ${{ secrets.TEST_NETMHC }}
+            DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+            DOCKERHUB_PASS: ${{ secrets.DOCKERHUB_PASS }}
+          run: |
+            mkdir -v non-free
+            curl -L https://raw.githubusercontent.com/lkuchenb/test-datasets/epitopeprediction/software/non-free-software.tar.gpg | ${GITHUB_WORKSPACE}/bin/decrypt | tar -C non-free -v -x
         - name: Build new docker image
           if: env.MATCHED_FILES
           run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
@@ -86,6 +128,15 @@ jobs:
           run: |
             wget -qO- get.nextflow.io | bash
             sudo mv nextflow /usr/local/bin/
-        - name: Run pipeline with profile ${{ matrix.tests }}
+        - name: Run pipeline with NetMHC
           run: |
-            nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.tests }},docker
+            nextflow run ${GITHUB_WORKSPACE} -profile netmhc,docker
+        - name: Run pipeline with NetMHCII
+          run: |
+            nextflow run ${GITHUB_WORKSPACE} -profile netmhcii,docker
+        - name: Run pipeline with NetMHCpan
+          run: |
+            nextflow run ${GITHUB_WORKSPACE} -profile netmhcpan,docker
+        - name: Run pipeline with NetMHCIIpan
+          run: |
+            nextflow run ${GITHUB_WORKSPACE} -profile netmhciipan,docker
