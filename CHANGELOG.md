@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v1.2.0dev
 
+### `Added`
+
+- [#73](https://github.com/nf-core/epitopeprediction/pull/73) - Add support for the non-free netmhc tool family
+
 ## v1.1.0 - Morgenstelle - 2020-10-20
 
 ### `Added`
