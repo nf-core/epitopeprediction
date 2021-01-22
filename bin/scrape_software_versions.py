@@ -12,6 +12,10 @@ regexes = {
     'Fred2': ['v_fred2.txt', r"fred2 (\S+)"],
     'MHCFlurry': ['v_mhcflurry.txt', r"mhcflurry (\S+)"],
     'MHCnuggets': ['v_mhcnuggets.txt', r"mhcnuggets (\S+)"],
+    'NetMHC': ['v_netmhc.txt', r"netmhc (\S+)"],
+    'NetMHCpan': ['v_netmhcpan.txt', r"netmhcpan (\S+)"],
+    'NetMHCII': ['v_netmhcii.txt', r"netmhcii (\S+)"],
+    'NetMHCIIpan': ['v_netmhciipan.txt', r"netmhciipan (\S+)"],
 }
 
 results = OrderedDict()
@@ -23,6 +27,10 @@ results['SNPsift'] = '<span style="color:#999999;\">N/A</span>'
 results['Fred2'] = '<span style="color:#999999;\">N/A</span>'
 results['MHCFlurry'] = '<span style="color:#999999;\">N/A</span>'
 results['MHCnuggets'] = '<span style="color:#999999;\">N/A</span>'
+results['NetMHC'] = '<span style="color:#999999;\">N/A</span>'
+results['NetMHCpan'] = '<span style="color:#999999;\">N/A</span>'
+results['NetMHCII'] = '<span style="color:#999999;\">N/A</span>'
+results['NetMHCIIpan'] = '<span style="color:#999999;\">N/A</span>'
 
 # Search each file using its regex
 for k, v in regexes.items():

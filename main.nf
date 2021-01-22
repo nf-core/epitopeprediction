@@ -37,9 +37,15 @@ def helpMessage() {
       --mhc_class [1,2]                     Specifies whether the predictions should be done for MHC class I (1) or class II (2). Default: 1
       --max_peptide_length [int]            Specifies the maximum peptide length (not applied when '--peptides' is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa
       --min_peptide_length [int]            Specifies the minimum peptide length (not applied when '--peptides' is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa
-      --tools [str]                         Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2'. Can be combined in a list separated by comma.
+      --tools [str]                         Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2', 'netmhc', 'netmhcpan', 'netmhcii', 'netmhciipan'. Can be combined in a list separated by comma.
       --peptides_split_maxchunks [int]      Used in combination with '--peptides' or '--proteins': maximum number of peptide chunks that will be created for parallelization. Default: 100
       --peptides_split_minchunksize [int]   Used in combination with '--peptides' or '--proteins': minimum number of peptides that should be written into one chunk. Default: 5000
+
+    External software:
+      --netmhcpan_path                      To use the 'netmhcpan' tool, specify a path to the original NetMHCpan 4.1 tar.gz archive here.
+      --netmhc_path                         To use the 'netmhc' tool, specify a path to the original NetMHC 4.0 tar.gz archive here.
+      --netmhciipan_path                    To use the 'netmhciipan' tool, specify a path to the original NetMHCIIpan 4.0 tar.gz archive here.
+      --netmhcii_path                       To use the 'netmhcii' tool, specify a path to the original NetMHCII 2.3 tar.gz archive here.
 
     References                              If not specified in the configuration file or you wish to overwrite any of the references
       --genome_version [str]                Specifies the ensembl reference genome version (GRCh37, GRCh38) Default: GRCh37
@@ -79,6 +85,41 @@ ch_check_alleles = Channel.empty()
 
 // Store input base name for later
 def input_base_name = ''
+
+ch_nonfree_paths = Channel.create()
+
+netmhc_meta = [
+    netmhc : [
+        version      : "4.0",
+        software_md5 : "132dc322da1e2043521138637dd31ebf",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHC-4.0/data.tar.gz",
+        data_md5     : "63c646fa0921d617576531396954d633",
+        binary_name  : "netMHC"
+    ],
+    netmhcpan: [
+        version      : "4.0",
+        software_md5 : "94aa60f3dfd9752881c64878500e58f3",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
+        data_md5     : "26cbbd99a38f6692249442aeca48608f",
+        binary_name  : "netMHCpan"
+    ],
+    netmhcii: [
+        version      : "2.2",
+        software_md5 : "918b7108a37599887b0725623d0974e6",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHCII-2.2/data.tar.gz",
+        data_md5     : "11579b61d3bfe13311f7b42fc93b4dd8",
+        binary_name  : "netMHCII"
+    ],
+    netmhciipan: [
+        version      : "3.1",
+        software_md5 : "0962ce799f7a4c9631f8566a55237073",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHCIIpan-3.1/data.tar.gz",
+        data_md5     : "f833df245378e60ca6e55748344a36f6",
+        binary_name  : "netMHCIIpan"
+    ]
+]
+
+tools = params.tools?.tokenize(',')
 
 // Validating parameters
 if ( !params.show_supported_models ){
@@ -137,7 +178,7 @@ if ( !params.show_supported_models ){
         exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
     }
 
-    if ( (params.mhc_class == 1 && params.tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && params.tools.contains("mhcnuggets-class-1")) ){
+    if ( (params.mhc_class == 1 && tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && tools.contains("mhcnuggets-class-1")) ){
         log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
     }
 
@@ -149,6 +190,38 @@ if ( !params.show_supported_models ){
     {
         exit 1, "Invalid memory mode parameter: ${params.mem_mode}. Valid options: 'low', 'intermediate', 'high'."
     }
+
+    // External tools
+    ["netmhc", "netmhcpan", "netmhcii", "netmhciipan"].each {
+        // Check if the _path parameter was set for this tool
+        if (params["${it}_path"] as Boolean && ! tools.contains(it))
+        {
+            log.warn("--${it}_path specified, but --tools does not contain ${it}. Both have to be specified to enable ${it}. Ignoring.")
+        }
+        else if (!params["${it}_path"] as Boolean && tools.contains(it))
+        {
+            log.warn("--${it}_path not specified, but --tools contains ${it}. Both have to be specified to enable ${it}. Ignoring.")
+            tools.removeElement(it)
+        }
+        else if (params["${it}_path"])
+        {
+            // If so, add the tool name and user installation path to the external tools import channel
+            ch_nonfree_paths.bind([
+                it,
+                netmhc_meta[it].version,
+                netmhc_meta[it].software_md5,
+                file(params["${it}_path"], checkIfExists:true),
+                file(netmhc_meta[it].data_url),
+                netmhc_meta[it].data_md5,
+                netmhc_meta[it].binary_name
+            ])
+        }
+    }
+    if (tools.isEmpty())
+    {
+        exit 1, "No valid tools specified."
+    }
+    ch_nonfree_paths.close()
 }
 
 // Has the run name been specified by the user?
@@ -199,7 +272,7 @@ if ( params.show_supported_models ) {
     if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome_version
     if ( params.proteome ) summary['Reference Proteome'] = params.proteome
     summary['Self-Filter'] = params.filter_self
-    summary['Tools'] = params.tools
+    summary['Tools'] = tools.join(',')
     summary['Wild-types'] = params.wild_type
     summary['Protein FASTA Output'] = params.fasta_output
     if ( params.peptides || params.proteins ) summary['Max. Number of Chunks for Parallelization'] = params.peptides_split_maxchunks
@@ -250,6 +323,74 @@ Channel.from(summary.collect{ [it.key, it.value] })
     .set { ch_workflow_summary }
 
 /*
+ * Copy non-free software provided by the user into the working directory
+ */
+process netmhc_tools_import {
+    input:
+    tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname) from ch_nonfree_paths
+
+    output:
+    path "${toolname}" into ch_nonfree_tools
+    path "v_${toolname}.txt" into ch_nonfree_versions
+
+    script:
+    """
+    #
+    # CHECK IF THE PROVIDED SOFTWARE TARBALL IS A REGULAR FILES
+    #
+    if [ ! -f "$tooltarball" ]; then
+        echo "Path specified for ${toolname} does not point to a regular file. Please specify a path to the original tool tarball." >&2
+        exit 1
+    fi
+
+    #
+    # VALIDATE THE CHECKSUM OF THE PROVIDED SOFTWARE TARBALL
+    #
+    checksum="\$(md5sum "$tooltarball" | cut -f1 -d' ')"
+    if [ "\$checksum" != "${toolchecksum}" ]; then
+        echo "Checksum error for $toolname. Please make sure to provide the original tarball for $toolname version $toolversion" >&2
+        exit 2
+    fi
+
+    #
+    # UNPACK THE PROVIDED SOFTWARE TARBALL
+    #
+    mkdir -v "${toolname}"
+    tar -C "${toolname}" --strip-components 1 -x -f "$tooltarball"
+
+    #
+    # MODIFY THE NETMHC WRAPPER SCRIPT ACCORDING TO INSTALL INSTRUCTIONS
+    # Substitution 1: We install tcsh via conda, thus /bin/tcsh won't work
+    # Substitution 2: We want temp files to be written to /tmp if TMPDIR is not set
+    # Substitution 3: NMHOME should be the folder in which the tcsh script itself resides
+    #
+    sed -i.bak \
+        -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
+        -e "s_/scratch_/tmp_" \
+        -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_" "${toolname}/${toolbinaryname}"
+
+    #
+    # VALIDATE THE CHECKSUM OF THE DOWNLOADED MODEL DATA
+    #
+    checksum="\$(md5sum "$datatarball" | cut -f1 -d' ')"
+    if [ "\$checksum" != "${datachecksum}" ]; then
+        echo "A checksum mismatch occurred when checking the data file for ${toolname}." >&2
+        exit 3
+    fi
+
+    #
+    # UNPACK THE DOWNLOADED MODEL DATA
+    #
+    tar -C "${toolname}" -v -x -f "$datatarball"
+
+    #
+    # CREATE VERSION FILE
+    #
+    echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
+    """
+}
+
+/*
  * Parse software version numbers
  */
 process get_software_versions {
@@ -258,6 +399,8 @@ process get_software_versions {
                       if (filename.indexOf(".csv") > 0) filename
                       else null
                 }
+    input:
+    file ("*") from ch_nonfree_versions.collect().ifEmpty([])
 
     output:
     file 'software_versions_mqc.yaml' into ch_software_versions_yaml
@@ -317,7 +460,7 @@ process checkRequestedModels {
     check_requested_models.py ${input_type} \
                          --alleles ${alleles} \
                          --mhcclass ${params.mhc_class} \
-                         --tools ${params.tools} \
+                         --tools ${tools.join(",")} \
                          --versions ${software_versions} > model_warnings.log
     """
 }
@@ -410,12 +553,13 @@ process peptidePrediction {
    file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
    file alleles from ch_alleles
    file software_versions from ch_software_versions_csv
+   file ('nonfree_software/*') from ch_nonfree_tools.collect().ifEmpty([])
 
    output:
    file "*.tsv" into ch_predicted_peptides
    file "*.json" into ch_json_reports
    file "*.fasta" optional true into ch_protein_fastas
-   
+
    script:
    def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
@@ -428,12 +572,17 @@ process peptidePrediction {
    # specify MHCflurry release for which to download models, need to be updated here as well when MHCflurry will be updated
    export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
 
+   # Add non-free software to the PATH
+   shopt -s nullglob
+   for p in nonfree_software/*; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
+   shopt -u nullglob
+
    epaa.py ${input_type} --identifier ${inputs.baseName} \
                          --alleles $alleles \
                          --mhcclass ${params.mhc_class} \
                          --max_length ${params.max_peptide_length} \
                          --min_length ${params.min_peptide_length} \
-                         --tools ${params.tools} \
+                         --tools ${tools.join(",")} \
                          --versions ${software_versions} \
                          --reference ${params.genome_version} \
                          ${ref_prot} \
