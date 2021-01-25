@@ -17,3 +17,6 @@ dependencies:
   - conda-forge::pymdown-extensions=6.0
   - conda-forge::pygments=2.5.2
   - conda-forge::r-markdown=1.1
+  - conda-forge::tcsh=6.22.03 # netmhc dependency
+  - bioconda::perl-env=1.04 # netmhc dependency
+  - gawk=5.1.0 # netmhc dependency
