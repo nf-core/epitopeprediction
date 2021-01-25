@@ -34,13 +34,13 @@ jobs:
 
       - name: Build new docker image
         if: env.MATCHED_FILES
-        run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
+        run: docker build --no-cache . -t nfcore/epitopeprediction:dev
 
       - name: Pull docker image
         if: ${{ !env.MATCHED_FILES }}
         run: |
           docker pull nfcore/epitopeprediction:dev
-          docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
+          docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
 
       - name: Install Nextflow
         env:
@@ -75,13 +75,13 @@ jobs:
               environment.yml
         - name: Build new docker image
           if: env.MATCHED_FILES
-          run: docker build --no-cache . -t nfcore/epitopeprediction:1.1.0
+          run: docker build --no-cache . -t nfcore/epitopeprediction:dev
 
         - name: Pull docker image
           if: ${{ !env.MATCHED_FILES }}
           run: |
             docker pull nfcore/epitopeprediction:dev
-            docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:1.1.0
+            docker tag nfcore/epitopeprediction:dev nfcore/epitopeprediction:dev
         - name: Install Nextflow
           run: |
             wget -qO- get.nextflow.io | bash
