@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-- [#73](https://github.com/nf-core/epitopeprediction/pull/73) - Add support for the non-free netmhc tool family
+- [#73](https://github.com/nf-core/epitopeprediction/pull/73) - Add support for the non-free netmhc tool family including netMHC 4.0, netMHCpan 4.0, netMHCII 2.2, and netMHCIIpan 3.1
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
 
