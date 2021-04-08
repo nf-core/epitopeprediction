@@ -38,6 +38,7 @@ def helpMessage() {
       --max_peptide_length [int]            Specifies the maximum peptide length (not applied when '--peptides' is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa
       --min_peptide_length [int]            Specifies the minimum peptide length (not applied when '--peptides' is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa
       --tools [str]                         Specifies a list of tool(s) to use. Available are: 'syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2', 'netmhc', 'netmhcpan', 'netmhcii', 'netmhciipan'. Can be combined in a list separated by comma.
+      --tool_thresholds [str]               Specifies the affinity thresholds for each given tool. A peptides affinity above the threshold is considered as a binder. Can be combined in a list separated by comma.
       --peptides_split_maxchunks [int]      Used in combination with '--peptides' or '--proteins': maximum number of peptide chunks that will be created for parallelization. Default: 100
       --peptides_split_minchunksize [int]   Used in combination with '--peptides' or '--proteins': minimum number of peptides that should be written into one chunk. Default: 5000
 
@@ -583,6 +584,7 @@ process peptidePrediction {
                          --max_length ${params.max_peptide_length} \
                          --min_length ${params.min_peptide_length} \
                          --tools ${tools.join(",")} \
+                         --tool_thresholds ${params.tool_thresholds} \
                          --versions ${software_versions} \
                          --reference ${params.genome_version} \
                          ${ref_prot} \
