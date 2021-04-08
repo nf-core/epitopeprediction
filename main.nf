@@ -16,7 +16,7 @@ log.info Headers.nf_core(workflow, params.monochrome_logs)
 ////////////////////////////////////////////////////+
 def json_schema = "$projectDir/nextflow_schema.json"
 if (params.help) {
-    def command = "nextflow run nf-core/epitopeprediction --input '*_R{1,2}.fastq.gz' -profile docker"
+    def command = "    nextflow run nf-core/epitopeprediction --input '*.vcf' -profile docker"
     log.info NfcoreSchema.params_help(workflow, params, json_schema, command)
     exit 0
 }
@@ -37,16 +37,154 @@ if (params.genomes && params.genome && !params.genomes.containsKey(params.genome
     exit 1, "The provided genome '${params.genome}' is not available in the iGenomes file. Currently the available genomes are ${params.genomes.keySet().join(', ')}"
 }
 
-// TODO nf-core: Add any reference files that are needed
-// Configurable reference genomes
-//
-// NOTE - THIS IS NOT USED IN THIS PIPELINE, EXAMPLE ONLY
-// If you want to use the channel below in a process, define the following:
-//   input:
-//   file fasta from ch_fasta
-//
-params.fasta = params.genome ? params.genomes[ params.genome ].fasta ?: false : false
-if (params.fasta) { ch_fasta = file(params.fasta, checkIfExists: true) }
+//Generate empty channels
+ch_peptides = Channel.empty()
+ch_check_peptides = Channel.empty()
+ch_proteins = Channel.empty()
+ch_split_variants = Channel.empty()
+ch_alleles = Channel.empty()
+ch_check_alleles = Channel.empty()
+
+// Store input base name for later
+def input_base_name = ''
+
+ch_nonfree_paths = Channel.create()
+
+netmhc_meta = [
+    netmhc : [
+        version      : "4.0",
+        software_md5 : "132dc322da1e2043521138637dd31ebf",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHC-4.0/data.tar.gz",
+        data_md5     : "63c646fa0921d617576531396954d633",
+        binary_name  : "netMHC"
+    ],
+    netmhcpan: [
+        version      : "4.0",
+        software_md5 : "94aa60f3dfd9752881c64878500e58f3",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
+        data_md5     : "26cbbd99a38f6692249442aeca48608f",
+        binary_name  : "netMHCpan"
+    ],
+    netmhcii: [
+        version      : "2.2",
+        software_md5 : "918b7108a37599887b0725623d0974e6",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHCII-2.2/data.tar.gz",
+        data_md5     : "11579b61d3bfe13311f7b42fc93b4dd8",
+        binary_name  : "netMHCII"
+    ],
+    netmhciipan: [
+        version      : "3.1",
+        software_md5 : "0962ce799f7a4c9631f8566a55237073",
+        data_url     : "http://www.cbs.dtu.dk/services/NetMHCIIpan-3.1/data.tar.gz",
+        data_md5     : "f833df245378e60ca6e55748344a36f6",
+        binary_name  : "netMHCIIpan"
+    ]
+]
+
+tools = params.tools?.tokenize(',')
+
+// Validating parameters
+if ( !params.show_supported_models ){
+    if ( params.peptides ) {
+        if ( params.fasta_output ) {
+            exit 1, "Peptide input not compatible with protein sequence FASTA output."
+        }
+        if ( params.wild_type ) {
+            exit 1, "Peptide input not compatible with wild-type sequence generation."
+        }
+        input_base_name = file(params.peptides).baseName
+        Channel
+            .fromPath(params.peptides, checkIfExists: true)
+            .set { ch_peptides }
+            (ch_peptides, ch_check_peptides) = ch_peptides.into(2)
+    }
+    else if ( params.proteins ) {
+        if ( params.fasta_output ) {
+            exit 1, "Protein input not compatible with protein sequence FASTA output."
+        }
+        if ( params.wild_type ) {
+            exit 1, "Protein input not compatible with wild-type sequence generation."
+        }
+        input_base_name = file(params.proteins).baseName
+        Channel
+            .fromPath(params.proteins, checkIfExists: true)
+            .set { ch_proteins }
+    }
+    else if (params.input) {
+        input_base_name = file(params.input).baseName
+        Channel
+            .fromPath(params.input, checkIfExists: true)
+            .set { ch_split_variants }
+    }
+    else {
+        exit 1, "Please specify a file that contains annotated variants, protein sequences OR peptide sequences. Alternatively, to write out all supported models specify '--show_supported_models'."
+    }
+
+    if ( !params.alleles ) {
+        exit 1, "Please specify a file containing MHC alleles."
+    }
+    else {
+        Channel.value(file(params.alleles, checkIfExists: true)).into{ch_alleles; ch_check_alleles}
+    }
+
+    if ( params.input ){
+        allele_file = file(params.alleles, checkIfExists: true)
+        allele_file.eachLine{line ->
+            if (line.contains("H2-")) {
+                exit 1, "Mouse allele provided: $line. Not compatible with reference ${params.genome_version}. Currently mouse alleles are only supported when using peptide sequences as input (--peptides)."
+            }
+        }
+    }
+
+    if ( params.mhc_class != 1 && params.mhc_class != 2 ){
+        exit 1, "Invalid MHC class option: ${params.mhc_class}. Valid options: 1, 2"
+    }
+
+    if ( (params.mhc_class == 1 && tools.contains("mhcnuggets-class-2")) || (params.mhc_class == 2 && tools.contains("mhcnuggets-class-1")) ){
+        log.warn "Provided MHC class is not compatible with the selected MHCnuggets tool. Output might be empty.\n"
+    }
+
+    if ( params.filter_self & !params.proteome ){
+        params.proteome = file("$projectDir/assets/")
+    }
+
+    if ( params.mem_mode != 'low' && params.mem_mode != 'intermediate' && params.mem_mode != 'high' )
+    {
+        exit 1, "Invalid memory mode parameter: ${params.mem_mode}. Valid options: 'low', 'intermediate', 'high'."
+    }
+
+    // External tools
+    ["netmhc", "netmhcpan", "netmhcii", "netmhciipan"].each {
+        // Check if the _path parameter was set for this tool
+        if (params["${it}_path"] as Boolean && ! tools.contains(it))
+        {
+            log.warn("--${it}_path specified, but --tools does not contain ${it}. Both have to be specified to enable ${it}. Ignoring.")
+        }
+        else if (!params["${it}_path"] as Boolean && tools.contains(it))
+        {
+            log.warn("--${it}_path not specified, but --tools contains ${it}. Both have to be specified to enable ${it}. Ignoring.")
+            tools.removeElement(it)
+        }
+        else if (params["${it}_path"])
+        {
+            // If so, add the tool name and user installation path to the external tools import channel
+            ch_nonfree_paths.bind([
+                it,
+                netmhc_meta[it].version,
+                netmhc_meta[it].software_md5,
+                file(params["${it}_path"], checkIfExists:true),
+                file(netmhc_meta[it].data_url),
+                netmhc_meta[it].data_md5,
+                netmhc_meta[it].binary_name
+            ])
+        }
+    }
+    if (tools.isEmpty())
+    {
+        exit 1, "No valid tools specified."
+    }
+    ch_nonfree_paths.close()
+}
 
 // Check AWS batch settings
 if (workflow.profile.contains('awsbatch')) {
@@ -65,30 +203,6 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 ch_output_docs = file("$projectDir/docs/output.md", checkIfExists: true)
 ch_output_docs_images = file("$projectDir/docs/images/", checkIfExists: true)
 
-/*
- * Create a channel for input read files
- */
-if (params.input_paths) {
-    if (params.single_end) {
-        Channel
-            .from(params.input_paths)
-            .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true) ] ] }
-            .ifEmpty { exit 1, 'params.input_paths was empty - no input files supplied' }
-            .into { ch_read_files_fastqc; ch_read_files_trimming }
-    } else {
-        Channel
-            .from(params.input_paths)
-            .map { row -> [ row[0], [ file(row[1][0], checkIfExists: true), file(row[1][1], checkIfExists: true) ] ] }
-            .ifEmpty { exit 1, 'params.input_paths was empty - no input files supplied' }
-            .into { ch_read_files_fastqc; ch_read_files_trimming }
-    }
-} else {
-    Channel
-        .fromFilePairs(params.input, size: params.single_end ? 1 : 2)
-        .ifEmpty { exit 1, "Cannot find any reads matching: ${params.input}\nNB: Path needs to be enclosed in quotes!\nIf this is single-end data, please specify --single_end on the command line." }
-        .into { ch_read_files_fastqc; ch_read_files_trimming }
-}
-
 ////////////////////////////////////////////////////
 /* --         PRINT PARAMETER SUMMARY          -- */
 ////////////////////////////////////////////////////
@@ -96,18 +210,40 @@ log.info NfcoreSchema.params_summary_log(workflow, params, json_schema)
 
 // Header log info
 def summary = [:]
+
+//Standard Params for nf-core pipelines
+summary['Pipeline Name']  = 'nf-core/epitopeprediction'
 if (workflow.revision) summary['Pipeline Release'] = workflow.revision
 summary['Run Name']         = workflow.runName
-// TODO nf-core: Report custom parameters here
-summary['Input']            = params.input
-summary['Fasta Ref']        = params.fasta
-summary['Data Type']        = params.single_end ? 'Single-End' : 'Paired-End'
+//Pipeline Parameters
 summary['Max Resources']    = "$params.max_memory memory, $params.max_cpus cpus, $params.max_time time per job"
+if ( params.show_supported_models ) {
+    summary['Show Supported Models'] = params.show_supported_models
+} else {
+    if ( params.input ) summary['Variants'] = params.input
+    if ( params.peptides ) summary['Peptides'] = params.peptides
+    if ( params.proteins ) summary['Proteins'] = params.proteins
+    if ( params.alleles ) summary['Alleles'] = params.alleles
+    if ( !params.peptides) {
+        summary['Min. Peptide Length'] = params.min_peptide_length
+        summary['Max. Peptide Length'] = params.max_peptide_length
+    }
+    summary['MHC Class'] = params.mhc_class
+    if ( !params.peptides && !params.proteins ) summary['Reference Genome'] = params.genome_version
+    if ( params.proteome ) summary['Reference Proteome'] = params.proteome
+    summary['Self-Filter'] = params.filter_self
+    summary['Tools'] = tools.join(',')
+    summary['Wild-types'] = params.wild_type
+    summary['Protein FASTA Output'] = params.fasta_output
+    if ( params.peptides || params.proteins ) summary['Max. Number of Chunks for Parallelization'] = params.peptides_split_maxchunks
+    if ( params.peptides || params.proteins ) summary['Min. Number of Peptides in One Chunk'] = params.peptides_split_minchunksize
+}
+summary['Memory Mode']      = params.mem_mode
 if (workflow.containerEngine) summary['Container'] = "$workflow.containerEngine - $workflow.container"
-summary['Output dir']       = params.outdir
-summary['Launch dir']       = workflow.launchDir
-summary['Working dir']      = workflow.workDir
-summary['Script dir']       = workflow.projectDir
+summary['Output Dir']       = params.outdir
+summary['Launch Dir']       = workflow.launchDir
+summary['Working Dir']      = workflow.workDir
+summary['Script Dir']       = workflow.projectDir
 summary['User']             = workflow.userName
 if (workflow.profile.contains('awsbatch')) {
     summary['AWS Region']   = params.awsregion
@@ -145,6 +281,74 @@ Channel.from(summary.collect{ [it.key, it.value] })
     .set { ch_workflow_summary }
 
 /*
+ * Copy non-free software provided by the user into the working directory
+ */
+process netmhc_tools_import {
+    input:
+    tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname) from ch_nonfree_paths
+
+    output:
+    path "${toolname}" into ch_nonfree_tools
+    path "v_${toolname}.txt" into ch_nonfree_versions
+
+    script:
+    """
+    #
+    # CHECK IF THE PROVIDED SOFTWARE TARBALL IS A REGULAR FILES
+    #
+    if [ ! -f "$tooltarball" ]; then
+        echo "Path specified for ${toolname} does not point to a regular file. Please specify a path to the original tool tarball." >&2
+        exit 1
+    fi
+
+    #
+    # VALIDATE THE CHECKSUM OF THE PROVIDED SOFTWARE TARBALL
+    #
+    checksum="\$(md5sum "$tooltarball" | cut -f1 -d' ')"
+    if [ "\$checksum" != "${toolchecksum}" ]; then
+        echo "Checksum error for $toolname. Please make sure to provide the original tarball for $toolname version $toolversion" >&2
+        exit 2
+    fi
+
+    #
+    # UNPACK THE PROVIDED SOFTWARE TARBALL
+    #
+    mkdir -v "${toolname}"
+    tar -C "${toolname}" --strip-components 1 -x -f "$tooltarball"
+
+    #
+    # MODIFY THE NETMHC WRAPPER SCRIPT ACCORDING TO INSTALL INSTRUCTIONS
+    # Substitution 1: We install tcsh via conda, thus /bin/tcsh won't work
+    # Substitution 2: We want temp files to be written to /tmp if TMPDIR is not set
+    # Substitution 3: NMHOME should be the folder in which the tcsh script itself resides
+    #
+    sed -i.bak \
+        -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
+        -e "s_/scratch_/tmp_" \
+        -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_" "${toolname}/${toolbinaryname}"
+
+    #
+    # VALIDATE THE CHECKSUM OF THE DOWNLOADED MODEL DATA
+    #
+    checksum="\$(md5sum "$datatarball" | cut -f1 -d' ')"
+    if [ "\$checksum" != "${datachecksum}" ]; then
+        echo "A checksum mismatch occurred when checking the data file for ${toolname}." >&2
+        exit 3
+    fi
+
+    #
+    # UNPACK THE DOWNLOADED MODEL DATA
+    #
+    tar -C "${toolname}" -v -x -f "$datatarball"
+
+    #
+    # CREATE VERSION FILE
+    #
+    echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
+    """
+}
+
+/*
  * Parse software version numbers
  */
 process get_software_versions {
@@ -152,48 +356,264 @@ process get_software_versions {
         saveAs: { filename ->
                       if (filename.indexOf('.csv') > 0) filename
                       else null
-        }
+                }
+    input:
+    file ("*") from ch_nonfree_versions.collect().ifEmpty([])
 
     output:
     file 'software_versions_mqc.yaml' into ch_software_versions_yaml
-    file 'software_versions.csv'
+    file "software_versions.csv" into ch_software_versions_csv
 
     script:
-    // TODO nf-core: Get all tools to print their version number here
     """
     echo $workflow.manifest.version > v_pipeline.txt
     echo $workflow.nextflow.version > v_nextflow.txt
-    fastqc --version > v_fastqc.txt
     multiqc --version > v_multiqc.txt
+    csvtk version > v_csvtk.txt
+    echo \$(SnpSift 2>&1) > v_snpsift.txt
+    python -c "import pkg_resources; print 'fred2 ' + pkg_resources.get_distribution('Fred2').version" > v_fred2.txt
+    echo \$(mhcflurry-predict --version 2>&1) > v_mhcflurry.txt
+    python -c "import pkg_resources; print 'mhcnuggets ' + pkg_resources.get_distribution('mhcnuggets').version" > v_mhcnuggets.txt
     scrape_software_versions.py &> software_versions_mqc.yaml
     """
 }
 
 /*
- * STEP 1 - FastQC
+ * Write models of predictions tools supported by FRED2 to file
  */
-process fastqc {
-    tag "$name"
-    label 'process_medium'
-    publishDir "${params.outdir}/fastqc", mode: params.publish_dir_mode,
-        saveAs: { filename ->
-                      filename.indexOf('.zip') > 0 ? "zips/$filename" : "$filename"
-        }
+process showSupportedModels {
+    publishDir "${params.outdir}/supported_models/", mode: 'copy'
 
     input:
-    set val(name), file(reads) from ch_read_files_fastqc
+    file software_versions from ch_software_versions_csv
 
     output:
-    file '*_fastqc.{zip,html}' into ch_fastqc_results
+    file '*.txt'
+
+    when: params.show_supported_models
 
     script:
     """
-    fastqc --quiet --threads $task.cpus $reads
+    check_supported_models.py --versions ${software_versions}
+    """
+}
+
+process checkRequestedModels {
+    publishDir "${params.outdir}/reports/", mode: 'copy'
+
+    input:
+    file peptides from ch_check_peptides
+    file alleles from ch_check_alleles
+    file software_versions from ch_software_versions_csv
+
+    output:
+    file 'model_report.txt'
+    file 'model_warnings.log' into ch_model_warnings
+
+    when: !params.show_supported_models
+
+    script:
+    def input_type = params.peptides ? "--peptides ${peptides}" : "--max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}"
+    """
+    check_requested_models.py ${input_type} \
+                         --alleles ${alleles} \
+                         --mhcclass ${params.mhc_class} \
+                         --tools ${tools.join(",")} \
+                         --versions ${software_versions} > model_warnings.log
+    """
+}
+
+ch_model_warnings.subscribe {
+        model_log_file = file("$it", checkIfExists: true)
+        def lines = model_log_file.readLines()
+        if (lines.size() > 0) {
+            log.info "-${c_purple} Warning: ${c_reset}-"
+            lines.each { String line ->
+                log.info "-${c_purple}   $line ${c_reset}-"
+            }
+        }
+    }
+
+/*
+ * STEP 1a - Split variant data
+ */
+process splitVariants {
+    input:
+    file variants from ch_split_variants
+
+    output:
+    file '*chr*.vcf' optional true into ch_splitted_vcfs
+    file '*chr*.tsv' optional true into ch_splitted_tsvs
+    file '*chr*.GSvar' optional true into ch_splitted_gsvars
+
+    when: !params.peptides && !params.show_supported_models
+
+    script:
+    if ( variants.toString().endsWith('.vcf') || variants.toString().endsWith('.vcf.gz') ) {
+        """
+        SnpSift split ${variants}
+        """
+    }
+    else {
+        """
+        sed -i.bak '/^##/d' ${variants}
+        csvtk split ${variants} -t -C '&' -f '#chr'
+        """
+    }
+}
+
+/*
+ * STEP 0b - Process FASTA file and generate peptides
+ */
+if (params.proteins) {
+    process genPeptides {
+        input:
+        file proteins from ch_proteins
+
+        output:
+        file 'peptides.tsv' into ch_split_peptides
+
+        when: !params.peptides
+
+        script:
+        """
+        gen_peptides.py --input ${proteins} --output 'peptides.tsv' --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}
+        """
+    }
+ } else {
+    ch_peptides.set{ch_split_peptides}
+ }
+/*
+ * STEP 1b- Split peptide data
+ */
+process splitPeptides {
+    input:
+    file peptides from ch_split_peptides
+
+    output:
+    file '*.chunk_*.tsv' into ch_splitted_peptides
+
+    when: !params.input
+
+    script:
+    """
+    split_peptides.py --input ${peptides} --output_base ${peptides.baseName} --min_size ${params.peptides_split_minchunksize} --max_chunks ${params.peptides_split_maxchunks}
+    """
+}
+
+
+/*
+ * STEP 2 - Run epitope prediction
+ */
+process peptidePrediction {
+
+   input:
+   file inputs from ch_splitted_vcfs.flatten().mix(ch_splitted_tsvs.flatten(), ch_splitted_gsvars.flatten(), ch_splitted_peptides.flatten())
+   file alleles from ch_alleles
+   file software_versions from ch_software_versions_csv
+   file ('nonfree_software/*') from ch_nonfree_tools.collect().ifEmpty([])
+
+   output:
+   file "*.tsv" into ch_predicted_peptides
+   file "*.json" into ch_json_reports
+   file "*.fasta" optional true into ch_protein_fastas
+
+   script:
+   def input_type = params.peptides ? "--peptides ${inputs}" : params.proteins ?  "--peptides ${inputs}" : "--somatic_mutations ${inputs}"
+   def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
+   def wt = params.wild_type ? "--wild_type" : ""
+   def fasta_output = params.fasta_output ? "--fasta_output" : ""
+   """
+   # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
+   mkdir -p mhcflurry-data
+   export MHCFLURRY_DATA_DIR=./mhcflurry-data
+   # specify MHCflurry release for which to download models, need to be updated here as well when MHCflurry will be updated
+   export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
+
+   # Add non-free software to the PATH
+   shopt -s nullglob
+   for p in nonfree_software/*; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
+   shopt -u nullglob
+
+   epaa.py ${input_type} --identifier ${inputs.baseName} \
+                         --alleles $alleles \
+                         --mhcclass ${params.mhc_class} \
+                         --max_length ${params.max_peptide_length} \
+                         --min_length ${params.min_peptide_length} \
+                         --tools ${tools.join(",")} \
+                         --versions ${software_versions} \
+                         --reference ${params.genome_version} \
+                         ${ref_prot} \
+                         ${wt} \
+                         ${fasta_output}
+   """
+}
+
+/*
+ * STEP 3 - Combine epitope prediction results
+ */
+process mergeResults {
+    publishDir "${params.outdir}/predictions", mode: 'copy'
+
+    input:
+    file predictions from ch_predicted_peptides.collect()
+
+    output:
+    file "${input_base_name}_prediction_result.tsv"
+
+    script:
+    def single = predictions instanceof Path ? 1 : predictions.size()
+    def merge = (single == 1) ? 'cat' : 'csvtk concat -t'
+
+    """
+    $merge $predictions > ${input_base_name}_prediction_result.tsv
     """
 }
 
 /*
- * STEP 2 - MultiQC
+ * STEP 3(2) optional - Combine protein sequences
+ */
+process mergeFastas {
+    publishDir "${params.outdir}/predictions", mode: 'copy'
+
+    input:
+    file proteins from ch_protein_fastas.collect()
+
+    output:
+    file "${input_base_name}_prediction_proteins.fasta"
+
+    when:
+    params.fasta_output
+
+    """
+    cat $proteins > ${input_base_name}_prediction_proteins.fasta
+    """
+}
+
+/*
+ * STEP 4 - Combine epitope prediction reports
+ */
+
+process mergeReports {
+    publishDir "${params.outdir}/predictions", mode: 'copy'
+
+    input:
+    file jsons from ch_json_reports.collect()
+
+    output:
+    file "${input_base_name}_prediction_report.json"
+
+    script:
+    def single = jsons instanceof Path ? 1 : jsons.size()
+    def command = (single == 1) ? "merge_jsons.py --single_input ${jsons} --prefix ${input_base_name}" : "merge_jsons.py --input \$PWD --prefix ${input_base_name}"
+
+    """
+    $command
+    """
+}
+
+/*
+ * STEP 5 - MultiQC
  */
 process multiqc {
     publishDir "${params.outdir}/MultiQC", mode: params.publish_dir_mode
@@ -201,8 +621,6 @@ process multiqc {
     input:
     file (multiqc_config) from ch_multiqc_config
     file (mqc_custom_config) from ch_multiqc_custom_config.collect().ifEmpty([])
-    // TODO nf-core: Add in log files from your new processes for MultiQC to find!
-    file ('fastqc/*') from ch_fastqc_results.collect().ifEmpty([])
     file ('software_versions/*') from ch_software_versions_yaml.collect()
     file workflow_summary from ch_workflow_summary.collectFile(name: "workflow_summary_mqc.yaml")
 
@@ -210,6 +628,8 @@ process multiqc {
     file "*multiqc_report.html" into ch_multiqc_report
     file "*_data"
     file "multiqc_plots"
+
+    when: !params.show_supported_models
 
     script:
     rtitle = ''
@@ -219,7 +639,6 @@ process multiqc {
         rfilename = "--filename " + workflow.runName.replaceAll('\\W','_').replaceAll('_+','_') + "_multiqc_report"
     }
     custom_config_file = params.multiqc_config ? "--config $mqc_custom_config" : ''
-    // TODO nf-core: Specify which MultiQC modules to use with -m for a faster run time
     """
     multiqc -f $rtitle $rfilename $custom_config_file .
     """
@@ -277,19 +696,20 @@ workflow.onComplete {
     email_fields['summary']['Nextflow Build'] = workflow.nextflow.build
     email_fields['summary']['Nextflow Compile Timestamp'] = workflow.nextflow.timestamp
 
-    // TODO nf-core: If not using MultiQC, strip out this code (including params.max_multiqc_email_size)
     // On success try attach the multiqc report
     def mqc_report = null
-    try {
-        if (workflow.success) {
-            mqc_report = ch_multiqc_report.getVal()
-            if (mqc_report.getClass() == ArrayList) {
-                log.warn "[nf-core/epitopeprediction] Found multiple reports from process 'multiqc', will use only one"
-                mqc_report = mqc_report[0]
+    if (!params.show_supported_models) {
+        try {
+            if (workflow.success) {
+                mqc_report = ch_multiqc_report.getVal()
+                if (mqc_report.getClass() == ArrayList) {
+                    log.warn "[nf-core/epitopeprediction] Found multiple reports from process 'multiqc', will use only one"
+                    mqc_report = mqc_report[0]
+                }
             }
+        } catch (all) {
+            log.warn "[nf-core/epitopeprediction] Could not attach MultiQC report to summary email"
         }
-    } catch (all) {
-        log.warn "[nf-core/epitopeprediction] Could not attach MultiQC report to summary email"
     }
 
     // Check if we are only sending emails on failure
@@ -348,6 +768,10 @@ workflow.onComplete {
     c_red = params.monochrome_logs ? '' : "\033[0;31m";
     c_reset = params.monochrome_logs ? '' : "\033[0m";
 
+    if (params.show_supported_models) {
+        log.info "-${c_green}Did not run the actual epitope prediction ${c_reset}-"
+        log.info "-${c_green}The information about supported models of the available prediction tools was written to ${params.outdir}/supported_models/  ${c_reset}-"
+    }
     if (workflow.stats.ignoredCount > 0 && workflow.success) {
         log.info "-${c_purple}Warning, pipeline completed, but with errored process(es) ${c_reset}-"
         log.info "-${c_red}Number of ignored errored process(es) : ${workflow.stats.ignoredCount} ${c_reset}-"
@@ -360,12 +784,34 @@ workflow.onComplete {
         checkHostname()
         log.info "-${c_purple}[nf-core/epitopeprediction]${c_red} Pipeline completed with errors${c_reset}-"
     }
-
 }
 
 workflow.onError {
     // Print unexpected parameters - easiest is to just rerun validation
     NfcoreSchema.validateParameters(params, json_schema, log)
+}
+
+def nfcoreHeader() {
+    // Log colors ANSI codes
+    c_black = params.monochrome_logs ? '' : "\033[0;30m";
+    c_blue = params.monochrome_logs ? '' : "\033[0;34m";
+    c_cyan = params.monochrome_logs ? '' : "\033[0;36m";
+    c_dim = params.monochrome_logs ? '' : "\033[2m";
+    c_green = params.monochrome_logs ? '' : "\033[0;32m";
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
+    c_white = params.monochrome_logs ? '' : "\033[0;37m";
+    c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
+
+    return """    -${c_dim}--------------------------------------------------${c_reset}-
+                                            ${c_green},--.${c_black}/${c_green},-.${c_reset}
+    ${c_blue}        ___     __   __   __   ___     ${c_green}/,-._.--~\'${c_reset}
+    ${c_blue}  |\\ | |__  __ /  ` /  \\ |__) |__         ${c_yellow}}  {${c_reset}
+    ${c_blue}  | \\| |       \\__, \\__/ |  \\ |___     ${c_green}\\`-._,-`-,${c_reset}
+                                            ${c_green}`._,._,\'${c_reset}
+    ${c_purple}  nf-core/epitopeprediction v${workflow.manifest.version}${c_reset}
+    -${c_dim}--------------------------------------------------${c_reset}-
+    """.stripIndent()
 }
 
 def checkHostname() {

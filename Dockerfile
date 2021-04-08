@@ -11,3 +11,7 @@ ENV PATH /opt/conda/envs/nf-core-epitopeprediction-1.2.0dev/bin:$PATH
 
 # Dump the details of the installed packages to a file for posterity
 RUN conda env export --name nf-core-epitopeprediction-1.2.0dev > nf-core-epitopeprediction-1.2.0dev.yml
+
+# Instruct R processes to use these empty files instead of clashing with a local version
+RUN touch .Rprofile
+RUN touch .Renviron
