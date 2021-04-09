@@ -110,12 +110,12 @@
                 },
                 "mhc_class": {
                     "type": "integer",
-                    "default": "1",
+                    "default": 1,
                     "description": "MHC class for prediction.",
                     "help_text": "Specifies whether the predictions should be done for MHC class I or class II.",
                     "enum": [
-                        "1",
-                        "2"
+                        1,
+                        2
                     ]
                 },
                 "max_peptide_length": {
