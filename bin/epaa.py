@@ -731,7 +731,10 @@ def create_affinity_values(allele, length, j, method, max_scores, allele_strings
 
 def create_binder_values(aff, method, thresholds):
     if not pd.isnull(aff):
-        return True if aff > thresholds.get(method) else False
+        if 'syf' in method:
+            return True if aff > thresholds[method] else False
+        else:
+            return True if aff < thresholds[method] else False
     else:
         return np.nan
 
@@ -1025,7 +1028,15 @@ def __main__():
         if version not in EpitopePredictorFactory.available_methods()[method]:
             raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
-    thresholds = assign_tool_thresholds(methods, args.tool_thresholds)
+    thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500}
+    if args.tool_thresholds:
+        with open(args.tool_thresholds, 'r') as json_file:
+            threshold_file = json.load(json_file)
+            for tool,thresh in threshold_file.items():
+                if tool in thresholds.keys():
+                    thresholds[tool] = thresh
+                else:
+                    raise ValueError('Tool ' + tool +' in specified threshold file is not supported')
 
     # MHC class I or II predictions
     if args.mhcclass is 1:

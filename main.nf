@@ -83,6 +83,7 @@ ch_proteins = Channel.empty()
 ch_split_variants = Channel.empty()
 ch_alleles = Channel.empty()
 ch_check_alleles = Channel.empty()
+ch_tool_thresholds = Channel.empty()
 
 // Store input base name for later
 def input_base_name = ''
@@ -223,6 +224,11 @@ if ( !params.show_supported_models ){
         exit 1, "No valid tools specified."
     }
     ch_nonfree_paths.close()
+}
+
+if ( params.tool_thresholds )
+{
+    ch_tool_thresholds = Channel.fromPath(params.tool_thresholds, checkIfExists: true)
 }
 
 // Has the run name been specified by the user?
@@ -555,6 +561,7 @@ process peptidePrediction {
    file alleles from ch_alleles
    file software_versions from ch_software_versions_csv
    file ('nonfree_software/*') from ch_nonfree_tools.collect().ifEmpty([])
+   file tool_thresholds from ch_tool_thresholds.ifEmpty("")
 
    output:
    file "*.tsv" into ch_predicted_peptides
@@ -566,6 +573,7 @@ process peptidePrediction {
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    def fasta_output = params.fasta_output ? "--fasta_output" : ""
+   def threshold_file = params.tool_thresholds ? "--tool_thresholds ${tool_thresholds}" : ""
    """
    # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
    mkdir -p mhcflurry-data
@@ -584,7 +592,7 @@ process peptidePrediction {
                          --max_length ${params.max_peptide_length} \
                          --min_length ${params.min_peptide_length} \
                          --tools ${tools.join(",")} \
-                         --tool_thresholds ${params.tool_thresholds} \
+                         ${threshold_file} \
                          --versions ${software_versions} \
                          --reference ${params.genome_version} \
                          ${ref_prot} \
