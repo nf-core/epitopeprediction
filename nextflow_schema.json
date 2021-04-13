@@ -135,6 +135,11 @@
                     "help_text": "Specifies the tool(s) to use. Available are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`. Can be combined in a list separated by comma.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
+                "tool_thresholds": {
+                    "type": "string",
+                    "description": "Specifies the binder threshold for each given tool in JSON format.",
+                    "help_text": "Default affinity thresholds to determine wether a peptide is considered as a binder: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2 <= 500, `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500. Thresholds can be customized using a JSON file."
+                },
                 "wild_type": {
                     "type": "boolean",
                     "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",

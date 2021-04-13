@@ -729,14 +729,15 @@ def create_affinity_values(allele, length, j, method, max_scores, allele_strings
         return np.nan
 
 
-def create_binder_values(aff, method):
+def create_binder_values(aff, method, thresholds):
     if not pd.isnull(aff):
         if 'syf' in method:
-            return True if aff > 50.0 else False
+            return True if aff > thresholds[method] else False
         else:
-            return True if aff <= 500.0 else False
+            return True if aff <= thresholds[method] else False
     else:
         return np.nan
+
 
 def generate_wt_seqs(peptides):
     wt_dict = {}
@@ -779,7 +780,7 @@ def generate_wt_seqs(peptides):
     return wt_dict
 
 
-def make_predictions_from_variants(variants_all, methods, alleles, minlength, maxlength, martsadapter, protein_db, identifier, metadata, transcriptProteinMap):
+def make_predictions_from_variants(variants_all, methods, tool_thresholds, alleles, minlength, maxlength, martsadapter, protein_db, identifier, metadata, transcriptProteinMap):
     # list for all peptides and filtered peptides
     all_peptides = []
     all_peptides_filtered = []
@@ -847,7 +848,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
             if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
-                df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
+                df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method'], tool_thresholds), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
                 df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
@@ -863,7 +864,7 @@ def make_predictions_from_variants(variants_all, methods, alleles, minlength, ma
     return pred_dataframes, statistics, all_peptides_filtered, prots
 
 
-def make_predictions_from_peptides(peptides, methods, alleles, protein_db, identifier, metadata):
+def make_predictions_from_peptides(peptides, methods, tool_thresholds, alleles, protein_db, identifier, metadata):
     # dictionaries for syfpeithi matrices max values and allele mapping
     max_values_matrices = {}
     allele_string_map = {}
@@ -926,7 +927,7 @@ def make_predictions_from_peptides(peptides, methods, alleles, protein_db, ident
             if ('HLA-' in str(c)) or ('H-2-' in str(c)):
                 idx = df.columns.get_loc(c)
                 df.insert(idx + 1, '%s affinity' % c, df.apply(lambda x: create_affinity_values(str(c), int(x['length']), float(x[c]), x['Method'], max_values_matrices, allele_string_map), axis=1))
-                df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method']), axis=1))
+                df.insert(idx + 2, '%s binder' % c, df.apply(lambda x: create_binder_values(float(x['%s affinity' % c]), x['Method'], tool_thresholds), axis=1))
                 df = df.rename(columns={c: '%s score' % c})
                 df['%s score' % c] = df.apply(lambda x: create_score_values(float(x['%s score' % c]), x['Method']), axis=1)
 
@@ -949,6 +950,7 @@ def __main__():
     parser.add_argument('-l', "--max_length", help="Maximum peptide length")
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
     parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
+    parser.add_argument('-tt', "--tool_thresholds", help="Customize affinity threshold of given tools using a json file", required=False, type=str)
     parser.add_argument('-sv', "--versions", help="File containing parsed software version numbers.", required=True)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
@@ -1017,17 +1019,27 @@ def __main__():
         if version not in EpitopePredictorFactory.available_methods()[method]:
             raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
+    thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":500, "netmhcpan":500, "netmhcii":500, "netmhciipan":500}
+    if args.tool_thresholds:
+        with open(args.tool_thresholds, 'r') as json_file:
+            threshold_file = json.load(json_file)
+            for tool, thresh in threshold_file.items():
+                if tool in thresholds.keys():
+                    thresholds[tool] = thresh
+                else:
+                    raise ValueError('Tool ' + tool +' in specified threshold file is not supported')
+
     # MHC class I or II predictions
     if args.mhcclass is 1:
         if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
     # concat dataframes for all peptide lengths
     try:
