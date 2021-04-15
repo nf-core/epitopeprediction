@@ -37,6 +37,20 @@ if (params.genomes && params.genome && !params.genomes.containsKey(params.genome
     exit 1, "The provided genome '${params.genome}' is not available in the iGenomes file. Currently the available genomes are ${params.genomes.keySet().join(', ')}"
 }
 
+// Log colors ANSI codes
+c_black = params.monochrome_logs ? '' : "\033[0;30m";
+c_blue = params.monochrome_logs ? '' : "\033[0;34m";
+c_cyan = params.monochrome_logs ? '' : "\033[0;36m";
+c_dim = params.monochrome_logs ? '' : "\033[2m";
+c_green = params.monochrome_logs ? '' : "\033[0;32m";
+c_purple = params.monochrome_logs ? '' : "\033[0;35m";
+c_reset = params.monochrome_logs ? '' : "\033[0m";
+c_white = params.monochrome_logs ? '' : "\033[0;37m";
+c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
+c_red = params.monochrome_logs ? '' : "\033[1;91m"
+c_yellow_bold = params.monochrome_logs ? '' : "\033[1;93m"
+
+
 //Generate empty channels
 ch_peptides = Channel.empty()
 ch_check_peptides = Channel.empty()
@@ -44,6 +58,7 @@ ch_proteins = Channel.empty()
 ch_split_variants = Channel.empty()
 ch_alleles = Channel.empty()
 ch_check_alleles = Channel.empty()
+ch_tool_thresholds = Channel.empty()
 
 // Store input base name for later
 def input_base_name = ''
@@ -195,6 +210,11 @@ if (workflow.profile.contains('awsbatch')) {
     if (!params.outdir.startsWith('s3:')) exit 1, 'Outdir not on S3 - specify S3 Bucket to run on AWSBatch!'
     // Prevent trace files to be stored on S3 since S3 does not support rolling files.
     if (params.tracedir.startsWith('s3:')) exit 1, 'Specify a local tracedir or run without trace! S3 cannot be used for tracefiles.'
+}
+
+if ( params.tool_thresholds )
+{
+    ch_tool_thresholds = Channel.fromPath(params.tool_thresholds, checkIfExists: true)
 }
 
 // Stage config files
@@ -512,6 +532,7 @@ process peptidePrediction {
    file alleles from ch_alleles
    file software_versions from ch_software_versions_csv
    file ('nonfree_software/*') from ch_nonfree_tools.collect().ifEmpty([])
+   file tool_thresholds from ch_tool_thresholds.ifEmpty("")
 
    output:
    file "*.tsv" into ch_predicted_peptides
@@ -523,6 +544,7 @@ process peptidePrediction {
    def ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
    def wt = params.wild_type ? "--wild_type" : ""
    def fasta_output = params.fasta_output ? "--fasta_output" : ""
+   def threshold_file = params.tool_thresholds ? "--tool_thresholds ${tool_thresholds}" : ""
    """
    # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
    mkdir -p mhcflurry-data
@@ -541,6 +563,7 @@ process peptidePrediction {
                          --max_length ${params.max_peptide_length} \
                          --min_length ${params.min_peptide_length} \
                          --tools ${tools.join(",")} \
+                         ${threshold_file} \
                          --versions ${software_versions} \
                          --reference ${params.genome_version} \
                          ${ref_prot} \
@@ -763,10 +786,6 @@ workflow.onComplete {
     def output_tf = new File(output_d, "pipeline_report.txt")
     output_tf.withWriter { w -> w << email_txt }
 
-    c_green = params.monochrome_logs ? '' : "\033[0;32m";
-    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
-    c_red = params.monochrome_logs ? '' : "\033[0;31m";
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
 
     if (params.show_supported_models) {
         log.info "-${c_green}Did not run the actual epitope prediction ${c_reset}-"
@@ -792,16 +811,6 @@ workflow.onError {
 }
 
 def nfcoreHeader() {
-    // Log colors ANSI codes
-    c_black = params.monochrome_logs ? '' : "\033[0;30m";
-    c_blue = params.monochrome_logs ? '' : "\033[0;34m";
-    c_cyan = params.monochrome_logs ? '' : "\033[0;36m";
-    c_dim = params.monochrome_logs ? '' : "\033[2m";
-    c_green = params.monochrome_logs ? '' : "\033[0;32m";
-    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
-    c_white = params.monochrome_logs ? '' : "\033[0;37m";
-    c_yellow = params.monochrome_logs ? '' : "\033[0;33m";
 
     return """    -${c_dim}--------------------------------------------------${c_reset}-
                                             ${c_green},--.${c_black}/${c_green},-.${c_reset}
@@ -815,10 +824,6 @@ def nfcoreHeader() {
 }
 
 def checkHostname() {
-    def c_reset = params.monochrome_logs ? '' : "\033[0m"
-    def c_white = params.monochrome_logs ? '' : "\033[0;37m"
-    def c_red = params.monochrome_logs ? '' : "\033[1;91m"
-    def c_yellow_bold = params.monochrome_logs ? '' : "\033[1;93m"
     if (params.hostnames) {
         def hostname = 'hostname'.execute().text.trim()
         params.hostnames.each { prof, hnames ->
