@@ -734,7 +734,7 @@ def create_binder_values(aff, method, thresholds):
         if 'syf' in method:
             return True if aff > thresholds[method] else False
         else:
-            return True if aff <= thresholds[method] else False
+            return True if aff <= thresholds[method.lower()] else False
     else:
         return np.nan
 
