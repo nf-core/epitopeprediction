@@ -12,28 +12,29 @@
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces"
             },
-            "fastq_1": {
-                "type": "string",
-                "pattern": "^\\S+\\.f(ast)?q\\.gz$",
-                "errorMessage": "FastQ file for reads 1 must be provided, cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'"
-            },
-            "fastq_2": {
-                "errorMessage": "FastQ file for reads 2 cannot contain spaces and must have extension '.fq.gz' or '.fastq.gz'",
+            "alleles": {
                 "anyOf": [
                     {
                         "type": "string",
-                        "pattern": "^\\S+\\.f(ast)?q\\.gz$"
+                        "pattern": "^\\S+\\.txt$"
                     },
                     {
                         "type": "string",
-                        "maxLength": 0
+                        "pattern": "(^[A-Z][*][0-9][0-9][:][0-9][0-9])$"
                     }
-                ]
+                ],
+                "errorMessage": "Alleles must be provided as string or file with extension '.txt''"
+            },
+            "filename": {
+                "type": "string",
+                "pattern": "^\\S+\\.(vcf|tsv|fasta|fa)$",
+                "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa'"
             }
         },
         "required": [
             "sample",
-            "fastq_1"
+            "alleles",
+            "filename"
         ]
     }
 }
