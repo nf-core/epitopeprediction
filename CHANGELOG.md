@@ -3,11 +3,17 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v1.2.0dev - [date]
+## v1.2.0dev - 2021-10-28
 
 ### `Added`
 
 - [#73](https://github.com/nf-core/epitopeprediction/pull/73) - Add support for the non-free netmhc tool family including netMHC 4.0, netMHCpan 4.0, netMHCII 2.2, and netMHCIIpan 3.1
+
+### `Changed`
+
+- [#100](https://github.com/nf-core/epitopeprediction/pull/89) - Merge previous template updates up to `v2.1`
+
+### `Fixed`
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
 
