@@ -117,7 +117,7 @@ def check_samplesheet(file_in, file_out):
                     first_header_col = [col.lower() for col in tsv.readlines()[0].split('\t')][0]
                     if first_header_col == "id":
                         anno = "pep"
-                    elif first_header_col == "#chr": ##TODO ASK CHRIS
+                    elif first_header_col == "#chr": 
                         anno = "variant"   
             else:
                 anno = "prot"
