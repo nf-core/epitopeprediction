@@ -1,0 +1,40 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema",
+    "$id": "https://raw.githubusercontent.com/nf-core/epitopeprediction/master/assets/schema_input.json",
+    "title": "nf-core/epitopeprediction pipeline - params.input schema",
+    "description": "Schema for the file provided with params.input",
+    "type": "array",
+    "items": {
+        "type": "object",
+        "properties": {
+            "sample": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "Sample name must be provided and cannot contain spaces"
+            },
+            "alleles": {
+                "anyOf": [
+                    {
+                        "type": "string",
+                        "pattern": "^\\S+\\.txt$"
+                    },
+                    {
+                        "type": "string",
+                        "pattern": "(^[A-Z][*][0-9][0-9][:][0-9][0-9])$"
+                    }
+                ],
+                "errorMessage": "Alleles must be provided as string or file with extension '.txt''"
+            },
+            "filename": {
+                "type": "string",
+                "pattern": "^\\S+\\.(vcf|tsv|fasta|fa)$",
+                "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa'"
+            }
+        },
+        "required": [
+            "sample",
+            "alleles",
+            "filename"
+        ]
+    }
+}

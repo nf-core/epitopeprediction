@@ -1,0 +1,4 @@
+sample,alleles,filename
+SAMPLE1,A*01:01;A*02:01,/path/to/sample1_variants.vcf
+SAMPLE2,/path/to/sample2_alleles.txt,/path/to/sample2_peptides.tsv
+SAMPLE3,/path/to/sample3_alleles.txt,/path/to/sample2_proteins.fasta
