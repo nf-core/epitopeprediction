@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 
-# TODO nf-core: Update the script to check the samplesheet
-# This script is based on the example at: https://raw.githubusercontent.com/nf-core/test-datasets/viralrecon/samplesheet/samplesheet_test_illumina_amplicon.csv
 
 import os
 import re
 import sys
-import errno
 import argparse
+import re
 
 def parse_args(args=None):
     Description = "Reformat nf-core/epitopeprediction samplesheet file and check its contents."
@@ -46,22 +44,29 @@ def make_dir(path):
 def check_samplesheet(file_in, file_out):
     """
     This function checks that the samplesheet follows the following structure:
+
     sample,alleles,filename
     GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
     GBM_2,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
+
     or
+
     sample,alleles,filename
     GBM_1,gbm_1_alleles.txt,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
     GBM_2,gbm_2_alleles.txt,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
+
+
     where the FileName column contains EIHTER a vcf file, a tsv file (peptides), or a fasta file (proteins)
     and the Alleles column contains EITHER a string of alleles separated by semicolon or the path to a text file
     containing one allele per line (no header)
+
     Furhter Examples:
     - Class2 allele format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/alleles/alleles.DRB1_01_01.txt
     - Mouse allele format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/alleles/alleles.H2.txt
     - pep.tsv => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/peptides/peptides.tsv
     - annotated_variants.tsv => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.tsv
     - annotated_variants.vcf => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.vcf
+
     """
 
     sample_run_dict = {}
