@@ -892,10 +892,10 @@ def make_predictions_from_peptides(peptides, methods, tool_thresholds, alleles, 
         for method, version in methods.items():
             try:
                 predictor = EpitopePredictorFactory(method, version=version)
+                ## TODO: somehow there is an empty list returned
                 results.extend([predictor.predict(all_peptides_filtered, alleles=alleles)])
             except:
                 logger.warning("Prediction for length {length} and allele {allele} not possible with {method} version {version}. No model available.".format(length=peplen, allele=','.join([str(a) for a in alleles]), method=method, version=version))
-
         # merge dataframes of the performed predictions
         if(len(results) == 0):
             continue
@@ -946,7 +946,7 @@ def __main__():
     parser.add_argument('-g', "--germline_mutations", help="Germline variants")
     parser.add_argument('-i', "--identifier", help="Dataset identifier")
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
-    parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
+    parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II", type=int)
     parser.add_argument('-l', "--max_length", help="Maximum peptide length")
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
     parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
@@ -1048,7 +1048,6 @@ def __main__():
     except:
         complete_df = pd.DataFrame()
         logger.error("No predictions available.")
-
     # replace method names with method names with version
     # complete_df.replace({'method': methods}, inplace=True)
     complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
