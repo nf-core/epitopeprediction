@@ -105,7 +105,7 @@ def read_GSvar(filename, pass_only=True):
                 logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
                 continue
             lines.append(row)
-    
+
     # get list of additional metadata
     metadata_list = set(tsvreader.fieldnames) - set(exclusion_list)
 
@@ -160,7 +160,7 @@ def read_GSvar(filename, pass_only=True):
                 nm_id = nm_id.split(".")[0]
 
                 coding[nm_id] = MutationSyntax(nm_id, int(trans_pos.split('_')[0])-1, int(prot_start)-1, trans_coding, prot_coding)
-                transcript_ids.append(nm_id)  
+                transcript_ids.append(nm_id)
         if coding:
             var = Variant(mut_id, vt, chrom.strip('chr'), int(genome_start), ref.upper(), alt.upper(), coding, isHomozygous, isSynonymous=isyn)
             var.gene = gene
@@ -221,7 +221,7 @@ def read_vcf(filename, pass_only=True):
     list_vars = []
     transcript_ids = []
     genotye_dict = {"het": False, "hom": True, "ref": True}
-    
+
     for num, record in enumerate(vl):
         c = record.CHROM.strip('chr')
         p = record.POS - 1
@@ -319,7 +319,7 @@ def read_vcf(filename, pass_only=True):
                         if metadata_name in record.INFO:
                             final_metadata_list.append(metadata_name)
                             var.log_metadata(metadata_name, record.INFO[metadata_name])
-                    
+
                     for sample in record.samples:
                         for format_key in format_list:
                             format_header = '{}.{}'.format(sample.sample, format_key)
@@ -658,7 +658,7 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
         tsvreader = csv.DictReader(urllib2.urlopen(biomart_url + urllib2.quote(rq_n)).read().splitlines(), dialect='excel-tab')
 
         tsvselect += [x for x in tsvreader]
-    
+
     swissProtKey = 'UniProt/SwissProt Accession'
 
     if(ENSEMBL):
@@ -672,7 +672,7 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
                 result_swissProt[dic[key]] = merged_swissProt
             else:
                 result[dic[key]] = [dic[protein_key]]
-                result_swissProt[dic[key]] = [dic[swissProtKey]] 
+                result_swissProt[dic[key]] = [dic[swissProtKey]]
     else:
         key = 'RefSeq mRNA [e.g. NM_001195597]'
         for dic in tsvselect:
@@ -753,7 +753,7 @@ def generate_wt_seqs(peptides):
             variant_available = False
             for p in protein_pos:
                   variant_dic = x.get_variants_by_protein_position(t.transcript_id, p)
-                  variant_available = bool(variant_dic) 
+                  variant_available = bool(variant_dic)
                   for key in variant_dic:
                          var_list = variant_dic[key]
                          for v in var_list:
@@ -770,7 +770,7 @@ def generate_wt_seqs(peptides):
                                   m = r.match(mut_syntax.split('.')[1])
                                   if m is None:
                                       not_available = True
-                                  else: 
+                                  else:
                                       wt = SeqUtils.seq1(m.groups()[0])
                                       mut_seq[key] = wt
             if not_available:
@@ -940,7 +940,7 @@ def make_predictions_from_peptides(peptides, methods, tool_thresholds, alleles, 
     return pred_dataframes, statistics
 
 def __main__():
-    parser = argparse.ArgumentParser(description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles. 
+    parser = argparse.ArgumentParser(description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles.
         Additionally predicted epitopes can be annotated with protein quantification values for the corresponding proteins, identified ligands, or differential expression values for the corresponding transcripts.""", version=VERSION)
     parser.add_argument('-s', "--somatic_mutations", help='Somatic variants')
     parser.add_argument('-g', "--germline_mutations", help="Germline variants")
@@ -952,7 +952,7 @@ def __main__():
     parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
     parser.add_argument('-tt', "--tool_thresholds", help="Customize affinity threshold of given tools using a json file", required=False, type=str)
     parser.add_argument('-sv', "--versions", help="File containing parsed software version numbers.", required=True)
-    parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
+    parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True, type=str)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
     parser.add_argument('-f', "--filter_self", help="Filter peptides against human proteom", required=False, action='store_true')
     parser.add_argument('-wt', "--wild_type", help="Add wild type sequences of mutated peptides to output", required=False, action='store_true')
@@ -990,7 +990,8 @@ def __main__():
         transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(ID_SYSTEM_USED, transcripts, references[args.reference], args.reference)
 
     # get the alleles
-    alleles = FileReader.read_lines(args.alleles, in_type=Allele)
+    # alleles = FileReader.read_lines(args.alleles, in_type=Allele)
+    alleles = args.alleles.split(";")
 
     # initialize MartsAdapter, GRCh37 or GRCh38 based
     ma = MartsAdapter(biomart=references[args.reference])
@@ -1002,14 +1003,14 @@ def __main__():
 
         if os.path.isdir(args.reference_proteome):
             for filename in os.listdir(args.reference_proteome):
-                if filename.endswith(".fasta") or filename.endswith(".fsa"): 
+                if filename.endswith(".fasta") or filename.endswith(".fsa"):
                     up_db.read_seqs(os.path.join(args.reference_proteome, filename))
         else:
             up_db.read_seqs(args.reference_proteome)
 
     selected_methods = [item for item in args.tools.split(',')]
     with open(args.versions, 'r') as versions_file:
-        tool_version = [ (row[0], str(row[1][1:])) for row in csv.reader(versions_file, delimiter = "\t") ]
+        tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = "\t") ]
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0'))
         # get for each selected method the corresponding tool version
@@ -1085,14 +1086,14 @@ def __main__():
             neg_predictions.append(str(r['sequence']))
             if str(r['sequence']) not in binders:
                 non_binders.append(str(r['sequence']))
-    
+
     # parse protein quantification results, annotate proteins for samples
     if args.protein_quantification is not None:
         protein_quant = read_protein_quant(args.protein_quantification)
         first_entry = protein_quant[protein_quant.keys()[0]]
         for k in first_entry.keys():
             complete_df['{} log2 protein LFQ intensity'.format(k)] = complete_df.apply(lambda row: create_quant_column_value_for_result(row, protein_quant, transcriptSwissProtMap, k), axis=1)
-        
+
     # parse (differential) expression analysis results, annotate features (genes/transcripts)
     if args.gene_expression is not None:
         fold_changes = read_diff_expression_values(args.gene_expression)
@@ -1157,7 +1158,7 @@ def __main__():
 
     with open('{}_report.json'.format(args.identifier), 'w') as json_out:
         json.dump(statistics, json_out)
-    
+
     logger.info("Finished predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
 if __name__ == "__main__":

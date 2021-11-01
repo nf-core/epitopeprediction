@@ -11,8 +11,7 @@ workflow INPUT_CHECK {
     samplesheet // file: /path/to/samplesheet.csv
 
     main:
-    // SAMPLESHEET_CHECK ( samplesheet )
-    Channel.fromPath(samplesheet)
+    SAMPLESHEET_CHECK ( samplesheet )
         .splitCsv ( header:true, sep:',' )
         .map { get_samplesheet_paths(it) }
         .set { reads }
