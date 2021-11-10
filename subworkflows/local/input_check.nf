@@ -26,6 +26,7 @@ def get_samplesheet_paths(LinkedHashMap row) {
     meta.sample         = row.sample
     meta.alleles        = row.alleles
     meta.anno           = row.anno
+    meta.ext           = row.ext
 
     def array = []
     if (!file(row.filename).exists()) {

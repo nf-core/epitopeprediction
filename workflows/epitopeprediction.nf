@@ -71,12 +71,17 @@ include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP } from '../module
 include { CHECK_REQUESTED_MODELS } from '../modules/local/check_requested_models'                                       addParams( options: check_modules_options )
 include { SHOW_SUPPORTED_MODELS} from '../modules/local/show_supported_models'                                          addParams( options: [:] )
 
-include { GEN_PEPTIDES } from '../modules/local/gen_peptides'                                                           addParams( options: get_peptides_options )
+include { SNPSIFT_SPLIT}            from '../modules/local/snpsift_split'                                               addParams( options: [:] )
+include { CSVTK_SPLIT}            from '../modules/local/csvtk_split'                                                   addParams( options: [:] )
+
+include { GENERATE_PEPTIDES } from '../modules/local/generate_peptides'                                                 addParams( options: get_peptides_options )
 include { SPLIT_PEPTIDES } from '../modules/local/split_peptides'                                                       addParams( options: split_peptides_options )
 
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP } from '../modules/local/peptide_prediction'                     addParams( options: peptide_predition_pep )
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR } from '../modules/local/peptide_prediction'                     addParams( options: peptide_predition_var )
+// include { CAT_CAT }                                      from '../modules/local/cat_cat'                                addParams( options: [:] )
 // include { }
+
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -111,8 +116,8 @@ workflow EPITOPEPREDICTION {
 
     ch_versions = Channel.empty()
     ch_software_versions = Channel.empty()
-    DEFINE_SOFTWARE()
-    ch_versions = ch_versions.mix(DEFINE_SOFTWARE.out.versions.ifEmpty(null))
+    // DEFINE_SOFTWARE() //TODO: This process needs to go, the current versions are not checked
+    // ch_versions = ch_versions.mix(DEFINE_SOFTWARE.out.versions.ifEmpty(null))
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
@@ -135,26 +140,40 @@ workflow EPITOPEPREDICTION {
         CHECK_REQUESTED_MODELS(ch_samples_from_sheet.prot
         .mix(ch_samples_from_sheet.variant)
         .combine(ch_versions)
-        .first()
-        )
+        .first())
         // Perform the check requested models on the peptide and variant but only the first item
         CHECK_REQUESTED_MODELS_PEP(ch_samples_from_sheet.pep.combine(ch_versions).first())
 
-    // TODO: how do we want to include this?
-    //ch_model_warnings.subscribe {
-    //    model_log_file = file("$it", checkIfExists: true)
-    //    def lines = model_log_file.readLines()
-    //    if (lines.size() > 0) {
-    //        log.info "-${c_purple} Warning: ${c_reset}-"
-    //        lines.each { String line ->
-    //            log.info "-${c_purple}   $line ${c_reset}-"
-    //        }
-    //    }
-    //}
+        // Return a warning if this is raised
+        CHECK_REQUESTED_MODELS.out.log.subscribe {
+            model_log_file = file("$it", checkIfExists: true)
+            def lines = model_log_file.readLines()
+            if (lines.size() > 0) {
+                log.info "-${c_purple} Warning: ${c_reset}-"
+                lines.each { String line ->
+                    log.info "-${c_purple}   $line ${c_reset}-"
+                }
+            }
+        }
+
+        // Make a division for the variant files and process them further accordingly
+        ch_samples_from_sheet.variant.branch {
+            meta, filename ->
+                vcf : meta.ext == 'vcf' || meta.ext == 'vcf.gz'
+                    return [ meta, filename ]
+                tab :  meta.ext == 'tsv' || meta.ext == 'GSvar'
+                    return [ meta, filename ]
+        }
+        .set { ch_variants }
+
+        // Include the snpsift_split function (only vcf and vcf.gz variant files)
+        SNPSIFT_SPLIT(ch_variants.vcf)
+        // Include the csvtk_split function (only variant files with an tsv and GSvar executable)
+        CSVTK_SPLIT(ch_variants.tab)
 
     } else {
         // Include a process for the show supported models
-        // TODO: which version of mhcnuggets-class-1 and mhcnuggets-class-2 are supported?
+        // TODO: include the module that is able to retrieve the version number of netmhc(ii)(pan)
         SHOW_SUPPORTED_MODELS(
             ch_samples_from_sheet.prot
             .mix(ch_samples_from_sheet.variant, ch_samples_from_sheet.pep)
@@ -162,19 +181,43 @@ workflow EPITOPEPREDICTION {
             .first()
         )
     }
+    /*
+    ========================================================================================
+    */
 
-    // Process FASTA file and generate peptides
-    GEN_PEPTIDES(ch_samples_from_sheet.prot)
-    // Combine all of the peptide tab seperated files into the peptides channel
-    ch_peptides = GEN_PEPTIDES.out.splitted.mix(ch_samples_from_sheet.pep)
-    // Split peptide data
-    // TODO: Check why the warnings are returned here
-    SPLIT_PEPTIDES(ch_peptides)
-    // Run epitope prediction
-    // TODO: there is an eroor in the epaa scripts
-    // TODO: Create a mulled container see module
-    //PEPTIDE_PREDICTION_PEP(ch_peptides.combine(ch_versions))
-    //PEPTIDE_PREDICTION_VAR(ch_samples_from_sheet.variant.combine(ch_versions))
+//    // Process FASTA file and generate peptides
+//    GENERATE_PEPTIDES(ch_samples_from_sheet.prot)
+//    // Combine all of the peptide tab seperated files into the peptides channel
+//    ch_peptides = GENERATE_PEPTIDES.out.splitted.mix(ch_samples_from_sheet.pep)
+//
+//
+//    // Split peptide data
+//    // TODO: Check why the warnings are returned here
+//    SPLIT_PEPTIDES(ch_peptides)
+//    // Run epitope prediction
+//    // TODO: there is an eroor in the epaa scripts
+//    // TODO: Create a mulled container see module
+//    PEPTIDE_PREDICTION_PEP(ch_peptides.combine(ch_versions))
+//    PEPTIDE_PREDICTION_VAR(ch_samples_from_sheet.variant.combine(ch_versions))
+//
+//
+//    predicted_collection = PEPTIDE_PREDICTION_VAR.out.predicted.mix(PEPTIDE_PREDICTION_PEP.out.predicted)
+//    // predicted_collection.view()
+//    // predicted_collection
+//    // .flatMap { meta, predicted -> [[[sample:meta.sample, alleles:meta.alleles], predicted]] }
+//    // .groupTuple(by:0)
+//    // //.flatMap { meta, predicted -> [[[sample:meta.sample, alleles:meta.alleles, files:predicted.size()], predicted]] }
+//    // .collect { it -> println it[1].size() }
+//    // .view()
+
+
+    // flatMap {
+                    // meta, predicted ->
+                    // observation = meta.sample.count()
+                    // [[[sample:meta.sample, alleles:meta.alleles], predicted, observation]]
+                    // }.view()
+    // PEPTIDE_PREDICTION_VAR.out.predicted.mix(PEPTIDE_PREDICTION_PEP.out.predicted).view()
+    //CAT_CAT(PEPTIDE_PREDICTION_VAR.out.predicted.mix(PEPTIDE_PREDICTION_PEP.out.predicted))
 
 // ##################### OLD ##################### //
 /*
@@ -261,22 +304,20 @@ workflow EPITOPEPREDICTION {
     //
     // MODULE: MultiQC
     //
-    // TODO: Make sure that this runs too, cannot check: "Process requirement exceed available memory -- req: 42 GB; avail: 16 GB"
-    // workflow_summary    = WorkflowEpitopeprediction.paramsSummaryMultiqc(workflow, summary_params)
-    // ch_workflow_summary = Channel.value(workflow_summary)
+    workflow_summary    = WorkflowEpitopeprediction.paramsSummaryMultiqc(workflow, summary_params)
+    ch_workflow_summary = Channel.value(workflow_summary)
 
-    // ch_multiqc_files = Channel.empty()
-    // ch_multiqc_files = ch_multiqc_files.mix(Channel.from(ch_multiqc_config))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
-    // ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    // ch_multiqc_files = ch_multiqc_files.mix(GET_SOFTWARE_VERSIONS.out.yaml.collect())
-    // ch_multiqc_files = ch_multiqc_files.mix(FASTQC.out.zip.collect{it[1]}.ifEmpty([]))
+    ch_multiqc_files = Channel.empty()
+    ch_multiqc_files = ch_multiqc_files.mix(Channel.from(ch_multiqc_config))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+    ch_multiqc_files = ch_multiqc_files.mix(GET_SOFTWARE_VERSIONS.out.yaml.collect())
 
-    // MULTIQC (
-    //     ch_multiqc_files.collect()
-    // )
-    // multiqc_report       = MULTIQC.out.report.toList()
-    //ch_software_versions = ch_software_versions.mix(MULTIQC.out.version.ifEmpty(null))
+    MULTIQC (
+        ch_multiqc_files.collect()
+    )
+    multiqc_report       = MULTIQC.out.report.toList()
+    ch_software_versions = ch_software_versions.mix(MULTIQC.out.version.ifEmpty(null))
 }
 
 /*
