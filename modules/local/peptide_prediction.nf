@@ -19,9 +19,9 @@ process PEPTIDE_PREDICTION {
     input:
         tuple val(meta), path(splitted), val(software_versions)
     output:
+        tuple val(meta), path("*.json"), emit: json
         tuple val(meta), path("*.tsv"), emit: predicted
-        path("*.json"), emit: json
-        path("*.log"), emit: log
+        tuple val(meta), path("*.fasta"), emit: fasta optional true
 
     script:
 

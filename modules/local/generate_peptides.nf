@@ -4,9 +4,7 @@ include { initOptions; saveFiles; getSoftwareName; getProcessName } from './func
 params.options = [:]
 options        = initOptions(params.options)
 
-def VERSION = "2.0.7"
-
-process GEN_PEPTIDES {
+process GENERATE_PEPTIDES {
 
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,

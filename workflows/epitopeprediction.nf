@@ -17,11 +17,6 @@ for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true
 // Check mandatory parameters
 if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input samplesheet not specified!' }
 
-// Determine if the parameters are defined or not
-ref_prot = params.proteome ? "--proteome ${params.proteome}" : ""
-wt = params.wild_type ? "--wild_type" : ""
-fasta_output = params.fasta_output ? "--fasta_output" : ""
-threshold_file = params.tool_thresholds ? "--tool_thresholds ${tool_thresholds}" : ""
 /*
 ========================================================================================
     CONFIG FILES
@@ -48,16 +43,29 @@ check_modules_options_pep.args += "--peptides"
 def get_peptides_options        = modules['gen_peptides']
 def split_peptides_options      = modules['split_peptides']
 def peptide_predition_options   = modules['peptide_prediction']
+def merge_json_options          = modules['merge_json']
 
 def peptide_predition_pep       = peptide_predition_options.clone()
-// def peptide_predition_prot      = peptide_predition_options.clone()
 def peptide_predition_var       = peptide_predition_options.clone()
+def merge_json_single           = merge_json_options.clone()
+def merge_json_multi            = merge_json_options.clone()
 
 check_modules_options.args     += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
-peptide_predition_pep.args     += ref_prot + wt + fasta_output + threshold_file + "--peptides "
-// peptide_predition_prot.args    += "--peptides "
-peptide_predition_var.args     += ref_prot + wt + fasta_output + threshold_file + "--somatic_mutation "
 
+peptide_predition_pep.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_predition_pep.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
+peptide_predition_pep.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
+peptide_predition_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
+peptide_predition_pep.args     += " --peptides "
+
+peptide_predition_var.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_predition_var.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
+peptide_predition_var.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
+peptide_predition_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
+peptide_predition_var.args     += " --somatic_mutation "
+
+merge_json_single.args          = " --single_input "
+merge_json_multi.args           = " --input \$PWD "
 
 
 //
@@ -67,21 +75,25 @@ include { GET_SOFTWARE_VERSIONS } from '../modules/local/get_software_versions' 
 
 include { DEFINE_SOFTWARE } from '../modules/local/define_software'                                                     addParams( options: [:] )
 
-include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP } from '../modules/local/check_requested_models'         addParams( options: check_modules_options_pep )
-include { CHECK_REQUESTED_MODELS } from '../modules/local/check_requested_models'                                       addParams( options: check_modules_options )
-include { SHOW_SUPPORTED_MODELS} from '../modules/local/show_supported_models'                                          addParams( options: [:] )
+include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'      addParams( options: check_modules_options_pep )
+include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'      addParams( options: check_modules_options )
+include { SHOW_SUPPORTED_MODELS}                                    from '../modules/local/show_supported_models'       addParams( options: [:] )
 
-include { SNPSIFT_SPLIT}            from '../modules/local/snpsift_split'                                               addParams( options: [:] )
-include { CSVTK_SPLIT}            from '../modules/local/csvtk_split'                                                   addParams( options: [:] )
+include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'               addParams( options: [:] )
+include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'                 addParams( options: [:] )
 
-include { GENERATE_PEPTIDES } from '../modules/local/generate_peptides'                                                 addParams( options: get_peptides_options )
-include { SPLIT_PEPTIDES } from '../modules/local/split_peptides'                                                       addParams( options: split_peptides_options )
+include { GENERATE_PEPTIDES }                                       from '../modules/local/generate_peptides'           addParams( options: get_peptides_options )
+include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'              addParams( options: split_peptides_options )
 
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP } from '../modules/local/peptide_prediction'                     addParams( options: peptide_predition_pep )
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR } from '../modules/local/peptide_prediction'                     addParams( options: peptide_predition_var )
-// include { CAT_CAT }                                      from '../modules/local/cat_cat'                                addParams( options: [:] )
-// include { }
+include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'          addParams( options: peptide_predition_pep )
+include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'          addParams( options: peptide_predition_var )
 
+include { CAT_TSV }                                                 from '../modules/local/cat_tsv'                     addParams( options: [:] )
+include { CAT_FASTA }                                               from '../modules/local/cat_fasta'                   addParams( options: [:] )
+include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'                addParams( options: [:] )
+
+include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'                  addParams( options: merge_json_single )
+include { MERGE_JSON as MERGE_JSON_MULTI }                          from '../modules/local/merge_json'                  addParams( options: merge_json_multi )
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -100,7 +112,6 @@ multiqc_options.args += params.multiqc_title ? Utils.joinModuleArgs(["--title \"
 //
 // MODULE: Installed directly from nf-core/modules
 //
-//include { FASTQC  } from '../modules/nf-core/modules/fastqc/main'  addParams( options: modules['fastqc'] )
 include { MULTIQC } from '../modules/nf-core/modules/multiqc/main' addParams( options: multiqc_options   )
 
 /*
@@ -116,8 +127,6 @@ workflow EPITOPEPREDICTION {
 
     ch_versions = Channel.empty()
     ch_software_versions = Channel.empty()
-    // DEFINE_SOFTWARE() //TODO: This process needs to go, the current versions are not checked
-    // ch_versions = ch_versions.mix(DEFINE_SOFTWARE.out.versions.ifEmpty(null))
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
@@ -185,105 +194,64 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
 
-//    // Process FASTA file and generate peptides
-//    GENERATE_PEPTIDES(ch_samples_from_sheet.prot)
-//    // Combine all of the peptide tab seperated files into the peptides channel
-//    ch_peptides = GENERATE_PEPTIDES.out.splitted.mix(ch_samples_from_sheet.pep)
-//
-//
-//    // Split peptide data
-//    // TODO: Check why the warnings are returned here
-//    SPLIT_PEPTIDES(ch_peptides)
-//    // Run epitope prediction
-//    // TODO: there is an eroor in the epaa scripts
-//    // TODO: Create a mulled container see module
-//    PEPTIDE_PREDICTION_PEP(ch_peptides.combine(ch_versions))
-//    PEPTIDE_PREDICTION_VAR(ch_samples_from_sheet.variant.combine(ch_versions))
-//
-//
-//    predicted_collection = PEPTIDE_PREDICTION_VAR.out.predicted.mix(PEPTIDE_PREDICTION_PEP.out.predicted)
-//    // predicted_collection.view()
-//    // predicted_collection
-//    // .flatMap { meta, predicted -> [[[sample:meta.sample, alleles:meta.alleles], predicted]] }
-//    // .groupTuple(by:0)
-//    // //.flatMap { meta, predicted -> [[[sample:meta.sample, alleles:meta.alleles, files:predicted.size()], predicted]] }
-//    // .collect { it -> println it[1].size() }
-//    // .view()
+    // Process FASTA file and generated peptides
+    if (ch_samples_from_sheet.prot.count() != 0) {
+        GENERATE_PEPTIDES(ch_samples_from_sheet.prot)
+        ch_split_peptides = GENERATE_PEPTIDES.out.splitted
+    } else {
+        ch_split_peptides = ch_samples_from_sheet.pep
+    }
 
+    // Split peptide data
+    // TODO: Add the appropriate container to remove the warning
+    SPLIT_PEPTIDES(ch_split_peptides)
+    /*
+    ========================================================================================
+    */
+    // TODO: Remove them when the mhcnet(ii)(pan) is introduced
+    DEFINE_SOFTWARE()
+    ch_versions = ch_versions.mix(DEFINE_SOFTWARE.out.versions.ifEmpty(null))
+    /*
+    ========================================================================================
+    */
+    // Run epitope prediction
+    PEPTIDE_PREDICTION_PEP(SPLIT_PEPTIDES.out.splitted.combine(ch_versions).transpose())
+    PEPTIDE_PREDICTION_VAR(CSVTK_SPLIT.out.splitted.mix(SNPSIFT_SPLIT.out.splitted).combine(ch_versions).transpose())
 
-    // flatMap {
-                    // meta, predicted ->
-                    // observation = meta.sample.count()
-                    // [[[sample:meta.sample, alleles:meta.alleles], predicted, observation]]
-                    // }.view()
-    // PEPTIDE_PREDICTION_VAR.out.predicted.mix(PEPTIDE_PREDICTION_PEP.out.predicted).view()
-    //CAT_CAT(PEPTIDE_PREDICTION_VAR.out.predicted.mix(PEPTIDE_PREDICTION_PEP.out.predicted))
+    // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
+    PEPTIDE_PREDICTION_PEP.out.predicted.mix(PEPTIDE_PREDICTION_VAR.out.predicted)
+    .groupTuple()
+    .flatMap { meta, predicted -> [[[sample:meta.sample, alleles:meta.alleles, files:predicted.size()], predicted]] }
+    .branch {
+        meta, predicted ->
+            multi: meta.files > 1
+                return [ meta, predicted ]
+            single: meta.files == 1
+                return [ meta, predicted ]
+    }
+    .set { ch_predicted_peptides }
 
-// ##################### OLD ##################### //
-/*
- * STEP 3 - Combine epitope prediction results
- */
-//process mergeResults {
-//    publishDir "${params.outdir}/predictions", mode: 'copy'
-//
-//    input:
-//    file predictions from ch_predicted_peptides.collect()
-//
-//    output:
-//    file "${input_base_name}_prediction_result.tsv"
-//
-//    script:
-//    def single = predictions instanceof Path ? 1 : predictions.size()
-//    def merge = (single == 1) ? 'cat' : 'csvtk concat -t'
-//
-//    """
-//    $merge $predictions > ${input_base_name}_prediction_result.tsv
-//    """
-//}
-//
-///*
-// * STEP 3(2) optional - Combine protein sequences
-// */
-//process mergeFastas {
-//    publishDir "${params.outdir}/predictions", mode: 'copy'
-//
-//    input:
-//    file proteins from ch_protein_fastas.collect()
-//
-//    output:
-//    file "${input_base_name}_prediction_proteins.fasta"
-//
-//    when:
-//    params.fasta_output
-//
-//    """
-//    cat $proteins > ${input_base_name}_prediction_proteins.fasta
-//    """
-//}
-//
-///*
-// * STEP 4 - Combine epitope prediction reports
-// */
-//
-//process mergeReports {
-//    publishDir "${params.outdir}/predictions", mode: 'copy'
-//
-//    input:
-//    file jsons from ch_json_reports.collect()
-//
-//    output:
-//    file "${input_base_name}_prediction_report.json"
-//
-//    script:
-//    def single = jsons instanceof Path ? 1 : jsons.size()
-//    def command = (single == 1) ? "merge_jsons.py --single_input ${jsons} --prefix ${input_base_name}" : "merge_jsons.py --input \$PWD --prefix ${input_base_name}"
-//
-//    """
-//    $command
-//    """
-//}
+    // Combine epitope prediction results
+    CAT_TSV(ch_predicted_peptides.single)
+    CSVTK_CONCAT(ch_predicted_peptides.multi)
+    // Combine protein sequences
+    CAT_FASTA(PEPTIDE_PREDICTION_PEP.out.fasta.mix(PEPTIDE_PREDICTION_VAR.out.fasta).groupTuple())
 
-// ##################### OLD ##################### //
+    PEPTIDE_PREDICTION_PEP.out.json.mix(PEPTIDE_PREDICTION_VAR.out.json)
+    .groupTuple()
+    .flatMap { meta, json -> [[[sample:meta.sample, alleles:meta.alleles, files:json.size()], json]] }
+    .branch {
+        meta, json ->
+            multi: meta.files > 1
+                return [ meta, json ]
+            single: meta.files == 1
+                return [ meta, json ]
+    }
+    .set { ch_json_reports }
+
+    // Combine epitope prediction reports
+    MERGE_JSON_SINGLE(ch_json_reports.single)
+    MERGE_JSON_MULTI(ch_json_reports.multi)
 
     //
     // MODULE: Pipeline reporting
