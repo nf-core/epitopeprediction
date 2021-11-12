@@ -67,7 +67,7 @@ def __main__():
 
     # get the alleles
     #alleles = FileReader.read_lines(args.alleles, in_type=Allele) ## Changed since the input is a allele string now
-    alleles = args.alleles.split(";")
+    alleles= [Allele(a) for a in args.alleles.split(";")]
 
     peptide_lengths = []
     if (args.peptides):

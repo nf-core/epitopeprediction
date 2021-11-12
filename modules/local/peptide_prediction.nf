@@ -22,6 +22,7 @@ process PEPTIDE_PREDICTION {
         tuple val(meta), path("*.json"), emit: json
         tuple val(meta), path("*.tsv"), emit: predicted
         tuple val(meta), path("*.fasta"), emit: fasta optional true
+        path "versions.yml", emit: versions
 
     script:
 
@@ -30,6 +31,16 @@ process PEPTIDE_PREDICTION {
                         --alleles "${meta.alleles}" \
                         --versions ${software_versions} \
                         $options.args ${splitted}
+
+    cat <<-END_VERSIONS > versions.yml
+    ${getProcessName(task.process)}:
+        snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
+        pandas: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)"))
+        pyvcf: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyvcf').version)"))
+        mhcflurry: \$(echo \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//') )
+        mhcnuggets: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)"))
+        fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
+    END_VERSIONS
     """
 
 }

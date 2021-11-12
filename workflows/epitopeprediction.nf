@@ -82,14 +82,14 @@ include { SHOW_SUPPORTED_MODELS}                                    from '../mod
 include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'               addParams( options: [:] )
 include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'                 addParams( options: [:] )
 
-include { GENERATE_PEPTIDES }                                       from '../modules/local/generate_peptides'           addParams( options: get_peptides_options )
+include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'      addParams( options: get_peptides_options )
 include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'              addParams( options: split_peptides_options )
 
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'          addParams( options: peptide_predition_pep )
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'          addParams( options: peptide_predition_var )
 
-include { CAT_TSV }                                                 from '../modules/local/cat_tsv'                     addParams( options: [:] )
-include { CAT_FASTA }                                               from '../modules/local/cat_fasta'                   addParams( options: [:] )
+include { CAT_CAT as CAT_TSV }                                      from '../modules/local/cat_cat'                     addParams( options: [:] )
+include { CAT_CAT as CAT_FASTA }                                    from '../modules/local/cat_cat'                     addParams( options: [:] )
 include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'                addParams( options: [:] )
 
 include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'                  addParams( options: merge_json_single )
@@ -196,8 +196,8 @@ workflow EPITOPEPREDICTION {
 
     // Process FASTA file and generated peptides
     if (ch_samples_from_sheet.prot.count() != 0) {
-        GENERATE_PEPTIDES(ch_samples_from_sheet.prot)
-        ch_split_peptides = GENERATE_PEPTIDES.out.splitted
+        FRED2_GENERATEPEPTIDES(ch_samples_from_sheet.prot)
+        ch_split_peptides = FRED2_GENERATEPEPTIDES.out.splitted
     } else {
         ch_split_peptides = ch_samples_from_sheet.pep
     }
@@ -217,6 +217,8 @@ workflow EPITOPEPREDICTION {
     // Run epitope prediction
     PEPTIDE_PREDICTION_PEP(SPLIT_PEPTIDES.out.splitted.combine(ch_versions).transpose())
     PEPTIDE_PREDICTION_VAR(CSVTK_SPLIT.out.splitted.mix(SNPSIFT_SPLIT.out.splitted).combine(ch_versions).transpose())
+    // TODO: Change when the netmhc(ii)(pan) replaced the DEFINE_SOFTWARE process
+    ch_versions = PEPTIDE_PREDICTION_VAR.out.versions
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
     PEPTIDE_PREDICTION_PEP.out.predicted.mix(PEPTIDE_PREDICTION_VAR.out.predicted)
@@ -234,6 +236,7 @@ workflow EPITOPEPREDICTION {
     // Combine epitope prediction results
     CAT_TSV(ch_predicted_peptides.single)
     CSVTK_CONCAT(ch_predicted_peptides.multi)
+    ch_versions = ch_versions.mix(CSVTK_CONCAT.out.versions.ifEmpty(null))
     // Combine protein sequences
     CAT_FASTA(PEPTIDE_PREDICTION_PEP.out.fasta.mix(PEPTIDE_PREDICTION_VAR.out.fasta).groupTuple())
 

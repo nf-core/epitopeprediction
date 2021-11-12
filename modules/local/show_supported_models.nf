@@ -22,11 +22,20 @@ process SHOW_SUPPORTED_MODELS {
 
     output:
         path '*.txt', emit: txt // model_report.txt
+        path "versions.yml", emit: versions
+
 
     script:
 
         """
         check_supported_models.py --versions ${software_versions}
+
+        cat <<-END_VERSIONS > versions.yml
+        ${getProcessName(task.process)}:
+            mhcflurry: \$(echo \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//') )
+            mhcnuggets: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)"))
+            fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
+        END_VERSIONS
         """
 
 }

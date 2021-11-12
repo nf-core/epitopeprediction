@@ -4,7 +4,7 @@ include { initOptions; saveFiles; getSoftwareName; getProcessName } from './func
 params.options = [:]
 options        = initOptions(params.options)
 
-process GENERATE_PEPTIDES {
+process FRED2_GENERATEPEPTIDES {
 
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
@@ -22,6 +22,7 @@ process GENERATE_PEPTIDES {
 
     output:
         tuple val(meta), path("*.tsv"), emit: splitted
+        path "versions.yml", emit: versions
 
     script:
         def prefix = options.suffix ? "${meta.sample}_${options.suffix}" : "${meta.sample}_peptides"
@@ -33,7 +34,7 @@ process GENERATE_PEPTIDES {
 
         cat <<-END_VERSIONS > versions.yml
             ${getProcessName(task.process)}:
-                fred2: \$(echo \$(python -c "import pkg_resources; print 'fred2 ' + pkg_resources.get_distribution('Fred2').version" | sed 's/^fred2 //; s/ .*\$//') )
+                fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
             END_VERSIONS
         """
 }

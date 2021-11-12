@@ -30,7 +30,7 @@ process SNPSIFT_SPLIT {
 
         cat <<-END_VERSIONS > versions.yml
             ${getProcessName(task.process)}:
-                snpsift: \$(echo \$(SnpSift 2>&1) )
+                snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
             END_VERSIONS
     """
 }
