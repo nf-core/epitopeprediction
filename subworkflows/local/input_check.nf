@@ -25,7 +25,7 @@ def get_samplesheet_paths(LinkedHashMap row) {
 
     // Collect the allele information from the file
     def alleleString
-    if ( row.alleles.endsWith("txt") )  {
+    if ( row.alleles.endsWith(".txt") || row.alleles.endsWith(".alleles") )  {
         alleleString = file(row.alleles).readLines().join(';')
     // or assign the information to a new variable
     } else {
