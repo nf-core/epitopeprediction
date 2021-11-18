@@ -34,7 +34,7 @@ process CHECK_REQUESTED_MODELS {
 
         """
         check_requested_models.py ${argument} \
-            --alleles "${meta.alleles}" \
+            --alleles ${meta.alleles} \
             --mhcclass ${params.mhc_class} \
             --versions ${software_versions} > model_warnings.log
 

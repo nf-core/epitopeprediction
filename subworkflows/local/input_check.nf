@@ -22,11 +22,21 @@ workflow INPUT_CHECK {
 
 // Function to get list of [ meta, filenames ]
 def get_samplesheet_paths(LinkedHashMap row) {
+
+    // Collect the allele information from the file
+    def alleleString
+    if ( row.alleles.endsWith("txt") )  {
+        alleleString = file(row.alleles).readLines().join(';')
+    // or assign the information to a new variable
+    } else {
+        alleleString = row.alleles
+    }
+
     def meta = [:]
     meta.sample         = row.sample
-    meta.alleles        = row.alleles
+    meta.alleles        = alleleString
     meta.anno           = row.anno
-    meta.ext           = row.ext
+    meta.ext            = row.ext
 
     def array = []
     if (!file(row.filename).exists()) {

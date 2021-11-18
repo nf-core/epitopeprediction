@@ -102,12 +102,6 @@ def check_samplesheet(file_in, file_out):
             ## Check sample name entries
             sample, alleles, filename = lspl[: len(HEADER)]
 
-            ## Check if the alleles given in the text file are in the right format
-            if alleles.endswith(".txt"):
-                with open(alleles, "r") as af:
-                    alleles = ';'.join([al.strip('\n') if check_allele_nomenclature(al) else \
-                    print_error("Allele format is not matching the nomenclature", "Line", line) for al in af.readlines()])
-
             file_extension = os.path.splitext(filename)[1][1::]
             ## Get annotation of filename column
             if filename.endswith(".vcf") | filename.endswith(".vcf.gz"):

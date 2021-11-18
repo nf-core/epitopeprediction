@@ -66,7 +66,7 @@ def __main__():
         methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
 
     # get the alleles
-    #alleles = FileReader.read_lines(args.alleles, in_type=Allele) ## Changed since the input is a allele string now
+    # alleles = FileReader.read_lines(args.alleles, in_type=Allele)
     alleles= [Allele(a) for a in args.alleles.split(";")]
 
     peptide_lengths = []

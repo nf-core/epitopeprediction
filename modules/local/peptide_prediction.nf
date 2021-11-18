@@ -28,7 +28,7 @@ process PEPTIDE_PREDICTION {
 
     """
     epaa.py --identifier ${splitted.baseName} \
-                        --alleles "${meta.alleles}" \
+                        --alleles ${meta.alleles} \
                         --versions ${software_versions} \
                         $options.args ${splitted}
 
