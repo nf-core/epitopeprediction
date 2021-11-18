@@ -18,7 +18,7 @@ process DEFINE_SOFTWARE {
         }
 
     output:
-       path '*.csv', emit: versions // model_report.txt
+        path '*.csv', emit: versions // model_report.txt
 
     script:
         """

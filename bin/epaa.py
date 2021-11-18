@@ -390,7 +390,7 @@ def read_protein_quant(filename):
                         valuedict[key.replace('LFQ intensity ', '').split('/')[-1]] = val
                 for p in row['Protein IDs'].split(';'):
                     if 'sp' in p:
-                    	intensities[p.split('|')[1]] = valuedict
+                        intensities[p.split('|')[1]] = valuedict
     return intensities
 
 
@@ -589,7 +589,7 @@ def create_quant_column_value_for_result(row, dict, swissProtDict, key):
     for p in all_proteins_filtered:
         if p in dict:
             if int(dict[p][key]) > 0:
-            	values.append(math.log(int(dict[p][key]),2))
+                values.append(math.log(int(dict[p][key]),2))
             else:
                 values.append(int(dict[p][key]))
     if len(values) is 0:
