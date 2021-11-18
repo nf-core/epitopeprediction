@@ -15,7 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#100](https://github.com/nf-core/epitopeprediction/pull/89) - Merge previous template updates up to `v2.1`
 - [#110](https://github.com/nf-core/epitopeprediction/pull/110) - DSL2 conversion
 
-
 ### `Fixed`
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
