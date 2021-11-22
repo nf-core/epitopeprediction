@@ -136,9 +136,9 @@ workflow EPITOPEPREDICTION {
         meta, input_file ->
             variant : meta.inputtype == 'variant'
                 return [ meta, input_file ]
-            pep :  meta.inputtype == 'peptide'
+            peptide :  meta.inputtype == 'peptide'
                 return [ meta, input_file ]
-            prot :  meta.inputtype == 'protein'
+            protein :  meta.inputtype == 'protein'
                 return [ meta, input_file ]
             }
         .set { ch_samples_from_sheet }
