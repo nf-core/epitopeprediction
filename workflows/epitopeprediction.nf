@@ -133,25 +133,25 @@ workflow EPITOPEPREDICTION {
     //
 
     INPUT_CHECK ( ch_input ).branch {
-        meta, filename ->
-            variant : meta.anno == 'variant'
-                return [ meta, filename ]
-            pep :  meta.anno == 'pep'
-                return [ meta, filename ]
-            prot :  meta.anno == 'prot'
-                return [ meta, filename ]
+        meta, input_file ->
+            variant : meta.inputtype == 'variant'
+                return [ meta, input_file ]
+            pep :  meta.inputtype == 'peptide'
+                return [ meta, input_file ]
+            prot :  meta.inputtype == 'protein'
+                return [ meta, input_file ]
             }
         .set { ch_samples_from_sheet }
 
     //TODO: include and increment when at least one of the processes ahas been run thus far
     if (!params.show_supported_models) {
         // Perform the check requested models on the peptide and variant files, but only the first item
-        CHECK_REQUESTED_MODELS(ch_samples_from_sheet.prot
+        CHECK_REQUESTED_MODELS(ch_samples_from_sheet.protein
         .mix(ch_samples_from_sheet.variant)
         .combine(ch_versions)
         .first())
         // Perform the check requested models on the peptide and variant but only the first item
-        CHECK_REQUESTED_MODELS_PEP(ch_samples_from_sheet.pep.combine(ch_versions).first())
+        CHECK_REQUESTED_MODELS_PEP(ch_samples_from_sheet.peptide.combine(ch_versions).first())
 
         // Return a warning if this is raised
         CHECK_REQUESTED_MODELS.out.log.subscribe {
@@ -167,11 +167,11 @@ workflow EPITOPEPREDICTION {
 
         // Make a division for the variant files and process them further accordingly
         ch_samples_from_sheet.variant.branch {
-            meta, filename ->
-                vcf : meta.ext == 'vcf' || meta.ext == 'vcf.gz'
-                    return [ meta, filename ]
-                tab :  meta.ext == 'tsv' || meta.ext == 'GSvar'
-                    return [ meta, filename ]
+            meta, input_file ->
+                vcf : input_file.extension == 'vcf' || input_file.extension == 'vcf.gz'
+                    return [ meta, input_file ]
+                tab :  input_file.extension == 'tsv' || input_file.extension == 'GSvar'
+                    return [ meta, input_file ]
         }
         .set { ch_variants }
 
@@ -184,8 +184,8 @@ workflow EPITOPEPREDICTION {
         // Include a process for the show supported models
         // TODO: include the module that is able to retrieve the version number of netmhc(ii)(pan)
         SHOW_SUPPORTED_MODELS(
-            ch_samples_from_sheet.prot
-            .mix(ch_samples_from_sheet.variant, ch_samples_from_sheet.pep)
+            ch_samples_from_sheet.protein
+            .mix(ch_samples_from_sheet.variant, ch_samples_from_sheet.peptide)
             .combine(ch_versions)
             .first()
         )
@@ -195,11 +195,11 @@ workflow EPITOPEPREDICTION {
     */
 
     // Process FASTA file and generated peptides
-    if (ch_samples_from_sheet.prot.count() != 0) {
-        FRED2_GENERATEPEPTIDES(ch_samples_from_sheet.prot)
+    if (ch_samples_from_sheet.protein.count() != 0) {
+        FRED2_GENERATEPEPTIDES(ch_samples_from_sheet.protein)
         ch_split_peptides = FRED2_GENERATEPEPTIDES.out.splitted
     } else {
-        ch_split_peptides = ch_samples_from_sheet.pep
+        ch_split_peptides = ch_samples_from_sheet.peptide
     }
 
     // Split peptide data
