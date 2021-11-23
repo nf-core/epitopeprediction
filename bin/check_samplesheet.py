@@ -14,7 +14,7 @@ def parse_args(args=None):
 
     parser = argparse.ArgumentParser(description=Description, epilog=Epilog)
     parser.add_argument("FILE_IN", help="Input samplesheet file.")
-    parser.add_argument("FILE_OUT", help="Output samplesheet file.")
+    parser.add_argument("FILE_OUT", help="Output file.")
     return parser.parse_args(args)
 
 
@@ -57,16 +57,16 @@ def check_samplesheet(file_in, file_out):
     GBM_2,gbm_2_alleles.txt,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
 
 
-    where the FileName column contains EIHTER a vcf file, a tsv file (peptides), or a fasta file (proteins)
+    where the FileName column contains EITHER a vcf/tsv file with genomic variants, a tsv file (peptides), or a fasta file (proteins)
     and the Alleles column contains EITHER a string of alleles separated by semicolon or the path to a text file
     containing one allele per line (no header)
 
-    Furhter Examples:
+    Further examples:
     - Class2 allele format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/alleles/alleles.DRB1_01_01.txt
     - Mouse allele format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/alleles/alleles.H2.txt
-    - pep.tsv => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/peptides/peptides.tsv
-    - annotated_variants.tsv => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.tsv
-    - annotated_variants.vcf => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.vcf
+    - Peptide format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/peptides/peptides.tsv
+    - Variant TSV format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.tsv
+    - Variant VCF format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.vcf
 
     """
 
@@ -102,22 +102,11 @@ def check_samplesheet(file_in, file_out):
             ## Check sample name entries
             sample, alleles, filename = lspl[: len(HEADER)]
 
-            file_extension = os.path.splitext(filename)[1][1::]
-            ## Get annotation of filename column
-            if filename.endswith(".vcf") | filename.endswith(".vcf.gz"):
-                anno = "variant"
-            elif filename.endswith(".tsv") | filename.endswith(".GSvar"):
-                ## Check if it is a variant annotation file or a peptide file
-                with open(filename, "r") as tsv:
-                    first_header_col = [col.lower() for col in tsv.readlines()[0].split('\t')][0]
-                    if first_header_col == "id":
-                        anno = "pep"
-                    elif first_header_col == "#chr":
-                        anno = "variant"
-            else:
-                anno = "prot"
+            ## Check given file types
+            if not filename.lower().endswith((".vcf", ".vcf.gz", ".tsv", ".GSvar", ".fasta")):
+                print_error("Samplesheet contains unsupported file type!", "Line", line)
 
-            sample_info = [sample, alleles, filename, anno, file_extension]
+            sample_info = [sample, alleles, filename]
             ## Create sample mapping dictionary
             if sample not in sample_run_dict:
                 sample_run_dict[sample] = [sample_info]
@@ -132,11 +121,13 @@ def check_samplesheet(file_in, file_out):
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
         with open(file_out, "w") as fout:
-            fout.write(",".join(["sample", "alleles", "filename", "anno", "ext"]) + "\n")
+            fout.write(",".join(["sample", "alleles", "filename"]) + "\n")
 
             for sample in sorted(sample_run_dict.keys()):
                 for val in sample_run_dict[sample]:
                     fout.write(",".join(val) + "\n")
+    else:
+        print_error(f"No entries to process!", "Samplesheet: {file_in}")
 
 
 def main(args=None):
