@@ -48,6 +48,7 @@ jobs:
         NXF_ANSI_LOG: false
       strategy:
         matrix:
+          nxf_ver: ['21.04.0', '']
           tests: ['test_variant_tsv', 'test_peptides', 'test_peptides_h2', 'test_proteins', 'test_mhcnuggets', 'test_mhcflurry']
       steps:
         - name: Check out pipeline code
