@@ -4,6 +4,7 @@ import os
 import sys
 import json
 import argparse
+import operator
 
 from collections import Counter
 
@@ -19,19 +20,23 @@ def __main__():
         parser.print_help()
         sys.exit(1)
 
+    # Combine_dicts function
+    def combine_dicts(a, b):
+        return dict(list(a.items()) + list(b.items()))
+
     # read in json reports
-    data = []
+    data = dict()
     if args.single_input:
         with open(args.single_input, 'r') as infile:
-            data.append(Counter(json.load(infile)))
+            data = combine_dicts(data, json.load(infile))
     else:
         for file in os.listdir(args.input):
             if file.endswith(".json"):
                 with open(file, "r") as infile:
-                    data.append(Counter(json.load(infile)))
+                    data = combine_dicts(data, json.load(infile))
 
     # merge and write json report
-    merged_data = sum(data, Counter())
+    merged_data = data
     merged_data['prediction_methods'] = ''.join(set(merged_data['prediction_methods']))
     merged_data['number_of_unique_peptides'] = len(set(merged_data['number_of_unique_peptides']))
     merged_data['number_of_unique_peptides_after_filtering'] = len(set(merged_data['number_of_unique_peptides_after_filtering']))
