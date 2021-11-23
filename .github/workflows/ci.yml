@@ -84,6 +84,9 @@ jobs:
       env:
         NXF_VER: ${{ matrix.nxf_ver }}
         NXF_ANSI_LOG: false
+      strategy:
+        matrix: 
+          nxf_ver: ['21.04.0', '']
       steps:
         - name: Check out pipeline code
           uses: actions/checkout@v2
