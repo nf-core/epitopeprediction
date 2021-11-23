@@ -4,13 +4,11 @@ include { initOptions; saveFiles; getSoftwareName; getProcessName } from './func
 params.options = [:]
 options        = initOptions(params.options)
 
-def VERSION = "2.0.7"
-
-process GEN_PEPTIDES {
+process FRED2_GENERATEPEPTIDES {
 
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'', meta:[:], publish_by_meta:[]) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'.', meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "conda-forge::fred2:2.0.7" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -24,6 +22,7 @@ process GEN_PEPTIDES {
 
     output:
         tuple val(meta), path("*.tsv"), emit: splitted
+        path "versions.yml", emit: versions
 
     script:
         def prefix = options.suffix ? "${meta.sample}_${options.suffix}" : "${meta.sample}_peptides"
@@ -35,7 +34,7 @@ process GEN_PEPTIDES {
 
         cat <<-END_VERSIONS > versions.yml
             ${getProcessName(task.process)}:
-                fred2: \$(echo \$(python -c "import pkg_resources; print 'fred2 ' + pkg_resources.get_distribution('Fred2').version" | sed 's/^fred2 //; s/ .*\$//') )
+                fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
             END_VERSIONS
         """
 }

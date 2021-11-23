@@ -17,15 +17,18 @@ workflow INPUT_CHECK {
         .set { reads }
 
     emit:
-    reads // channel: [ val(meta), [ reads ] ]
+    reads // channel: [ val(meta), [ input filename ] ]
 }
 
 // Function to get list of [ meta, filenames ]
 def get_samplesheet_paths(LinkedHashMap row) {
+
+    def allele_string = generate_allele_string(row.alleles)
+    def type = determine_input_type(row.filename)
     def meta = [:]
     meta.sample         = row.sample
-    meta.alleles        = row.alleles
-    meta.anno           = row.anno
+    meta.alleles        = allele_string
+    meta.inputtype      = type
 
     def array = []
     if (!file(row.filename).exists()) {
@@ -34,4 +37,40 @@ def get_samplesheet_paths(LinkedHashMap row) {
         array = [ meta, file(row.filename) ]
     }
     return array
+}
+
+def generate_allele_string(String alleles) {
+    // Collect the allele information from the file
+    def allele_string
+    if ( alleles.endsWith(".txt") || alleles.endsWith(".alleles") )  {
+        allele_string = file(alleles).readLines().join(';')
+    }
+    // or assign the information to a new variable
+    else {
+        allele_string = alleles
+    }
+    return allele_string
+}
+
+def determine_input_type(String filename) {
+    def filetype
+    def input_file = file(filename)
+    def extension = input_file.extension
+
+    if ( extension == "vcf" | extension == "vcf.gz" ) {
+        filetype = "variant"
+    }
+    else if ( extension == "tsv" | extension == "GSvar" ) {
+        // Check if it is a variant annotation file or a peptide file
+        input_file.withReader {
+            def first_header_col = it.readLine().split('\t')[0]
+            //first_header_col = [col.lower() for col in tsv.readlines()[0].split('\t')][0]
+            if (first_header_col == "id") { filetype = "peptide" }
+            else if (first_header_col == "#chr") {filetype = "variant"}
+        }
+    }
+    else {
+        filetype = "protein"
+    }
+    return filetype
 }

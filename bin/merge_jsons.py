@@ -40,6 +40,6 @@ def __main__():
 
     with open('{}_prediction_report.json'.format(args.prefix), 'w') as outfile:
         json.dump(merged_data, outfile)
-    
+
 if __name__ == "__main__":
     __main__()

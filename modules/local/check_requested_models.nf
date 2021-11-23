@@ -23,6 +23,7 @@ process CHECK_REQUESTED_MODELS {
     output:
         path '*.txt', emit: txt // model_report.txt
         path '*.log', emit: log // model_warnings.log
+        path "versions.yml", emit: versions
 
     script:
         def argument = "$options.args"
@@ -33,9 +34,16 @@ process CHECK_REQUESTED_MODELS {
 
         """
         check_requested_models.py ${argument} \
-            --alleles "${meta.alleles}" \
+            --alleles ${meta.alleles} \
             --mhcclass ${params.mhc_class} \
             --versions ${software_versions} > model_warnings.log
+
+        cat <<-END_VERSIONS > versions.yml
+        ${getProcessName(task.process)}:
+            mhcflurry: \$(echo \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//') )
+            mhcnuggets: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)"))
+            fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
+        END_VERSIONS
         """
 
 }

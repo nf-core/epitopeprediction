@@ -1,5 +1,5 @@
 // Import generic module functions
-include { saveFiles } from './functions'
+include { initOptions; saveFiles; } from './functions'
 
 params.options = [:]
 
@@ -17,10 +17,10 @@ process SAMPLESHEET_CHECK {
     }
 
     input:
-    path samplesheet
+        path samplesheet
 
     output:
-    path '*.csv'
+        path '*.csv', emit: csv
 
     script: // This script is bundled with the pipeline, in nf-core/epitopeprediction/bin/
     """
