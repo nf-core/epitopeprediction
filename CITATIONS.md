@@ -15,21 +15,17 @@
 * [MultiQC](https://www.ncbi.nlm.nih.gov/pubmed/27312411/)
     > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
-* **Using Drosophila melanogaster as a model for genotoxic chemical mutational studies with a new program, SnpSift.**\
-    Pablo Cingolani, Viral M. Patel, Melissa Coon, Tung Nguyen, Susan J. Land, Douglas M. Ruden and Xiangyi Lu1\
-    _Frontiers in Genetics_ 3, 35 (2012). doi: [10.3389/fgene.2012.00035](https://dx.doi.org/10.3389/fgene.2012.00035).
+* [SnpSift](https://dx.doi.org/10.3389/fgene.2012.00035)
+    > Pablo Cingolani, Viral M. Patel, Melissa Coon, Tung Nguyen, Susan J. Land, Douglas M. Ruden and Xiangyi Lu. Using Drosophila melanogaster as a model for genotoxic chemical mutational studies with a new program, SnpSift. _Frontiers in Genetics_ 3, 35 (2012). doi: 10.3389/fgene.2012.00035.
 
-* **FRED 2: an immunoinformatics framework for Python.**\
-    Benjamin Schubert, Mathias Walzer, Hans-Philipp Brachvogel, András Szolek, Christopher Mohr, Oliver Kohlbacher\
-    _Bioinformatics_ 32(13), 2044-2046 (2016). doi: [10.1093/bioinformatics/btw113](https://dx.doi.org/10.1093/bioinformatics/btw113).
+* [FRED2](https://dx.doi.org/10.1093/bioinformatics/btw113)
+    > Benjamin Schubert, Mathias Walzer, Hans-Philipp Brachvogel, András Szolek, Christopher Mohr, Oliver Kohlbacher. FRED 2: an immunoinformatics framework for Pythonö Bioinformatics 32(13), 2044-2046 (2016). doi: 10.1093/bioinformatics/btw113.
 
-* **MHCflurry: open-source class I MHC binding affinity prediction.**\
-    Timothy J. O’Donnell, Alex Rubinsteyn, Maria Bonsack, Angelika B. Riemer, Uri Laserson, Jeff Hammerbacher\
-    _Cell systems_ 7(1), 129-132 (2018). doi: [10.1016/j.cels.2018.05.014](https://dx.doi.org/10.1016/j.cels.2018.05.014).
+* [MHCflurry](https://dx.doi.org/10.1016/j.cels.2018.05.014)
+    > Timothy J. O’Donnell, Alex Rubinsteyn, Maria Bonsack, Angelika B. Riemer, Uri Laserson, Jeff Hammerbacher. MHC flurry: open-source class I MHC binding affinity prediction. Cell systems 7(1), 129-132 (2018). doi: 10.1016/j.cels.2018.05.014.
 
-* **High-throughput prediction of MHC class i and ii neoantigens with MHCnuggets.**\
-    Xiaoshan M. Shao, Rohit Bhattacharya, Justin Huang, I.K. Ashok Sivakumar, Collin Tokheim, Lily Zheng, Dylan Hirsch, Benjamin Kaminow, Ashton Omdahl, Maria Bonsack, Angelika B. Riemer, Victor E. Velculescu, Valsamo Anagnostou, Kymberleigh A. Pagel and Rachel Karchin\
-    _Cancer Immunology Research_ 8(3), 396-408 (2020). doi: [10.1158/2326-6066.CIR-19-0464](https://dx.doi.org/10.1158/2326-6066.CIR-19-0464).
+* [MHCnuggets](https://dx.doi.org/10.1158/2326-6066.CIR-19-0464)
+    > Xiaoshan M. Shao, Rohit Bhattacharya, Justin Huang, I.K. Ashok Sivakumar, Collin Tokheim, Lily Zheng, Dylan Hirsch, Benjamin Kaminow, Ashton Omdahl, Maria Bonsack, Angelika B. Riemer, Victor E. Velculescu, Valsamo Anagnostou, Kymberleigh A. Pagel and Rachel Karchin. High-throughput prediction of MHC class i and ii neoantigens with MHCnuggets. Cancer Immunology Research 8(3), 396-408 (2020). doi: 10.1158/2326-6066.CIR-19-0464.
 
 ## Software packaging/containerisation tools
 
