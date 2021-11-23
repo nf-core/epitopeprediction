@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v1.2.0dev - 2021-10-28
+## v2.0dev - date
 
 ### `Added`
 
@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#110](https://github.com/nf-core/epitopeprediction/pull/110) - DSL2 conversion
 
 ### `Fixed`
+
+### `Updated versions`
+
+- [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Updated `python 2.7` to `python 3.8.9` in `splitpeptides.py` and `merge_jsons.py`.
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
 
