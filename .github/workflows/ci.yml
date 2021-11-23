@@ -82,7 +82,7 @@ jobs:
       if: ${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}
       runs-on: ubuntu-latest
       env:
-        NXF_VER: '21.04.0'
+        NXF_VER: ${{ matrix.nxf_ver }}
         NXF_ANSI_LOG: false
       steps:
         - name: Check out pipeline code
