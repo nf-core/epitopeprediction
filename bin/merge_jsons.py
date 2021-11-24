@@ -54,7 +54,7 @@ def __main__():
     # merge and write json report
     data["prediction_methods"] = "".join(set(list(flatten(data["prediction_methods"]))))
     data["number_of_unique_peptides"] = len(
-        set(list(flatten((data["number_of_unique_peptides"]))))
+        set(list(flatten(data["number_of_unique_peptides"])))
     )
     data["number_of_unique_peptides_after_filtering"] = len(
         set(list(flatten(data["number_of_unique_peptides_after_filtering"])))
