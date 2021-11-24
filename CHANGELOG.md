@@ -14,12 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#100](https://github.com/nf-core/epitopeprediction/pull/89) - Merge previous template updates up to `v2.1`
 - [#110](https://github.com/nf-core/epitopeprediction/pull/110) - DSL2 conversion
+- [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Updated `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
 
 ### `Fixed`
-
-### `Changed`
-
-- [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Updated `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
 
