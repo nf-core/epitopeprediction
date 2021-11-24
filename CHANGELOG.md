@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
-### `Updated versions`
+### `Changed`
 
 - [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Updated `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
 
