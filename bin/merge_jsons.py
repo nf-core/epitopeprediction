@@ -4,8 +4,6 @@ import os
 import sys
 import json
 import argparse
-from itertools import chain
-from collections.abc import Iterable
 
 
 def __main__():
