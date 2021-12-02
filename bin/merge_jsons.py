@@ -48,7 +48,7 @@ def __main__():
     else:
         for file in os.listdir(args.input):
             if file.endswith(".json"):
-                with open(file, "r") as infile:
+                with open(os.path.join(args.input, file), "r") as infile:
                     data = combine_dicts(data, json.load(infile))
 
     # merge and write json report
