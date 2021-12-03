@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. At the end, version of the tools are summarized in a MultiQC report which is generated at the end of the pipeline.
+This document describes the output produced by the pipeline. The version of all tools used in the pipeline are summarized in a MultiQC report which is generated at the end of the pipeline.
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
