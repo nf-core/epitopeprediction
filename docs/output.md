@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
+This document describes the output produced by the pipeline. The version of all tools used in the pipeline are summarized in a MultiQC report which is generated at the end of the pipeline.
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
@@ -49,7 +49,7 @@ Peptides are considered binders if the affinity is higher than 50.
     * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
     * **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`.
 
-When the parameter `--fasta_output` is specified a `FASTA` file will be generated that contains the sequences of proteins that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
+When the parameter `--fasta_output` is specified, a `FASTA` file will be generated containing the protein sequences that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
 
 **Output directory: `predictions/`**
 
@@ -58,7 +58,7 @@ When the parameter `--fasta_output` is specified a `FASTA` file will be generate
 
 ### Supported models
 
-When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder.
+When running the pipeline using the `--show_supported_models` parameter,  information about supported models for the available predictor tool versions will be written to the results folder.
 
 **Output directory: `supported_models/`**
 
