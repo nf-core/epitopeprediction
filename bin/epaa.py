@@ -858,7 +858,11 @@ def make_predictions_from_variants(variants_all, methods, tool_thresholds, allel
         df = df.rename(columns={'Method': 'method'})
         pred_dataframes.append(df)
 
-    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ] ,'number_of_variants': len(variants_all), 'number_of_unique_peptides': [str(p) for p in all_peptides], 'number_of_unique_peptides_after_filtering': [str(p) for p in all_peptides_filtered]}
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],
+                'number_of_variants': len(variants_all),
+                'number_of_unique_peptides': [str(p) for p in all_peptides],
+                'number_of_unique_peptides_after_filtering': [str(p) for p in all_peptides_filtered]
+                }
 
     return pred_dataframes, statistics, all_peptides_filtered, prots
 
@@ -934,7 +938,11 @@ def make_predictions_from_peptides(peptides, methods, tool_thresholds, alleles, 
         pred_dataframes.append(df)
 
     # write prediction statistics
-    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],'number_of_variants': '-', 'number_of_unique_peptides': [str(p) for p in peptides], 'number_of_unique_peptides_after_filtering': [str(p) for p in peptides_filtered]}
+    statistics = {'prediction_methods': [ method + "-" + version for method, version in methods.items() ],
+                'number_of_variants': 0,
+                'number_of_unique_peptides': [str(p) for p in peptides],
+                'number_of_unique_peptides_after_filtering': [str(p) for p in peptides_filtered]
+                }
     return pred_dataframes, statistics
 
 def __main__():
