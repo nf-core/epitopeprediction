@@ -36,7 +36,6 @@ def read_peptide_input(filename):
 
 def convert_allele_back(allele):
     name = str(allele)
-    print(name)
     if name.startswith("H-2-"):
         # convert internal Fred2 representation back to the nf-core/epitopeprediction input allele format
         return name.replace("H-2-", "H2-")
@@ -56,7 +55,6 @@ def __main__():
     parser.add_argument('-t', '--tools', help='Tools requested for peptide predictions', required=True, type=str)
     parser.add_argument('-v', '--versions', help='<Required> File with used software versions.', required=True)
     args = parser.parse_args()
-
     selected_methods = [item for item in args.tools.split(',')]
     with open(args.versions, 'r') as versions_file:
         tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = "\t") ]
@@ -79,7 +77,7 @@ def __main__():
     with open("model_report.txt", 'w') as output:
         # check if requested tool versions are supported
         for method, version in methods.items():
-            if version not in EpitopePredictorFactory.available_methods()[method]:
+            if version not in EpitopePredictorFactory.available_methods()[method.lower()]:
                 raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
         # check if reuested alleles are supported

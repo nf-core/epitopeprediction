@@ -18,7 +18,7 @@ process SNPSIFT_SPLIT {
     }
 
     input:
-        tuple val(meta), path(raw)
+        tuple val(meta), path(input_file)
 
     output:
         tuple val(meta), path("*.vcf"), emit: splitted
@@ -26,11 +26,11 @@ process SNPSIFT_SPLIT {
 
     script:
     """
-        SnpSift split ${raw}
+    SnpSift split ${input_file}
 
-        cat <<-END_VERSIONS > versions.yml
-            ${getProcessName(task.process)}:
-                snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
-            END_VERSIONS
+    cat <<-END_VERSIONS > versions.yml
+        ${getProcessName(task.process)}:
+            snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
+    END_VERSIONS
     """
 }

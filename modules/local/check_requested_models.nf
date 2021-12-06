@@ -18,23 +18,25 @@ process CHECK_REQUESTED_MODELS {
     }
 
     input:
-        tuple val(meta), path(raw), val(software_versions)
+        tuple val(alleles), path(input_file)
+        val(software_versions)
 
     output:
         path '*.txt', emit: txt // model_report.txt
         path '*.log', emit: log // model_warnings.log
-        path "versions.yml", emit: versions
+        val "versions.yml", emit: versions
+
 
     script:
         def argument = "$options.args"
 
         if (argument.contains("peptides") == true) {
-            argument += " ${raw}"
+            argument += " ${input_file}"
         }
 
         """
         check_requested_models.py ${argument} \
-            --alleles ${meta.alleles} \
+            --alleles '${alleles.join(';')}' \
             --mhcclass ${params.mhc_class} \
             --versions ${software_versions} > model_warnings.log
 

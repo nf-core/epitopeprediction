@@ -1042,12 +1042,13 @@ def __main__():
     # concat dataframes for all peptide lengths
     try:
         complete_df = pd.concat(pred_dataframes, sort=True)
+        # replace method names with method names with version
+        # complete_df.replace({'method': methods}, inplace=True)
+        complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
     except:
         complete_df = pd.DataFrame()
         logger.error("No predictions available.")
-    # replace method names with method names with version
-    # complete_df.replace({'method': methods}, inplace=True)
-    complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
+
     # include wild type sequences to dataframe if specified
     if args.wild_type:
         wt_sequences = generate_wt_seqs(all_peptides_filtered)
