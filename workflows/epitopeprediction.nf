@@ -210,10 +210,9 @@ workflow EPITOPEPREDICTION {
         .map { meta_data, file -> meta_data.alleles }
         .splitCsv(sep: ';')
         .collect()
-        .unique()
         .toList()
         .combine(ch_samples_from_sheet.variant.first())
-        .map { it -> tuple(it[0], it[-1])}
+        .map { it -> tuple(it[0].unique(), it[-1])}
 
         CHECK_REQUESTED_MODELS(
             ch_variants_protein_models,
@@ -223,7 +222,7 @@ workflow EPITOPEPREDICTION {
         // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
         CHECK_REQUESTED_MODELS_PEP(
             ch_samples_from_sheet.peptide
-            .map { meta_data, input_file -> tuple( [meta_data.alleles], input_file ) },
+            .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
             ch_versions
         )
 
