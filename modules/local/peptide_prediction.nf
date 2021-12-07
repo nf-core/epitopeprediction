@@ -28,9 +28,9 @@ process PEPTIDE_PREDICTION {
 
     """
     epaa.py --identifier ${splitted.baseName} \
-                        --alleles ${meta.alleles} \
-                        --versions ${software_versions} \
-                        $options.args ${splitted}
+        --alleles '${meta.alleles}' \
+        --versions ${software_versions} \
+        $options.args ${splitted}
 
     cat <<-END_VERSIONS > versions.yml
     ${getProcessName(task.process)}:

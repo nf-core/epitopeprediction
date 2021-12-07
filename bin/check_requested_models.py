@@ -64,7 +64,6 @@ def __main__():
         methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
 
     # get the alleles
-    # alleles = FileReader.read_lines(args.alleles, in_type=Allele)
     alleles= [Allele(a) for a in args.alleles.split(";")]
 
     peptide_lengths = []
@@ -80,7 +79,7 @@ def __main__():
             if version not in EpitopePredictorFactory.available_methods()[method.lower()]:
                 raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
-        # check if reuested alleles are supported
+        # check if requested alleles are supported
         support_all_alleles = True
         no_allele_support = True
         for a in alleles:
@@ -107,7 +106,7 @@ def __main__():
 
 
         output.write("\n")
-        # check if reuested lengths are supported
+        # check if requested lengths are supported
         support_all_lengths = True
         no_length_support = True
         for l in peptide_lengths:

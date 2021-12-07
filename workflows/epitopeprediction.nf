@@ -37,8 +37,6 @@ def modules = params.modules.clone()
 
 def check_modules_options       = modules['check_modules']
 def check_modules_options_pep   = check_modules_options.clone()
-check_modules_options.args      += "--max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}"
-check_modules_options_pep.args  += "--peptides"
 
 def get_peptides_options        = modules['gen_peptides']
 def split_peptides_options      = modules['split_peptides']
@@ -50,21 +48,23 @@ def peptide_prediction_var      = peptide_prediction_options.clone()
 def merge_json_single           = merge_json_options.clone()
 def merge_json_multi            = merge_json_options.clone()
 
+check_modules_options.args      += " --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} "
+check_modules_options_pep.args  += " --peptides "
 check_modules_options.args      += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
 
-peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
 peptide_prediction_pep.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
 peptide_prediction_pep.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
-peptide_prediction_pep.args     += " --peptides "
+peptide_prediction_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(["--tool_thresholds ${tool_thresholds}"]) : ''
+peptide_prediction_pep.args     += ' --peptides '
 
-peptide_prediction_var.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_prediction_var.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
 peptide_prediction_var.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
 peptide_prediction_var.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
-peptide_prediction_var.args     += " --somatic_mutation "
+peptide_prediction_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(["--tool_thresholds ${tool_thresholds}"]) : ''
+peptide_prediction_var.args     += ' --somatic_mutation '
 
-merge_json_single.args          = " --single_input "
+merge_json_single.args          = ' --single_input '
 merge_json_multi.args           = " --input \$PWD "
 
 //
