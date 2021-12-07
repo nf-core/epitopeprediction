@@ -24,11 +24,12 @@ process CHECK_REQUESTED_MODELS {
     output:
         path '*.txt', emit: txt // model_report.txt
         path '*.log', emit: log // model_warnings.log
-        val "versions.yml", emit: versions
+        path "versions.yml", emit: versions
 
 
     script:
         def argument = "$options.args"
+
 
         if (argument.contains("peptides") == true) {
             argument += " ${input_file}"

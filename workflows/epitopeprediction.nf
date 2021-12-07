@@ -52,17 +52,17 @@ def merge_json_multi            = merge_json_options.clone()
 
 check_modules_options.args      += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
 
-peptide_prediction_pep.args      += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
-peptide_prediction_pep.args      += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
-peptide_prediction_pep.args      += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_pep.args      += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
-peptide_prediction_pep.args      += " --peptides "
+peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_prediction_pep.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
+peptide_prediction_pep.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
+peptide_prediction_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
+peptide_prediction_pep.args     += " --peptides "
 
-peptide_prediction_var.args      += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
-peptide_prediction_var.args      += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
-peptide_prediction_var.args      += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_var.args      += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
-peptide_prediction_var.args      += " --somatic_mutation "
+peptide_prediction_var.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_prediction_var.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
+peptide_prediction_var.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
+peptide_prediction_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
+peptide_prediction_var.args     += " --somatic_mutation "
 
 merge_json_single.args          = " --single_input "
 merge_json_multi.args           = " --input \$PWD "
@@ -210,6 +210,7 @@ workflow EPITOPEPREDICTION {
         .map { meta_data, file -> meta_data.alleles }
         .splitCsv(sep: ';')
         .collect()
+        .unique()
         .toList()
         .combine(ch_samples_from_sheet.variant.first())
         .map { it -> tuple(it[0], it[-1])}
@@ -319,19 +320,23 @@ workflow EPITOPEPREDICTION {
     PEPTIDE_PREDICTION_PROTEIN(
         SPLIT_PEPTIDES_PROTEIN.out.splitted
                                     .combine(ch_versions)
-                                    .transpose())
+                                    .transpose()
+    )
 
     // Run epitope prediction for peptides
     PEPTIDE_PREDICTION_PEP(
         SPLIT_PEPTIDES.out.splitted
                             .combine(ch_versions)
-                            .transpose())
+                            .transpose()
+    )
 
     // Run epitope prediction for variants
     PEPTIDE_PREDICTION_VAR(
         CSVTK_SPLIT.out.splitted
                         .mix(SNPSIFT_SPLIT.out.splitted)
-                        .combine(ch_versions).transpose())
+                        .combine(ch_versions)
+                        .transpose()
+    )
 
     // collect prediction script versions
     ch_versions = ch_versions.mix(PEPTIDE_PREDICTION_VAR.out.versions)
