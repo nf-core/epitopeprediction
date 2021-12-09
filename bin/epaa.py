@@ -1016,7 +1016,7 @@ def __main__():
 
     selected_methods = [item for item in args.tools.split(',')]
     with open(args.versions, 'r') as versions_file:
-        tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = "\t") ]
+        tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = ":") ]
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0'))
         # get for each selected method the corresponding tool version

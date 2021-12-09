@@ -8,7 +8,7 @@ process MERGE_JSON {
 
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'predictions', meta:[:], publish_by_meta:[]) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'merged_predictions', meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -22,6 +22,7 @@ process MERGE_JSON {
 
     output:
         tuple val(meta), path("*.json"), emit: json
+        path "versions.yml", emit: versions
 
     script:
         def argument = "$options.args"
@@ -31,6 +32,11 @@ process MERGE_JSON {
 
         """
         merge_jsons.py --prefix ${meta.sample} ${argument}
+
+        cat <<-END_VERSIONS > versions.yml
+        ${getProcessName(task.process)}:
+            python: \$(python --version | sed 's/Python //g')
+        END_VERSIONS
         """
 }
 

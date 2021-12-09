@@ -23,6 +23,7 @@ process SPLIT_PEPTIDES {
 
     output:
         tuple val(meta), path("*.tsv"), emit: splitted
+        path "versions.yml", emit: versions
 
     script:
         def prefix = options.suffix ? "${peptide.baseName}_${options.suffix}" : "${peptide.baseName}"
@@ -31,5 +32,10 @@ process SPLIT_PEPTIDES {
         split_peptides.py --input ${peptide} \\
         --output_base "${prefix}" \\
         $options.args
+
+        cat <<-END_VERSIONS > versions.yml
+        ${getProcessName(task.process)}:
+            python: \$(python --version | sed 's/Python //g')
+        END_VERSIONS
         """
 }

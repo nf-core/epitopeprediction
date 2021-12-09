@@ -7,7 +7,7 @@ options        = initOptions(params.options)
 process PEPTIDE_PREDICTION {
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'.', meta:[:], publish_by_meta:[]) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'predictions', meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "bioconda::snpsift=4.3.1t bioconda::python=2.7.15 bioconda::pyvcf=0.6.8 conda-forge::pandas=0.24.2 bioconda::fred2=2.0.7 bioconda::mhcflurry=1.4.3 bioconda::mhcnuggets=2.3.2" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -18,6 +18,7 @@ process PEPTIDE_PREDICTION {
 
     input:
         tuple val(meta), path(splitted), val(software_versions)
+
     output:
         tuple val(meta), path("*.json"), emit: json
         tuple val(meta), path("*.tsv"), emit: predicted
@@ -25,7 +26,6 @@ process PEPTIDE_PREDICTION {
         path "versions.yml", emit: versions
 
     script:
-
     """
     epaa.py --identifier ${splitted.baseName} \
         --alleles '${meta.alleles}' \
@@ -34,12 +34,12 @@ process PEPTIDE_PREDICTION {
 
     cat <<-END_VERSIONS > versions.yml
     ${getProcessName(task.process)}:
-        snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
-        pandas: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)"))
-        pyvcf: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyvcf').version)"))
-        mhcflurry: \$(echo \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//') )
-        mhcnuggets: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)"))
-        fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        fred2: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)")
+        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
+        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyvcf').version)")
+        mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')
+        mhcnuggets: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)")
     END_VERSIONS
     """
 
