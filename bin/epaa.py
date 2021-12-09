@@ -1020,7 +1020,7 @@ def __main__():
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0'))
         # get for each selected method the corresponding tool version
-        methods = { method.lower() : version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
+        methods = { method.lower().strip() : version.strip() for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
 
     for method, version in methods.items():
         if version not in EpitopePredictorFactory.available_methods()[method]:

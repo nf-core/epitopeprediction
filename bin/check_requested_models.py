@@ -61,7 +61,7 @@ def __main__():
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0')) # how to handle this?
         # get for each method the corresponding tool version
-        methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
+        methods = { method.strip():version.strip() for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
 
     # get the alleles
     alleles= [Allele(a) for a in args.alleles.split(";")]
