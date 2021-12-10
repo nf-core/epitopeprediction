@@ -48,7 +48,7 @@ jobs:
       NXF_ANSI_LOG: false
     strategy:
       matrix:
-        nxf_ver: ["21.10.0", ""]
+        nxf_ver: ["21.10.4", ""]
         tests:
           [
             "test_variant_tsv",
@@ -94,7 +94,7 @@ jobs:
       NXF_ANSI_LOG: false
     strategy:
       matrix:
-        nxf_ver: ["21.10.0", ""]
+        nxf_ver: ["21.10.4", ""]
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
