@@ -70,8 +70,6 @@ merge_json_multi.args           = " --input \$PWD "
 //
 // MODULE: Local to the pipeline
 //
-include { GET_SOFTWARE_VERSIONS }                                   from '../modules/local/get_software_versions'       addParams( options: [publish_files : ['tsv':'']] )
-
 include { GET_PREDICTION_VERSIONS }                                 from '../modules/local/get_prediction_versions'     addParams( options: [:] )
 
 include { EXTERNAL_TOOLS_IMPORT }                                   from '../modules/local/external_tools_import'       addParams( options: [:] )
