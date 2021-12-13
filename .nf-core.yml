@@ -1,0 +1,3 @@
+lint:
+    files_exist:
+      - modules/local/get_software_versions.nf
