@@ -8,7 +8,7 @@ process FRED2_GENERATEPEPTIDES {
 
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'.', meta:[:], publish_by_meta:[]) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:getProcessName(task.process), meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "conda-forge::fred2:2.0.7" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -33,8 +33,9 @@ process FRED2_GENERATEPEPTIDES {
         $options.args
 
         cat <<-END_VERSIONS > versions.yml
-            ${getProcessName(task.process)}:
-                fred2: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)"))
-            END_VERSIONS
+        ${getProcessName(task.process)}:
+            fred2: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)")
+            python: \$(python --version 2>&1 | sed 's/Python //g')
+        END_VERSIONS
         """
 }

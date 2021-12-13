@@ -37,43 +37,42 @@ def modules = params.modules.clone()
 
 def check_modules_options       = modules['check_modules']
 def check_modules_options_pep   = check_modules_options.clone()
-check_modules_options.args += "--max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length}"
-check_modules_options_pep.args += "--peptides"
 
 def get_peptides_options        = modules['gen_peptides']
 def split_peptides_options      = modules['split_peptides']
-def peptide_prediction_options   = modules['peptide_prediction']
+def peptide_prediction_options  = modules['peptide_prediction']
 def merge_json_options          = modules['merge_json']
 
-def peptide_prediction_pep       = peptide_prediction_options.clone()
-def peptide_prediction_var       = peptide_prediction_options.clone()
+def peptide_prediction_pep      = peptide_prediction_options.clone()
+def peptide_prediction_var      = peptide_prediction_options.clone()
 def merge_json_single           = merge_json_options.clone()
 def merge_json_multi            = merge_json_options.clone()
 
-check_modules_options.args     += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
+check_modules_options.args      += " --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} "
+check_modules_options_pep.args  += " --peptides "
+check_modules_options.args      += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
 
-peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
 peptide_prediction_pep.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
 peptide_prediction_pep.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
-peptide_prediction_pep.args     += " --peptides "
+peptide_prediction_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(["--tool_thresholds ${tool_thresholds}"]) : ''
+peptide_prediction_pep.args     += ' --peptides '
 
-peptide_prediction_var.args     += params.proteome ? Utils.joinModuleArgs(['--proteome ${params.proteome}']) : ''
+peptide_prediction_var.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
 peptide_prediction_var.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
 peptide_prediction_var.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(['--tool_thresholds ${tool_thresholds}']) : ''
-peptide_prediction_var.args     += " --somatic_mutation "
+peptide_prediction_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(["--tool_thresholds ${tool_thresholds}"]) : ''
+peptide_prediction_var.args     += ' --somatic_mutation '
 
-merge_json_single.args          = " --single_input "
+merge_json_single.args          = ' --single_input '
 merge_json_multi.args           = " --input \$PWD "
-
 
 //
 // MODULE: Local to the pipeline
 //
-include { GET_SOFTWARE_VERSIONS } from '../modules/local/get_software_versions'                                         addParams( options: [publish_files : ['tsv':'']] )
+include { GET_PREDICTION_VERSIONS }                                 from '../modules/local/get_prediction_versions'     addParams( options: [:] )
 
-include { DEFINE_SOFTWARE } from '../modules/local/define_software'                                                     addParams( options: [:] )
+include { EXTERNAL_TOOLS_IMPORT }                                   from '../modules/local/external_tools_import'       addParams( options: [:] )
 
 include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'      addParams( options: check_modules_options_pep )
 include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'      addParams( options: check_modules_options )
@@ -84,12 +83,14 @@ include { CSVTK_SPLIT}                                              from '../mod
 
 include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'      addParams( options: get_peptides_options )
 include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'              addParams( options: split_peptides_options )
+include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                from '../modules/local/split_peptides'              addParams( options: split_peptides_options )
 
+include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_pep )
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_pep )
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_var )
 
-include { CAT_CAT as CAT_TSV }                                      from '../modules/local/cat_cat'                     addParams( options: [:] )
-include { CAT_CAT as CAT_FASTA }                                    from '../modules/local/cat_cat'                     addParams( options: [:] )
+include { CAT_FILES as CAT_TSV }                                    from '../modules/local/cat_files'                   addParams( options: [:] )
+include { CAT_FILES as CAT_FASTA }                                  from '../modules/local/cat_files'                   addParams( options: [:] )
 include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'                addParams( options: [:] )
 
 include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'                  addParams( options: merge_json_single )
@@ -112,7 +113,8 @@ multiqc_options.args += params.multiqc_title ? Utils.joinModuleArgs(["--title \"
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { MULTIQC } from '../modules/nf-core/modules/multiqc/main' addParams( options: multiqc_options   )
+include { MULTIQC }                                                 from '../modules/nf-core/modules/multiqc/main' addParams( options: multiqc_options   )
+include { CUSTOM_DUMPSOFTWAREVERSIONS }                             from '../modules/nf-core/modules/custom/dumpsoftwareversions/main' addParams( options: [:] )
 
 /*
 ========================================================================================
@@ -127,103 +129,217 @@ workflow EPITOPEPREDICTION {
 
     ch_versions = Channel.empty()
     ch_software_versions = Channel.empty()
+    // Non-free prediction tools
+    ch_nonfree_paths = Channel.empty()
 
     //
     // SUBWORKFLOW: Read in samplesheet, validate and stage input files
     //
-
     INPUT_CHECK (
         ch_input
     )
 
     INPUT_CHECK.out
                 .branch {
-                    meta, input_file ->
-                        variant : meta.inputtype == 'variant'
-                            return [ meta, input_file ]
-                        peptide :  meta.inputtype == 'peptide'
-                            return [ meta, input_file ]
-                        protein :  meta.inputtype == 'protein'
-                            return [ meta, input_file ]
+                    meta_data, input_file ->
+                        variant : meta_data.inputtype == 'variant'
+                            return [ meta_data, input_file ]
+                        peptide :  meta_data.inputtype == 'peptide'
+                            return [ meta_data, input_file ]
+                        protein :  meta_data.inputtype == 'protein'
+                            return [ meta_data, input_file ]
                     }
                 .set { ch_samples_from_sheet }
 
-    //TODO: include and increment when at least one of the processes ahas been run thus far
-    if (!params.show_supported_models) {
+    //TODO think about a better how to handle these supported external versions, config file? (CM)
+    netmhc_meta_data = [
+        netmhc : [
+            version      : "4.0",
+            software_md5 : "132dc322da1e2043521138637dd31ebf",
+            data_url     : "https://services.healthtech.dtu.dk/services/NetMHC-4.0/data.tar.gz",
+            data_md5     : "63c646fa0921d617576531396954d633",
+            binary_name  : "netMHC"
+        ],
+        netmhcpan: [
+            version      : "4.0",
+            software_md5 : "94aa60f3dfd9752881c64878500e58f3",
+            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
+            data_md5     : "26cbbd99a38f6692249442aeca48608f",
+            binary_name  : "netMHCpan"
+        ],
+        netmhcii: [
+            version      : "2.2",
+            software_md5 : "918b7108a37599887b0725623d0974e6",
+            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCII-2.2/data.tar.gz",
+            data_md5     : "11579b61d3bfe13311f7b42fc93b4dd8",
+            binary_name  : "netMHCII"
+        ],
+        netmhciipan: [
+            version      : "3.1",
+            software_md5 : "0962ce799f7a4c9631f8566a55237073",
+            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCIIpan-3.1/data.tar.gz",
+            data_md5     : "f833df245378e60ca6e55748344a36f6",
+            binary_name  : "netMHCIIpan"
+        ]
+    ]
 
-        // Perform the check requested models on the peptide and variant files, but only the first item
-        CHECK_REQUESTED_MODELS(
-            ch_samples_from_sheet.protein
-                                .mix(ch_samples_from_sheet.variant)
-                                .combine(ch_versions)
-                                .first()
-        )
+    tools = params.tools?.tokenize(',')
 
-        // Perform the check requested models on the peptide and variant but only the first item
-        CHECK_REQUESTED_MODELS_PEP(
-            ch_samples_from_sheet.peptide.combine(ch_versions).first()
-        )
+    if (tools.isEmpty()) { exit 1, "No valid tools specified." }
 
-        // Return a warning if this is raised
-        CHECK_REQUESTED_MODELS.out.log.subscribe {
-            model_log_file = file("$it", checkIfExists: true)
-            def lines = model_log_file.readLines()
-            if (lines.size() > 0) {
-                log.info "-${c_purple} Warning: ${c_reset}-"
-                lines.each { String line ->
-                    log.info "-${c_purple}   $line ${c_reset}-"
-                }
-            }
-        }
+    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
+    c_reset = params.monochrome_logs ? '' : "\033[0m";
 
-        // Make a division for the variant files and process them further accordingly
-        ch_samples_from_sheet.variant
-                            .branch {
-                                meta, input_file ->
-                                    vcf : input_file.extension == 'vcf' || input_file.extension == 'vcf.gz'
-                                        return [ meta, input_file ]
-                                    tab :  input_file.extension == 'tsv' || input_file.extension == 'GSvar'
-                                        return [ meta, input_file ]
-                            }
-                            .set { ch_variants }
+    // get versions of specified external tools
+    ch_external_versions = Channel
+    .from(tools)
+    .filter( ~/(?i)^net.*/ )
+    .map { it -> "${it}: ${netmhc_meta_data[it.toLowerCase()].version}"}
+    .collect()
 
-        // Include the snpsift_split function (only vcf and vcf.gz variant files)
-        SNPSIFT_SPLIT(ch_variants.vcf)
+    // get versions of all prediction tools
+    GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty([]))
+    ch_prediction_tool_versions = GET_PREDICTION_VERSIONS.out.versions.ifEmpty("")
 
-        // Include the csvtk_split function (only variant files with an tsv and GSvar executable)
-        CSVTK_SPLIT(ch_variants.tab)
-
-    } else {
-        // Include a process for the show supported models
-        // TODO: include the module that is able to retrieve the version number of netmhc(ii)(pan)
+    // TODO I guess it would be better to have two subworkflows for the if else parts (CM)
+    if (params.show_supported_models) {
         SHOW_SUPPORTED_MODELS(
             ch_samples_from_sheet.protein
                                 .mix(ch_samples_from_sheet.variant, ch_samples_from_sheet.peptide)
-                                .combine(ch_versions)
+                                .combine(ch_prediction_tool_versions)
                                 .first()
         )
     }
 
-    // Process FASTA file and generated peptides
-    if (ch_samples_from_sheet.protein.count() != 0) {
-        FRED2_GENERATEPEPTIDES(ch_samples_from_sheet.protein)
-        ch_split_peptides = FRED2_GENERATEPEPTIDES.out.splitted
-    } else {
-        ch_split_peptides = ch_samples_from_sheet.peptide
+    else {
+
+    /*
+    ========================================================================================
+        CHECK AVAILABLE MODELS AND LOAD EXTERNAL TOOLS
+    ========================================================================================
+    */
+
+    // perform the check requested models on the protein and variant files
+    // we have to perform it on all alleles that are given in the sample sheet
+    ch_variants_protein_models = ch_samples_from_sheet.variant
+    .mix(ch_samples_from_sheet.protein)
+    .map { meta_data, file -> meta_data.alleles }
+    .splitCsv(sep: ';')
+    .collect()
+    .toList()
+    .combine(ch_samples_from_sheet.variant.first())
+    .map { it -> tuple(it[0].unique(), it[-1])}
+
+    CHECK_REQUESTED_MODELS(
+        ch_variants_protein_models,
+        ch_prediction_tool_versions
+    )
+
+    // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
+    CHECK_REQUESTED_MODELS_PEP(
+        ch_samples_from_sheet.peptide
+        .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
+        ch_prediction_tool_versions
+    )
+
+    // Return a warning if this is raised
+    CHECK_REQUESTED_MODELS.out.log
+    .combine(CHECK_REQUESTED_MODELS_PEP.out.log)
+    .subscribe {
+        model_log_file = file("$it", checkIfExists: true)
+        def lines = model_log_file.readLines()
+        if (lines.size() > 0) {
+            log.info "-${c_purple} Warning: ${c_reset}-"
+            lines.each { String line ->
+                log.info "-${c_purple}   $line ${c_reset}-"
+            }
+        }
     }
 
-    // Split peptide data
-    // TODO: Add the appropriate container to remove the warning
-    SPLIT_PEPTIDES(ch_split_peptides)
+    // Retrieve meta data for external tools
+    ["netmhc", "netmhcpan", "netmhcii", "netmhciipan"].each {
+        // Check if the _path parameter was set for this tool
+        if (params["${it}_path"] as Boolean && ! tools.contains(it))
+        {
+            log.warn("--${it}_path specified, but --tools does not contain ${it}. Both have to be specified to enable ${it}. Ignoring.")
+        }
+        else if (!params["${it}_path"] as Boolean && tools.contains(it))
+        {
+            log.warn("--${it}_path not specified, but --tools contains ${it}. Both have to be specified to enable ${it}. Ignoring.")
+            tools.removeElement(it)
+        }
+        else if (params["${it}_path"])
+        {
+            // If so, add the tool name and user installation path to the external tools import channel
+            ch_nonfree_paths.bind([
+                it,
+                netmhc_meta_data[it].version,
+                netmhc_meta_data[it].software_md5,
+                file(params["${it}_path"], checkIfExists:true),
+                file(netmhc_meta_data[it].data_url),
+                netmhc_meta_data[it].data_md5,
+                netmhc_meta_data[it].binary_name
+            ])
+        }
+    }
+    // import external tools
+    EXTERNAL_TOOLS_IMPORT(ch_nonfree_paths)
 
-    // TODO: Remove them when the mhcnet(ii)(pan) is introduced
-    DEFINE_SOFTWARE()
-    ch_versions = ch_versions.mix(DEFINE_SOFTWARE.out.versions.ifEmpty(null))
+    /*
+    ========================================================================================
+        PREPARE INPUT FOR PREDICTION
+    ========================================================================================
+    */
+
+    // Make a division for the variant files and process them further accordingly
+    ch_samples_from_sheet.variant
+                            .branch {
+                                meta_data, input_file ->
+                                    vcf : input_file.extension == 'vcf' || input_file.extension == 'vcf.gz'
+                                        return [ meta_data, input_file ]
+                                    tab :  input_file.extension == 'tsv' || input_file.extension == 'GSvar'
+                                        return [ meta_data, input_file ]
+                            }
+                            .set { ch_variants }
+
+    // include the snpsift_split function (only vcf and vcf.gz variant files)
+    SNPSIFT_SPLIT(ch_variants.vcf)
+    // include the csvtk_split function (only variant files with an tsv and GSvar executable)
+    CSVTK_SPLIT(ch_variants.tab)
+
+    ch_versions = ch_versions.mix(SNPSIFT_SPLIT.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(CSVTK_SPLIT.out.versions.ifEmpty(null))
+
+    // process FASTA file and generated peptides
+    FRED2_GENERATEPEPTIDES(ch_samples_from_sheet.protein)
+    SPLIT_PEPTIDES_PROTEIN(FRED2_GENERATEPEPTIDES.out.splitted)
+
+    ch_versions = ch_versions.mix(FRED2_GENERATEPEPTIDES.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null))
+
+    // split peptide data
+    // TODO: Add the appropriate container to remove the warning
+    SPLIT_PEPTIDES(ch_samples_from_sheet.peptide)
+    ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions.ifEmpty(null))
+
+    /*
+    ========================================================================================
+        RUN EPITOPE PREDICTION
+    ========================================================================================
+    */
+
+    // not sure if this is the best solution to also have a extra process for protein, but I think we need it for cases when we have both in one sheet? (CM)
+    // run epitope prediction for proteins
+    PEPTIDE_PREDICTION_PROTEIN(
+        SPLIT_PEPTIDES_PROTEIN.out.splitted
+                                    .combine(ch_prediction_tool_versions)
+                                    .transpose()
+    )
 
     // Run epitope prediction for peptides
     PEPTIDE_PREDICTION_PEP(
         SPLIT_PEPTIDES.out.splitted
-                            .combine(ch_versions)
+                            .combine(ch_prediction_tool_versions)
                             .transpose()
     )
 
@@ -231,38 +347,39 @@ workflow EPITOPEPREDICTION {
     PEPTIDE_PREDICTION_VAR(
         CSVTK_SPLIT.out.splitted
                         .mix(SNPSIFT_SPLIT.out.splitted)
-                        .combine(ch_versions)
+                        .combine(ch_prediction_tool_versions)
                         .transpose()
     )
 
-    // TODO: Change when the netmhc(ii)(pan) replaced the DEFINE_SOFTWARE process
-    ch_versions = PEPTIDE_PREDICTION_VAR.out.versions
+    // collect prediction script versions
+    ch_versions = ch_versions.mix(PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null))
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
-    PEPTIDE_PREDICTION_PEP.out.predicted
-                                .mix(PEPTIDE_PREDICTION_VAR.out.predicted)
-                                .groupTuple()
-                                .flatMap { meta, predicted -> [[[sample:meta.sample, alleles:meta.alleles, files:predicted.size()], predicted]] }
-                                .branch {
-                                    meta, predicted ->
-                                        multi: meta.files > 1
-                                            return [ meta, predicted ]
-                                        single: meta.files == 1
-                                            return [ meta, predicted ]
-                                }
-                                .set { ch_predicted_peptides }
+    PEPTIDE_PREDICTION_PEP.out.predicted.mix(PEPTIDE_PREDICTION_VAR.out.predicted, PEPTIDE_PREDICTION_PROTEIN.out.predicted)
+    .groupTuple()
+    .flatMap { meta_data, predicted -> [[[sample:meta_data.sample, alleles:meta_data.alleles, files:predicted.size()], predicted]] }
+    .branch {
+        meta_data, predicted ->
+            multi: meta_data.files > 1
+                return [ meta_data, predicted ]
+            single: meta_data.files == 1
+                return [ meta_data, predicted ]
+    }
+    .set { ch_predicted_peptides }
 
     // Combine epitope prediction results
     CAT_TSV(ch_predicted_peptides.single)
-
     CSVTK_CONCAT(ch_predicted_peptides.multi)
     ch_versions = ch_versions.mix(CSVTK_CONCAT.out.versions.ifEmpty(null))
 
     // Combine protein sequences
-    CAT_FASTA(PEPTIDE_PREDICTION_PEP.out.fasta.mix(PEPTIDE_PREDICTION_VAR.out.fasta).groupTuple())
+    CAT_FASTA(PEPTIDE_PREDICTION_PEP.out.fasta.mix(PEPTIDE_PREDICTION_VAR.out.fasta, PEPTIDE_PREDICTION_PROTEIN.out.fasta).groupTuple())
 
     PEPTIDE_PREDICTION_PEP.out.json
                                 .mix(PEPTIDE_PREDICTION_VAR.out.json)
+                                .mix(PEPTIDE_PREDICTION_PROTEIN.out.json)
                                 .groupTuple()
                                 .flatMap { meta, json -> [[[sample:meta.sample, alleles:meta.alleles, files:json.size()], json]] }
                                 .branch {
@@ -277,21 +394,14 @@ workflow EPITOPEPREDICTION {
     // Combine epitope prediction reports
     MERGE_JSON_SINGLE(ch_json_reports.single)
     MERGE_JSON_MULTI(ch_json_reports.multi)
+    ch_versions = ch_versions.mix(MERGE_JSON_SINGLE.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(MERGE_JSON_MULTI.out.versions.ifEmpty(null))
 
     //
     // MODULE: Pipeline reporting
     //
-    // TODO: Get the software versions that are done for each step (expecially the protein prediction step)
-    ch_software_versions
-        .map { it -> if (it) [ it.baseName, it ] }
-        .groupTuple()
-        .map { it[1][0] }
-        .flatten()
-        .collect()
-        .set { ch_software_versions }
-
-    GET_SOFTWARE_VERSIONS (
-        ch_software_versions.map { it }.collect()
+    CUSTOM_DUMPSOFTWAREVERSIONS (
+        ch_versions.unique().collectFile()
     )
 
     //
@@ -303,14 +413,14 @@ workflow EPITOPEPREDICTION {
     ch_multiqc_files = Channel.empty()
     ch_multiqc_files = ch_multiqc_files.mix(Channel.from(ch_multiqc_config))
     ch_multiqc_files = ch_multiqc_files.mix(ch_multiqc_custom_config.collect().ifEmpty([]))
+    ch_multiqc_files = ch_multiqc_files.mix(CUSTOM_DUMPSOFTWAREVERSIONS.out.mqc_yml.collect())
     ch_multiqc_files = ch_multiqc_files.mix(ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_files = ch_multiqc_files.mix(GET_SOFTWARE_VERSIONS.out.yaml.collect())
 
     MULTIQC (
         ch_multiqc_files.collect()
     )
     multiqc_report       = MULTIQC.out.report.toList()
-    ch_software_versions = ch_software_versions.mix(MULTIQC.out.version.ifEmpty(null))
+}
 }
 
 /*

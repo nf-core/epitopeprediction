@@ -8,7 +8,7 @@ process SNPSIFT_SPLIT {
 
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'.', meta:[:], publish_by_meta:[]) }
+        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'splitted', meta:[:], publish_by_meta:[]) }
 
     conda (params.enable_conda ? "conda-forge::snpsift:4.2" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
@@ -18,7 +18,7 @@ process SNPSIFT_SPLIT {
     }
 
     input:
-        tuple val(meta), path(raw)
+        tuple val(meta), path(input_file)
 
     output:
         tuple val(meta), path("*.vcf"), emit: splitted
@@ -26,11 +26,11 @@ process SNPSIFT_SPLIT {
 
     script:
     """
-        SnpSift split ${raw}
+    SnpSift split ${input_file}
 
-        cat <<-END_VERSIONS > versions.yml
-            ${getProcessName(task.process)}:
-                snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
-            END_VERSIONS
+    cat <<-END_VERSIONS > versions.yml
+        ${getProcessName(task.process)}:
+            snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
+    END_VERSIONS
     """
 }

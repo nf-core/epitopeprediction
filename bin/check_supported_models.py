@@ -25,14 +25,14 @@ def __main__():
     # NOTE this needs to be updated manually, if other methods should be used in the future
     available_methods = ['syfpeithi', 'mhcflurry', 'mhcnuggets-class-1', 'mhcnuggets-class-2']
     with open(args.versions, 'r') as versions_file:
-        tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = "\t") ]
+        tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = ":") ]
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0'))
         # get for each method the corresponding tool version
-        methods = { method:version for tool, version in tool_version for method in available_methods if tool.lower() in method.lower() }
+        methods = { method.strip():version.strip() for tool, version in tool_version for method in available_methods if tool.lower() in method.lower() }
 
     for method, version in methods.items():
-        if version not in EpitopePredictorFactory.available_methods()[method]:
+        if (version not in EpitopePredictorFactory.available_methods()[method]):
             raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
         predictor = EpitopePredictorFactory(method, version=version)
