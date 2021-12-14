@@ -17,7 +17,7 @@ process PEPTIDE_PREDICTION {
     }
 
     input:
-        tuple val(meta), path(splitted), val(software_versions)
+        tuple val(meta), path(splitted), path(software_versions)
 
     output:
         tuple val(meta), path("*.json"), emit: json

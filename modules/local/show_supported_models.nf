@@ -18,7 +18,7 @@ process SHOW_SUPPORTED_MODELS {
     }
 
     input:
-        tuple val(meta), path(raw), val(software_versions)
+        tuple val(meta), path(raw), path(software_versions)
 
     output:
         path '*.txt', emit: txt // model_report.txt
