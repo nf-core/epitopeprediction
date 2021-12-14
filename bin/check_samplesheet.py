@@ -103,7 +103,7 @@ def check_samplesheet(file_in, file_out):
             sample, alleles, filename = lspl[: len(HEADER)]
 
             ## Check given file types
-            if not filename.lower().endswith((".vcf", ".vcf.gz", ".tsv", ".GSvar", ".fasta")):
+            if not filename.lower().endswith((".vcf", ".vcf.gz", ".tsv", ".GSvar", ".fasta", ".txt")):
                 print_error("Samplesheet contains unsupported file type!", "Line", line)
 
             sample_info = [sample, alleles, filename]

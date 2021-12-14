@@ -27,8 +27,8 @@
             },
             "filename": {
                 "type": "string",
-                "pattern": "^\\S+\\.(vcf|tsv|fasta|fa)$",
-                "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa'"
+                "pattern": "^\\S+\\.(vcf|tsv|fasta|fa|txt)$",
+                "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa', '.txt'"
             }
         },
         "required": [

@@ -19,7 +19,7 @@ process CHECK_REQUESTED_MODELS {
 
     input:
         tuple val(alleles), path(input_file)
-        val(software_versions)
+        path(software_versions)
 
     output:
         path '*.txt', emit: txt // model_report.txt
