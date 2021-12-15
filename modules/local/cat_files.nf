@@ -9,7 +9,7 @@ process CAT_FILES {
 
     script:
     def fileExt = input.collect { it.name.tokenize("\\.")[-1] }.join(' ')
-    prefix = options.suffix ? "${meta.sample}_${options.suffix}" : "${meta.sample}"
+    prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}"
 
     """
     cat $input > ${prefix}_prediction.${fileExt}

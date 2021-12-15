@@ -174,12 +174,6 @@
                     "default": 5000,
                     "help_text": "Used in combination with `--peptides` or `--proteins`: minimum number of peptides that should be written into one chunk.",
                     "description": "Specifies the minimum number of peptides that should be written into one chunk."
-                },
-                "mem_mode": {
-                    "type": "string",
-                    "default": "low",
-                    "help_text": "Specifies which memory mode should be used for processes requiring a bit more memory, useful e.g. when running on arbitrary big protein or peptide input data. Available: `low`, `intermediate`, `high` (corresponding to max. 7.GB, 40.GB, 500.GB). Default: `low`.",
-                    "description": "Specifies which memory mode should be used."
                 }
             }
         },

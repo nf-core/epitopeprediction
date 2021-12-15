@@ -14,12 +14,12 @@ process SPLIT_PEPTIDES {
     path "versions.yml", emit: versions
 
     script:
-    def prefix = options.suffix ? "${peptide.baseName}_${options.suffix}" : "${peptide.baseName}"
+    def prefix = task.ext.suffix ? "${peptide.baseName}_${task.ext.suffix}" : "${peptide.baseName}"
 
     """
     split_peptides.py --input ${peptide} \\
     --output_base "${prefix}" \\
-    $options.args
+    $task.ext.args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

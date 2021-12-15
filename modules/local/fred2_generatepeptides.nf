@@ -1,5 +1,6 @@
 process FRED2_GENERATEPEPTIDES {
     label 'process_low'
+    tag "${meta.sample}"
 
     conda (params.enable_conda ? "conda-forge::fred2:2.0.7" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -14,12 +15,12 @@ process FRED2_GENERATEPEPTIDES {
     path "versions.yml", emit: versions
 
     script:
-    def prefix = options.suffix ? "${meta.sample}_${options.suffix}" : "${meta.sample}_peptides"
+    def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}_peptides"
 
     """
     gen_peptides.py --input ${raw} \\
     --output '${prefix}.tsv' \\
-    $options.args
+    $task.ext.args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
