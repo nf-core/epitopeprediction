@@ -9,7 +9,6 @@ def summary_params = NfcoreSchema.paramsSummaryMap(workflow, params)
 // Validate input parameters
 WorkflowEpitopeprediction.initialise(params, log)
 
-// TODO nf-core: Add all file path parameters for the pipeline to the list below
 // Check input path parameters to see if they exist
 def checkPathParamList = [ params.input, params.multiqc_config ]
 for (param in checkPathParamList) { if (param) { file(param, checkIfExists: true) } }
@@ -107,14 +106,11 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check' addParams( opti
 ========================================================================================
 */
 
-def multiqc_options   = modules['multiqc']
-multiqc_options.args += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
-
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { MULTIQC }                                                 from '../modules/nf-core/modules/multiqc/main' addParams( options: multiqc_options   )
-include { CUSTOM_DUMPSOFTWAREVERSIONS }                             from '../modules/nf-core/modules/custom/dumpsoftwareversions/main' addParams( options: [:] )
+include { MULTIQC                     } from '../modules/nf-core/modules/multiqc/main'
+include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
 
 /*
 ========================================================================================
@@ -138,6 +134,7 @@ workflow EPITOPEPREDICTION {
     INPUT_CHECK (
         ch_input
     )
+    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
     INPUT_CHECK.out
                 .branch {
