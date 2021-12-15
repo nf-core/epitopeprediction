@@ -125,12 +125,6 @@ jobs:
       - name: Run pipeline with NetMHC
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_netmhc,docker
-      - name: Run pipeline with NetMHCII
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcii,docker
       - name: Run pipeline with NetMHCpan
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker
-      - name: Run pipeline with NetMHCIIpan
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_netmhciipan,docker

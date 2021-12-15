@@ -128,20 +128,6 @@ workflow EPITOPEPREDICTION {
             data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
             data_md5     : "26cbbd99a38f6692249442aeca48608f",
             binary_name  : "netMHCpan"
-        ],
-        netmhcii: [
-            version      : "2.2",
-            software_md5 : "918b7108a37599887b0725623d0974e6",
-            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCII-2.2/data.tar.gz",
-            data_md5     : "11579b61d3bfe13311f7b42fc93b4dd8",
-            binary_name  : "netMHCII"
-        ],
-        netmhciipan: [
-            version      : "3.1",
-            software_md5 : "0962ce799f7a4c9631f8566a55237073",
-            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCIIpan-3.1/data.tar.gz",
-            data_md5     : "f833df245378e60ca6e55748344a36f6",
-            binary_name  : "netMHCIIpan"
         ]
     ]
 
@@ -224,7 +210,7 @@ workflow EPITOPEPREDICTION {
     }
 
     // Retrieve meta data for external tools
-    ["netmhc", "netmhcpan", "netmhcii", "netmhciipan"].each {
+    ["netmhc", "netmhcpan"].each {
         // Check if the _path parameter was set for this tool
         if (params["${it}_path"] as Boolean && ! tools.contains(it))
         {
