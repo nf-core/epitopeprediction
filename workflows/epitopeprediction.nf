@@ -34,15 +34,15 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 // MODULE: Local to the pipeline
 //
-include { GET_PREDICTION_VERSIONS }                                 from '../modules/local/get_prediction_versions'     addParams( options: [:] )
+include { GET_PREDICTION_VERSIONS }                                 from '../modules/local/get_prediction_versions'
 
-include { EXTERNAL_TOOLS_IMPORT }                                   from '../modules/local/external_tools_import'       addParams( options: [:] )
+include { EXTERNAL_TOOLS_IMPORT }                                   from '../modules/local/external_tools_import'
 
 include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'
 include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'
-include { SHOW_SUPPORTED_MODELS}                                    from '../modules/local/show_supported_models'       addParams( options: [:] )
+include { SHOW_SUPPORTED_MODELS}                                    from '../modules/local/show_supported_models'
 
-include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'               addParams( options: [:] )
+include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'
 include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'
 
 include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'
@@ -61,7 +61,7 @@ include { MERGE_JSON as MERGE_JSON_MULTI }                          from '../mod
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 
-include { INPUT_CHECK } from '../subworkflows/local/input_check' addParams( options: [:] )
+include { INPUT_CHECK } from '../subworkflows/local/input_check'
 
 /*
 ========================================================================================
