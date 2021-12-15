@@ -1,3 +1,3 @@
 lint:
-    files_exist:
-      - modules/local/get_software_versions.nf
+    files_unchanged:
+      - docs/images/nf-core-epitopeprediction_logo_dark.png

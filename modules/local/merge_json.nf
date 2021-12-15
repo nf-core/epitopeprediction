@@ -1,44 +1,29 @@
-// Import generic module functions
-include { initOptions; saveFiles; getSoftwareName; getProcessName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process MERGE_JSON {
-
-    publishDir "${params.outdir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'merged_predictions', meta:[:], publish_by_meta:[]) }
+    label 'process_low'
 
     conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
-    if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
-        container "https://depot.galaxyproject.org/singularity/python:3.8.3"
-    } else {
-        container "quay.io/biocontainers/python:3.8.3"
-    }
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://depot.galaxyproject.org/singularity/python:3.8.3' :
+        'quay.io/biocontainers/python:3.8.3' }"
 
     input:
-        tuple val(meta), path(json)
+    tuple val(meta), path(json)
 
     output:
-        tuple val(meta), path("*.json"), emit: json
-        path "versions.yml", emit: versions
+    tuple val(meta), path("*.json"), emit: json
+    path "versions.yml", emit: versions
 
     script:
-        def argument = "$options.args"
-        if (argument.contains("single_input") == true) {
-            argument += " ${json}"
-        }
+    def argument = task.ext.args
+    if (argument.contains("single_input") == true) {
+        argument += " ${json}"
+    }
+    """
+    merge_jsons.py --prefix ${meta.sample} ${argument}
 
-        """
-        merge_jsons.py --prefix ${meta.sample} ${argument}
-
-        cat <<-END_VERSIONS > versions.yml
-        ${getProcessName(task.process)}:
-            python: \$(python --version | sed 's/Python //g')
-        END_VERSIONS
-        """
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version | sed 's/Python //g')
+    END_VERSIONS
+    """
 }
-
-// "merge_jsons.py --single_input ${jsons} --prefix ${input_base_name}" :
-// "merge_jsons.py --input \$PWD --prefix ${input_base_name}"
