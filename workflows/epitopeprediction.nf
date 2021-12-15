@@ -32,25 +32,14 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 */
 
 
-def peptide_prediction_options  = modules['peptide_prediction']
+
 def merge_json_options          = modules['merge_json']
 
-def peptide_prediction_pep      = peptide_prediction_options.clone()
-def peptide_prediction_var      = peptide_prediction_options.clone()
+
 def merge_json_single           = merge_json_options.clone()
 def merge_json_multi            = merge_json_options.clone()
 
-peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
-peptide_prediction_pep.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
-peptide_prediction_pep.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_pep.args     += params.tool_thresholds ? Utils.joinModuleArgs(["--tool_thresholds ${tool_thresholds}"]) : ''
-peptide_prediction_pep.args     += ' --peptides '
 
-peptide_prediction_var.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
-peptide_prediction_var.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
-peptide_prediction_var.args     += params.fasta_output ? Utils.joinModuleArgs(['--fasta_output']) : ''
-peptide_prediction_var.args     += params.tool_thresholds ? Utils.joinModuleArgs(["--tool_thresholds ${tool_thresholds}"]) : ''
-peptide_prediction_var.args     += ' --somatic_mutation '
 
 merge_json_single.args          = ' --single_input '
 merge_json_multi.args           = " --input \$PWD "

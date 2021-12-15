@@ -1,9 +1,4 @@
 // Import generic module functions
-include { initOptions; saveFiles; getSoftwareName; getProcessName } from './functions'
-
-params.options = [:]
-options        = initOptions(params.options)
-
 process PEPTIDE_PREDICTION {
     publishDir "${params.outdir}",
         mode: params.publish_dir_mode,
@@ -26,6 +21,26 @@ process PEPTIDE_PREDICTION {
         path "versions.yml", emit: versions
 
     script:
+    // Additions to the argument command need to go to the beginning.
+    // Argument list needs to end with --peptides or --somatic_mutation
+    def argument = task.ext.args
+
+    if (params.proteome) {
+        argument = "--proteome ${params.proteome} " + argument
+    }
+
+    if (params.wild_type) {
+        argument = "--wild_type " + argument
+    }
+
+    if (params.fasta_output) {
+        argument = "--fasta_output " + argument
+    }
+
+    if (params.tool_thresholds) {
+        argument = "--tool_thresholds ${tool_thresholds} " + argument
+    }
+
     """
     epaa.py --identifier ${splitted.baseName} \
         --alleles '${meta.alleles}' \
