@@ -28,10 +28,14 @@ process CHECK_REQUESTED_MODELS {
 
 
     script:
-        def argument = "$options.args"
+        def argument = task.ext.args
 
         if (argument.contains("peptides") == true) {
             argument += " ${input_file}"
+        }
+
+        if (params.multiqc_title) {
+            argument += "--title \"$params.multiqc_title\""
         }
 
         """

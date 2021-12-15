@@ -34,8 +34,7 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 // Don't overwrite global params.modules, create a copy instead and use that within the main script.
 def modules = params.modules.clone()
 
-def check_modules_options       = modules['check_modules']
-def check_modules_options_pep   = check_modules_options.clone()
+
 
 def get_peptides_options        = modules['gen_peptides']
 def split_peptides_options      = modules['split_peptides']
@@ -46,10 +45,6 @@ def peptide_prediction_pep      = peptide_prediction_options.clone()
 def peptide_prediction_var      = peptide_prediction_options.clone()
 def merge_json_single           = merge_json_options.clone()
 def merge_json_multi            = merge_json_options.clone()
-
-check_modules_options.args      += " --max_length ${params.max_peptide_length} --min_length ${params.min_peptide_length} "
-check_modules_options_pep.args  += " --peptides "
-check_modules_options.args      += params.multiqc_title ? Utils.joinModuleArgs(["--title \"$params.multiqc_title\""]) : ''
 
 peptide_prediction_pep.args     += params.proteome ? Utils.joinModuleArgs(["--proteome ${params.proteome}"]) : ''
 peptide_prediction_pep.args     += params.wild_type ? Utils.joinModuleArgs(['--wild_type']) : ''
@@ -219,13 +214,13 @@ workflow EPITOPEPREDICTION {
     // perform the check requested models on the protein and variant files
     // we have to perform it on all alleles that are given in the sample sheet
     ch_variants_protein_models = ch_samples_from_sheet.variant
-    .mix(ch_samples_from_sheet.protein)
-    .map { meta_data, file -> meta_data.alleles }
-    .splitCsv(sep: ';')
-    .collect()
-    .toList()
-    .combine(ch_samples_from_sheet.variant.first())
-    .map { it -> tuple(it[0].unique(), it[-1])}
+                                    .mix(ch_samples_from_sheet.protein)
+                                    .map { meta_data, file -> meta_data.alleles }
+                                    .splitCsv(sep: ';')
+                                    .collect()
+                                    .toList()
+                                    .combine(ch_samples_from_sheet.variant.first())
+                                    .map { it -> tuple(it[0].unique(), it[-1])}
 
     CHECK_REQUESTED_MODELS(
         ch_variants_protein_models,
@@ -241,16 +236,16 @@ workflow EPITOPEPREDICTION {
 
     // Return a warning if this is raised
     CHECK_REQUESTED_MODELS.out.log
-    .combine(CHECK_REQUESTED_MODELS_PEP.out.log)
-    .subscribe {
-        model_log_file = file("$it", checkIfExists: true)
-        def lines = model_log_file.readLines()
-        if (lines.size() > 0) {
-            log.info "-${c_purple} Warning: ${c_reset}-"
-            lines.each { String line ->
-                log.info "-${c_purple}   $line ${c_reset}-"
-            }
-        }
+                            .combine(CHECK_REQUESTED_MODELS_PEP.out.log)
+                            .subscribe {
+                                model_log_file = file("$it", checkIfExists: true)
+                                def lines = model_log_file.readLines()
+                                if (lines.size() > 0) {
+                                    log.info "-${c_purple} Warning: ${c_reset}-"
+                                    lines.each { String line ->
+                                        log.info "-${c_purple}   $line ${c_reset}-"
+                                    }
+                                }
     }
 
     // Retrieve meta data for external tools
