@@ -43,7 +43,7 @@ include { CHECK_REQUESTED_MODELS }                                  from '../mod
 include { SHOW_SUPPORTED_MODELS}                                    from '../modules/local/show_supported_models'       addParams( options: [:] )
 
 include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'               addParams( options: [:] )
-include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'                 addParams( options: [:] )
+include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'
 
 include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'
 include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'
@@ -53,9 +53,7 @@ include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../mod
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'
 
-include { CAT_FILES as CAT_TSV }                                    from '../modules/local/cat_files'                   addParams( options: [:] )
-include { CAT_FILES as CAT_FASTA }                                  from '../modules/local/cat_files'                   addParams( options: [:] )
-include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'                addParams( options: [:] )
+include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'
 
 include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'
 include { MERGE_JSON as MERGE_JSON_MULTI }                          from '../modules/local/merge_json'

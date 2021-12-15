@@ -6,10 +6,6 @@ options        = initOptions(params.options)
 
 process CSVTK_SPLIT {
 
-    publishDir "${params.outdir}",
-        mode: params.publish_dir_mode,
-        saveAs: { filename -> saveFiles(filename:filename, options:params.options, publish_dir:'splitted', meta:[:], publish_by_meta:[]) }
-
     conda (params.enable_conda ? "bioconda::csvtk=0.23.0" : null)
     if (workflow.containerEngine == 'singularity' && !params.singularity_pull_docker_container) {
         container "https://depot.galaxyproject.org/singularity/csvtk:0.23.0--h9ee0642_0"
