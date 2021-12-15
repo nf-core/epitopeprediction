@@ -204,16 +204,16 @@ workflow EPITOPEPREDICTION {
 
     // Return a warning if this is raised
     CHECK_REQUESTED_MODELS.out.log
-                            .combine(CHECK_REQUESTED_MODELS_PEP.out.log)
-                            .subscribe {
-                                model_log_file = file("$it", checkIfExists: true)
-                                def lines = model_log_file.readLines()
-                                if (lines.size() > 0) {
-                                    log.info "-${c_purple} Warning: ${c_reset}-"
-                                    lines.each { String line ->
-                                        log.info "-${c_purple}   $line ${c_reset}-"
-                                    }
-                                }
+                          .mix(CHECK_REQUESTED_MODELS_PEP.out.log)
+                          .subscribe {
+                              model_log_file = file("$it", checkIfExists: true)
+                              def lines = model_log_file.readLines()
+                              if (lines.size() > 0) {
+                                  log.info "-${c_purple} Warning: ${c_reset}-"
+                                  lines.each { String line ->
+                                      log.info "-${c_purple}   $line ${c_reset}-"
+                                  }
+                              }
     }
 
     // Retrieve meta data for external tools
