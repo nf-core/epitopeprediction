@@ -154,10 +154,10 @@ workflow EPITOPEPREDICTION {
 
     // get versions of specified external tools
     ch_external_versions = Channel
-    .from(tools)
-    .filter( ~/(?i)^net.*/ )
-    .map { it -> "${it}: ${netmhc_meta_data[it.toLowerCase()].version}"}
-    .collect()
+                                .from(tools)
+                                .filter( ~/(?i)^net.*/ )
+                                .map { it -> "${it}: ${netmhc_meta_data[it.toLowerCase()].version}"}
+                                .collect()
 
     // get versions of all prediction tools
     GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty([]))
@@ -200,7 +200,7 @@ workflow EPITOPEPREDICTION {
     // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
     CHECK_REQUESTED_MODELS_PEP(
         ch_samples_from_sheet.peptide
-        .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
+                                .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
         ch_prediction_tool_versions
     )
 
@@ -320,16 +320,16 @@ workflow EPITOPEPREDICTION {
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
     PEPTIDE_PREDICTION_PEP.out.predicted.mix(PEPTIDE_PREDICTION_VAR.out.predicted, PEPTIDE_PREDICTION_PROTEIN.out.predicted)
-    .groupTuple()
-    .flatMap { meta_data, predicted -> [[[sample:meta_data.sample, alleles:meta_data.alleles, files:predicted.size()], predicted]] }
-    .branch {
-        meta_data, predicted ->
-            multi: meta_data.files > 1
-                return [ meta_data, predicted ]
-            single: meta_data.files == 1
-                return [ meta_data, predicted ]
-    }
-    .set { ch_predicted_peptides }
+                                        .groupTuple()
+                                        .flatMap { meta_data, predicted -> [[[sample:meta_data.sample, alleles:meta_data.alleles, files:predicted.size()], predicted]] }
+                                        .branch {
+                                            meta_data, predicted ->
+                                                multi: meta_data.files > 1
+                                                    return [ meta_data, predicted ]
+                                                single: meta_data.files == 1
+                                                    return [ meta_data, predicted ]
+                                        }
+                                        .set { ch_predicted_peptides }
 
     // Combine epitope prediction results
     CAT_TSV(ch_predicted_peptides.single)
@@ -381,7 +381,7 @@ workflow EPITOPEPREDICTION {
     MULTIQC (
         ch_multiqc_files.collect()
     )
-    multiqc_report       = MULTIQC.out.report.toList()
+    multiqc_report = MULTIQC.out.report.toList()
 }
 }
 
