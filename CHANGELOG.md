@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#110](https://github.com/nf-core/epitopeprediction/pull/110) - DSL2 conversion
 - [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Updated `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
 - [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.4`
+- [#121](https://github.com/nf-core/epitopeprediction/pull/121) - Extend full test to cover more test cases
 
 ### `Fixed`
 
