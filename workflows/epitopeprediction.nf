@@ -244,7 +244,7 @@ workflow EPITOPEPREDICTION {
 
     // Return a warning if this is raised
     CHECK_REQUESTED_MODELS.out.log
-    .combine(CHECK_REQUESTED_MODELS_PEP.out.log)
+    .mix(CHECK_REQUESTED_MODELS_PEP.out.log)
     .subscribe {
         model_log_file = file("$it", checkIfExists: true)
         def lines = model_log_file.readLines()
