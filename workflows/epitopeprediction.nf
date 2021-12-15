@@ -31,13 +31,7 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 ========================================================================================
 */
 
-// Don't overwrite global params.modules, create a copy instead and use that within the main script.
-def modules = params.modules.clone()
 
-
-
-def get_peptides_options        = modules['gen_peptides']
-def split_peptides_options      = modules['split_peptides']
 def peptide_prediction_options  = modules['peptide_prediction']
 def merge_json_options          = modules['merge_json']
 
@@ -68,16 +62,16 @@ include { GET_PREDICTION_VERSIONS }                                 from '../mod
 
 include { EXTERNAL_TOOLS_IMPORT }                                   from '../modules/local/external_tools_import'       addParams( options: [:] )
 
-include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'      addParams( options: check_modules_options_pep )
-include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'      addParams( options: check_modules_options )
+include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'
+include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'
 include { SHOW_SUPPORTED_MODELS}                                    from '../modules/local/show_supported_models'       addParams( options: [:] )
 
 include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'               addParams( options: [:] )
 include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'                 addParams( options: [:] )
 
-include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'      addParams( options: get_peptides_options )
-include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'              addParams( options: split_peptides_options )
-include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                from '../modules/local/split_peptides'              addParams( options: split_peptides_options )
+include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'
+include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'
+include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                from '../modules/local/split_peptides'
 
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_pep )
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_pep )
