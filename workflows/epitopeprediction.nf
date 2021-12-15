@@ -53,6 +53,8 @@ include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../mod
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'
 include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'
 
+include { CAT_FILES as CAT_TSV }                                    from '../modules/local/cat_files'
+include { CAT_FILES as CAT_FASTA }                                  from '../modules/local/cat_files'
 include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'
 
 include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'
@@ -99,7 +101,7 @@ workflow EPITOPEPREDICTION {
     )
     ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
 
-    INPUT_CHECK.out
+    INPUT_CHECK.out.reads
                 .branch {
                     meta_data, input_file ->
                         variant : meta_data.inputtype == 'variant'
@@ -204,16 +206,16 @@ workflow EPITOPEPREDICTION {
 
     // Return a warning if this is raised
     CHECK_REQUESTED_MODELS.out.log
-                          .mix(CHECK_REQUESTED_MODELS_PEP.out.log)
-                          .subscribe {
-                              model_log_file = file("$it", checkIfExists: true)
-                              def lines = model_log_file.readLines()
-                              if (lines.size() > 0) {
-                                  log.info "-${c_purple} Warning: ${c_reset}-"
-                                  lines.each { String line ->
-                                      log.info "-${c_purple}   $line ${c_reset}-"
-                                  }
-                              }
+                            .mix(CHECK_REQUESTED_MODELS_PEP.out.log)
+                            .subscribe {
+                                model_log_file = file("$it", checkIfExists: true)
+                                def lines = model_log_file.readLines()
+                                if (lines.size() > 0) {
+                                    log.info "-${c_purple} Warning: ${c_reset}-"
+                                    lines.each { String line ->
+                                        log.info "-${c_purple}   $line ${c_reset}-"
+                                    }
+                                }
     }
 
     // Retrieve meta data for external tools
