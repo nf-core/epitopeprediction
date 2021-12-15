@@ -14,7 +14,7 @@ process MERGE_JSON {
     path "versions.yml", emit: versions
 
     script:
-    def argument = "$options.args"
+    def argument = task.ext.args
     if (argument.contains("single_input") == true) {
         argument += " ${json}"
     }

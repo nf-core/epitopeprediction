@@ -33,14 +33,14 @@ process PEPTIDE_PREDICTION {
     }
 
     if (params.tool_thresholds) {
-        argument = "--tool_thresholds ${tool_thresholds} " + argument
+        argument = "--tool_thresholds ${params.tool_thresholds} " + argument
     }
 
     """
     epaa.py --identifier ${splitted.baseName} \
         --alleles '${meta.alleles}' \
         --versions ${software_versions} \
-        $options.args ${splitted}
+        ${argument} ${splitted}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
