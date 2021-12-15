@@ -31,19 +31,6 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 ========================================================================================
 */
 
-
-
-def merge_json_options          = modules['merge_json']
-
-
-def merge_json_single           = merge_json_options.clone()
-def merge_json_multi            = merge_json_options.clone()
-
-
-
-merge_json_single.args          = ' --single_input '
-merge_json_multi.args           = " --input \$PWD "
-
 //
 // MODULE: Local to the pipeline
 //
@@ -62,16 +49,16 @@ include { FRED2_GENERATEPEPTIDES }                                  from '../mod
 include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                from '../modules/local/split_peptides'
 
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_pep )
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_pep )
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'          addParams( options: peptide_prediction_var )
+include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/peptide_prediction'
+include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'
+include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'
 
 include { CAT_FILES as CAT_TSV }                                    from '../modules/local/cat_files'                   addParams( options: [:] )
 include { CAT_FILES as CAT_FASTA }                                  from '../modules/local/cat_files'                   addParams( options: [:] )
 include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'                addParams( options: [:] )
 
-include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'                  addParams( options: merge_json_single )
-include { MERGE_JSON as MERGE_JSON_MULTI }                          from '../modules/local/merge_json'                  addParams( options: merge_json_multi )
+include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'
+include { MERGE_JSON as MERGE_JSON_MULTI }                          from '../modules/local/merge_json'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
