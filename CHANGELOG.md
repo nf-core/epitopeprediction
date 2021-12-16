@@ -3,11 +3,23 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v1.2.0dev - [date]
+## v2.0dev - date
 
 ### `Added`
 
 - [#73](https://github.com/nf-core/epitopeprediction/pull/73) - Add support for the non-free netmhc tool family including netMHC 4.0, netMHCpan 4.0, netMHCII 2.2, and netMHCIIpan 3.1
+- [#101](https://github.com/nf-core/epitopeprediction/pull/101) - Inclusion of local modules and DSL2 conversion
+
+### `Changed`
+
+- [#100](https://github.com/nf-core/epitopeprediction/pull/89) - Merge previous template updates up to `v2.1`
+- [#110](https://github.com/nf-core/epitopeprediction/pull/110) - DSL2 conversion
+- [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Updated `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
+- [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.4`
+- [#121](https://github.com/nf-core/epitopeprediction/pull/121) - Extend full test to cover more test cases
+- [#122](https://github.com/nf-core/epitopeprediction/pull/122) - Updated to nf-core template v2.2
+
+### `Fixed`
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
 

@@ -6,7 +6,7 @@
 
 ## Introduction
 
-This document describes the output produced by the pipeline. Most of the plots are taken from the MultiQC report, which summarises results at the end of the pipeline.
+This document describes the output produced by the pipeline. The version of all tools used in the pipeline are summarized in a MultiQC report which is generated at the end of the pipeline.
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
@@ -25,9 +25,9 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 **Output directory: `predictions/`**
 
 * `[input_base_name]_prediction_report.json`
-  * The predicted epitopes in JSON format for downstream analysis tasks
+    * The predicted epitopes in JSON format for downstream analysis tasks
 * `[input_base_name]_prediction_results.tsv`
-  * The predicted epitopes in TSV format for further processing.
+    * The predicted epitopes in TSV format for further processing.
 
 An example report looks like this in TSV format:
 
@@ -42,53 +42,43 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 The prediction results are given as allele-specific score and affinity values per peptide. The computation of these values depends on the applied prediction method:
 
 * [`Syfpeithi`](http://www.syfpeithi.de) :
-  * **Affinity**: Calculated based on the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
-  * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
+    * **Affinity**: Calculated based on the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
+    * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
 Peptides are considered binders if the affinity is higher than 50.
 * [`MHCflurry`](https://github.com/openvax/mhcflurry), [`MHCnuggets`](https://github.com/KarchinLab/mhcnuggets) and [`NetMHC` tool family](https://services.healthtech.dtu.dk/):
-  * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
-  * **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`.
+    * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
+    * **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`.
 
-When the parameter `--fasta_output` is specified a `FASTA` file will be generated that contains the sequences of proteins that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
+When the parameter `--fasta_output` is specified, a `FASTA` file will be generated containing the protein sequences that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
 
 **Output directory: `predictions/`**
 
 * `[input_base_name]_prediction_proteins.fasta`
-  * The sequences of proteins, affected by provided variants, in FASTA format.
+    * The sequences of proteins, affected by provided variants, in FASTA format.
 
 ### Supported models
 
-When running the pipeline using the `--show_supported_models` parameter, the information about supported models for the available predictor tool versions will be written to the results folder.
+When running the pipeline using the `--show_supported_models` parameter,  information about supported models for the available predictor tool versions will be written to the results folder.
 
 **Output directory: `supported_models/`**
 
 * `[tool].[version].supported_alleles.txt`
-  * A list of all supported alleles by the corresponding predictor method.
+    * A list of all supported alleles by the corresponding predictor method.
 * `[tool].[version].supported_lengths.txt`
-  * A list of all supported peptide lengths by the corresponding predictor method.
+    * A list of all supported peptide lengths by the corresponding predictor method.
 
-## MultiQC
+* [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
 
-[MultiQC](http://multiqc.info) is a visualization tool that generates a single HTML report summarizing all samples in your project. Most of the pipeline QC results are visualised in the report and further statistics are available in the report data directory.
+### Pipeline information
 
-The pipeline has special steps which also allow the software versions to be reported in the MultiQC output for future traceability.
-
-For more information about how to use MultiQC reports, see [https://multiqc.info](https://multiqc.info).
-
-**Output files:**
-
-* `multiqc/`
-  * `multiqc_report.html`: a standalone HTML file that can be viewed in your web browser.
-  * `multiqc_data/`: directory containing parsed statistics from the different tools used in the pipeline.
-  * `multiqc_plots/`: directory containing static images from the report in various formats.
-
-## Pipeline information
-
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
-
-**Output files:**
+<details markdown="1">
+<summary>Output files</summary>
 
 * `pipeline_info/`
-  * Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
-  * Reports generated by the pipeline: `pipeline_report.html`, `pipeline_report.txt` and `software_versions.csv`.
-  * Documentation for interpretation of results in HTML format: `results_description.html`.
+    * Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
+    * Reports generated by the pipeline: `pipeline_report.html`, `pipeline_report.txt` and `software_versions.yml`. The `pipeline_report*` files will only be present if the `--email` / `--email_on_fail` parameter's are used when running the pipeline.
+    * Reformatted samplesheet files used as input to the pipeline: `samplesheet.valid.csv`.
+
+</details>
+
+[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.

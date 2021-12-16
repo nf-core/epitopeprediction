@@ -1,0 +1,3 @@
+lint:
+    files_unchanged:
+      - docs/images/nf-core-epitopeprediction_logo_dark.png
