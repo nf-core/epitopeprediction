@@ -20,16 +20,18 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 ## Epitope Prediction
 
-[FRED2](https://github.com/FRED-2) is used to perform the prediction of Epitopes on the given data, independent of the chosen `tools` to perform the prediction.
+[FRED2](https://github.com/FRED-2) is used to perform the prediction of epitopes on the given data, independent of the chosen `tools` to perform the prediction.
 
-**Output directory: `predictions/`**
+**Output directory: `merged_predictions/`**
 
 * `[input_base_name]_prediction_report.json`
-    * The predicted epitopes in JSON format for downstream analysis tasks
-* `[input_base_name]_prediction_results.tsv`
+    * The statistics of the performed prediction in JSON format.
+* `[input_base_name]_prediction.tsv`
     * The predicted epitopes in TSV format for further processing.
 
-An example report looks like this in TSV format:
+Partial results, e.g. predictions per chromosome or of individual peptide chunks can be found in `predictions/`.
+
+An example prediction result looks like this in TSV format:
 
 ```bash
 sequence length chr pos gene transcripts proteins variant type method HLA-A*01:01 score HLA-A*01:01 affinity HLA-A*01:01 binder synonymous homozygous variant details (genomic) variant details (protein)
@@ -37,6 +39,12 @@ DSHLHTHVY 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 HLHTHVYLF 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 3.0 7.5 False False False c.173C>A p.Pro58His
 HTHVYLFLS 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 7.0 17.5 False False False c.173C>A p.Pro58His
 HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpeithi-1.0 0.0 0.0 False False False c.173C>A p.Pro58His
+```
+
+An example prediction report looks like this in JSON format:
+
+```json
+{"prediction_methods": "syfpeithi-1.0", "number_of_unique_peptides_after_filtering": 199, "number_of_nonbinders": 196, "number_of_variants": 0, "number_of_binders": 3, "number_of_unique_peptides": 199, "number_of_unique_binders": 3, "number_of_unique_nonbinders": 196, "number_of_predictions": 199}
 ```
 
 The prediction results are given as allele-specific score and affinity values per peptide. The computation of these values depends on the applied prediction method:
@@ -51,7 +59,7 @@ Peptides are considered binders if the affinity is higher than 50.
 
 When the parameter `--fasta_output` is specified, a `FASTA` file will be generated containing the protein sequences that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
 
-**Output directory: `predictions/`**
+**Output directory: `merged_predictions/`**
 
 * `[input_base_name]_prediction_proteins.fasta`
     * The sequences of proteins, affected by provided variants, in FASTA format.
