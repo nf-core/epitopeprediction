@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
-- [#125](https://github.com/nf-core/epitopeprediction/pull/125) - Fix AWS test
+- [#125](https://github.com/nf-core/epitopeprediction/pull/125), [#126](https://github.com/nf-core/epitopeprediction/pull/126) - Fix AWS test
 
 ## v1.1.0 - Morgenstelle - 2020-10-20
 

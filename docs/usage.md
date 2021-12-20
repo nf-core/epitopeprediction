@@ -20,22 +20,23 @@ The `sample` identifiers are used to determine which sample belongs to the input
 
 ```console
 sample,alleles,filename
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_anno.vcf(.gz)
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_peps.tsv
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_prot.fasta
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_variants.vcf(.gz)
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_peptides.tsv
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_proteins.fasta
 ```
 
 ### Full samplesheet
 
-The pipeline will auto-detect whether a sample is single- or paired-end using the information provided in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
+The pipeline accepts allele information in a file or as string in the samplesheet. The samplesheet can have as many columns as you desire, however, there is a strict requirement for the first 3 columns to match those defined in the table below.
 
-A final samplesheet file consisting of both single- and paired-end data may look something like the one below.
+A final samplesheet file consisting of both allele data and different input types of two samples may look something like the one below.
 
 ```console
 sample,alleles,filename
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_anno.vcf
-GBM_2,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,gbm_2_anno.vcf
-GBM_3,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,gbm_3_anno.vcf
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_variants.vcf
+GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,gbm_1_peptides.vcf
+GBM_1,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,gbm_1_proteins.vcf
+GBM_2,alleles.txt,gbm_2_variants.vcf
 ```
 
 | Column         | Description                                                                                                                                                                            |
