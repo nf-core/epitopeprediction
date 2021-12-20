@@ -8,7 +8,7 @@ process CAT_FILES {
     tuple val(meta), path("*_prediction.*"), emit: output
 
     script:
-    def fileExt = input.collect { it.name.tokenize("\\.")[-1] }.join(' ')
+    def fileExt = input[0].name.tokenize("\\.")[-1]
     prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}"
 
     """
