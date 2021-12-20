@@ -199,7 +199,7 @@ workflow EPITOPEPREDICTION {
         .log
         .mix(CHECK_REQUESTED_MODELS_PEP.out.log)
         .subscribe {
-            model_log_file = file("$it", checkIfExists: true)
+            model_log_file = file(${it}, checkIfExists: true)
             def lines = model_log_file.readLines()
             if (lines.size() > 0) {
                 log.info "-${c_purple} Warning: ${c_reset}-"
