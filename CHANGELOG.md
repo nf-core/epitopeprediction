@@ -3,6 +3,28 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v2.0.0 - Heuberg - 2021-12-20
+
+### `Added`
+
+- [#73](https://github.com/nf-core/epitopeprediction/pull/73)   - Add support for the non-free `NetMHC` tool family including `NetMHC 4.0`, `NetMHCpan 4.0`, `NetMHCII 2.2`, and `NetMHCIIpan 3.1`
+- [#83](https://github.com/nf-core/epitopeprediction/pull/83)   - Add option for threshold customization
+- [#101](https://github.com/nf-core/epitopeprediction/pull/101) - Add local modules for DSL2 conversion
+
+### `Changed`
+
+- [#107](https://github.com/nf-core/epitopeprediction/pull/107)  - Merge previous template updates up to `v2.1`
+- [#110](https://github.com/nf-core/epitopeprediction/pull/110), [#113](https://github.com/nf-core/epitopeprediction/pull/113) - Port pipeline to Nextflow DSL2 syntax
+- [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Update `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
+- [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.4`
+- [#121](https://github.com/nf-core/epitopeprediction/pull/121) - Extend full test to cover more test cases
+- [#122](https://github.com/nf-core/epitopeprediction/pull/122) - Update to nf-core template v2.2
+- [#123](https://github.com/nf-core/epitopeprediction/pull/123) - Remove support for outdated external tools `NetMHCII 2.2` and `NetMHCIIpan 3.1`
+
+### `Fixed`
+
+- [#125](https://github.com/nf-core/epitopeprediction/pull/125), [#126](https://github.com/nf-core/epitopeprediction/pull/126) - Fix AWS test
+
 ## v1.1.0 - Morgenstelle - 2020-10-20
 
 ### `Added`

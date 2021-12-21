@@ -49,23 +49,22 @@ def __main__():
     parser = argparse.ArgumentParser("Write out information about supported models by Fred2 for installed predictor tool versions.")
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
     parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
-    parser.add_argument('-l', "--max_length", help="Maximum peptide length")
-    parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
-    parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True)
+    parser.add_argument('-l', "--max_length", help="Maximum peptide length", type=int)
+    parser.add_argument('-ml', "--min_length", help="Minimum peptide length", type=int)
+    parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True, type=str)
     parser.add_argument('-t', '--tools', help='Tools requested for peptide predictions', required=True, type=str)
     parser.add_argument('-v', '--versions', help='<Required> File with used software versions.', required=True)
     args = parser.parse_args()
-
     selected_methods = [item for item in args.tools.split(',')]
     with open(args.versions, 'r') as versions_file:
-        tool_version = [ (row[0], str(row[1][1:])) for row in csv.reader(versions_file, delimiter = "\t") ]
+        tool_version = [ (row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter = ":") ]
         # NOTE this needs to be updated, if a newer version will be available via Fred2 and should be used in the future
         tool_version.append(('syfpeithi', '1.0')) # how to handle this?
         # get for each method the corresponding tool version
-        methods = { method:version for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
+        methods = { method.strip():version.strip() for tool, version in tool_version for method in selected_methods if tool.lower() in method.lower() }
 
     # get the alleles
-    alleles = FileReader.read_lines(args.alleles, in_type=Allele)
+    alleles= [Allele(a) for a in args.alleles.split(";")]
 
     peptide_lengths = []
     if (args.peptides):
@@ -77,10 +76,10 @@ def __main__():
     with open("model_report.txt", 'w') as output:
         # check if requested tool versions are supported
         for method, version in methods.items():
-            if version not in EpitopePredictorFactory.available_methods()[method]:
+            if version not in EpitopePredictorFactory.available_methods()[method.lower()]:
                 raise ValueError("The specified version " + version + " for " + method + " is not supported by Fred2.")
 
-        # check if reuested alleles are supported
+        # check if requested alleles are supported
         support_all_alleles = True
         no_allele_support = True
         for a in alleles:
@@ -107,7 +106,7 @@ def __main__():
 
 
         output.write("\n")
-        # check if reuested lengths are supported
+        # check if requested lengths are supported
         support_all_lengths = True
         no_length_support = True
         for l in peptide_lengths:
