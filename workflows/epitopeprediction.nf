@@ -236,7 +236,9 @@ workflow EPITOPEPREDICTION {
         }
     }
     // import external tools
-    EXTERNAL_TOOLS_IMPORT(ch_nonfree_paths)
+    EXTERNAL_TOOLS_IMPORT(
+        ch_nonfree_paths
+    )
 
     /*
     ========================================================================================
