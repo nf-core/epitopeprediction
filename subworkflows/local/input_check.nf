@@ -64,7 +64,6 @@ def determine_input_type(String filename) {
         // Check if it is a variant annotation file or a peptide file
         input_file.withReader {
             def first_header_col = it.readLine().split('\t')[0]
-            //first_header_col = [col.lower() for col in tsv.readlines()[0].split('\t')][0]
             if (first_header_col == "id") { filetype = "peptide" }
             else if (first_header_col == "#chr") {filetype = "variant"}
         }
