@@ -979,6 +979,7 @@ def __main__():
     logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     metadata = []
+    proteins = []
     references = {'GRCh37': 'http://feb2014.archive.ensembl.org', 'GRCh38': 'http://dec2016.archive.ensembl.org'}
     global transcriptProteinMap
     global transcriptSwissProtMap
