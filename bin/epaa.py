@@ -532,7 +532,7 @@ def create_metadata_column_value(pep, c):
     variants = []
     for t in transcript_ids:
         variants.extend([v for v in pep[0].get_variants_by_protein(t)])
-    meta = set([str(y.get_metadata(c)[0]) for y in set(variants)])
+    meta = set([str(y.get_metadata(c)[0]) for y in set(variants) if len(y.get_metadata(c)) != 0])
     if len(meta) is 0:
         return np.nan
     else:
