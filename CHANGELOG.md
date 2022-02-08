@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
+- [#136](https://github.com/nf-core/epitopeprediction/pull/135) - Allow variants with unique annotation fields
 ## v2.0.0 - Heuberg - 2021-12-20
 
 ### `Added`
