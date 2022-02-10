@@ -127,7 +127,7 @@ def check_samplesheet(file_in, file_out):
                 for val in sample_run_dict[sample]:
                     fout.write(",".join(val) + "\n")
     else:
-        print_error(f"No entries to process!", "Samplesheet: {file_in}")
+        print_error("No entries to process!", context="File", context_str="Samplesheet: {}".format(file_in))
 
 
 def main(args=None):
