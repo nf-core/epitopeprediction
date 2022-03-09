@@ -322,6 +322,9 @@ def read_vcf(filename, pass_only=True):
 
                     for sample in record.samples:
                         for format_key in format_list:
+                            if not getattr(sample.data, format_key, None):
+                                logger.warning("FORMAT entry {entry} not defined for {genotype}. Skipping.".format(entry=format_key, genotype=sample.sample))
+                                continue
                             format_header = '{}.{}'.format(sample.sample, format_key)
                             final_metadata_list.append(format_header)
                             if isinstance(sample[format_key], list):
