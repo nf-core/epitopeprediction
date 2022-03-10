@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+- [#145](https://github.com/nf-core/epitopeprediction/pull/145) - Add functionality for handling gzipped VCF files for [#143](https://github.com/nf-core/epitopeprediction/issues/143)
+
 ### `Changed`
 
 ### `Fixed`
