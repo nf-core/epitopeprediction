@@ -18,8 +18,8 @@ process SNPSIFT_SPLIT {
     SnpSift split ${input_file}
 
     cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            snpsift: \$(echo \$(snpsift -version 2>&1 | sed -n 3p | cut -d\$' ' -f3))
+    "${task.process}":
+        snpsift: \$( echo \$(SnpSift split -h 2>&1) | sed 's/^.*version //' | sed 's/(.*//' | sed 's/t//g' )
     END_VERSIONS
     """
 }
