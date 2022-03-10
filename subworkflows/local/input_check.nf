@@ -57,7 +57,10 @@ def determine_input_type(String filename) {
     def input_file = file(filename)
     def extension = input_file.extension
 
-    if ( extension == "vcf" | filename.endsWith("vcf.gz") ) {
+    if (filename.endsWith("vcf.gz") ) {
+        filetype = "variant_compressed"
+    }
+    else if (extension == "vcf") {
         filetype = "variant"
     }
     else if ( extension == "tsv" | extension == "GSvar" ) {

@@ -105,7 +105,7 @@ workflow EPITOPEPREDICTION {
     INPUT_CHECK.out.reads
                 .branch {
                     meta_data, input_file ->
-                        variant_compressed : meta_data.inputtype == 'variant' & input_file.toString().endsWith('.gz')
+                        variant_compressed : meta_data.inputtype == 'variant_compressed'
                             return [ meta_data, input_file ]
                         variant_uncompressed :  meta_data.inputtype == 'variant'
                             return [ meta_data, input_file ]
@@ -132,7 +132,7 @@ workflow EPITOPEPREDICTION {
         .mix(ch_variants_uncompressed)
         .branch {
                 meta_data, input_file ->
-                variant :  meta_data.inputtype == 'variant'
+                variant :  meta_data.inputtype == 'variant' | meta_data.inputtype == 'variant_compressed'
                 peptide :  meta_data.inputtype == 'peptide'
                 protein :  meta_data.inputtype == 'protein'
             }
