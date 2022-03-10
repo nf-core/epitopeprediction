@@ -40,7 +40,7 @@ include { EXTERNAL_TOOLS_IMPORT }                                   from '../mod
 
 include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'
 include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'
-include { SHOW_SUPPORTED_MODELS}                                    from '../modules/local/show_supported_models'
+include { SHOW_SUPPORTED_MODELS }                                   from '../modules/local/show_supported_models'
 
 include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'
 include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'
@@ -76,6 +76,7 @@ include { INPUT_CHECK } from '../subworkflows/local/input_check'
 //
 include { MULTIQC                     } from '../modules/nf-core/modules/multiqc/main'
 include { CUSTOM_DUMPSOFTWAREVERSIONS } from '../modules/nf-core/modules/custom/dumpsoftwareversions/main'
+include { GUNZIP as GUNZIP_VCF }        from '../modules/nf-core/modules/gunzip/main'
 
 /*
 ========================================================================================
@@ -104,7 +105,9 @@ workflow EPITOPEPREDICTION {
     INPUT_CHECK.out.reads
                 .branch {
                     meta_data, input_file ->
-                        variant : meta_data.inputtype == 'variant'
+                        variant_compressed : meta_data.inputtype == 'variant' & input_file.toString().endsWith('.gz')
+                            return [ meta_data, input_file ]
+                        variant_uncompressed :  meta_data.inputtype == 'variant'
                             return [ meta_data, input_file ]
                         peptide :  meta_data.inputtype == 'peptide'
                             return [ meta_data, input_file ]
@@ -112,6 +115,27 @@ workflow EPITOPEPREDICTION {
                             return [ meta_data, input_file ]
                     }
                 .set { ch_samples_from_sheet }
+
+    // gunzip variant files
+    GUNZIP_VCF (
+        ch_samples_from_sheet.variant_compressed
+    )
+    ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
+
+    ch_variants_uncompressed = GUNZIP_VCF.out.gunzip
+        .mix(ch_samples_from_sheet.variant_uncompressed)
+
+
+    // (re)combine different input file types
+    ch_samples_uncompressed = ch_samples_from_sheet.protein
+        .mix(ch_samples_from_sheet.peptide)
+        .mix(ch_variants_uncompressed)
+        .branch {
+                meta_data, input_file ->
+                variant :  meta_data.inputtype == 'variant'
+                peptide :  meta_data.inputtype == 'peptide'
+                protein :  meta_data.inputtype == 'protein'
+            }
 
     //TODO think about a better how to handle these supported external versions, config file? (CM)
     netmhc_meta_data = [
@@ -152,9 +176,9 @@ workflow EPITOPEPREDICTION {
     // TODO I guess it would be better to have two subworkflows for the if else parts (CM)
     if (params.show_supported_models) {
         SHOW_SUPPORTED_MODELS(
-            ch_samples_from_sheet
+            ch_samples_uncompressed
                 .protein
-                .mix(ch_samples_from_sheet.variant, ch_samples_from_sheet.peptide)
+                .mix(ch_samples_uncompressed.variant, ch_samples_uncompressed.peptide)
                 .combine(ch_prediction_tool_versions)
                 .first()
         )
@@ -170,14 +194,14 @@ workflow EPITOPEPREDICTION {
 
     // perform the check requested models on the protein and variant files
     // we have to perform it on all alleles that are given in the sample sheet
-    ch_variants_protein_models = ch_samples_from_sheet
+    ch_variants_protein_models = ch_samples_uncompressed
         .variant
-        .mix(ch_samples_from_sheet.protein)
+        .mix(ch_samples_uncompressed.protein)
         .map { meta_data, file -> meta_data.alleles }
         .splitCsv(sep: ';')
         .collect()
         .toList()
-        .combine(ch_samples_from_sheet.variant.first())
+        .combine(ch_samples_uncompressed.variant.first())
         .map { it -> tuple(it[0].unique(), it[-1])}
 
     CHECK_REQUESTED_MODELS(
@@ -187,7 +211,7 @@ workflow EPITOPEPREDICTION {
 
     // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
     CHECK_REQUESTED_MODELS_PEP(
-        ch_samples_from_sheet
+        ch_samples_uncompressed
             .peptide
             .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
         ch_prediction_tool_versions
@@ -247,7 +271,7 @@ workflow EPITOPEPREDICTION {
     */
 
     // Make a division for the variant files and process them further accordingly
-    ch_samples_from_sheet
+    ch_samples_uncompressed
         .variant
         .branch {
             meta_data, input_file ->
@@ -272,7 +296,7 @@ workflow EPITOPEPREDICTION {
 
     // process FASTA file and generated peptides
     FRED2_GENERATEPEPTIDES(
-        ch_samples_from_sheet.protein
+        ch_samples_uncompressed.protein
     )
 
     SPLIT_PEPTIDES_PROTEIN(
@@ -285,7 +309,7 @@ workflow EPITOPEPREDICTION {
     // split peptide data
     // TODO: Add the appropriate container to remove the warning
     SPLIT_PEPTIDES(
-        ch_samples_from_sheet.peptide
+        ch_samples_uncompressed.peptide
     )
     ch_versions = ch_versions.mix( SPLIT_PEPTIDES.out.versions.ifEmpty(null) )
 
