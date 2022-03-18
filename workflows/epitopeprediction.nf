@@ -45,7 +45,7 @@ include { SHOW_SUPPORTED_MODELS }                                   from '../mod
 include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'
 include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'
 
-include { FRED2_GENERATEPEPTIDES }                                  from '../modules/local/fred2_generatepeptides'
+include { GENERATE_PEPTIDES }                                       from '../modules/local/generate_peptides'
 include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                from '../modules/local/split_peptides'
 
@@ -295,15 +295,15 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix( CSVTK_SPLIT.out.versions.ifEmpty(null) )
 
     // process FASTA file and generated peptides
-    FRED2_GENERATEPEPTIDES(
+    GENERATE_PEPTIDES(
         ch_samples_uncompressed.protein
     )
 
     SPLIT_PEPTIDES_PROTEIN(
-        FRED2_GENERATEPEPTIDES.out.splitted
+        GENERATE_PEPTIDES.out.splitted
     )
 
-    ch_versions = ch_versions.mix( FRED2_GENERATEPEPTIDES.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( GENERATE_PEPTIDES.out.versions.ifEmpty(null) )
     ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null) )
 
     // split peptide data

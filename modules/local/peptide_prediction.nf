@@ -1,9 +1,9 @@
 process PEPTIDE_PREDICTION {
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::snpsift=4.3.1t bioconda::python=2.7.15 bioconda::pyvcf=0.6.8 conda-forge::pandas=0.24.2 bioconda::epytope=3.0.0 bioconda::mhcflurry=1.4.3 bioconda::mhcnuggets=2.3.2" : null)
+    conda (params.enable_conda ? "conda-forge::gawk=5.1.0 bioconda::epytope=3.0.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-c3f301504f7fa2e7bf81c3783de19a9990ea3001:12b1b9f040fd92a80629d58f8a558dde4820eb15-0' :
+        'https://depot.galaxyproject.org/singularity/epytope:3.0.0--pyh5e36f6f_0' :
         'quay.io/biocontainers/epytope:3.0.0--pyh5e36f6f_0' }"
 
     input:
@@ -45,7 +45,7 @@ process PEPTIDE_PREDICTION {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        fred2: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)")
+        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
         pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
         pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyvcf').version)")
         mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')
