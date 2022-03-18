@@ -3,8 +3,8 @@ process CHECK_REQUESTED_MODELS {
 
     conda (params.enable_conda ? "bioconda::epytope=3.0.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-c3f301504f7fa2e7bf81c3783de19a9990ea3001:12b1b9f040fd92a80629d58f8a558dde4820eb15-0' :
-        'quay.io/biocontainers/mulled-v2-c3f301504f7fa2e7bf81c3783de19a9990ea3001:12b1b9f040fd92a80629d58f8a558dde4820eb15-0' }"
+        'https://depot.galaxyproject.org/singularity/epytope:3.0.0--pyh5e36f6f_0' :
+        'quay.io/biocontainers/epytope:3.0.0--pyh5e36f6f_0' }"
 
     input:
     tuple val(alleles), path(input_file)
