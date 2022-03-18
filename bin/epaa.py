@@ -322,6 +322,9 @@ def read_vcf(filename, pass_only=True):
 
                     for sample in record.samples:
                         for format_key in format_list:
+                            if not getattr(sample.data, format_key, None):
+                                logger.warning("FORMAT entry {entry} not defined for {genotype}. Skipping.".format(entry=format_key, genotype=sample.sample))
+                                continue
                             format_header = '{}.{}'.format(sample.sample, format_key)
                             final_metadata_list.append(format_header)
                             if isinstance(sample[format_key], list):
@@ -814,9 +817,6 @@ def make_predictions_from_variants(variants_all, methods, tool_thresholds, allel
         df.reset_index(inplace=True)
         df = df.rename(columns={'Method': 'method', 'Peptides':'sequence'})
 
-        # create column containing the peptide lengths
-        #df.insert(2, 'length', df['sequence'].map(len))
-
         for a in alleles:
             conv_allele = "%s_%s%s" % (a.locus, a.supertype, a.subtype)
             allele_string_map['%s_%s' % (a, peplen)] = '%s_%i' % (conv_allele, peplen)
@@ -838,6 +838,7 @@ def make_predictions_from_variants(variants_all, methods, tool_thresholds, allel
             if ('HLA-' in str(c) or 'H-2-' in str(c)) and 'Score' in str(c):
                 idx = df.columns.get_loc(c)
                 allele = c.rstrip(' Score')
+                df[c] = df[c].round(4)
                 df.insert(idx + 1, '%s affinity' % allele, df.apply(lambda x: create_affinity_values(allele, int(x['length']), float(x[c]), x['method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % allele, df.apply(lambda x: create_binder_values(float(x['%s affinity' % allele]), x['method'], tool_thresholds), axis=1))
 
@@ -930,6 +931,7 @@ def make_predictions_from_peptides(peptides, methods, tool_thresholds, alleles, 
             if ('HLA-' in str(c) or 'H-2-' in str(c)) and 'Score' in str(c):
                 idx = df.columns.get_loc(c)
                 allele = c.rstrip(' Score')
+                df[c] = df[c].round(4)
                 df.insert(idx + 1, '%s affinity' % allele, df.apply(lambda x: create_affinity_values(allele, int(x['length']), float(x[c]), x['method'], max_values_matrices, allele_string_map), axis=1))
                 df.insert(idx + 2, '%s binder' % allele, df.apply(lambda x: create_binder_values(float(x['%s affinity' % allele]), x['method'], tool_thresholds), axis=1))
 
