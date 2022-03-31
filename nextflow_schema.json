@@ -52,10 +52,7 @@
                     "type": "string",
                     "default": "GRCh37",
                     "help_text": "This defines against which human reference genome the pipeline performs the analysis including the incorporation of genetic variants e.g..",
-                    "enum": [
-                        "GRCh37",
-                        "GRCh38"
-                    ],
+                    "enum": ["GRCh37", "GRCh38"],
                     "description": "Specifies  the human reference genome version."
                 },
                 "proteome": {
@@ -96,10 +93,7 @@
                     "default": 1,
                     "description": "MHC class for prediction.",
                     "help_text": "Specifies whether the predictions should be done for MHC class I or class II.",
-                    "enum": [
-                        1,
-                        2
-                    ]
+                    "enum": [1, 2]
                 },
                 "max_peptide_length": {
                     "type": "integer",
