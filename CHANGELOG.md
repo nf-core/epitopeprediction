@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- [#152](https://github.com/nf-core/epitopeprediction/pull/152) - Update MultiQC from 1.11 to 1.12
+
 ### `Fixed`
 
 - [#135](https://github.com/nf-core/epitopeprediction/pull/135) - Fix unique variant annotation field handling [#136](https://github.com/nf-core/epitopeprediction/issues/136)
@@ -29,7 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#107](https://github.com/nf-core/epitopeprediction/pull/107) - Merge previous template updates up to `v2.1`
 - [#110](https://github.com/nf-core/epitopeprediction/pull/110), [#113](https://github.com/nf-core/epitopeprediction/pull/113) - Port pipeline to Nextflow DSL2 syntax
 - [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Update `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
-- [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.4`
+- [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.3`
 - [#121](https://github.com/nf-core/epitopeprediction/pull/121) - Extend full test to cover more test cases
 - [#122](https://github.com/nf-core/epitopeprediction/pull/122) - Update to nf-core template v2.2
 - [#123](https://github.com/nf-core/epitopeprediction/pull/123) - Remove support for outdated external tools `NetMHCII 2.2` and `NetMHCIIpan 3.1`
