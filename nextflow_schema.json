@@ -42,41 +42,144 @@
                 }
             }
         },
+        "reference_options": {
+            "title": "Reference options",
+            "type": "object",
+            "description": "Options for the genome and proteome reference.",
+            "fa_icon": "fas fa-stream",
+            "properties": {
+                "genome_version": {
+                    "type": "string",
+                    "default": "GRCh37",
+                    "help_text": "This defines against which human reference genome the pipeline performs the analysis including the incorporation of genetic variants e.g..",
+                    "enum": ["GRCh37", "GRCh38"],
+                    "description": "Specifies  the human reference genome version."
+                },
+                "proteome": {
+                    "type": "string",
+                    "help_text": "Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).",
+                    "description": "Specifies the reference proteome."
+                }
+            }
+        },
         "reference_genome_options": {
             "title": "Reference genome options",
             "type": "object",
             "fa_icon": "fas fa-dna",
             "description": "Reference genome related files and options required for the workflow.",
             "properties": {
-                "genome": {
-                    "type": "string",
-                    "description": "Name of iGenomes reference.",
-                    "fa_icon": "fas fa-book",
-                    "help_text": "If using a reference genome configured in the pipeline using iGenomes, use this parameter to give the ID for the reference. This is then used to build the full paths for all required reference genome files e.g. `--genome GRCh38`. \n\nSee the [nf-core website docs](https://nf-co.re/usage/reference_genomes) for more details."
-                },
-                "fasta": {
-                    "type": "string",
-                    "format": "file-path",
-                    "mimetype": "text/plain",
-                    "pattern": "^\\S+\\.fn?a(sta)?(\\.gz)?$",
-                    "description": "Path to FASTA genome file.",
-                    "help_text": "This parameter is *mandatory* if `--genome` is not specified. If you don't have a BWA index available this will be generated for you automatically. Combine with `--save_reference` to save BWA index for future runs.",
-                    "fa_icon": "far fa-file-code"
-                },
-                "igenomes_base": {
-                    "type": "string",
-                    "format": "directory-path",
-                    "description": "Directory / URL base for iGenomes references.",
-                    "default": "s3://ngi-igenomes/igenomes",
-                    "fa_icon": "fas fa-cloud-download-alt",
-                    "hidden": true
-                },
                 "igenomes_ignore": {
                     "type": "boolean",
                     "description": "Do not load the iGenomes reference config.",
                     "fa_icon": "fas fa-ban",
                     "hidden": true,
                     "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+                }
+            }
+        },
+        "peptide_prediction_options": {
+            "title": "Peptide prediction options",
+            "type": "object",
+            "description": "Options for the peptide prediction step.",
+            "fa_icon": "far fa-chart-bar",
+            "properties": {
+                "filter_self": {
+                    "type": "boolean",
+                    "description": "Filter against human proteome.",
+                    "help_text": "Specifies that peptides should be filtered against the specified human proteome references."
+                },
+                "mhc_class": {
+                    "type": "integer",
+                    "default": 1,
+                    "description": "MHC class for prediction.",
+                    "help_text": "Specifies whether the predictions should be done for MHC class I or class II.",
+                    "enum": [1, 2]
+                },
+                "max_peptide_length": {
+                    "type": "integer",
+                    "default": 11,
+                    "description": "Specifies the maximum peptide length.",
+                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
+                },
+                "min_peptide_length": {
+                    "type": "integer",
+                    "default": 8,
+                    "description": "Specifies the minimum peptide length.",
+                    "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
+                },
+                "tools": {
+                    "type": "string",
+                    "default": "syfpeithi",
+                    "help_text": "Specifies the tool(s) to use. Available are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`. Can be combined in a list separated by comma.",
+                    "description": "Specifies the prediction tool(s) to use."
+                },
+                "tool_thresholds": {
+                    "type": "string",
+                    "description": "Specifies tool-specific binder thresholds in a JSON file. This can be used to override the given default binder threshold values.",
+                    "help_text": "Default affinity thresholds to determine whether a peptide is considered as a binder are the following:: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500. Thresholds can be customized in a JSON file: `tool-name:value`"
+                },
+                "wild_type": {
+                    "type": "boolean",
+                    "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
+                    "description": "Specifies whether wild-type sequences should be predicted."
+                },
+                "fasta_output": {
+                    "type": "boolean",
+                    "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
+                    "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences."
+                },
+                "show_supported_models": {
+                    "type": "boolean",
+                    "description": "Writes out supported prediction models.",
+                    "help_text": "Writes out supported models. Does not run any predictions."
+                }
+            }
+        },
+        "run_optimisation": {
+            "title": "Run optimisation",
+            "type": "object",
+            "description": "Options for optimising the pipeline run execution.",
+            "fa_icon": "fas fa-history",
+            "properties": {
+                "peptides_split_maxchunks": {
+                    "type": "integer",
+                    "default": 100,
+                    "help_text": "Used in combination with `--peptides` or `--proteins`. Maximum number of peptide chunks that will be created for parallelisation.",
+                    "description": "Specifies the maximum number of peptide chunks."
+                },
+                "peptides_split_minchunksize": {
+                    "type": "integer",
+                    "default": 5000,
+                    "help_text": "Used in combination with `--peptides` or `--proteins`: minimum number of peptides that should be written into one chunk.",
+                    "description": "Specifies the minimum number of peptides that should be written into one chunk."
+                }
+            }
+        },
+        "external_software": {
+            "title": "External software",
+            "type": "object",
+            "description": "External MHC binding prediction software that is not shipped with the pipeline.",
+            "default": null,
+            "properties": {
+                "netmhcpan_path": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 (Linux) here."
+                },
+                "netmhc_path": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 (Linux) here."
+                },
+                "netmhciipan_path": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 (Linux) here."
+                },
+                "netmhcii_path": {
+                    "type": "string",
+                    "default": "None",
+                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 (Linux) here."
                 }
             }
         },
@@ -92,14 +195,15 @@
                     "description": "Git commit id for Institutional configs.",
                     "default": "master",
                     "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                    "fa_icon": "fas fa-users-cog",
+                    "help_text": "Provide git commit id for custom Institutional configs hosted at `nf-core/configs`. This was implemented for reproducibility purposes. Default: `master`.\n\n```bash\n## Download and use config file with following git commit id\n--custom_config_version d52db660777c4bf36546ddb188ec530c3ada1b96\n```"
                 },
                 "custom_config_base": {
                     "type": "string",
                     "description": "Base directory for Institutional configs.",
                     "default": "https://raw.githubusercontent.com/nf-core/configs/master",
                     "hidden": true,
-                    "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+                    "help_text": "If you're running offline, nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell nextflow where to find them with the `custom_config_base` option. For example:\n\n```bash\n## Download and unzip the config files\ncd /path/to/my/configs\nwget https://github.com/nf-core/configs/archive/master.zip\nunzip master.zip\n\n## Run the pipeline\ncd /path/to/my/data\nnextflow run /path/to/pipeline/ --custom_config_base /path/to/my/configs/configs-master/\n```\n\n> Note that the nf-core/tools helper package has a `download` command to download all required pipeline files + singularity containers + institutional configs in one go for you, to make this process easier.",
                     "fa_icon": "fas fa-users-cog"
                 },
                 "config_profile_name": {
@@ -254,7 +358,19 @@
             "$ref": "#/definitions/input_output_options"
         },
         {
+            "$ref": "#/definitions/reference_options"
+        },
+        {
             "$ref": "#/definitions/reference_genome_options"
+        },
+        {
+            "$ref": "#/definitions/peptide_prediction_options"
+        },
+        {
+            "$ref": "#/definitions/run_optimisation"
+        },
+        {
+            "$ref": "#/definitions/external_software"
         },
         {
             "$ref": "#/definitions/institutional_config_options"

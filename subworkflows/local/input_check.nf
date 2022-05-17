@@ -12,7 +12,7 @@ workflow INPUT_CHECK {
     SAMPLESHEET_CHECK ( samplesheet )
         .csv
         .splitCsv ( header:true, sep:',' )
-        .map { create_fastq_channel(it) }
+        .map { get_samplesheet_paths(it) }
         .set { reads }
 
     emit:
@@ -20,25 +20,59 @@ workflow INPUT_CHECK {
     versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
 
-// Function to get list of [ meta, [ fastq_1, fastq_2 ] ]
-def create_fastq_channel(LinkedHashMap row) {
-    // create meta map
-    def meta = [:]
-    meta.id         = row.sample
-    meta.single_end = row.single_end.toBoolean()
+// Function to get list of [ meta, filenames ]
+def get_samplesheet_paths(LinkedHashMap row) {
 
-    // add path(s) of the fastq file(s) to the meta map
-    def fastq_meta = []
-    if (!file(row.fastq_1).exists()) {
-        exit 1, "ERROR: Please check input samplesheet -> Read 1 FastQ file does not exist!\n${row.fastq_1}"
-    }
-    if (meta.single_end) {
-        fastq_meta = [ meta, [ file(row.fastq_1) ] ]
+    def allele_string = generate_allele_string(row.alleles)
+    def type = determine_input_type(row.filename)
+    def meta = [:]
+    meta.sample         = row.sample
+    meta.alleles        = allele_string
+    meta.inputtype      = type
+
+    def array = []
+    if (!file(row.filename).exists()) {
+        exit 1, "ERROR: Please check input samplesheet -> file does not exist!\n${row.Filename}"
     } else {
-        if (!file(row.fastq_2).exists()) {
-            exit 1, "ERROR: Please check input samplesheet -> Read 2 FastQ file does not exist!\n${row.fastq_2}"
-        }
-        fastq_meta = [ meta, [ file(row.fastq_1), file(row.fastq_2) ] ]
+        array = [ meta, file(row.filename) ]
     }
-    return fastq_meta
+    return array
+}
+
+def generate_allele_string(String alleles) {
+    // Collect the allele information from the file
+    def allele_string
+    if ( alleles.endsWith(".txt") || alleles.endsWith(".alleles") )  {
+        allele_string = file(alleles).readLines().join(';')
+    }
+    // or assign the information to a new variable
+    else {
+        allele_string = alleles
+    }
+    return allele_string
+}
+
+def determine_input_type(String filename) {
+    def filetype
+    def input_file = file(filename)
+    def extension = input_file.extension
+
+    if (filename.endsWith("vcf.gz") ) {
+        filetype = "variant_compressed"
+    }
+    else if (extension == "vcf") {
+        filetype = "variant"
+    }
+    else if ( extension == "tsv" | extension == "GSvar" ) {
+        // Check if it is a variant annotation file or a peptide file
+        input_file.withReader {
+            def first_header_col = it.readLine().split('\t')[0]
+            if (first_header_col == "id") { filetype = "peptide" }
+            else if (first_header_col == "#chr") {filetype = "variant"}
+        }
+    }
+    else {
+        filetype = "protein"
+    }
+    return filetype
 }

@@ -1,0 +1,10 @@
+#!/bin/sh
+# Decrypts stdin -> stdout reading the passphrase from the environment variable
+# DECRYPT_PASSPHRASE.
+gpg \
+    --quiet \
+    --batch \
+    --yes \
+    --decrypt \
+    --passphrase="$DECRYPT_PASSPHRASE" \
+    --output -
