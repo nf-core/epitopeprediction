@@ -36,7 +36,7 @@ process EXTERNAL_TOOLS_IMPORT {
     #
     mkdir -v "${toolname}"
     tar -C "${toolname}" --strip-components 1 -x -f "$tooltarball"
-    echo $PATH
+
     #
     # MODIFY THE NETMHC WRAPPER SCRIPT ACCORDING TO INSTALL INSTRUCTIONS
     # Substitution 1: We install tcsh via conda, thus /bin/tcsh won't work
