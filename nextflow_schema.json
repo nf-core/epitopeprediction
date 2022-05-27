@@ -10,10 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "input",
-                "outdir"
-            ],
+            "required": ["input", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -55,10 +52,7 @@
                     "type": "string",
                     "default": "GRCh37",
                     "help_text": "This defines against which human reference genome the pipeline performs the analysis including the incorporation of genetic variants e.g..",
-                    "enum": [
-                        "GRCh37",
-                        "GRCh38"
-                    ],
+                    "enum": ["GRCh37", "GRCh38"],
                     "description": "Specifies  the human reference genome version."
                 },
                 "proteome": {
@@ -99,10 +93,7 @@
                     "default": 1,
                     "description": "MHC class for prediction.",
                     "help_text": "Specifies whether the predictions should be done for MHC class I or class II.",
-                    "enum": [
-                        1,
-                        2
-                    ]
+                    "enum": [1, 2]
                 },
                 "max_peptide_length": {
                     "type": "integer",
@@ -311,14 +302,7 @@
                     "description": "Method used to save pipeline results to output directory.",
                     "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
                     "fa_icon": "fas fa-copy",
-                    "enum": [
-                        "symlink",
-                        "rellink",
-                        "link",
-                        "copy",
-                        "copyNoFollow",
-                        "move"
-                    ],
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
                 "email_on_fail": {
