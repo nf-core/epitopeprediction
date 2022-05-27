@@ -36,7 +36,7 @@ process EXTERNAL_TOOLS_IMPORT {
     #
     mkdir -v "${toolname}"
     tar -C "${toolname}" --strip-components 1 -x -f "$tooltarball"
-
+    echo $PATH
     #
     # MODIFY THE NETMHC WRAPPER SCRIPT ACCORDING TO INSTALL INSTRUCTIONS
     # Substitution 1: We install tcsh via conda, thus /bin/tcsh won't work
@@ -44,7 +44,7 @@ process EXTERNAL_TOOLS_IMPORT {
     # Substitution 3: NMHOME should be the folder in which the tcsh script itself resides
     #
     sed -i.bak \
-        -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
+        -e 's_bin/tcsh.*\$_usr/local/bin/tcsh_' \
         -e "s_/scratch_/tmp_" \
         -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_" "${toolname}/${toolbinaryname}"
 
@@ -66,5 +66,6 @@ process EXTERNAL_TOOLS_IMPORT {
     # CREATE VERSION FILE
     #
     echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
+
     """
 }

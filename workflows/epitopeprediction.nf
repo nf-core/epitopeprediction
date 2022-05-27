@@ -148,7 +148,7 @@ workflow EPITOPEPREDICTION {
         ],
         netmhcpan: [
             version      : "4.0",
-            software_md5 : "94aa60f3dfd9752881c64878500e58f3",
+            software_md5 : "f576cd2d1906d5fafd182d71e8caf886",
             data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
             data_md5     : "26cbbd99a38f6692249442aeca48608f",
             binary_name  : "netMHCpan"
@@ -263,6 +263,8 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
+    // TODO: Is there a way to provide and "empty" path object if netmhc is not given?
+    ch_exported_tools = EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.ifEmpty(".")
 
     /*
     ========================================================================================
@@ -326,6 +328,7 @@ workflow EPITOPEPREDICTION {
             .out
             .splitted
             .combine( ch_prediction_tool_versions )
+            .combine( ch_exported_tools )
             .transpose()
     )
 
@@ -335,6 +338,7 @@ workflow EPITOPEPREDICTION {
             .out
             .splitted
             .combine( ch_prediction_tool_versions )
+            .combine( ch_exported_tools )
             .transpose()
     )
 
@@ -345,6 +349,7 @@ workflow EPITOPEPREDICTION {
             .splitted
             .mix( SNPSIFT_SPLIT.out.splitted )
             .combine( ch_prediction_tool_versions )
+            .combine( ch_exported_tools )
             .transpose()
     )
 
