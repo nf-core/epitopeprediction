@@ -42,6 +42,7 @@ include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../mod
 include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'
 include { SHOW_SUPPORTED_MODELS }                                   from '../modules/local/show_supported_models'
 
+include { VARIANT_SPLIT}                                            from '../modules/local/variant_split'
 include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'
 include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'
 
@@ -282,16 +283,29 @@ workflow EPITOPEPREDICTION {
         }
         .set { ch_variants }
 
-    // include the snpsift_split function (only vcf and vcf.gz variant files)
-    SNPSIFT_SPLIT(
-        ch_variants.vcf
-    )
+    // decide between the split_by_variants and snpsift_split (by chromosome) function (only vcf and vcf.gz variant files)
+    if (params.split_by_variants) {
+        VARIANT_SPLIT(
+            ch_variants.vcf,
+            params.split_by_variants_size ?: [],
+            params.split_by_variants_distance ?: []
+        )
+        .set { ch_split_variants }
+        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions.ifEmpty(null) )
+
+    }
+    else {
+        SNPSIFT_SPLIT(
+            ch_variants.vcf
+        )
+        .set { ch_split_variants }
+        ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions.ifEmpty(null) )
+    }
     // include the csvtk_split function (only variant files with an tsv and GSvar executable)
     CSVTK_SPLIT(
         ch_variants.tab
     )
 
-    ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions.ifEmpty(null) )
     ch_versions = ch_versions.mix( CSVTK_SPLIT.out.versions.ifEmpty(null) )
 
     // process FASTA file and generated peptides
@@ -343,7 +357,7 @@ workflow EPITOPEPREDICTION {
         CSVTK_SPLIT
             .out
             .splitted
-            .mix( SNPSIFT_SPLIT.out.splitted )
+            .mix( ch_split_variants.splitted )
             .combine( ch_prediction_tool_versions )
             .transpose()
     )
