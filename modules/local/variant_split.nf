@@ -8,8 +8,6 @@ process VARIANT_SPLIT {
 
     input:
     tuple val(meta), path(input_file)
-    val size
-    val distance
 
     output:
     tuple val(meta), path("*.vcf"), emit: splitted
@@ -17,8 +15,8 @@ process VARIANT_SPLIT {
 
     script:
 
-    def size_parameter = size ? "--size ${size}" : ''
-    def distance_parameter = distance ? "--distance ${distance}" : ''
+    def size_parameter = params.split_by_variants_size ? "--size ${params.split_by_variants_size}" : ''
+    def distance_parameter = params.split_by_variants_distance ? "--distance ${params.split_by_variants_distance}" : ''
 
     """
     split_vcf_by_variants.py --input ${input_file} ${size_parameter} ${distance_parameter} --output .

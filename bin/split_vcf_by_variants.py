@@ -12,11 +12,11 @@ def determine_split_size(input_file, size):
         input_lines = variants.readlines()
         num_variants = sum(1 for i in input_lines if not i.startswith('#'))
     if not size:
-        return int(num_variants / 10)
+        return max( int(num_variants / 10), 1)
     elif num_variants < size:
         logging.warning(
             'Provided split size larger than number of variants. Using default value.')
-        return int(num_variants / 10)
+        return max( int(num_variants / 10), 1)
     else:
         return size
 

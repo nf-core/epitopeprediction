@@ -286,9 +286,7 @@ workflow EPITOPEPREDICTION {
     // decide between the split_by_variants and snpsift_split (by chromosome) function (only vcf and vcf.gz variant files)
     if (params.split_by_variants) {
         VARIANT_SPLIT(
-            ch_variants.vcf,
-            params.split_by_variants_size ?: [],
-            params.split_by_variants_distance ?: []
+            ch_variants.vcf
         )
         .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions.ifEmpty(null) )
