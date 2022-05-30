@@ -7,8 +7,8 @@ import os
 from typing import Optional
 
 
-def determine_split_size(inputFile, size):
-    with open(inputFile, "r") as variants:
+def determine_split_size(input_file, size):
+    with open(input_file, "r") as variants:
         input_lines = variants.readlines()
         num_variants = sum(1 for i in input_lines if not i.startswith('#'))
     if not size:
@@ -36,10 +36,10 @@ def main():
 
     split_size = determine_split_size(args.input, args.size)
     file_name = args.input.split('.')[0]
-    varGroupCount = 0
-    fileCount = 1
+    var_group_count = 0
+    file_count = 1
     metadata = ''
-    varGroup = ''
+    var_group = ''
 
     with open(args.input, 'r') as input_file:
         vcf_file = csv.reader(input_file, delimiter="\t")
@@ -49,26 +49,27 @@ def main():
                 metadata += ('\t').join(line)
                 metadata += '\n'
             else:
-                varGroup += ('\t').join(line)
-                varGroup += '\n'
+                var_group += ('\t').join(line)
+                var_group += '\n'
                 # Get chromosome and positional information of the transcript
                 transcript = (line[0], int(line[1]))
                 # Check if the current number of saved variants is lower the number of desired variants per split
-                if varGroupCount < split_size:
-                    varGroupCount += 1
+                if var_group_count < split_size:
+                    var_group_count += 1
                 # Check if previous variant might be in the same transcript by checking chr and pos information
-                elif transcript[0] == previousTranscript[0] and transcript[1] < previousTranscript[1] + args.distance:
-                    varGroupCount += 1
+                elif transcript[0] == previous_transcript[0] and transcript[1] < previous_transcript[1] + args.distance:
+                    var_group_count += 1
                 # write split to new VCF file
                 else:
-                    with open(os.path.join(args.output, f'{file_name}_chunk_{fileCount}.vcf'), 'w') as outputFile:
-                        outputFile.write(metadata + varGroup)
-                        varGroup = ""
-                        varGroupCount = 0
-                        fileCount += 1
-                previousTranscript = transcript
-        with open(os.path.join(args.output, f'{file_name}_chunk_{fileCount}.vcf'), 'w') as outputFile:
-            outputFile.write(metadata + varGroup)
+                    with open(os.path.join(args.output, f'{file_name}_chunk_{file_count}.vcf'), 'w') as output_file:
+                        output_file.write(metadata + var_group)
+                        var_group = ""
+                        var_group_count = 0
+                        file_count += 1
+                previous_transcript = transcript
+        if var_group:
+            with open(os.path.join(args.output, f'{file_name}_chunk_{file_count}.vcf'), 'w') as output_file:
+                output_file.write(metadata + var_group)
 
 
 if __name__ == "__main__":
