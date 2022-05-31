@@ -141,6 +141,22 @@
             "description": "Options for optimising the pipeline run execution.",
             "fa_icon": "fas fa-history",
             "properties": {
+                "split_by_variants": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Split VCF file into multiple files by number of variants."
+                },
+                "split_by_variants_size": {
+                    "type": "string",
+                    "default": "null",
+                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten"
+                },
+                "split_by_variants_distance": {
+                    "type": "integer",
+                    "default": 110000,
+                    "description": "Number of nucleotides between previous and current variant across split.",
+                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. "
+                },
                 "peptides_split_maxchunks": {
                     "type": "integer",
                     "default": 100,
