@@ -14,6 +14,22 @@ You will need to create a samplesheet with information about the samples you wou
 --input '[path to samplesheet file]'
 ```
 
+### Input Formats
+
+The pipeline currently accepts three different types of input that are genomic variants, peptides and proteins. The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
+
+:warning: Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.github.io/SnpEff/). Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
+
+`tsv` files with genomic variants have to provide the following columns:
+
+```console
+start, end, #chr, ref, obs, gene, tumour_genotype, coding_and_splicing_details, variant_details, variant_type, coding_and_splicing
+```
+
+Peptide sequences have to be provided in `tsv` format with two mandatory columns `id` and `sequence`. Additional columns will be added as metadata to results.
+
+Protein input is supported in `FASTA` format.
+
 ### Multiple runs of the same sample
 
 The `sample` identifiers are used to determine which sample belongs to the input file. Below is an example for the same sample with different input files that can be used:
