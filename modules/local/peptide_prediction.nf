@@ -7,7 +7,8 @@ process PEPTIDE_PREDICTION {
         'quay.io/biocontainers/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:79da0cdeada554621d205f5713988db45f65fb80-0' }"
 
     input:
-    tuple val(meta), path(splitted), path(software_versions), path(netmhc_paths)
+    tuple val(meta), path(splitted), path(software_versions)
+    path netmhc_paths
 
     output:
     tuple val(meta), path("*.json"), emit: json

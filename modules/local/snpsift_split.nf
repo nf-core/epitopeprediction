@@ -1,7 +1,7 @@
 process SNPSIFT_SPLIT {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::snpsift:4.2" : null)
+    conda (params.enable_conda ? "bioconda::snpsift==4.2" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/snpsift:4.2--hdfd78af_5' :
         'quay.io/biocontainers/snpsift:4.2--hdfd78af_5' }"
