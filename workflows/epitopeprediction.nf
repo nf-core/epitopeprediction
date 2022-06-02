@@ -263,6 +263,8 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
+    // TODO: Is there a way to provide and "empty" path object if netmhc is not given?
+    ch_exported_tools = EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.ifEmpty([])
 
     /*
     ========================================================================================
@@ -326,7 +328,8 @@ workflow EPITOPEPREDICTION {
             .out
             .splitted
             .combine( ch_prediction_tool_versions )
-            .transpose()
+            .transpose(),
+            ch_exported_tools
     )
 
     // Run epitope prediction for peptides
@@ -335,7 +338,8 @@ workflow EPITOPEPREDICTION {
             .out
             .splitted
             .combine( ch_prediction_tool_versions )
-            .transpose()
+            .transpose(),
+            ch_exported_tools
     )
 
     // Run epitope prediction for variants
@@ -345,7 +349,8 @@ workflow EPITOPEPREDICTION {
             .splitted
             .mix( SNPSIFT_SPLIT.out.splitted )
             .combine( ch_prediction_tool_versions )
-            .transpose()
+            .transpose(),
+            ch_exported_tools
     )
 
     // collect prediction script versions
