@@ -147,11 +147,25 @@ workflow EPITOPEPREDICTION {
             data_md5     : "63c646fa0921d617576531396954d633",
             binary_name  : "netMHC"
         ],
-        netmhcpan: [
+        netmhc_darwin : [
+            version      : "4.0",
+            software_md5 : "43519de644c67ee4c8ee04c673861568",
+            data_url     : "https://services.healthtech.dtu.dk/services/NetMHC-4.0/data.tar.gz",
+            data_md5     : "63c646fa0921d617576531396954d633",
+            binary_name  : "netMHC"
+        ],
+        netmhcpan : [
             version      : "4.0",
             software_md5 : "94aa60f3dfd9752881c64878500e58f3",
             data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
             data_md5     : "26cbbd99a38f6692249442aeca48608f",
+            binary_name  : "netMHCpan"
+        ],
+        netmhcpan_darwin : [
+            version      : "4.0",
+            software_md5 : "042d16b89adcf5656ca4deae06b55cc6",
+            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Darwin.tar.gz",
+            data_md5     : "b4eef3c82852d677a98e0f7d753a36e2",
             binary_name  : "netMHCpan"
         ]
     ]
@@ -159,6 +173,10 @@ workflow EPITOPEPREDICTION {
     tools = params.tools?.tokenize(',')
 
     if (tools.isEmpty()) { exit 1, "No valid tools specified." }
+
+    if (params.enable_conda && params.tools.contains("netmhc")) {
+            log.warn("Please note: if you want to use external prediction tools with conda it might be necessary to set --netmhc_system to darwin depending on your system.")
+    }
 
     c_purple = params.monochrome_logs ? '' : "\033[0;35m";
     c_reset = params.monochrome_logs ? '' : "\033[0m";
@@ -248,15 +266,19 @@ workflow EPITOPEPREDICTION {
         }
         else if (params["${it}_path"])
         {
+            def tool_name = it
+            if (params["netmhc_system"] == 'darwin') {
+                tool_name = "${it}_darwin"
+            }
             // If so, add the tool name and user installation path to the external tools import channel
             ch_nonfree_paths.bind([
                 it,
-                netmhc_meta_data[it].version,
-                netmhc_meta_data[it].software_md5,
+                netmhc_meta_data[tool_name].version,
+                netmhc_meta_data[tool_name].software_md5,
                 file(params["${it}_path"], checkIfExists:true),
-                file(netmhc_meta_data[it].data_url),
-                netmhc_meta_data[it].data_md5,
-                netmhc_meta_data[it].binary_name
+                file(netmhc_meta_data[tool_name].data_url),
+                netmhc_meta_data[tool_name].data_md5,
+                netmhc_meta_data[tool_name].binary_name
             ])
         }
     }
@@ -264,7 +286,6 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
-    // TODO: Is there a way to provide and "empty" path object if netmhc is not given?
     ch_exported_tools = EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.ifEmpty([])
 
     /*

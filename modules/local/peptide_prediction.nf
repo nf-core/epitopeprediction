@@ -1,7 +1,7 @@
 process PEPTIDE_PREDICTION {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::tcsh=6.20.00 conda-forge::gawk=5.1.0 bioconda::epytope=3.0.0" : null)
+    conda (params.enable_conda ? "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.0.0 conda-forge::gawk=5.1.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:79da0cdeada554621d205f5713988db45f65fb80-0' :
         'quay.io/biocontainers/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:79da0cdeada554621d205f5713988db45f65fb80-0' }"
@@ -47,7 +47,6 @@ process PEPTIDE_PREDICTION {
     shopt -s nullglob
     for p in ${netmhc_paths} ; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
     shopt -u nullglob
-
 
     epaa.py --identifier ${splitted.baseName} \
         --alleles '${meta.alleles}' \

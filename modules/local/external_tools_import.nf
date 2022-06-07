@@ -4,6 +4,11 @@
 process EXTERNAL_TOOLS_IMPORT {
     label 'process_low'
 
+    conda (params.enable_conda ? "conda-forge::coreutils=9.1" : null)
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
+        'biocontainers/biocontainers:v1.2.0_cv1' }"
+
     input:
     tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname)
 
@@ -44,7 +49,7 @@ process EXTERNAL_TOOLS_IMPORT {
     # Substitution 3: NMHOME should be the folder in which the tcsh script itself resides
     #
     sed -i.bak \
-        -e 's_bin/tcsh.*\$_usr/local/bin/tcsh_' \
+        -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
         -e "s_/scratch_/tmp_" \
         -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_" "${toolname}/${toolbinaryname}"
 
