@@ -20,7 +20,7 @@
 
   > Pablo Cingolani, Viral M. Patel, Melissa Coon, Tung Nguyen, Susan J. Land, Douglas M. Ruden and Xiangyi Lu. Using Drosophila melanogaster as a model for genotoxic chemical mutational studies with a new program, SnpSift. _Frontiers in Genetics_ 3, 35 (2012). doi: 10.3389/fgene.2012.00035.
 
-- [FRED2](https://dx.doi.org/10.1093/bioinformatics/btw113)
+- [Epytope (FRED2)](https://dx.doi.org/10.1093/bioinformatics/btw113)
 
   > Benjamin Schubert, Mathias Walzer, Hans-Philipp Brachvogel, András Szolek, Christopher Mohr, Oliver Kohlbacher. FRED 2: an immunoinformatics framework for Pythonö Bioinformatics 32(13), 2044-2046 (2016). doi: 10.1093/bioinformatics/btw113.
 
@@ -30,6 +30,24 @@
 
 - [MHCnuggets](https://dx.doi.org/10.1158/2326-6066.CIR-19-0464)
   > Xiaoshan M. Shao, Rohit Bhattacharya, Justin Huang, I.K. Ashok Sivakumar, Collin Tokheim, Lily Zheng, Dylan Hirsch, Benjamin Kaminow, Ashton Omdahl, Maria Bonsack, Angelika B. Riemer, Victor E. Velculescu, Valsamo Anagnostou, Kymberleigh A. Pagel and Rachel Karchin. High-throughput prediction of MHC class i and ii neoantigens with MHCnuggets. Cancer Immunology Research 8(3), 396-408 (2020). doi: 10.1158/2326-6066.CIR-19-0464.
+
+- [NetMHC-4.0](https://pubmed.ncbi.nlm.nih.gov/26515819/)
+  > Andreatta M, Nielsen M. Gapped sequence alignment using artificial neural networks: application to the MHC class I system. Bioinformatics. 2016 Feb 15;32(4):511-7. doi: 10.1093/bioinformatics/btv639. Epub 2015 Oct 29. PMID: 26515819; PMCID: PMC6402319.
+
+- [NetMHCpan-4.0](https://pubmed.ncbi.nlm.nih.gov/28978689/)
+  > Jurtz V, Paul S, Andreatta M, Marcatili P, Peters B, Nielsen M. NetMHCpan-4.0: Improved Peptide-MHC Class I Interaction Predictions Integrating Eluted Ligand and Peptide Binding Affinity Data. J Immunol. 2017 Nov 1;199(9):3360-3368. doi: 10.4049/jimmunol.1700893. Epub 2017 Oct 4. PMID: 28978689; PMCID: PMC5679736.
+
+- [NetMHCpan-4.1](https://pubmed.ncbi.nlm.nih.gov/32406916/)
+  > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
+
+- [NetMHCII-2.3](https://pubmed.ncbi.nlm.nih.gov/29315598/)
+  > Jensen KK, Andreatta M, Marcatili P, Buus S, Greenbaum JA, Yan Z, Sette A, Peters B, Nielsen M. Improved methods for predicting peptide binding affinity to MHC class II molecules. Immunology. 2018 Jul;154(3):394-406. doi: 10.1111/imm.12889. Epub 2018 Feb 6. PMID: 29315598; PMCID: PMC6002223.
+
+- [NetMHCII-2.3](https://pubmed.ncbi.nlm.nih.gov/29315598/)
+  > Jensen KK, Andreatta M, Marcatili P, Buus S, Greenbaum JA, Yan Z, Sette A, Peters B, Nielsen M. Improved methods for predicting peptide binding affinity to MHC class II molecules. Immunology. 2018 Jul;154(3):394-406. doi: 10.1111/imm.12889. Epub 2018 Feb 6. PMID: 29315598; PMCID: PMC6002223.
+
+- [NetMHCIIpan-4.0](https://pubmed.ncbi.nlm.nih.gov/32406916/)
+  > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
 
 ## Software packaging/containerisation tools
 
