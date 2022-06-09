@@ -1,4 +1,4 @@
-process GENERATE_PEPTIDES {
+process EPYTOPE_GENERATE_PEPTIDES {
     label 'process_low'
     tag "${meta.sample}"
 

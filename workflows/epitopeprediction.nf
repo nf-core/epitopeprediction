@@ -34,32 +34,34 @@ ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multi
 //
 // MODULE: Local to the pipeline
 //
-include { GET_PREDICTION_VERSIONS }                                 from '../modules/local/get_prediction_versions'
+include { GET_PREDICTION_VERSIONS }                                                 from '../modules/local/get_prediction_versions'
 
-include { EXTERNAL_TOOLS_IMPORT }                                   from '../modules/local/external_tools_import'
+include { EXTERNAL_TOOLS_IMPORT }                                                   from '../modules/local/external_tools_import'
 
-include { CHECK_REQUESTED_MODELS as CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/check_requested_models'
-include { CHECK_REQUESTED_MODELS }                                  from '../modules/local/check_requested_models'
-include { SHOW_SUPPORTED_MODELS }                                   from '../modules/local/show_supported_models'
+include { GET_EXTERNAL_TOOLS_META }                                                 from '../modules/local/get_external_tools_meta'
 
-include { VARIANT_SPLIT}                                            from '../modules/local/variant_split'
-include { SNPSIFT_SPLIT}                                            from '../modules/local/snpsift_split'
-include { CSVTK_SPLIT}                                              from '../modules/local/csvtk_split'
+include { EPYTOPE_CHECK_REQUESTED_MODELS as EPYTOPE_CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/epytope_check_requested_models'
+include { EPYTOPE_CHECK_REQUESTED_MODELS }                                          from '../modules/local/epytope_check_requested_models'
+include { EPYTOPE_SHOW_SUPPORTED_MODELS }                                           from '../modules/local/epytope_show_supported_models'
 
-include { GENERATE_PEPTIDES }                                       from '../modules/local/generate_peptides'
-include { SPLIT_PEPTIDES }                                          from '../modules/local/split_peptides'
-include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                from '../modules/local/split_peptides'
+include { VARIANT_SPLIT}                                                            from '../modules/local/variant_split'
+include { SNPSIFT_SPLIT}                                                            from '../modules/local/snpsift_split'
+include { CSVTK_SPLIT}                                                              from '../modules/local/csvtk_split'
 
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/peptide_prediction'
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_PEP }            from '../modules/local/peptide_prediction'
-include { PEPTIDE_PREDICTION as PEPTIDE_PREDICTION_VAR }            from '../modules/local/peptide_prediction'
+include { EPYTOPE_GENERATE_PEPTIDES }                                               from '../modules/local/epytope_generate_peptides'
+include { SPLIT_PEPTIDES }                                                          from '../modules/local/split_peptides'
+include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                                from '../modules/local/split_peptides'
 
-include { CAT_FILES as CAT_TSV }                                    from '../modules/local/cat_files'
-include { CAT_FILES as CAT_FASTA }                                  from '../modules/local/cat_files'
-include { CSVTK_CONCAT }                                            from '../modules/local/csvtk_concat'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/epytope_peptide_prediction'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PEP }            from '../modules/local/epytope_peptide_prediction'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR }            from '../modules/local/epytope_peptide_prediction'
 
-include { MERGE_JSON as MERGE_JSON_SINGLE }                         from '../modules/local/merge_json'
-include { MERGE_JSON as MERGE_JSON_MULTI }                          from '../modules/local/merge_json'
+include { CAT_FILES as CAT_TSV }                                                    from '../modules/local/cat_files'
+include { CAT_FILES as CAT_FASTA }                                                  from '../modules/local/cat_files'
+include { CSVTK_CONCAT }                                                            from '../modules/local/csvtk_concat'
+
+include { MERGE_JSON as MERGE_JSON_SINGLE }                                         from '../modules/local/merge_json'
+include { MERGE_JSON as MERGE_JSON_MULTI }                                          from '../modules/local/merge_json'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -223,13 +225,13 @@ workflow EPITOPEPREDICTION {
         .combine(ch_samples_uncompressed.variant.first())
         .map { it -> tuple(it[0].unique(), it[-1])}
 
-    CHECK_REQUESTED_MODELS(
+    EPYTOPE_CHECK_REQUESTED_MODELS(
         ch_variants_protein_models,
         ch_prediction_tool_versions
     )
 
     // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
-    CHECK_REQUESTED_MODELS_PEP(
+    EPYTOPE_CHECK_REQUESTED_MODELS_PEP(
         ch_samples_uncompressed
             .peptide
             .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
@@ -237,10 +239,10 @@ workflow EPITOPEPREDICTION {
     )
 
     // Return a warning if this is raised
-    CHECK_REQUESTED_MODELS
+    EPYTOPE_CHECK_REQUESTED_MODELS
         .out
         .log
-        .mix( CHECK_REQUESTED_MODELS_PEP.out.log )
+        .mix( EPYTOPE_CHECK_REQUESTED_MODELS_PEP.out.log )
         .subscribe {
             model_log_file = file( it, checkIfExists: true )
             def lines = model_log_file.readLines()
@@ -330,15 +332,15 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix( CSVTK_SPLIT.out.versions.ifEmpty(null) )
 
     // process FASTA file and generated peptides
-    GENERATE_PEPTIDES(
+    EPYTOPE_GENERATE_PEPTIDES(
         ch_samples_uncompressed.protein
     )
 
     SPLIT_PEPTIDES_PROTEIN(
-        GENERATE_PEPTIDES.out.splitted
+        EPYTOPE_GENERATE_PEPTIDES.out.splitted
     )
 
-    ch_versions = ch_versions.mix( GENERATE_PEPTIDES.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_GENERATE_PEPTIDES.out.versions.ifEmpty(null) )
     ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null) )
 
     // split peptide data
@@ -356,7 +358,7 @@ workflow EPITOPEPREDICTION {
 
     // not sure if this is the best solution to also have a extra process for protein, but I think we need it for cases when we have both in one sheet? (CM)
     // run epitope prediction for proteins
-    PEPTIDE_PREDICTION_PROTEIN(
+    EPYTOPE_PEPTIDE_PREDICTION_PROTEIN(
         SPLIT_PEPTIDES_PROTEIN
             .out
             .splitted
@@ -366,7 +368,7 @@ workflow EPITOPEPREDICTION {
     )
 
     // Run epitope prediction for peptides
-    PEPTIDE_PREDICTION_PEP(
+    EPYTOPE_PEPTIDE_PREDICTION_PEP(
         SPLIT_PEPTIDES
             .out
             .splitted
@@ -376,7 +378,7 @@ workflow EPITOPEPREDICTION {
     )
 
     // Run epitope prediction for variants
-    PEPTIDE_PREDICTION_VAR(
+    EPYTOPE_PEPTIDE_PREDICTION_VAR(
         CSVTK_SPLIT
             .out
             .splitted
@@ -387,15 +389,15 @@ workflow EPITOPEPREDICTION {
     )
 
     // collect prediction script versions
-    ch_versions = ch_versions.mix( PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null) )
-    ch_versions = ch_versions.mix( PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
-    ch_versions = ch_versions.mix( PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null) )
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
-    PEPTIDE_PREDICTION_PEP
+    EPYTOPE_PEPTIDE_PREDICTION_PEP
         .out
         .predicted
-        .mix( PEPTIDE_PREDICTION_VAR.out.predicted, PEPTIDE_PREDICTION_PROTEIN.out.predicted )
+        .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.predicted, EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.predicted )
         .groupTuple()
         .flatMap { meta_data, predicted -> [[[ sample:meta_data.sample, alleles:meta_data.alleles, files:predicted.size() ], predicted ]] }
         .branch {
@@ -418,18 +420,18 @@ workflow EPITOPEPREDICTION {
 
     // Combine protein sequences
     CAT_FASTA(
-        PEPTIDE_PREDICTION_PEP
+        EPYTOPE_PEPTIDE_PREDICTION_PEP
             .out
             .fasta
-            .mix( PEPTIDE_PREDICTION_VAR.out.fasta, PEPTIDE_PREDICTION_PROTEIN.out.fasta )
+            .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.fasta, EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.fasta )
             .groupTuple()
     )
 
-    PEPTIDE_PREDICTION_PEP
+    EPYTOPE_PEPTIDE_PREDICTION_PEP
         .out
         .json
-        .mix( PEPTIDE_PREDICTION_VAR.out.json )
-        .mix( PEPTIDE_PREDICTION_PROTEIN.out.json )
+        .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.json )
+        .mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.json )
         .groupTuple()
         .flatMap { meta, json -> [[[ sample:meta.sample, alleles:meta.alleles, files:json.size() ], json ]] }
         .branch {

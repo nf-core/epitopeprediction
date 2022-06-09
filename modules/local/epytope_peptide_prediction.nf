@@ -1,4 +1,4 @@
-process PEPTIDE_PREDICTION {
+process EPYTOPE_PEPTIDE_PREDICTION {
     label 'process_low'
 
     conda (params.enable_conda ? "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.0.0 conda-forge::gawk=5.1.0" : null)

@@ -1,4 +1,4 @@
-process CHECK_REQUESTED_MODELS {
+process EPYTOPE_CHECK_REQUESTED_MODELS {
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::epytope=3.0.0" : null)

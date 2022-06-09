@@ -1,4 +1,4 @@
-process SHOW_SUPPORTED_MODELS {
+process EPYTOPE_SHOW_SUPPORTED_MODELS {
     label 'process_low'
 
     conda (params.enable_conda ? "bioconda::epytope=3.0.0" : null)
