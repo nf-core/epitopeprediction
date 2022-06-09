@@ -20,13 +20,23 @@ The pipeline currently accepts three different types of input that are genomic v
 
 :warning: Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.github.io/SnpEff/). Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
 
+#### Genomic variants
+
 `tsv` files with genomic variants have to provide the following columns:
 
 ```console
 start, end, #chr, ref, obs, gene, tumour_genotype, coding_and_splicing_details, variant_details, variant_type, coding_and_splicing
+...
+chr1 12954870 12954870 C T . 0 NORMAL:414,TUMOR:8 . missense_variant 0.5 transcript PRAMEF10 missense_variant PRAMEF10:ENST00000235347:missense_variant:MODERATE:exon3:c.413G>A:p.Cys138Tyr
+...
+
 ```
 
+#### Peptide sequences
+
 Peptide sequences have to be provided in `tsv` format with two mandatory columns `id` and `sequence`. Additional columns will be added as metadata to results.
+
+#### Protein sequences
 
 Protein input is supported in `FASTA` format.
 
