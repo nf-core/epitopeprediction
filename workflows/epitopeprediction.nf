@@ -38,8 +38,6 @@ include { GET_PREDICTION_VERSIONS }                                             
 
 include { EXTERNAL_TOOLS_IMPORT }                                                   from '../modules/local/external_tools_import'
 
-include { GET_EXTERNAL_TOOLS_META }                                                 from '../modules/local/get_external_tools_meta'
-
 include { EPYTOPE_CHECK_REQUESTED_MODELS as EPYTOPE_CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/epytope_check_requested_models'
 include { EPYTOPE_CHECK_REQUESTED_MODELS }                                          from '../modules/local/epytope_check_requested_models'
 include { EPYTOPE_SHOW_SUPPORTED_MODELS }                                           from '../modules/local/epytope_show_supported_models'
