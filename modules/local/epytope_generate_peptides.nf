@@ -1,11 +1,11 @@
-process FRED2_GENERATEPEPTIDES {
+process EPYTOPE_GENERATE_PEPTIDES {
     label 'process_low'
     tag "${meta.sample}"
 
-    conda (params.enable_conda ? "conda-forge::fred2:2.0.7" : null)
+    conda (params.enable_conda ? "bioconda::epytope=3.0.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/fred2:2.0.7--py_0' :
-        'quay.io/biocontainers/fred2:2.0.7--py_0' }"
+        'https://depot.galaxyproject.org/singularity/epytope:3.0.0--pyh5e36f6f_0' :
+        'quay.io/biocontainers/epytope:3.0.0--pyh5e36f6f_0' }"
 
     input:
     tuple val(meta), path(raw)
@@ -24,7 +24,7 @@ process FRED2_GENERATEPEPTIDES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fred2: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)")
+        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
         python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """

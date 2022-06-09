@@ -1,13 +1,14 @@
-process PEPTIDE_PREDICTION {
+process EPYTOPE_PEPTIDE_PREDICTION {
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::snpsift=4.3.1t bioconda::python=2.7.15 bioconda::pyvcf=0.6.8 conda-forge::pandas=0.24.2 bioconda::epytope=3.0.0 bioconda::mhcflurry=1.4.3 bioconda::mhcnuggets=2.3.2" : null)
+    conda (params.enable_conda ? "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.0.0 conda-forge::gawk=5.1.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-c3f301504f7fa2e7bf81c3783de19a9990ea3001:12b1b9f040fd92a80629d58f8a558dde4820eb15-0' :
-        'quay.io/biocontainers/epytope:3.0.0--pyh5e36f6f_0' }"
+        'https://depot.galaxyproject.org/singularity/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:79da0cdeada554621d205f5713988db45f65fb80-0' :
+        'quay.io/biocontainers/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:79da0cdeada554621d205f5713988db45f65fb80-0' }"
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
+    path netmhc_paths
 
     output:
     tuple val(meta), path("*.json"), emit: json
@@ -37,6 +38,16 @@ process PEPTIDE_PREDICTION {
     }
 
     """
+    # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
+    mkdir -p mhcflurry-data
+    export MHCFLURRY_DATA_DIR=./mhcflurry-data
+    # specify MHCflurry release for which to download models, need to be updated here as well when MHCflurry will be updated
+    export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
+    # Add non-free software to the PATH
+    shopt -s nullglob
+    for p in ${netmhc_paths} ; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
+    shopt -u nullglob
+
     epaa.py --identifier ${splitted.baseName} \
         --alleles '${meta.alleles}' \
         --versions ${software_versions} \
@@ -45,7 +56,7 @@ process PEPTIDE_PREDICTION {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        fred2: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)")
+        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
         pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
         pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyvcf').version)")
         mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')

@@ -1,7 +1,7 @@
 process CAT_FILES {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::cat=5.2.3" : null)
+    conda (params.enable_conda ? "conda-forge:sed=4.8" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/cat:5.2.3--hdfd78af_1' :
         'quay.io/biocontainers/cat:5.2.3--hdfd78af_1' }"
