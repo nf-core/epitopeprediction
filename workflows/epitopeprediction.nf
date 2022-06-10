@@ -286,7 +286,6 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
-    ch_exported_tools = EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.ifEmpty([])
 
     /*
     ========================================================================================
@@ -362,7 +361,7 @@ workflow EPITOPEPREDICTION {
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            ch_exported_tools
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
 
     // Run epitope prediction for peptides
@@ -372,7 +371,7 @@ workflow EPITOPEPREDICTION {
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            ch_exported_tools
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
 
     // Run epitope prediction for variants
@@ -383,7 +382,7 @@ workflow EPITOPEPREDICTION {
             .mix( ch_split_variants.splitted )
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            ch_exported_tools
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
 
     // collect prediction script versions

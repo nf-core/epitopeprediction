@@ -8,7 +8,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
-    path netmhc_paths
+    val netmhc_paths
 
     output:
     tuple val(meta), path("*.json"), emit: json
@@ -45,7 +45,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
     # Add non-free software to the PATH
     shopt -s nullglob
-    for p in ${netmhc_paths} ; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
+    for p in ${netmhc_paths.join('')} ; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
     shopt -u nullglob
 
     epaa.py --identifier ${splitted.baseName} \
