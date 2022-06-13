@@ -110,7 +110,7 @@
                 "tools": {
                     "type": "string",
                     "default": "syfpeithi",
-                    "help_text": "Specifies the tool(s) to use. Available are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`. Can be combined in a list separated by comma.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "tool_thresholds": {
@@ -176,6 +176,11 @@
             "description": "External MHC binding prediction software that is not shipped with the pipeline.",
             "default": null,
             "properties": {
+                "external_tools_meta": {
+                    "type": "string",
+                    "default": "${projectDir}/assets/external_tools_meta.json",
+                    "description": "Specifies the path to the JSON file with meta information on external prediction tools."
+                },
                 "netmhc_system": {
                     "type": "string",
                     "default": "linux",

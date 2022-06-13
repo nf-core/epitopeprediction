@@ -88,6 +88,11 @@ include { GUNZIP as GUNZIP_VCF }        from '../modules/nf-core/modules/gunzip/
 // Info required for completion email and summary
 def multiqc_report = []
 
+// load meta data of external tools
+import groovy.json.JsonSlurper
+def jsonSlurper = new JsonSlurper()
+def external_tools_meta = jsonSlurper.parse(file(params.external_tools_meta, checkIfExists: true))
+
 workflow EPITOPEPREDICTION {
 
     ch_versions = Channel.empty()
@@ -138,38 +143,6 @@ workflow EPITOPEPREDICTION {
                 protein :  meta_data.inputtype == 'protein'
             }
 
-    //TODO think about a better how to handle these supported external versions, config file? (CM)
-    netmhc_meta_data = [
-        netmhc : [
-            version      : "4.0",
-            software_md5 : "132dc322da1e2043521138637dd31ebf",
-            data_url     : "https://services.healthtech.dtu.dk/services/NetMHC-4.0/data.tar.gz",
-            data_md5     : "63c646fa0921d617576531396954d633",
-            binary_name  : "netMHC"
-        ],
-        netmhc_darwin : [
-            version      : "4.0",
-            software_md5 : "43519de644c67ee4c8ee04c673861568",
-            data_url     : "https://services.healthtech.dtu.dk/services/NetMHC-4.0/data.tar.gz",
-            data_md5     : "63c646fa0921d617576531396954d633",
-            binary_name  : "netMHC"
-        ],
-        netmhcpan : [
-            version      : "4.0",
-            software_md5 : "94aa60f3dfd9752881c64878500e58f3",
-            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
-            data_md5     : "26cbbd99a38f6692249442aeca48608f",
-            binary_name  : "netMHCpan"
-        ],
-        netmhcpan_darwin : [
-            version      : "4.0",
-            software_md5 : "042d16b89adcf5656ca4deae06b55cc6",
-            data_url     : "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Darwin.tar.gz",
-            data_md5     : "b4eef3c82852d677a98e0f7d753a36e2",
-            binary_name  : "netMHCpan"
-        ]
-    ]
-
     tools = params.tools?.tokenize(',')
 
     if (tools.isEmpty()) { exit 1, "No valid tools specified." }
@@ -185,7 +158,7 @@ workflow EPITOPEPREDICTION {
     ch_external_versions = Channel
         .from(tools)
         .filter( ~/(?i)^net.*/ )
-        .map { it -> "${it}: ${netmhc_meta_data[it.toLowerCase()].version}"}
+        .map { it -> "${it.split('-')[0]}: ${it.split('-')[1]}"}
         .collect()
 
     // get versions of all prediction tools
@@ -253,35 +226,41 @@ workflow EPITOPEPREDICTION {
     }
 
     // Retrieve meta data for external tools
-    ["netmhc", "netmhcpan"].each {
-        // Check if the _path parameter was set for this tool
-        if (params["${it}_path"] as Boolean && ! tools.contains(it))
-        {
-            log.warn("--${it}_path specified, but --tools does not contain ${it}. Both have to be specified to enable ${it}. Ignoring.")
-        }
-        else if (!params["${it}_path"] as Boolean && tools.contains(it))
-        {
-            log.warn("--${it}_path not specified, but --tools contains ${it}. Both have to be specified to enable ${it}. Ignoring.")
-            tools.removeElement(it)
-        }
-        else if (params["${it}_path"])
-        {
-            def tool_name = it
-            if (params["netmhc_system"] == 'darwin') {
-                tool_name = "${it}_darwin"
+    tools.each {
+        if(it.contains("net")) {
+            def tool_name = it.split('-')[0]
+            // Check if the _path parameter was set for this tool
+            if (params["${tool_name}_path"] as Boolean && ! tools.contains(it))
+            {
+                log.warn("--${tool_name}_path specified, but --tools does not contain ${tool_name}. Both have to be specified to enable ${tool_name}. Ignoring.")
             }
-            // If so, add the tool name and user installation path to the external tools import channel
-            ch_nonfree_paths.bind([
-                it,
-                netmhc_meta_data[tool_name].version,
-                netmhc_meta_data[tool_name].software_md5,
-                file(params["${it}_path"], checkIfExists:true),
-                file(netmhc_meta_data[tool_name].data_url),
-                netmhc_meta_data[tool_name].data_md5,
-                netmhc_meta_data[tool_name].binary_name
-            ])
+            else if (!params["${tool_name}_path"] as Boolean && tools.contains(it))
+            {
+                log.warn("--${tool_name}_path not specified, but --tools contains ${tool_name}. Both have to be specified to enable ${tool_name}. Ignoring.")
+                tools.removeElement(it)
+            }
+            else if (params["${tool_name}_path"])
+            {
+                def external_tool_version = it.split('-')[1]
+                def entry = external_tools_meta[tool_name][external_tool_version]
+                if (params["netmhc_system"] == 'darwin') {
+                    entry = external_tools_meta["${tool_name}_darwin"][external_tool_version]
+                }
+
+                // If so, add the tool name and user installation path to the external tools import channel
+                ch_nonfree_paths.bind([
+                    tool_name,
+                    entry.version,
+                    entry.software_md5,
+                    file(params["${tool_name}_path"], checkIfExists:true),
+                    file(entry.data_url),
+                    entry.data_md5,
+                    entry.binary_name
+                ])
+            }
         }
     }
+
     // import external tools
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
