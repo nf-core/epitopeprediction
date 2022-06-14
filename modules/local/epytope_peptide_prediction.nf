@@ -8,7 +8,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
-    path netmhc_paths
+    val netmhc_paths
 
     output:
     tuple val(meta), path("*.json"), emit: json
@@ -37,6 +37,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         argument = "--tool_thresholds ${params.tool_thresholds} " + argument
     }
 
+    def netmhc_paths_string = netmhc_paths.join(",")
     """
     # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
     mkdir -p mhcflurry-data
@@ -45,7 +46,10 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=1.4.0
     # Add non-free software to the PATH
     shopt -s nullglob
-    for p in ${netmhc_paths} ; do export PATH="\$(realpath -s "\$p"):\$PATH"; done
+    IFS=',' read -r -a netmhc_paths_string <<< \"$netmhc_paths_string\"
+    for p in "\${netmhc_paths_string[@]}"; do
+            export PATH="\$(realpath -s "\$p"):\$PATH";
+        done
     shopt -u nullglob
 
     epaa.py --identifier ${splitted.baseName} \
