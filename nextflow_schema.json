@@ -116,7 +116,13 @@
                 "tool_thresholds": {
                     "type": "string",
                     "description": "Specifies tool-specific binder thresholds in a JSON file. This can be used to override the given default binder threshold values.",
-                    "help_text": "Default affinity thresholds to determine whether a peptide is considered as a binder are the following:: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500. Thresholds can be customized in a JSON file: `tool-name:value`"
+                    "help_text": "Default thresholds to determine whether a peptide is considered as a binder are the following: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 2, `netmhcpan` <= 2, `netmhcii` <= 5, `netmhciipan` <= 5. Note that the default threshold for NetMHC tools is based on the rank metric and remaining predictors is based on affinities. Thresholds can be customized in a JSON file: `tool-name:value`"
+                },
+                "affinity_thresholds": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Specifies the affinity metric instead of the rank metric used for determining whether a peptide is considered as a binder.",
+                    "help_text": "Default affinity thresholds to determine whether a peptide is considered as a binder are the following:: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500."
                 },
                 "wild_type": {
                     "type": "boolean",

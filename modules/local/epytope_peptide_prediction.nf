@@ -37,6 +37,10 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         argument = "--tool_thresholds ${params.tool_thresholds} " + argument
     }
 
+    if (params.affinity_thresholds) {
+        argument = "--affinity_thresholds " + argument
+    }
+
     def netmhc_paths_string = netmhc_paths.join(",")
     """
     # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
