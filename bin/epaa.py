@@ -1034,11 +1034,10 @@ def __main__():
         if version not in EpitopePredictorFactory.available_methods()[method]:
             raise ValueError("The specified version " + version + " for " + method + " is not supported by epytope.")
 
+    thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":500, "netmhcpan":500, "netmhcii":500, "netmhciipan":500}
     # Define binders based on the rank metric for netmhc family tools
     if "netmhc" in ''.join(methods.keys()) and not args.affinity_thresholds:
-        thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":2, "netmhcpan":2, "netmhcii":5, "netmhciipan":5}
-    else:
-        thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":500, "netmhcpan":500, "netmhcii":500, "netmhciipan":500}
+        thresholds.update({"netmhc":2, "netmhcpan":2, "netmhcii":5, "netmhciipan":5})
 
     if args.tool_thresholds:
         with open(args.tool_thresholds, 'r') as json_file:
