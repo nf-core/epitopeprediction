@@ -37,8 +37,8 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         argument = "--tool_thresholds ${params.tool_thresholds} " + argument
     }
 
-    if (params.affinity_thresholds) {
-        argument = "--affinity_thresholds " + argument
+    if (params.use_affinity_thresholds) {
+        argument = "--use_affinity_thresholds " + argument
     }
 
     def netmhc_paths_string = netmhc_paths.join(",")

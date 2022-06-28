@@ -708,12 +708,12 @@ def create_affinity_values(allele, length, j, method, max_scores, allele_strings
         return np.nan
 
 
-def create_binder_values(pred_score, method, thresholds):
-    if not pd.isnull(pred_score):
+def create_binder_values(pred_value, method, thresholds):
+    if not pd.isnull(pred_value):
         if 'syf' in method:
-            return True if pred_score > thresholds[method] else False
+            return True if pred_value > thresholds[method] else False
         else:
-            return True if pred_score <= thresholds[method.lower()] else False
+            return True if pred_value <= thresholds[method.lower()] else False
     else:
         return np.nan
 
@@ -962,7 +962,7 @@ def __main__():
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
     parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
     parser.add_argument('-tt', "--tool_thresholds", help="Customize thresholds of given tools using a json file", required=False, type=str)
-    parser.add_argument('-at', "--affinity_thresholds", help="Use affinity instead of rank for thresholding", required=False, action='store_true')
+    parser.add_argument('-at', "--use_affinity_thresholds", help="Use affinity instead of rank for thresholding", required=False, action='store_true')
     parser.add_argument('-sv', "--versions", help="File containing parsed software version numbers.", required=True)
     parser.add_argument('-a', "--alleles", help="<Required> MHC Alleles", required=True, type=str)
     parser.add_argument('-r', "--reference", help="Reference, retrieved information will be based on this ensembl version", required=False, default='GRCh37', choices=['GRCh37', 'GRCh38'])
@@ -1034,9 +1034,9 @@ def __main__():
         if version not in EpitopePredictorFactory.available_methods()[method]:
             raise ValueError("The specified version " + version + " for " + method + " is not supported by epytope.")
 
-    thresholds = {"syfpeithi":60, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":500, "netmhcpan":500, "netmhcii":500, "netmhciipan":500}
+    thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":500, "netmhcpan":500, "netmhcii":500, "netmhciipan":500}
     # Define binders based on the rank metric for netmhc family tools
-    # NOTE these recommendet thresholds might change in the future with new versions of the tools
+    # NOTE these recommended thresholds might change in the future with new versions of the tools
     if "netmhc" in ''.join(methods.keys()) and not args.affinity_thresholds:
         thresholds.update({"netmhc":2, "netmhcpan":2, "netmhcii":10, "netmhciipan":5})
 
