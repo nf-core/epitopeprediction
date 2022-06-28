@@ -759,7 +759,7 @@ def generate_wt_seqs(peptides):
     return wt_dict
 
 
-def make_predictions_from_variants(variants_all, methods, tool_thresholds, alleles, use_affinity_thresholds, minlength, maxlength, martsadapter, protein_db, identifier, metadata, transcriptProteinMap):
+def make_predictions_from_variants(variants_all, methods, tool_thresholds, use_affinity_thresholds, alleles, minlength, maxlength, martsadapter, protein_db, identifier, metadata, transcriptProteinMap):
     # list for all peptides and filtered peptides
     all_peptides = []
     all_peptides_filtered = []
