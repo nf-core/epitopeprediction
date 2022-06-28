@@ -1037,7 +1037,7 @@ def __main__():
     thresholds = {"syfpeithi":50, "mhcflurry":500, "mhcnuggets-class-1":500, "mhcnuggets-class-2":500, "netmhc":500, "netmhcpan":500, "netmhcii":500, "netmhciipan":500}
     # Define binders based on the rank metric for netmhc family tools
     # NOTE these recommended thresholds might change in the future with new versions of the tools
-    if "netmhc" in ''.join(methods.keys()) and not args.affinity_thresholds:
+    if "netmhc" in ''.join(methods.keys()) and not args.use_affinity_thresholds:
         thresholds.update({"netmhc":2, "netmhcpan":2, "netmhcii":10, "netmhciipan":5})
 
     if args.tool_thresholds:
@@ -1052,14 +1052,14 @@ def __main__():
     # MHC class I or II predictions
     if args.mhcclass is 1:
         if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.affinity_thresholds, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
         else:
             pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     else:
         if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.affinity_thresholds, alleles, up_db, args.identifier, metadata)
+            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
         else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
     # concat dataframes for all peptide lengths
     try:
         complete_df = pd.concat(pred_dataframes, sort=True)
