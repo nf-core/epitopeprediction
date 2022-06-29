@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#121](https://github.com/nf-core/epitopeprediction/pull/121) - Extend full test to cover more test cases
 - [#122](https://github.com/nf-core/epitopeprediction/pull/122) - Update to nf-core template v2.2
 - [#123](https://github.com/nf-core/epitopeprediction/pull/123) - Remove support for outdated external tools `NetMHCII 2.2` and `NetMHCIIpan 3.1`
+- [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use most recent `epytope` release (`3.1.0`)
 
 ### `Fixed`
 
