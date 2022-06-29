@@ -642,7 +642,7 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
     else:
         input_lists += [transcripts]
 
-    attribut_swissprot = "uniprot_swissprot_accession" if reference == 'GRCh37' else 'uniprot_swissprot'
+    attribut_swissprot = "uniprot_swissprot_accession" if reference == 'GRCh37' else 'uniprotswissprot'
 
     tsvselect = []
     for l in input_lists:
@@ -659,12 +659,13 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
 
         tsvselect += [x for x in tsvreader]
 
-    swissProtKey = 'UniProt/SwissProt Accession'
+    swissProtKey = 'UniProt/SwissProt Accession' if reference == 'GRCh37' else 'UniProtKB/Swiss-Prot ID'
 
     if(ENSEMBL):
-        key = 'Ensembl Transcript ID' if reference == 'GRCh37' else 'Transcript ID'
-        protein_key = 'Ensembl Protein ID' if reference == 'GRCh37' else 'Protein ID'
+        key = 'Ensembl Transcript ID' if reference == 'GRCh37' else 'Transcript stable ID'
+        protein_key = 'Ensembl Protein ID' if reference == 'GRCh37' else 'Protein stable ID'
         for dic in tsvselect:
+            print(dic)
             if dic[key] in result:
                 merged = result[dic[key]] + [dic[protein_key]]
                 merged_swissProt = result_swissProt[dic[key]] + [dic[swissProtKey]]
@@ -685,6 +686,7 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
                 result[dic[key]] = [dic['RefSeq Protein ID [e.g. NP_001005353]']]
                 result_swissProt[dic[key]] = [dic[swissProtKey]]
 
+    print(result)
     return result, result_swissProt
 
 
@@ -987,7 +989,7 @@ def __main__():
 
     metadata = []
     proteins = []
-    references = {'GRCh37': 'http://feb2014.archive.ensembl.org', 'GRCh38': 'http://dec2016.archive.ensembl.org'}
+    references = {'GRCh37': 'http://feb2014.archive.ensembl.org', 'GRCh38': 'http://mar2017.archive.ensembl.org'}
     global transcriptProteinMap
     global transcriptSwissProtMap
 
