@@ -665,7 +665,6 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
         key = 'Ensembl Transcript ID' if reference == 'GRCh37' else 'Transcript stable ID'
         protein_key = 'Ensembl Protein ID' if reference == 'GRCh37' else 'Protein stable ID'
         for dic in tsvselect:
-            print(dic)
             if dic[key] in result:
                 merged = result[dic[key]] + [dic[protein_key]]
                 merged_swissProt = result_swissProt[dic[key]] + [dic[swissProtKey]]
@@ -686,7 +685,6 @@ def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference)
                 result[dic[key]] = [dic['RefSeq Protein ID [e.g. NP_001005353]']]
                 result_swissProt[dic[key]] = [dic[swissProtKey]]
 
-    print(result)
     return result, result_swissProt
 
 
