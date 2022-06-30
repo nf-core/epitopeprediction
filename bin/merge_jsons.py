@@ -42,12 +42,9 @@ def __main__():
 
     # read in json reports
     data = dict()
-    thresholds = dict()
     if args.single_input:
         with open(args.single_input, "r") as infile:
             json_content = json.load(infile)
-            # thresholds is the same for all runs of one sample
-            thresholds.update(json_content["tool_thresholds"])
             data = combine_dicts(data, json_content)
 
     else:
@@ -55,13 +52,12 @@ def __main__():
             if file.endswith(".json"):
                 with open(os.path.join(args.input, file), "r") as infile:
                     json_content = json.load(infile)
-                    # thresholds is the same for all runs of one sample
-                    thresholds.update(json_content["tool_thresholds"])
                     data = combine_dicts(data, json_content)
 
     # merge and write json report
     data["prediction_methods"] = "".join(set(list(flatten(data["prediction_methods"]))))
-    data["tool_thresholds"] = thresholds
+    # tool thresholds is the same for all runs i.e. for all JSON parts
+    data["tool_thresholds"] = json_content["tool_thresholds"]
     data["number_of_unique_peptides"] = len(
         set(list(flatten(data["number_of_unique_peptides"])))
     )
