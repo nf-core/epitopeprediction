@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#145](https://github.com/nf-core/epitopeprediction/pull/145) - Add functionality for handling gzipped VCF files for [#143](https://github.com/nf-core/epitopeprediction/issues/143)
 - [#155](https://github.com/nf-core/epitopeprediction/pull/155) - Add functionality for splitting input VCF files by the number of variants [#140](https://github.com/nf-core/epitopeprediction/issues/140)
+- [#161](https://github.com/nf-core/epitopeprediction/pull/161) - Add rank values for prediction threshold (as default) and parameter `use_affinity_thresholds` to use affinity thresholds instead [#160](https://github.com/nf-core/epitopeprediction/issues/160)
 
 ### `Changed`
 
