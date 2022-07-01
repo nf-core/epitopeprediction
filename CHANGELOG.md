@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Changed`
 
 - [#152](https://github.com/nf-core/epitopeprediction/pull/152) - Update MultiQC from 1.11 to 1.12
+- [#163](https://github.com/nf-core/epitopeprediction/pull/163) - Save applied tool thresholds in prediction report
 
 ### `Fixed`
 
