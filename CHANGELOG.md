@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Changed`
 
 - [#152](https://github.com/nf-core/epitopeprediction/pull/152) - Update MultiQC from 1.11 to 1.12
+- [#158](https://github.com/nf-core/epitopeprediction/pull/158) - CI tests for non-free tools are not run on PR to `dev`(the secret is not available there).
 - [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use most recent `epytope` release (`3.1.0`)
 - [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use more recent `Ensembl BioMart` archive release for `GRCh38` (`Ensembl 88`)
 - [#163](https://github.com/nf-core/epitopeprediction/pull/163) - Save applied tool thresholds in prediction report
