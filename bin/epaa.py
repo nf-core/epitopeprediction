@@ -1162,6 +1162,7 @@ def __main__():
     complete_df.fillna('')
     complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
 
+    statistics['tool_thresholds'] = thresholds
     statistics['number_of_predictions'] = len(complete_df)
     statistics['number_of_binders'] = len(pos_predictions)
     statistics['number_of_nonbinders'] = len(neg_predictions)
