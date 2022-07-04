@@ -1,7 +1,7 @@
 process EPYTOPE_SHOW_SUPPORTED_MODELS {
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::epytope=3.0.0" : null)
+    conda (params.enable_conda ? "bioconda::epytope=3.1.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/epytope:3.1.0--pyh5e36f6f_0' :
         'quay.io/biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
