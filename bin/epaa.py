@@ -1052,16 +1052,16 @@ def __main__():
         else:
             pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
 
-    no_predictions = False
     # concat dataframes for all peptide lengths
     try:
         complete_df = pd.concat(pred_dataframes, sort=True)
         # replace method names with method names with version
         # complete_df.replace({'method': methods}, inplace=True)
         complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
+        predictions_available = True
     except:
         complete_df = pd.DataFrame()
-        no_predictions = True
+        predictions_available = False
         logger.error("No predictions available.")
 
 
@@ -1140,7 +1140,7 @@ def __main__():
             complete_df['wt ligand score'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 0, True), axis=1)
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
     # write mutated protein sequences to fasta file
-    if args.fasta_output and not no_predictions:
+    if args.fasta_output and predictions_available:
         with open('{}_prediction_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
             for p in proteins:
                 variants = []
@@ -1155,7 +1155,8 @@ def __main__():
 
     # write dataframe to tsv
     complete_df.fillna('')
-    if not no_predictions:
+    print(predictions_available)
+    if predictions_available:
         complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
 
     statistics['number_of_predictions'] = len(complete_df)
