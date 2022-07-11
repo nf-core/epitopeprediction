@@ -56,7 +56,7 @@ process EXTERNAL_TOOLS_IMPORT {
     # MODIFY perl location in perl script for netmhcIIpan
     if [ "$toolname" == "netmhciipan" ]; then
         sed -i.bak \
-        -e 's_bin/perl.*\$_local/bin/perl_' "${toolname}/NetMHCIIpan-4.0.pl"
+        -e 's_bin/perl.*\$_local/bin/perl_' "${toolname}/NetMHCIIpan-${toolversion}.pl"
     fi
     #
     # VALIDATE THE CHECKSUM OF THE DOWNLOADED MODEL DATA
