@@ -52,7 +52,7 @@ def __main__():
                     data = combine_dicts(data, json.load(infile))
 
     # merge and write json report
-    data["prediction_methods"] = "".join(set(list(flatten(data["prediction_methods"]))))
+    data["prediction_methods"] = ",".join(set(list(flatten(data["prediction_methods"]))))
     data["number_of_unique_peptides"] = len(
         set(list(flatten(data["number_of_unique_peptides"])))
     )
