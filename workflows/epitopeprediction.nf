@@ -242,6 +242,10 @@ workflow EPITOPEPREDICTION {
             else if (params["${tool_name}_path"])
             {
                 def external_tool_version = it.split('-')[1]
+                if (! external_tools_meta[tool_name].keySet().contains(external_tool_version)) {
+                    exit 1, "Unsupported external prediction tool version specified: ${tool_name} ${external_tool_version}"
+                }
+
                 def entry = external_tools_meta[tool_name][external_tool_version]
                 if (params["netmhc_system"] == 'darwin') {
                     entry = external_tools_meta["${tool_name}_darwin"][external_tool_version]

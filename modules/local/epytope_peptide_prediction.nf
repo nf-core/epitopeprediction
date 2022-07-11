@@ -3,8 +3,8 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     conda (params.enable_conda ? "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.1.0 conda-forge::gawk=5.1.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:6c5a7c166277372052f332fd7b94cacc43f5520c-0' :
-        'quay.io/biocontainers/mulled-v2-3774d4f6160bf3a5a53d47875424448104ba6d22:6c5a7c166277372052f332fd7b94cacc43f5520c-0' }"
+        'https://depot.galaxyproject.org/singularity/mulled-v2-11bbf0d242ea96f7b9c08d5b5bc26f2cd5ac5943:3419f320edefe6077631798f50d7bd4f8dc4763f-0' :
+        'quay.io/biocontainers/mulled-v2-11bbf0d242ea96f7b9c08d5b5bc26f2cd5ac5943:3419f320edefe6077631798f50d7bd4f8dc4763f-0' }"
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
