@@ -1066,9 +1066,12 @@ def __main__():
         # replace method names with method names with version
         # complete_df.replace({'method': methods}, inplace=True)
         complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
+        predictions_available = True
     except:
         complete_df = pd.DataFrame()
+        predictions_available = False
         logger.error("No predictions available.")
+
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
@@ -1145,7 +1148,7 @@ def __main__():
             complete_df['wt ligand score'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 0, True), axis=1)
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
     # write mutated protein sequences to fasta file
-    if args.fasta_output:
+    if args.fasta_output and predictions_available:
         with open('{}_prediction_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
             for p in proteins:
                 variants = []
@@ -1160,7 +1163,8 @@ def __main__():
 
     # write dataframe to tsv
     complete_df.fillna('')
-    complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
+    if predictions_available:
+        complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
 
     statistics['tool_thresholds'] = thresholds
     statistics['number_of_predictions'] = len(complete_df)
