@@ -1164,7 +1164,7 @@ def __main__():
     # write dataframe to tsv
     complete_df.fillna('')
     if predictions_available:
-        complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
+        complete_df.to_csv("{}_prediction_result.tsv".format(args.identifier), '\t', index=False)
 
     statistics['tool_thresholds'] = thresholds
     statistics['number_of_predictions'] = len(complete_df)
