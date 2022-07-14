@@ -56,6 +56,8 @@ def __main__():
 
     # merge and write json report
     data["prediction_methods"] = ",".join(set(list(flatten(data["prediction_methods"]))))
+    # tool thresholds is the same for all runs i.e. for all JSON parts
+    data["tool_thresholds"] = json_content["tool_thresholds"]
     data["number_of_unique_peptides"] = len(
         set(list(flatten(data["number_of_unique_peptides"])))
     )
