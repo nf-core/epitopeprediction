@@ -23,11 +23,12 @@ workflow INPUT_CHECK {
 // Function to get list of [ meta, filenames ]
 def get_samplesheet_paths(LinkedHashMap row) {
 
-    def allele_string = generate_allele_string(row.alleles)
+    def allele_string = generate_allele_string(row.alleles, row.mhc_class)
     def type = determine_input_type(row.filename)
     def meta = [:]
     meta.sample         = row.sample
     meta.alleles        = allele_string
+    meta.mhcclass       = row.mhc_class
     meta.inputtype      = type
 
     def array = []
@@ -39,11 +40,17 @@ def get_samplesheet_paths(LinkedHashMap row) {
     return array
 }
 
-def generate_allele_string(String alleles) {
+def generate_allele_string(String alleles, String mhcclass) {
     // Collect the allele information from the file
     def allele_string
+    valid_class1_loci = ['A*','B*','C*','E*','G*']
+    valid_class2_loci = ['DR','DP','DQ']
     if ( alleles.endsWith(".txt") || alleles.endsWith(".alleles") )  {
         allele_string = file(alleles).readLines().join(';')
+        if ((mhcclass == 'I' & valid_class2_loci.any { allele_string.contains(it)}) |
+        (mhcclass == 'II' & valid_class1_loci.any { allele_string.contains(it)})) {
+            exit 1, "ERROR: Please check input samplesheet -> invalid mhc class and allele combination found!\n${row.Filename}"
+        }
     }
     // or assign the information to a new variable
     else {

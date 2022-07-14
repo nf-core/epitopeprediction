@@ -16,9 +16,13 @@ process EPYTOPE_GENERATE_PEPTIDES {
 
     script:
     def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}_peptides"
+    def min_length = (meta.mhcclass == "I") ? params.min_peptide_length : params.min_peptide_length_class2
+    def max_length = (meta.mhcclass == "I") ? params.max_peptide_length : params.max_peptide_length_class2
 
     """
     gen_peptides.py --input ${raw} \\
+    --max_length ${max_length} \\
+    --min_length ${min_length} \\
     --output '${prefix}.tsv' \\
     $task.ext.args
 
