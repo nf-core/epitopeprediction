@@ -1049,17 +1049,12 @@ def __main__():
                 else:
                     raise ValueError('Tool ' + tool +' in specified threshold file is not supported')
 
-    # MHC class I or II predictions
-    if args.mhcclass is 'I':
-        if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
-        else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+    # Distinguish between prediction for peptides and variants
+    if args.peptides:
+        pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
     else:
-        if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
-        else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+        pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+
     # concat dataframes for all peptide lengths
     try:
         complete_df = pd.concat(pred_dataframes, sort=True)
