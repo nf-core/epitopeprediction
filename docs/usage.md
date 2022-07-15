@@ -67,12 +67,12 @@ GBM_1,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,I,gbm_1_proteins.vcf
 GBM_2,alleles.txt,I,gbm_2_variants.vcf
 ```
 
-| Column     | Description                                                                                                                                                                            |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`   | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `alleles`  | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.
-| `mhc_class`  | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II` and `H-2` (mouse).                                             |
-| `filename` | Full path to a variant/peptide or protein file (".vcf", ".vcf.gz", "tsv", "fasta", or "GSvar").                                                                                        |
+| Column      | Description                                                                                                                                                                            |
+| ----------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sample`    | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
+| `alleles`   | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.                                        |
+| `mhc_class` | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II` and `H-2` (mouse).                                                                   |
+| `filename`  | Full path to a variant/peptide or protein file (".vcf", ".vcf.gz", "tsv", "fasta", or "GSvar").                                                                                        |
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
 
