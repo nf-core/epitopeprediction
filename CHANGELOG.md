@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#145](https://github.com/nf-core/epitopeprediction/pull/145) - Add functionality for handling gzipped VCF files for [#143](https://github.com/nf-core/epitopeprediction/issues/143)
 - [#155](https://github.com/nf-core/epitopeprediction/pull/155) - Add functionality for splitting input VCF files by the number of variants [#140](https://github.com/nf-core/epitopeprediction/issues/140)
 - [#161](https://github.com/nf-core/epitopeprediction/pull/161) - Add rank values for prediction threshold (as default) and parameter `use_affinity_thresholds` to use affinity thresholds instead [#160](https://github.com/nf-core/epitopeprediction/issues/160)
+- [#168](https://github.com/nf-core/epitopeprediction/pull/168) - Add parameters to specify MHC class II peptide length (`max_peptide_length_class2` and `min_peptide_length_class2`)
 
 ### `Changed`
 
@@ -18,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use most recent `epytope` release (`3.1.0`)
 - [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use more recent `Ensembl BioMart` archive release for `GRCh38` (`Ensembl 88`)
 - [#163](https://github.com/nf-core/epitopeprediction/pull/163) - Save applied tool thresholds in prediction report
+- [#168](https://github.com/nf-core/epitopeprediction/pull/168) - Use MHC class information specified in sample sheet
 
 ### `Fixed`
 
