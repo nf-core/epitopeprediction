@@ -45,11 +45,13 @@ Protein input is supported in `FASTA` format.
 The `sample` identifiers are used to determine which sample belongs to the input file. Below is an example for the same sample with different input files that can be used:
 
 ```console
-sample,alleles,filename
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_variants.vcf(.gz)
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_peptides.tsv
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_proteins.fasta
+sample,alleles,mhc_class,filename
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf(.gz)
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_peptides.tsv
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_proteins.fasta
 ```
+
+You can also perform predictions for multiple MHC classes (`I`, `II` and `H-2`) in the same run by specifying the value in the corresponding column (one value per row). Please make sure to select the alleles accordingly.
 
 ### Full samplesheet
 
@@ -58,17 +60,18 @@ The pipeline accepts allele information in a file or as string in the sampleshee
 A final samplesheet file consisting of both allele data and different input types of two samples may look something like the one below.
 
 ```console
-sample,alleles,filename
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_variants.vcf
-GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,gbm_1_peptides.vcf
-GBM_1,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,gbm_1_proteins.vcf
-GBM_2,alleles.txt,gbm_2_variants.vcf
+sample,alleles,mhc_class,filename
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
+GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.vcf
+GBM_1,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,I,gbm_1_proteins.vcf
+GBM_2,alleles.txt,I,gbm_2_variants.vcf
 ```
 
 | Column     | Description                                                                                                                                                                            |
 | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sample`   | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. Spaces in sample names are automatically converted to underscores (`_`). |
-| `alleles`  | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.                                        |
+| `alleles`  | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.
+| `mhc_class`  | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II` and `H-2` (mouse).                                             |
 | `filename` | Full path to a variant/peptide or protein file (".vcf", ".vcf.gz", "tsv", "fasta", or "GSvar").                                                                                        |
 
 An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
