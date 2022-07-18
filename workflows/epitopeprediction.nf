@@ -187,15 +187,13 @@ workflow EPITOPEPREDICTION {
 
     // perform the check requested models on the variant files
     EPYTOPE_CHECK_REQUESTED_MODELS(
-        ch_samples_uncompressed.variant
-            .mix(ch_samples_uncompressed.protein),
+        ch_samples_uncompressed.variant,
         ch_prediction_tool_versions
     )
 
     // perform the check requested models on the protein files
     EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN(
-        ch_samples_uncompressed.variant
-            .mix(ch_samples_uncompressed.protein),
+        ch_samples_uncompressed.protein,
         ch_prediction_tool_versions
     )
 
