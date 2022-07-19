@@ -10,13 +10,15 @@ process CAT_FILES {
     tuple val(meta), path(input)
 
     output:
-    tuple val(meta), path("*_prediction.*"), emit: output
+    tuple val(meta), path("*_prediction*"), emit: output
 
     script:
     def fileExt = input[0].name.tokenize("\\.")[-1]
-    prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}"
+    def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}"
+    def type = fileExt == "tsv" ? "prediction_result" : "prediction_proteins"
+
 
     """
-    cat $input > ${prefix}_prediction.${fileExt}
+    cat $input > ${prefix}_${type}.${fileExt}
     """
 }

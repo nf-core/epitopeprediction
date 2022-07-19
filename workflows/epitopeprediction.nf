@@ -38,6 +38,7 @@ include { GET_PREDICTION_VERSIONS }                                             
 
 include { EXTERNAL_TOOLS_IMPORT }                                                   from '../modules/local/external_tools_import'
 
+include { EPYTOPE_CHECK_REQUESTED_MODELS as EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN } from '../modules/local/epytope_check_requested_models'
 include { EPYTOPE_CHECK_REQUESTED_MODELS as EPYTOPE_CHECK_REQUESTED_MODELS_PEP }    from '../modules/local/epytope_check_requested_models'
 include { EPYTOPE_CHECK_REQUESTED_MODELS }                                          from '../modules/local/epytope_check_requested_models'
 include { EPYTOPE_SHOW_SUPPORTED_MODELS }                                           from '../modules/local/epytope_show_supported_models'
@@ -184,20 +185,15 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
 
-    // perform the check requested models on the protein and variant files
-    // we have to perform it on all alleles that are given in the sample sheet
-    ch_variants_protein_models = ch_samples_uncompressed
-        .variant
-        .mix(ch_samples_uncompressed.protein)
-        .map { meta_data, file -> meta_data.alleles }
-        .splitCsv(sep: ';')
-        .collect()
-        .toList()
-        .combine(ch_samples_uncompressed.variant.first())
-        .map { it -> tuple(it[0].unique(), it[-1])}
-
+    // perform the check requested models on the variant files
     EPYTOPE_CHECK_REQUESTED_MODELS(
-        ch_variants_protein_models,
+        ch_samples_uncompressed.variant,
+        ch_prediction_tool_versions
+    )
+
+    // perform the check requested models on the protein files
+    EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN(
+        ch_samples_uncompressed.protein,
         ch_prediction_tool_versions
     )
 
@@ -205,7 +201,7 @@ workflow EPITOPEPREDICTION {
     EPYTOPE_CHECK_REQUESTED_MODELS_PEP(
         ch_samples_uncompressed
             .peptide
-            .map { meta_data, input_file -> tuple( meta_data.alleles.split(';'), input_file ) },
+            .map { meta_data, input_file -> tuple( meta_data, input_file ) },
         ch_prediction_tool_versions
     )
 
@@ -214,6 +210,7 @@ workflow EPITOPEPREDICTION {
         .out
         .log
         .mix( EPYTOPE_CHECK_REQUESTED_MODELS_PEP.out.log )
+        .mix (EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN.out.log )
         .subscribe {
             model_log_file = file( it, checkIfExists: true )
             def lines = model_log_file.readLines()
@@ -242,6 +239,10 @@ workflow EPITOPEPREDICTION {
             else if (params["${tool_name}_path"])
             {
                 def external_tool_version = it.split('-')[1]
+                if (! external_tools_meta[tool_name].keySet().contains(external_tool_version)) {
+                    exit 1, "Unsupported external prediction tool version specified: ${tool_name} ${external_tool_version}"
+                }
+
                 def entry = external_tools_meta[tool_name][external_tool_version]
                 if (params["netmhc_system"] == 'darwin') {
                     entry = external_tools_meta["${tool_name}_darwin"][external_tool_version]

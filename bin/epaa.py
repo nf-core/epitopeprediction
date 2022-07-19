@@ -957,7 +957,7 @@ def __main__():
     parser.add_argument('-g', "--germline_mutations", help="Germline variants")
     parser.add_argument('-i', "--identifier", help="Dataset identifier")
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
-    parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II", type=int)
+    parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
     parser.add_argument('-l', "--max_length", help="Maximum peptide length")
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
     parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
@@ -1049,26 +1049,24 @@ def __main__():
                 else:
                     raise ValueError('Tool ' + tool +' in specified threshold file is not supported')
 
-    # MHC class I or II predictions
-    if args.mhcclass is 1:
-        if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
-        else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+    # Distinguish between prediction for peptides and variants
+    if args.peptides:
+        pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
     else:
-        if args.peptides:
-            pred_dataframes, statistics = make_predictions_from_peptides(peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata)
-        else:
-            pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+        pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(vl, methods, thresholds, args.use_affinity_thresholds, alleles, int(args.min_length), int(args.max_length) + 1, ma, up_db, args.identifier, metadata, transcriptProteinMap)
+
     # concat dataframes for all peptide lengths
     try:
         complete_df = pd.concat(pred_dataframes, sort=True)
         # replace method names with method names with version
         # complete_df.replace({'method': methods}, inplace=True)
         complete_df['method'] = complete_df['method'].apply(lambda x : x.lower() + '-' + methods[x.lower()] )
+        predictions_available = True
     except:
         complete_df = pd.DataFrame()
+        predictions_available = False
         logger.error("No predictions available.")
+
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
@@ -1145,7 +1143,7 @@ def __main__():
             complete_df['wt ligand score'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 0, True), axis=1)
             complete_df['wt ligand intensity'] = complete_df.apply(lambda row: create_ligandomics_column_value_for_result(row, lig_id, 1, True), axis=1)
     # write mutated protein sequences to fasta file
-    if args.fasta_output:
+    if args.fasta_output and predictions_available:
         with open('{}_prediction_proteins.fasta'.format(args.identifier), 'w') as protein_outfile:
             for p in proteins:
                 variants = []
@@ -1160,7 +1158,8 @@ def __main__():
 
     # write dataframe to tsv
     complete_df.fillna('')
-    complete_df.to_csv("{}_prediction_results.tsv".format(args.identifier), '\t', index=False)
+    if predictions_available:
+        complete_df.to_csv("{}_prediction_result.tsv".format(args.identifier), '\t', index=False)
 
     statistics['tool_thresholds'] = thresholds
     statistics['number_of_predictions'] = len(complete_df)
