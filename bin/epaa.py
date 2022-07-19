@@ -102,7 +102,7 @@ def read_GSvar(filename, pass_only=True):
         tsvreader = csv.DictReader((row for row in tsvfile if not row.startswith('##')), delimiter='\t')
         for row in tsvreader:
             if not check_min_req_GSvar(row):
-                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row))
+                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row)+". \n Have you annotated your GSVar file with SnpEff?")
                 continue
             lines.append(row)
 
@@ -277,6 +277,9 @@ def read_vcf(filename, pass_only=True):
                 types = []
                 for annraw in record.INFO['ANN']:  # for each ANN only add a new coding! see GSvar
                     annots = annraw.split('|')
+                    if len(annots) != 16:
+                        logger.warning("read_vcf: Omitted row! Mandatory columns not present in annotation field (ANN). \n Have you annotated your VCF file with SnpEff?")
+                        continue
                     obs, a_mut_type, impact, a_gene, a_gene_id, feature_type, transcript_id, exon, tot_exon, trans_coding, prot_coding, cdna, cds, aa, distance, warnings = annots
                     types.append(a_mut_type)
 
