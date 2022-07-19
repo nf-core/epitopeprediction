@@ -219,15 +219,15 @@ def make_dir(path):
 def check_samplesheet(file_in, file_out):
 
     """
-    sample,alleles,filename
-    GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
-    GBM_2,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
+    sample,alleles,mhc_class,filename
+    GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
+    GBM_2,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
 
     or
 
-    sample,alleles,filename
-    GBM_1,gbm_1_alleles.txt,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
-    GBM_2,gbm_2_alleles.txt,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
+    sample,alleles,mhc_class,filename
+    GBM_1,gbm_1_alleles.txt,I,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
+    GBM_2,gbm_2_alleles.txt,I,gbm_2_anno.vcf|gbm_2_peps.tsv|gbm_2_prot.fasta
 
 
     where the FileName column contains EITHER a vcf/tsv file with genomic variants, a tsv file (peptides), or a fasta file (proteins)
@@ -246,9 +246,12 @@ def check_samplesheet(file_in, file_out):
     with open(file_in, "r") as fin:
 
         ## Check header
-        COL_NUM = 3
-        HEADER = ["sample", "alleles", "filename"]
+        COL_NUM = 4
+        HEADER = ["sample", "alleles", "mhc_class", "filename"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
+        valid_classes = "I,II,H-2"
+        valid_class1_loci = ['A*','B*','C*','E*','G*']
+        valid_class2_loci = ['DR','DP','DQ']
         if header[: len(HEADER)] != HEADER:
             print("ERROR: Please check samplesheet header -> {} != {}".format("\t".join(header), "\t".join(HEADER)))
             sys.exit(1)
@@ -272,13 +275,21 @@ def check_samplesheet(file_in, file_out):
                 )
 
             ## Check sample name entries
-            sample, alleles, filename = lspl[: len(HEADER)]
+            sample, alleles, mhcclass, filename = lspl[: len(HEADER)]
 
             ## Check given file types
             if not filename.lower().endswith((".vcf", ".vcf.gz", ".tsv", ".GSvar", ".fasta", ".txt")):
                 print_error("Samplesheet contains unsupported file type!", "Line", line)
 
-            sample_info = [sample, alleles, filename]
+            # Check given mhc classes
+            if mhcclass not in valid_classes:
+                print_error("Samplesheet contains unsupported mhc class!", "Line", line)
+
+            # Check mhc class and allele combintion
+            if  not os.path.isfile(alleles) and mhcclass == 'I' and any(substring in alleles for substring in valid_class2_loci) or mhcclass == 'II' and any(substring in alleles for substring in valid_class1_loci):
+                print_error("Samplesheet contains invalid mhc class and allele combination!", "Line", line)
+
+            sample_info = [sample, alleles, mhcclass, filename]
             ## Create sample mapping dictionary
             if sample not in sample_run_dict:
                 sample_run_dict[sample] = [sample_info]
@@ -293,7 +304,7 @@ def check_samplesheet(file_in, file_out):
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
         with open(file_out, "w") as fout:
-            fout.write(",".join(["sample", "alleles", "filename"]) + "\n")
+            fout.write(",".join(["sample", "alleles","mhc_class","filename"]) + "\n")
 
             for sample in sorted(sample_run_dict.keys()):
                 for val in sample_run_dict[sample]:

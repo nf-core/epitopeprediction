@@ -4,6 +4,11 @@
 process EXTERNAL_TOOLS_IMPORT {
     label 'process_low'
 
+    conda (params.enable_conda ? "conda-forge::coreutils=9.1" : null)
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
+        'biocontainers/biocontainers:v1.2.0_cv1' }"
+
     input:
     tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname)
 
@@ -46,8 +51,13 @@ process EXTERNAL_TOOLS_IMPORT {
     sed -i.bak \
         -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
         -e "s_/scratch_/tmp_" \
-        -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_" "${toolname}/${toolbinaryname}"
+        -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_ " "${toolname}/${toolbinaryname}"
 
+    # MODIFY perl location in perl script for netmhcIIpan
+    if [ "$toolname" == "netmhciipan" ]; then
+        sed -i.bak \
+        -e 's_bin/perl.*\$_local/bin/perl_' "${toolname}/NetMHCIIpan-${toolversion}.pl"
+    fi
     #
     # VALIDATE THE CHECKSUM OF THE DOWNLOADED MODEL DATA
     #
@@ -66,5 +76,6 @@ process EXTERNAL_TOOLS_IMPORT {
     # CREATE VERSION FILE
     #
     echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
+
     """
 }
