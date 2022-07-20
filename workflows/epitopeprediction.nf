@@ -449,7 +449,7 @@ workflow EPITOPEPREDICTION {
     ch_multiqc_files = ch_multiqc_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
 
     MULTIQC (
-        ch_multiqc_files.collect(), ch_multiqc_config
+        ch_multiqc_files.collect(), ch_configs_mqc.collect()
     )
     multiqc_report = MULTIQC.out.report.toList()
 }
