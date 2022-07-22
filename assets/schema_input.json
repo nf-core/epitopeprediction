@@ -31,6 +31,6 @@
                 "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa', '.txt'"
             }
         },
-        "required": ["sample", "alleles", "filename"]
+        "required": ["sample", "alleles", "mhc_class", "filename"]
     }
 }
