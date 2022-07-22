@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#157](https://github.com/nf-core/epitopeprediction/pull/157) - Add JSON config for external prediction tools
 - [#161](https://github.com/nf-core/epitopeprediction/pull/161) - Add rank values for prediction threshold (as default) and parameter `use_affinity_thresholds` to use affinity thresholds instead [#160](https://github.com/nf-core/epitopeprediction/issues/160)
 - [#165](https://github.com/nf-core/epitopeprediction/pull/165) - Add tools to full size test, add MHC class II to MHCnuggets test
+- [#166](https://github.com/nf-core/epitopeprediction/pull/166) - Add support for more non-free `NetMHC` family tools including `NetMHCpan 4.1`, `NetMHCII 2.2`(MacOS), `NetMHCII 2.3`, `NetMHCIIpan 4.0`, and `NetMHCIIpan 4.1`
 - [#168](https://github.com/nf-core/epitopeprediction/pull/168) - Add parameters to specify MHC class II peptide length (`max_peptide_length_class2` and `min_peptide_length_class2`)
 - [#170](https://github.com/nf-core/epitopeprediction/pull/170) - Add `binder` column (binder to any specified MHC allele)
 
