@@ -27,7 +27,7 @@
             },
             "mhc_class": {
                 "type": "string",
-                "pattern":"^(I|II|H-2)$",
+                "pattern": "^(I|II|H-2)$",
                 "errorMessage": "The MHC class must be provided. Valid values: "
             },
             "filename": {
