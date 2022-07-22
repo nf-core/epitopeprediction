@@ -71,7 +71,6 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     epaa.py --identifier ${splitted.baseName} \
         --alleles '${meta.alleles}' \
-        --mhcclass '${meta.mhcclass}' \
         --tools '${tools_to_use}' \
         --max_length ${max_length} \
         --min_length ${min_length} \
