@@ -1159,6 +1159,8 @@ def __main__():
                 protein_outfile.write('>{}:{}:{}\n'.format(p.transcript_id, aas, cds))
                 protein_outfile.write('{}\n'.format(str(p)))
 
+    complete_df["binder"] = complete_df[[col for col in complete_df.columns if 'binder' in col]].any( axis=1)
+
     # write dataframe to tsv
     complete_df.fillna('')
     if predictions_available:
