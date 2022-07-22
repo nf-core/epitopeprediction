@@ -960,7 +960,6 @@ def __main__():
     parser.add_argument('-g', "--germline_mutations", help="Germline variants")
     parser.add_argument('-i', "--identifier", help="Dataset identifier")
     parser.add_argument('-p', "--peptides", help="File with one peptide per line")
-    parser.add_argument('-c', "--mhcclass", default=1, help="MHC class I or II")
     parser.add_argument('-l', "--max_length", help="Maximum peptide length")
     parser.add_argument('-ml', "--min_length", help="Minimum peptide length")
     parser.add_argument('-t', "--tools", help="Tools used for peptide predictions", required=True, type=str)
