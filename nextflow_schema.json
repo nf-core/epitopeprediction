@@ -197,22 +197,22 @@
                 "netmhcpan_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 (Linux) here."
+                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
                 },
                 "netmhc_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 (Linux) here."
+                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 here."
                 },
                 "netmhciipan_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 (Linux) here."
+                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
                 },
                 "netmhcii_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 (Linux) here."
+                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 here."
                 }
             }
         },

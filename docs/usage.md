@@ -95,6 +95,19 @@ work                # Directory containing the nextflow working files
 # Other nextflow hidden files, eg. history of pipeline runs and old logs.
 ```
 
+### Running the pipeline with external prediction tools
+
+The pipeline can be used with external prediction tools that cannot be provided with the pipeline due to license restrictions.
+
+Currently we do support prediction tools of the `netMHC` family. Please refer to the [parameter docs](https://nf-co.re/epitopeprediction/latest/parameters#tools) for the list of supported tools. If one of the external tools is specified, the path to the corresponding tarball has to be specified.
+When using `conda`, the parameter `--netmhc_system` (if the default value `linux` is not applicable) must also be specified.
+
+A typical command is as follows:
+
+```console
+nextflow run nf-core/epitopeprediction --input samplesheet.csv -profile docker --tools netmhcpan-4.1 --netmhciipan_path /path/to/netMHCIIpan-4.0.Linux.tar --outdir <OUTDIR>
+```
+
 ### Updating the pipeline
 
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. After this, it will use the cached version if available - even if the pipeline has been updated since. To ensure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
