@@ -102,7 +102,7 @@ def read_GSvar(filename, pass_only=True):
         tsvreader = csv.DictReader((row for row in tsvfile if not row.startswith('##')), delimiter='\t')
         for row in tsvreader:
             if not check_min_req_GSvar(row):
-                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row)+". \n Have you annotated your GSVar file with SnpEff?")
+                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n"+str(row)+".")
                 continue
             lines.append(row)
 
