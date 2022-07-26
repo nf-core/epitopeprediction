@@ -50,13 +50,6 @@
         }
     },
     "netmhcii": {
-        "2.2": {
-            "version": 2.2,
-            "software_md5": "918b7108a37599887b0725623d0974e6",
-            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCII-2.2/data.tar.gz",
-            "data_md5": "11579b61d3bfe13311f7b42fc93b4dd8",
-            "binary_name": "netMHCII"
-        },
         "2.3": {
             "version": 2.3,
             "software_md5": "48f118c133990c9458ef82fa23ef901c",
@@ -66,13 +59,6 @@
         }
     },
     "netmhcii_darwin": {
-        "2.2": {
-            "version": 2.2,
-            "software_md5": "1dfd0e69346a7e1d6c9b55cfeb70d744",
-            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCII-2.2/data.tar.gz",
-            "data_md5": "11579b61d3bfe13311f7b42fc93b4dd8",
-            "binary_name": "netMHCII"
-        },
         "2.3": {
             "version": 2.3,
             "software_md5": "c944550e4f07a32ac52524a59e5bf89a",

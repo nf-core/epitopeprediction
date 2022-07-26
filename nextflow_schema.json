@@ -113,7 +113,7 @@
                 "tools": {
                     "type": "string",
                     "default": "syfpeithi",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`,`netmhcii-2.2`,`netmhcii-2.3`,`netmhciipan-4.0`,`netmhciipan-4.1`.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`,`netmhcii-2.3`,`netmhciipan-4.0`,`netmhciipan-4.1`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "tool_thresholds": {
