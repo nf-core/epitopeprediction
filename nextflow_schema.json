@@ -154,8 +154,8 @@
                     "description": "Split VCF file into multiple files by number of variants."
                 },
                 "split_by_variants_size": {
-                    "type": "string",
-                    "default": "null",
+                    "type": "integer",
+                    "default": 0,
                     "description": "Number of variants that should be written into one file. Default: number of variants divided by ten"
                 },
                 "split_by_variants_distance": {

@@ -15,7 +15,7 @@ process VARIANT_SPLIT {
 
     script:
 
-    def size_parameter = params.split_by_variants_size ? "--size ${params.split_by_variants_size}" : ''
+    def size_parameter = params.split_by_variants_size != 0 ? "--size ${params.split_by_variants_size}" : ''
     def distance_parameter = params.split_by_variants_distance ? "--distance ${params.split_by_variants_distance}" : ''
 
     """
