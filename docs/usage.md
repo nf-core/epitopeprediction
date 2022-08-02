@@ -105,7 +105,7 @@ When using `conda`, the parameter `--netmhc_system` (if the default value `linux
 A typical command is as follows:
 
 ```console
-nextflow run nf-core/epitopeprediction --input samplesheet.csv -profile docker --tools netmhcpan-4.1 --netmhciipan_path /path/to/netMHCIIpan-4.0.Linux.tar --outdir <OUTDIR>
+nextflow run nf-core/epitopeprediction --input samplesheet.csv -profile docker --tools netmhcpan-4.1 --netmhcpan_path /path/to/netMHCpan-4.1.Linux.tar.gz --outdir <OUTDIR>
 ```
 
 ### Updating the pipeline
