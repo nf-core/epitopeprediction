@@ -15,7 +15,8 @@ process CSVTK_CONCAT {
 
     script:
     """
-    csvtk concat -t $predicted > ${meta.sample}_prediction_result.tsv
+    csvtk concat -t $predicted > ${meta.sample}_prediction_result_unsorted.tmp
+    csvtk sort -k chr:n,length:n ${meta.sample}_prediction_result_unsorted.tmp -t --out-file ${meta.sample}_prediction_result.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
