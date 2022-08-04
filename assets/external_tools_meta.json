@@ -1,0 +1,70 @@
+{
+    "netmhc": {
+        "4.0": {
+            "version": 4.0,
+            "software_md5": "132dc322da1e2043521138637dd31ebf",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHC-4.0/data.tar.gz",
+            "data_md5": "63c646fa0921d617576531396954d633",
+            "binary_name": "netMHC"
+        }
+    },
+    "netmhc_darwin": {
+        "4.0": {
+            "version": 4.0,
+            "software_md5": "43519de644c67ee4c8ee04c673861568",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHC-4.0/data.tar.gz",
+            "data_md5": "63c646fa0921d617576531396954d633",
+            "binary_name": "netMHC"
+        }
+    },
+    "netmhcpan": {
+        "4.0": {
+            "version": 4.0,
+            "software_md5": "94aa60f3dfd9752881c64878500e58f3",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Linux.tar.gz",
+            "data_md5": "26cbbd99a38f6692249442aeca48608f",
+            "binary_name": "netMHCpan"
+        },
+        "4.1": {
+            "version": 4.1,
+            "software_md5": "105210d3de5525076347973e9391131c",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCpan-4.1/data.tar.gz",
+            "data_md5": "4bdd3944cb4c5b8ba4d8900dae074c85",
+            "binary_name": "netMHCpan"
+        }
+    },
+    "netmhcpan_darwin": {
+        "4.0": {
+            "version": 4.0,
+            "software_md5": "042d16b89adcf5656ca4deae06b55cc6",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCpan-4.0/data.Darwin.tar.gz",
+            "data_md5": "b4eef3c82852d677a98e0f7d753a36e2",
+            "binary_name": "netMHCpan"
+        },
+        "4.1": {
+            "version": 4.0,
+            "software_md5": "5f6eab43feb80a24e32eb02b22e9db5f",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCpan-4.1/data.tar.gz",
+            "data_md5": "4bdd3944cb4c5b8ba4d8900dae074c85",
+            "binary_name": "netMHCpan"
+        }
+    },
+    "netmhciipan": {
+        "4.1": {
+            "version": 4.1,
+            "software_md5": "c70810798334e9f7614899b7ee965a3a",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.0/data.tar.gz",
+            "data_md5": "ec3032cb66aee20ff0f53ff7f1795f47",
+            "binary_name": "netMHCIIpan"
+        }
+    },
+    "netmhciipan_darwin": {
+        "4.1": {
+            "version": 4.1,
+            "software_md5": "eaa25d39710da3a8000a5cfd36707f7b",
+            "data_url": "https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.0/data.tar.gz",
+            "data_md5": "ec3032cb66aee20ff0f53ff7f1795f47",
+            "binary_name": "netMHCIIpan"
+        }
+    }
+}

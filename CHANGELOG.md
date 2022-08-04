@@ -3,22 +3,53 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v2.1.0 - Nordring - 2022-08-02
+
+### `Added`
+
+- [#145](https://github.com/nf-core/epitopeprediction/pull/145) - Add functionality for handling gzipped VCF files for [#143](https://github.com/nf-core/epitopeprediction/issues/143)
+- [#155](https://github.com/nf-core/epitopeprediction/pull/155) - Add functionality for splitting input VCF files by the number of variants [#140](https://github.com/nf-core/epitopeprediction/issues/140)
+- [#157](https://github.com/nf-core/epitopeprediction/pull/157) - Add JSON config for external prediction tools
+- [#161](https://github.com/nf-core/epitopeprediction/pull/161) - Add rank values for prediction threshold (as default) and parameter `use_affinity_thresholds` to use affinity thresholds instead [#160](https://github.com/nf-core/epitopeprediction/issues/160)
+- [#165](https://github.com/nf-core/epitopeprediction/pull/165) - Add tools to full size test, add MHC class II to MHCnuggets test
+- [#166](https://github.com/nf-core/epitopeprediction/pull/166) - Add support for additional non-free `NetMHC` family tools
+- [#168](https://github.com/nf-core/epitopeprediction/pull/168) - Add parameters to specify MHC class II peptide length (`max_peptide_length_class2` and `min_peptide_length_class2`)
+- [#170](https://github.com/nf-core/epitopeprediction/pull/170) - Add `binder` column (binder to any specified MHC allele)
+
+### `Changed`
+
+- [#152](https://github.com/nf-core/epitopeprediction/pull/152) - Update MultiQC from `1.11` to `1.12`
+- [#152](https://github.com/nf-core/epitopeprediction/pull/152) - Merge previous template updates up to `2.3.2`
+- [#153](https://github.com/nf-core/epitopeprediction/pull/153) - Update to nf-core template `2.4`
+- [#158](https://github.com/nf-core/epitopeprediction/pull/158) - CI tests for non-free tools are not run on PR to `dev`(the secret is not available there).
+- [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use most recent `epytope` release (`3.1.0`)
+- [#162](https://github.com/nf-core/epitopeprediction/pull/162) - Use more recent `Ensembl BioMart` archive release for `GRCh38` (`Ensembl 88`)
+- [#163](https://github.com/nf-core/epitopeprediction/pull/163) - Save applied tool thresholds in prediction report
+- [#168](https://github.com/nf-core/epitopeprediction/pull/168) - Use MHC class information specified in sample sheet
+- [#169](https://github.com/nf-core/epitopeprediction/pull/169) - Update MultiQC to `1.13`
+
+### `Fixed`
+
+- [#135](https://github.com/nf-core/epitopeprediction/pull/135) - Fix unique variant annotation field handling [#136](https://github.com/nf-core/epitopeprediction/issues/136)
+- [#144](https://github.com/nf-core/epitopeprediction/pull/144) - Fix VCF file parsing [#142](https://github.com/nf-core/epitopeprediction/issues/142)
+- [#159](https://github.com/nf-core/epitopeprediction/pull/159) - Fix execution for multiple samples of same input type
+
 ## v2.0.0 - Heuberg - 2021-12-20
 
 ### `Added`
 
-- [#73](https://github.com/nf-core/epitopeprediction/pull/73)   - Add support for the non-free `NetMHC` tool family including `NetMHC 4.0`, `NetMHCpan 4.0`, `NetMHCII 2.2`, and `NetMHCIIpan 3.1`
-- [#83](https://github.com/nf-core/epitopeprediction/pull/83)   - Add option for threshold customization
+- [#73](https://github.com/nf-core/epitopeprediction/pull/73) - Add support for the non-free `NetMHC` tool family including `NetMHC 4.0`, `NetMHCpan 4.0`, `NetMHCII 2.2`, and `NetMHCIIpan 3.1`
+- [#83](https://github.com/nf-core/epitopeprediction/pull/83) - Add option for threshold customization
 - [#101](https://github.com/nf-core/epitopeprediction/pull/101) - Add local modules for DSL2 conversion
 
 ### `Changed`
 
-- [#107](https://github.com/nf-core/epitopeprediction/pull/107)  - Merge previous template updates up to `v2.1`
+- [#107](https://github.com/nf-core/epitopeprediction/pull/107) - Merge previous template updates up to `v2.1`
 - [#110](https://github.com/nf-core/epitopeprediction/pull/110), [#113](https://github.com/nf-core/epitopeprediction/pull/113) - Port pipeline to Nextflow DSL2 syntax
 - [#114](https://github.com/nf-core/epitopeprediction/pull/114) - Update `python 2.7` to `python 3.8.9` in `split_peptides.nf` and `merge_json.nf`.
-- [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.4`
+- [#117](https://github.com/nf-core/epitopeprediction/pull/117) - Bump minimal NXF version to `21.10.3`
 - [#121](https://github.com/nf-core/epitopeprediction/pull/121) - Extend full test to cover more test cases
-- [#122](https://github.com/nf-core/epitopeprediction/pull/122) - Update to nf-core template v2.2
+- [#122](https://github.com/nf-core/epitopeprediction/pull/122) - Update to nf-core template `v2.2`
 - [#123](https://github.com/nf-core/epitopeprediction/pull/123) - Remove support for outdated external tools `NetMHCII 2.2` and `NetMHCIIpan 3.1`
 
 ### `Fixed`

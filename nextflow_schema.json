@@ -10,9 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-terminal",
             "description": "Define where the pipeline should find input data and save output data.",
-            "required": [
-                "input"
-            ],
+            "required": ["input", "outdir"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -26,8 +24,8 @@
                 },
                 "outdir": {
                     "type": "string",
-                    "description": "Path to the output directory where the results will be saved.",
-                    "default": "./results",
+                    "format": "directory-path",
+                    "description": "The output directory where the results will be saved. You have to use absolute paths to storage on Cloud infrastructure.",
                     "fa_icon": "fas fa-folder-open"
                 },
                 "email": {
@@ -54,10 +52,7 @@
                     "type": "string",
                     "default": "GRCh37",
                     "help_text": "This defines against which human reference genome the pipeline performs the analysis including the incorporation of genetic variants e.g..",
-                    "enum": [
-                        "GRCh37",
-                        "GRCh38"
-                    ],
+                    "enum": ["GRCh37", "GRCh38"],
                     "description": "Specifies  the human reference genome version."
                 },
                 "proteome": {
@@ -93,16 +88,6 @@
                     "description": "Filter against human proteome.",
                     "help_text": "Specifies that peptides should be filtered against the specified human proteome references."
                 },
-                "mhc_class": {
-                    "type": "integer",
-                    "default": 1,
-                    "description": "MHC class for prediction.",
-                    "help_text": "Specifies whether the predictions should be done for MHC class I or class II.",
-                    "enum": [
-                        1,
-                        2
-                    ]
-                },
                 "max_peptide_length": {
                     "type": "integer",
                     "default": 11,
@@ -115,16 +100,31 @@
                     "description": "Specifies the minimum peptide length.",
                     "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
                 },
+                "max_peptide_length_class2": {
+                    "type": "integer",
+                    "default": 16,
+                    "description": "Specifies the maximum peptide length for MHC class II peptides."
+                },
+                "min_peptide_length_class2": {
+                    "type": "integer",
+                    "default": 15,
+                    "description": "Specifies the minimum peptide length for MHC class II peptides."
+                },
                 "tools": {
                     "type": "string",
                     "default": "syfpeithi",
-                    "help_text": "Specifies the tool(s) to use. Available are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`. Can be combined in a list separated by comma.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`,`netmhciipan-4.1`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "tool_thresholds": {
                     "type": "string",
                     "description": "Specifies tool-specific binder thresholds in a JSON file. This can be used to override the given default binder threshold values.",
-                    "help_text": "Default affinity thresholds to determine whether a peptide is considered as a binder are the following:: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500. Thresholds can be customized in a JSON file: `tool-name:value`"
+                    "help_text": "Default thresholds to determine whether a peptide is considered as a binder are the following: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 2, `netmhcpan` <= 2, `netmhcii` <= 5, `netmhciipan` <= 5. Note that the default threshold for NetMHC tools is based on the rank metric. The remaining predictors thresholds are based on affinities. Thresholds can be customized in a JSON file: `tool-name:value`"
+                },
+                "use_affinity_thresholds": {
+                    "type": "boolean",
+                    "description": "Specifies the affinity metric instead of the rank metric used for determining whether a peptide is considered as a binder.",
+                    "help_text": "Switches the prediction metric of netMHC tools from rank to affinity. Default: `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500."
                 },
                 "wild_type": {
                     "type": "boolean",
@@ -149,6 +149,21 @@
             "description": "Options for optimising the pipeline run execution.",
             "fa_icon": "fas fa-history",
             "properties": {
+                "split_by_variants": {
+                    "type": "boolean",
+                    "description": "Split VCF file into multiple files by number of variants."
+                },
+                "split_by_variants_size": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten"
+                },
+                "split_by_variants_distance": {
+                    "type": "integer",
+                    "default": 110000,
+                    "description": "Number of nucleotides between previous and current variant across split.",
+                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. "
+                },
                 "peptides_split_maxchunks": {
                     "type": "integer",
                     "default": 100,
@@ -169,25 +184,35 @@
             "description": "External MHC binding prediction software that is not shipped with the pipeline.",
             "default": null,
             "properties": {
+                "external_tools_meta": {
+                    "type": "string",
+                    "default": "${projectDir}/assets/external_tools_meta.json",
+                    "description": "Specifies the path to the JSON file with meta information on external prediction tools."
+                },
+                "netmhc_system": {
+                    "type": "string",
+                    "default": "linux",
+                    "description": "Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used."
+                },
                 "netmhcpan_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 (Linux) here."
+                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
                 },
                 "netmhc_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 (Linux) here."
+                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 here."
                 },
                 "netmhciipan_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 (Linux) here."
+                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
                 },
                 "netmhcii_path": {
                     "type": "string",
                     "default": "None",
-                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 (Linux) here."
+                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 here."
                 }
             }
         },
@@ -286,6 +311,15 @@
                     "type": "boolean",
                     "description": "Display help text.",
                     "fa_icon": "fas fa-question-circle",
+                    "hidden": true
+                },
+                "publish_dir_mode": {
+                    "type": "string",
+                    "default": "copy",
+                    "description": "Method used to save pipeline results to output directory.",
+                    "help_text": "The Nextflow `publishDir` option specifies which intermediate files should be saved to the output directory. This option tells the pipeline what method should be used to move these files. See [Nextflow docs](https://www.nextflow.io/docs/latest/process.html#publishdir) for details.",
+                    "fa_icon": "fas fa-copy",
+                    "enum": ["symlink", "rellink", "link", "copy", "copyNoFollow", "move"],
                     "hidden": true
                 },
                 "email_on_fail": {

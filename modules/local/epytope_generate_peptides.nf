@@ -1,11 +1,11 @@
-process FRED2_GENERATEPEPTIDES {
+process EPYTOPE_GENERATE_PEPTIDES {
     label 'process_low'
     tag "${meta.sample}"
 
-    conda (params.enable_conda ? "conda-forge::fred2:2.0.7" : null)
+    conda (params.enable_conda ? "bioconda::epytope=3.1.0" : null)
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/fred2:2.0.7--py_0' :
-        'quay.io/biocontainers/fred2:2.0.7--py_0' }"
+        'https://depot.galaxyproject.org/singularity/epytope:3.1.0--pyh5e36f6f_0' :
+        'quay.io/biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
 
     input:
     tuple val(meta), path(raw)
@@ -16,15 +16,19 @@ process FRED2_GENERATEPEPTIDES {
 
     script:
     def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}_peptides"
+    def min_length = (meta.mhcclass == "I") ? params.min_peptide_length : params.min_peptide_length_class2
+    def max_length = (meta.mhcclass == "I") ? params.max_peptide_length : params.max_peptide_length_class2
 
     """
     gen_peptides.py --input ${raw} \\
+    --max_length ${max_length} \\
+    --min_length ${min_length} \\
     --output '${prefix}.tsv' \\
     $task.ext.args
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fred2: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('Fred2').version)")
+        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
         python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """

@@ -14,9 +14,9 @@ The directories listed below will be created in the results directory after the 
 
 The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes data using the following steps:
 
-* [Epitope Prediction](#epitope-prediction) - Predict MHC-binding peptides
-* [MultiQC](#multiqc) - Aggregate report describing results from the whole pipeline
-* [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
+- [Epitope Prediction](#epitope-prediction) - Predict MHC-binding peptides
+- [MultiQC](#multiqc) - Aggregate report describing results and QC from the whole pipeline
+- [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
 
 ## Epitope Prediction
 
@@ -24,10 +24,10 @@ The pipeline is built using [Nextflow](https://www.nextflow.io/) and processes d
 
 **Output directory: `merged_predictions/`**
 
-* `[input_base_name]_prediction_report.json`
-    * The statistics of the performed prediction in JSON format.
-* `[input_base_name]_prediction_result.tsv`
-    * The predicted epitopes in TSV format for further processing.
+- `[input_base_name]_prediction_report.json`
+  - The statistics of the performed prediction in JSON format.
+- `[input_base_name]_prediction_result.tsv`
+  - The predicted epitopes in TSV format for further processing.
 
 Partial results, e.g. predictions per chromosome or of individual peptide chunks can be found in `predictions/`.
 
@@ -44,48 +44,59 @@ HVYLFLSNL 9 17 3336962 ENSG00000127780 ENST00000248384 ENSP00000248384 SNP syfpe
 An example prediction report looks like this in JSON format:
 
 ```json
-{"prediction_methods": "syfpeithi-1.0", "number_of_unique_peptides_after_filtering": 199, "number_of_nonbinders": 196, "number_of_variants": 0, "number_of_binders": 3, "number_of_unique_peptides": 199, "number_of_unique_binders": 3, "number_of_unique_nonbinders": 196, "number_of_predictions": 199}
+{
+  "prediction_methods": "syfpeithi-1.0",
+  "number_of_unique_peptides_after_filtering": 199,
+  "number_of_nonbinders": 196,
+  "number_of_variants": 0,
+  "number_of_binders": 3,
+  "number_of_unique_peptides": 199,
+  "number_of_unique_binders": 3,
+  "number_of_unique_nonbinders": 196,
+  "number_of_predictions": 199
+}
 ```
 
 The prediction results are given as allele-specific score and affinity values per peptide. The computation of these values depends on the applied prediction method:
 
-* [`Syfpeithi`](http://www.syfpeithi.de) :
-    * **Affinity**: Calculated based on the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
-    * **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
-Peptides are considered binders if the affinity is higher than 50.
-* [`MHCflurry`](https://github.com/openvax/mhcflurry), [`MHCnuggets`](https://github.com/KarchinLab/mhcnuggets) and [`NetMHC` tool family](https://services.healthtech.dtu.dk/):
-    * **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
-    * **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1:  `1-log50000(aff)`.
+- [`Syfpeithi`](http://www.syfpeithi.de) :
+  - **Affinity**: Calculated based on the score as the percentage of the maximum value of the corresponding matrix: `score(peptide) divided by the maximum score of the allele/length-specific matrix * 100`.
+  - **Score**: Sum of the values given by the allele-specific position-specific scoring matrix (PSSM) for the respective peptide sequence.
+    Peptides are considered binders if the affinity is higher than 50.
+- [`MHCflurry`](https://github.com/openvax/mhcflurry), [`MHCnuggets`](https://github.com/KarchinLab/mhcnuggets) and [`NetMHC` tool family](https://services.healthtech.dtu.dk/):
+  - **Affinity**: Predicted IC50 (threshold for binders: `<500 nmol/L`).
+  - **Score**: The provided score is calculated from the log-transformed predicted binding affinity and scaled to an interval of 0 to 1: `1-log50000(aff)`.
 
 When the parameter `--fasta_output` is specified, a `FASTA` file will be generated containing the protein sequences that are affected by the provided genomic variants. The resulting `FASTA` file will contain the wild-type and mutated protein sequences.
 
 **Output directory: `merged_predictions/`**
 
-* `[input_base_name]_prediction.fasta`
-    * The sequences of proteins, affected by provided variants, in FASTA format.
+- `[input_base_name]_prediction.fasta`
+  - The sequences of proteins, affected by provided variants, in FASTA format.
 
 ### Supported models
 
-When running the pipeline using the `--show_supported_models` parameter,  information about supported models for the available predictor tool versions will be written to the results folder.
+When running the pipeline using the `--show_supported_models` parameter, information about supported models for the available predictor tool versions will be written to the results folder.
 
 **Output directory: `supported_models/`**
 
-* `[tool].[version].supported_alleles.txt`
-    * A list of all supported alleles by the corresponding predictor method.
-* `[tool].[version].supported_lengths.txt`
-    * A list of all supported peptide lengths by the corresponding predictor method.
+- `[tool].[version].supported_alleles.txt`
+  - A list of all supported alleles by the corresponding predictor method.
+- `[tool].[version].supported_lengths.txt`
 
-* [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
+  - A list of all supported peptide lengths by the corresponding predictor method.
+
+- [Pipeline information](#pipeline-information) - Report metrics generated during the workflow execution
 
 ### Pipeline information
 
 <details markdown="1">
 <summary>Output files</summary>
 
-* `pipeline_info/`
-    * Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
-    * Reports generated by the pipeline: `pipeline_report.html`, `pipeline_report.txt` and `software_versions.yml`. The `pipeline_report*` files will only be present if the `--email` / `--email_on_fail` parameter's are used when running the pipeline.
-    * Reformatted samplesheet files used as input to the pipeline: `samplesheet.valid.csv`.
+- `pipeline_info/`
+  - Reports generated by Nextflow: `execution_report.html`, `execution_timeline.html`, `execution_trace.txt` and `pipeline_dag.dot`/`pipeline_dag.svg`.
+  - Reports generated by the pipeline: `pipeline_report.html`, `pipeline_report.txt` and `software_versions.yml`. The `pipeline_report*` files will only be present if the `--email` / `--email_on_fail` parameter's are used when running the pipeline.
+  - Reformatted samplesheet files used as input to the pipeline: `samplesheet.valid.csv`.
 
 </details>
 

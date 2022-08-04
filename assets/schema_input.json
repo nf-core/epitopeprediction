@@ -25,16 +25,17 @@
                 ],
                 "errorMessage": "Alleles must be provided as string or file with extension '.txt''"
             },
+            "mhc_class": {
+                "type": "string",
+                "pattern": "^(I|II|H-2)$",
+                "errorMessage": "The MHC class must be provided. Valid values: "
+            },
             "filename": {
                 "type": "string",
                 "pattern": "^\\S+\\.(vcf|tsv|fasta|fa|txt)$",
                 "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa', '.txt'"
             }
         },
-        "required": [
-            "sample",
-            "alleles",
-            "filename"
-        ]
+        "required": ["sample", "alleles", "mhc_class", "filename"]
     }
 }

@@ -5,7 +5,7 @@ import argparse
 import pandas as pd
 
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from Fred2.Core import Allele, Peptide, Protein, generate_peptides_from_proteins
+from epytope.Core import Allele, Peptide, Protein, generate_peptides_from_proteins
 
 
 parser = argparse.ArgumentParser("Generating peptides from protein sequences.")
