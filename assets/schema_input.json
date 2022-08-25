@@ -30,6 +30,11 @@
                 "pattern": "^(I|II|H-2)$",
                 "errorMessage": "The MHC class must be provided. Valid values: "
             },
+            "rnaseq": {
+                "type": "string",
+                "pattern": "^\\S+\\.(tsv)$",
+                "errorMessage": "RNAseq analysis results must have one of the following extensions:  ''.tsv''"
+            },
             "filename": {
                 "type": "string",
                 "pattern": "^\\S+\\.(vcf|tsv|fasta|fa|txt)$",
