@@ -112,7 +112,7 @@ workflow EPITOPEPREDICTION {
 
     INPUT_CHECK.out.reads
                 .branch {
-                    meta_data, input_file ->
+                    meta_data, expression, input_file ->
                         variant_compressed : meta_data.inputtype == 'variant_compressed'
                             return [ meta_data, input_file ]
                         variant_uncompressed :  meta_data.inputtype == 'variant'
@@ -123,6 +123,9 @@ workflow EPITOPEPREDICTION {
                             return [ meta_data, input_file ]
                     }
                 .set { ch_samples_from_sheet }
+
+    ch_expression = INPUT_CHECK.out.reads
+                        .map { meta_data, expression, input_file -> expression }
 
     // gunzip variant files
     GUNZIP_VCF (
@@ -342,7 +345,8 @@ workflow EPITOPEPREDICTION {
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([]),
+            ch_expression
     )
 
     // Run epitope prediction for peptides
@@ -352,7 +356,8 @@ workflow EPITOPEPREDICTION {
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([]),
+            ch_expression
     )
 
     // Run epitope prediction for variants
@@ -363,7 +368,8 @@ workflow EPITOPEPREDICTION {
             .mix( ch_split_variants.splitted )
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([]),
+            ch_expression
     )
 
     // collect prediction script versions

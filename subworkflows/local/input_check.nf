@@ -30,12 +30,14 @@ def get_samplesheet_paths(LinkedHashMap row) {
     meta.alleles        = allele_string
     meta.mhcclass       = row.mhc_class
     meta.inputtype      = type
+    expression = row.expression ? file(row.expression, checkIfExists: true) : []
 
     def array = []
     if (!file(row.filename).exists()) {
         exit 1, "ERROR: Please check input samplesheet -> file does not exist!\n${row.Filename}"
-    } else {
-        array = [ meta, file(row.filename) ]
+    }
+    else {
+        array = [meta, expression, file(row.filename)]
     }
     return array
 }
