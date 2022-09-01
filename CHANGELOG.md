@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- [#176](https://github.com/nf-core/epitopeprediction/pull/176) - Update to nf-core template `2.5.1`
+
 ### `Fixed`
 
 ## v2.1.0 - Nordring - 2022-08-02
