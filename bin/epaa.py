@@ -1215,7 +1215,7 @@ def __main__():
 
     metadata = []
     proteins = []
-    references = {"GRCh37": "http://feb2014.archive.ensembl.org", "GRCh38": "http://mar2017.archive.ensembl.org"}
+    references = {"GRCh37": "http://feb2014.archive.ensembl.org", "GRCh38": "http://aug2017.archive.ensembl.org"}
     global transcriptProteinMap
     global transcriptSwissProtMap
 
