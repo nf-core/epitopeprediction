@@ -466,9 +466,10 @@ def read_protein_quant(filename):
                         intensities[p.split("|")[1]] = valuedict
     return intensities
 
+
 # parse rnaseq analysis results
 # data frame: gene/transcript -> count/TPM
-#def read_diff_expression_values(filename):
+# def read_diff_expression_values(filename):
 
 # parse different expression analysis results (DESeq2), link log2fold changes to transcripts/genes
 def read_diff_expression_values(filename):
@@ -1212,8 +1213,7 @@ def __main__():
 
     metadata = []
     proteins = []
-    references = {'GRCh37': 'http://feb2014.archive.ensembl.org',
-                  'GRCh38': 'http://aug2017.archive.ensembl.org'}
+    references = {"GRCh37": "http://feb2014.archive.ensembl.org", "GRCh38": "http://aug2017.archive.ensembl.org"}
 
     global transcriptProteinMap
     global transcriptSwissProtMap
@@ -1330,9 +1330,9 @@ def __main__():
     # get gene names from Ensembl and add them to the data frame
     # we want to add gene names to our data frame in order to make the mapping easier
     # we will use this when the next epytope release is ready where we already implemented the functionality
-    #mapping_gene_names_ids = ma.get_gene_name_from_id(complete_df['gene_id'].unique.to_list())
-    #mapping_gene_names_ids.columns = ["gene_name", "gene_id"]
-    #complete_df = complete_df.merge(mapping_gene_names_ids,on='gene_id',how="left")
+    # mapping_gene_names_ids = ma.get_gene_name_from_id(complete_df['gene_id'].unique.to_list())
+    # mapping_gene_names_ids.columns = ["gene_name", "gene_id"]
+    # complete_df = complete_df.merge(mapping_gene_names_ids,on='gene_id',how="left")
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
@@ -1400,23 +1400,29 @@ def __main__():
             )
     # parse expression (nf-core/rnaseq) analysis results, annotate features (genes/transcripts)
     if args.expression is not None:
-        rnaseq_results = pd.read_csv(args.expression, sep='\t', header=0)
+        rnaseq_results = pd.read_csv(args.expression, sep="\t", header=0)
 
         measure = "count" if "count" in args.expression else "TPM"
         transcript_features = "tx" in rnaseq_results.columns
-        #merge_on = "gene_name"
+        # merge_on = "gene_name"
         merge_on = "gene_id"
 
         # we expect columns: tx gene_id samples
         if transcript_features:
-            rnaseq_results.columns = ["{}{}".format(c, "" if c in ["tx", "gene_id"] else f"_{'transcript'}_{measure}") for c in rnaseq_results.columns]
+            rnaseq_results.columns = [
+                "{}{}".format(c, "" if c in ["tx", "gene_id"] else f"_{'transcript'}_{measure}")
+                for c in rnaseq_results.columns
+            ]
             merge_on = "tx"
         # we expect columns: gene_id gene_name samples
         else:
-            rnaseq_results.columns = ["{}{}".format(c, "" if c in ["gene_name", "gene_id"] else f"_{'gene'}_{measure}") for c in rnaseq_results.columns]
+            rnaseq_results.columns = [
+                "{}{}".format(c, "" if c in ["gene_name", "gene_id"] else f"_{'gene'}_{measure}")
+                for c in rnaseq_results.columns
+            ]
 
         # add sample-specific expression values to data frame
-        complete_df = complete_df.merge(rnaseq_results,on=merge_on,how="left")
+        complete_df = complete_df.merge(rnaseq_results, on=merge_on, how="left")
 
     if args.diff_gene_expression is not None:
         gene_id_lengths = {}

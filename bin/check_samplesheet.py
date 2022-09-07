@@ -253,13 +253,13 @@ def check_samplesheet(file_in, file_out):
     with open(file_in, "r") as fin:
 
         ## Check header
-        MIN_COL = 4 # expression optional
+        MIN_COL = 4  # expression optional
         HEADER = ["sample", "alleles", "mhc_class", "filename"]
         header = [x.strip('"') for x in fin.readline().strip().split(",")]
         expression_available = "expression" in header
         valid_classes = "I,II,H-2"
-        valid_class1_loci = ['A*','B*','C*','E*','G*']
-        valid_class2_loci = ['DR','DP','DQ']
+        valid_class1_loci = ["A*", "B*", "C*", "E*", "G*"]
+        valid_class2_loci = ["DR", "DP", "DQ"]
 
         if expression_available:
             HEADER.insert(3, "expression")
@@ -326,7 +326,7 @@ def check_samplesheet(file_in, file_out):
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
         with open(file_out, "w") as fout:
-            fout.write(",".join(["sample", "alleles","mhc_class", "expression", "filename"]) + "\n")
+            fout.write(",".join(["sample", "alleles", "mhc_class", "expression", "filename"]) + "\n")
             for sample in sorted(sample_run_dict.keys()):
                 for val in sample_run_dict[sample]:
                     fout.write(",".join(val) + "\n")
