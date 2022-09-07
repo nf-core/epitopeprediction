@@ -11,7 +11,6 @@ import urllib
 import itertools
 import pandas as pd
 import numpy as np
-
 import epytope.Core.Generator as generator
 import math
 import json
@@ -467,6 +466,7 @@ def read_vcf(filename, pass_only=True):
                     vs_new.log_metadata(m, v.get_metadata(m))
                 dict_vars[v] = vs_new
 
+    print(dict_vars)
     return dict_vars.values(), transcript_ids, final_metadata_list
 
 
