@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Changed`
 
 - [#177](https://github.com/nf-core/epitopeprediction/pull/177) - Update to nf-core template `2.5.1`
+- [#178](https://github.com/nf-core/epitopeprediction/pull/178) - Update MultiQC to `1.13`
 
 ### `Fixed`
 
