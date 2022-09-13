@@ -66,6 +66,7 @@ def get_epytope_annotation(vt, p, r, alt):
             return p, r, alt
     return position, reference, alternative
 
+
 def check_min_req_GSvar(row):
     """
     checking the presence of mandatory columns
@@ -147,12 +148,14 @@ def read_GSvar(filename, pass_only=True):
             )
             else False
         )
+
         # old GSvar version
         if "coding_and_splicing_details" in line:
             mut_type = line.get("variant_details", "")
             annots = RE.findall(line["coding_and_splicing_details"])
         else:
             mut_type = line.get("variant_type", "")
+            # Gene, transcript number, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam
             annots = RE.findall(line["coding_and_splicing"])
         isyn = mut_type == "synonymous_variant"
 
@@ -176,20 +179,22 @@ def read_GSvar(filename, pass_only=True):
         coding = dict()
 
         for annot in annots:
-            a_gene, nm_id, a_mut_type, exon, trans_coding, trans_pos, prot_coding, prot_start = annot
-            if "NM" in nm_id:
+            a_gene, transcript_id, a_mut_type, exon, trans_coding, trans_pos, prot_coding, prot_start = annot
+            if "NM" in transcript_id:
                 ID_SYSTEM_USED = EIdentifierTypes.REFSEQ
             if "stop_gained" not in mut_type:
                 if not gene:
                     gene = a_gene
                 if not mut_type:
                     mut_type = a_mut_type
-                nm_id = nm_id.split(".")[0]
 
-                coding[nm_id] = MutationSyntax(
-                    nm_id, int(trans_pos.split("_")[0]) - 1, int(prot_start) - 1, trans_coding, prot_coding
+                #TODO with the next epytope release we can deal with transcript id version
+                transcript_id = transcript_id.split(".")[0]
+
+                coding[transcript_id] = MutationSyntax(
+                    transcript_id, int(trans_pos.split("_")[0]) - 1, int(prot_start) - 1, trans_coding, prot_coding
                 )
-                transcript_ids.append(nm_id)
+                transcript_ids.append(transcript_id)
         if coding:
             var = Variant(
                 mut_id,
@@ -213,7 +218,7 @@ def read_GSvar(filename, pass_only=True):
 
     transToVar = {}
 
-    # fix because of memory/timing issues due to combinatoric explosion
+    # fix because of memory/timing issues due to combinatorial explosion
     for v in list_vars:
         for trans_id in v.coding.keys():
             transToVar.setdefault(trans_id, []).append(v)
@@ -302,7 +307,7 @@ def read_vcf(filename, pass_only=True):
             vt = VariationType.SNP
         elif record.is_indel:
             #@TODO Potential bug here if v_list is really list
-            if len(v_list) % 3 == 0:  # no frameshift
+            if len(alternative_list[0]) % 3 == 0:  # no frameshift
                 if record.is_deletion:
                     vt = VariationType.DEL
                 else:
@@ -365,7 +370,6 @@ def read_vcf(filename, pass_only=True):
                         gene = a_gene_id
 
                         #TODO with the new epytope release we will support transcript IDs with version
-                        # there are no isoforms in biomart
                         transcript_id = transcript_id.split(".")[0]
                         if 'NM' in transcript_id:
                             ID_SYSTEM_USED = EIdentifierTypes.REFSEQ
@@ -416,36 +420,36 @@ def read_vcf(filename, pass_only=True):
                             coding[transcript_id] = MutationSyntax(
                                 transcript_id, tpos, ppos, split_coding_c[-1], split_coding_p[-1])
                             transcript_ids.append(transcript_id)
-                    if coding:
-                        pos, reference, alternative = get_epytope_annotation(
-                            vt, genomic_position, reference, str(alt))
-                        var = Variant("line" + str(num), vt, chr, pos, reference,
-                                    alternative, coding, isHomozygous, isSynonymous)
-                        var.gene = gene
-                        var.log_metadata("vardbid", variation_dbid)
-                        final_metadata_list.append("vardbid")
-                        for metadata_name in metadata_list:
-                            if metadata_name in record.INFO:
-                                final_metadata_list.append(metadata_name)
-                                var.log_metadata(
-                                    metadata_name, record.INFO[metadata_name])
-                        for sample in record.samples:
-                            for format_key in format_list:
-                                if getattr(sample.data, format_key, None) is None:
-                                    logger.warning("FORMAT entry {entry} not defined for {genotype}. Skipping.".format(
-                                        entry=format_key, genotype=sample.sample))
-                                    continue
-                                format_header = '{}.{}'.format(
-                                    sample.sample, format_key)
-                                final_metadata_list.append(format_header)
-                                if isinstance(sample[format_key], list):
-                                    format_value = ','.join(
-                                        [str(i) for i in sample[format_key]])
-                                else:
-                                    format_value = sample[format_key]
-                                var.log_metadata(format_header, format_value)
-                        dict_vars[var] = var
-                        list_vars.append(var)
+                if coding:
+                    pos, reference, alternative = get_epytope_annotation(
+                        vt, genomic_position, reference, str(alt))
+                    var = Variant("line" + str(num), vt, chr, pos, reference,
+                                alternative, coding, isHomozygous, isSynonymous)
+                    var.gene = gene
+                    var.log_metadata("vardbid", variation_dbid)
+                    final_metadata_list.append("vardbid")
+                    for metadata_name in metadata_list:
+                        if metadata_name in record.INFO:
+                            final_metadata_list.append(metadata_name)
+                            var.log_metadata(
+                                metadata_name, record.INFO[metadata_name])
+                    for sample in record.samples:
+                        for format_key in format_list:
+                            if getattr(sample.data, format_key, None) is None:
+                                logger.warning("FORMAT entry {entry} not defined for {genotype}. Skipping.".format(
+                                    entry=format_key, genotype=sample.sample))
+                                continue
+                            format_header = '{}.{}'.format(
+                                sample.sample, format_key)
+                            final_metadata_list.append(format_header)
+                            if isinstance(sample[format_key], list):
+                                format_value = ','.join(
+                                    [str(i) for i in sample[format_key]])
+                            else:
+                                format_value = sample[format_key]
+                            var.log_metadata(format_header, format_value)
+                    dict_vars[var] = var
+                    list_vars.append(var)
             else:
                 logger.error("No supported variant annotation string found. Aborting.")
                 sys.exit(1)
