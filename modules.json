@@ -7,7 +7,7 @@
             "modules": {
                 "custom/dumpsoftwareversions": {
                     "branch": "master",
-                    "git_sha": "682f789f93070bd047868300dd018faf3d434e7c"
+                    "git_sha": "5e7b1ef9a5a2d9258635bcbf70fcf37dacd1b247"
                 },
                 "gunzip": {
                     "branch": "master",
@@ -15,7 +15,7 @@
                 },
                 "multiqc": {
                     "branch": "master",
-                    "git_sha": "5138acca0985ca01c38a1c4fba917d83772b1106"
+                    "git_sha": "5587389874dac9c9953a2ab6f01d49af81969492"
                 }
             }
         }
