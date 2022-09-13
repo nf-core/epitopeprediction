@@ -22,9 +22,10 @@ if (params.input) { ch_input = file(params.input) } else { exit 1, 'Input sample
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-ch_multiqc_config        = [file("$projectDir/assets/multiqc_config.yml", checkIfExists: true), file("$projectDir/assets/nf-core-epitopeprediction_logo_light.png", checkIfExists: true)]
+ch_multiqc_config        = file("$projectDir/assets/multiqc_config.yml", checkIfExists: true)
 ch_multiqc_custom_config = params.multiqc_config ? Channel.fromPath(params.multiqc_config) : Channel.empty()
 ch_multiqc_configs = Channel.from(ch_multiqc_config).mix(ch_multiqc_custom_config).ifEmpty([])
+ch_multiqc_logo = Channel.from(file("$projectDir/assets/nf-core-epitopeprediction_logo_light.png", checkIfExists: true))
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -449,7 +450,9 @@ workflow EPITOPEPREDICTION {
     ch_multiqc_files = ch_multiqc_files.mix( ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml') )
 
     MULTIQC (
-        ch_multiqc_files.collect(), ch_multiqc_configs.collect()
+        ch_multiqc_files.collect(),
+        ch_multiqc_configs.collect(),
+        ch_multiqc_logo
     )
     multiqc_report = MULTIQC.out.report.toList()
 }
