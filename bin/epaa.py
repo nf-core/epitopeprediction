@@ -352,10 +352,11 @@ def read_vcf(filename, pass_only=True):
                             continue
                         obs, a_mut_type, impact, a_gene, a_gene_id, feature_type, transcript_id, exon, tot_exon, trans_coding, prot_coding, cdna, cds, aa, distance, warnings = annots
                         types.append(a_mut_type)
-
                         tpos = 0
                         ppos = 0
                         positions = ''
+                        isSynonymous = (a_mut_type == "synonymous_variant")
+                        gene = a_gene_id
 
                         # get cds/protein positions and convert mutation syntax to epytope format
                         if trans_coding != '':
@@ -365,9 +366,6 @@ def read_vcf(filename, pass_only=True):
                         if prot_coding != '':
                             positions = re.findall(r'\d+', prot_coding)
                             tpos = int(positions[0]) - 1
-
-                        isSynonymous = (a_mut_type == "synonymous_variant")
-                        gene = a_gene_id
 
                         #TODO with the new epytope release we will support transcript IDs with version
                         transcript_id = transcript_id.split(".")[0]
@@ -393,18 +391,6 @@ def read_vcf(filename, pass_only=True):
                         cds_pos = split_annotation[vep_fields["cds_position"]]
                         # not sure yet if this is always the case
                         if cds_pos:
-                            """
-                            https://varnomen.hgvs.org/recommendations/general/
-                            “c.” for a coding DNA reference sequence
-                            “g.” for a linear genomic reference sequence
-                            “m.” for a mitochondrial DNA reference sequence
-                            “n.” for a non-coding DNA reference sequence
-                            “o.” for a circular genomic reference sequence
-                            “p.” for a protein reference sequence
-                            “r.” for an RNA reference sequence (transcript)
-
-                            We could filter for coding and genomic here.
-                            """
                             ppos = -1
                             prot_coding = ""
                             split_coding_c = c_coding.split(':')
@@ -453,10 +439,9 @@ def read_vcf(filename, pass_only=True):
             else:
                 logger.error("No supported variant annotation string found. Aborting.")
                 sys.exit(1)
-
     transToVar = {}
 
-    # fix because of memory/timing issues due to combinatoric explosion
+    # fix because of memory/timing issues due to combinatorial explosion
     for v in list_vars:
         for trans_id in v.coding.keys():
             transToVar.setdefault(trans_id, []).append(v)
@@ -470,7 +455,6 @@ def read_vcf(filename, pass_only=True):
                     vs_new.log_metadata(m, v.get_metadata(m))
                 dict_vars[v] = vs_new
 
-    print(dict_vars)
     return dict_vars.values(), transcript_ids, final_metadata_list
 
 
