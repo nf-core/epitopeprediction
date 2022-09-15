@@ -188,7 +188,7 @@ def read_GSvar(filename, pass_only=True):
                 if not mut_type:
                     mut_type = a_mut_type
 
-                #TODO with the next epytope release we can deal with transcript id version
+                # TODO with the next epytope release we can deal with transcript id version
                 transcript_id = transcript_id.split(".")[0]
 
                 coding[transcript_id] = MutationSyntax(
@@ -246,7 +246,31 @@ def read_vcf(filename, pass_only=True):
 
     vep_header_available = False
     # default VEP fields
-    vep_fields = {"allele": 0,"consequence": 1,"impact": 2,"symbol": 3,"gene": 4,"feature_type": 5,"feature": 6,"biotype": 7,"exon": 8,"intron": 9,"hgvsc": 10,"hgvsp": 11,"cdna_position": 12,"cds_position": 13, "protein_position": 14,"amino_acids": 15,"codons": 16,"existing_variation": 17,"distance": 18,"strand": 19,"flags": 20,"symbol_source": 21,"hgnc_id":22}
+    vep_fields = {
+        "allele": 0,
+        "consequence": 1,
+        "impact": 2,
+        "symbol": 3,
+        "gene": 4,
+        "feature_type": 5,
+        "feature": 6,
+        "biotype": 7,
+        "exon": 8,
+        "intron": 9,
+        "hgvsc": 10,
+        "hgvsp": 11,
+        "cdna_position": 12,
+        "cds_position": 13,
+        "protein_position": 14,
+        "amino_acids": 15,
+        "codons": 16,
+        "existing_variation": 17,
+        "distance": 18,
+        "strand": 19,
+        "flags": 20,
+        "symbol_source": 21,
+        "hgnc_id": 22,
+    }
 
     VEP_KEY = "CSQ"
     SNPEFF_KEY = "ANN"
@@ -265,7 +289,7 @@ def read_vcf(filename, pass_only=True):
     # determine format of given VEP annotation
     if VEP_KEY in vcf_reader.infos:
         split_vep_def = vcf_reader.infos[VEP_KEY]
-        for idx, field in enumerate(split_vep_def.desc.split()[-1].split('|')):
+        for idx, field in enumerate(split_vep_def.desc.split()[-1].split("|")):
             vep_fields[field.strip().lower()] = idx
         vep_header_available = True
 
@@ -281,7 +305,7 @@ def read_vcf(filename, pass_only=True):
     genotye_dict = {"het": False, "hom": True, "ref": True}
 
     for num, record in enumerate(vl):
-        chr = record.CHROM.strip('chr')
+        chr = record.CHROM.strip("chr")
         genomic_position = record.POS
         variation_dbid = record.ID
         reference = str(record.REF)
@@ -306,7 +330,7 @@ def read_vcf(filename, pass_only=True):
         if record.is_snp:
             vt = VariationType.SNP
         elif record.is_indel:
-            #@TODO Potential bug here if v_list is really list
+            # @TODO Potential bug here if v_list is really list
             if len(alternative_list[0]) % 3 == 0:  # no frameshift
                 if record.is_deletion:
                     vt = VariationType.DEL
@@ -345,47 +369,64 @@ def read_vcf(filename, pass_only=True):
                 # SNPEFF annotation
                 if SNPEFF_KEY in record.INFO:
                     for annraw in record.INFO[SNPEFF_KEY]:
-                        annots = annraw.split('|')
+                        annots = annraw.split("|")
                         if len(annots) != 16:
                             logger.warning(
-                                "read_vcf: Omitted row! Mandatory columns not present in annotation field (ANN). \n Have you annotated your VCF file with SnpEff?")
+                                "read_vcf: Omitted row! Mandatory columns not present in annotation field (ANN). \n Have you annotated your VCF file with SnpEff?"
+                            )
                             continue
-                        obs, a_mut_type, impact, a_gene, a_gene_id, feature_type, transcript_id, exon, tot_exon, trans_coding, prot_coding, cdna, cds, aa, distance, warnings = annots
+                        (
+                            obs,
+                            a_mut_type,
+                            impact,
+                            a_gene,
+                            a_gene_id,
+                            feature_type,
+                            transcript_id,
+                            exon,
+                            tot_exon,
+                            trans_coding,
+                            prot_coding,
+                            cdna,
+                            cds,
+                            aa,
+                            distance,
+                            warnings,
+                        ) = annots
                         types.append(a_mut_type)
                         tpos = 0
                         ppos = 0
-                        positions = ''
-                        isSynonymous = (a_mut_type == "synonymous_variant")
+                        positions = ""
+                        isSynonymous = a_mut_type == "synonymous_variant"
                         gene = a_gene_id
 
                         # get cds/protein positions and convert mutation syntax to epytope format
-                        if trans_coding != '':
-                            positions = re.findall(r'\d+', trans_coding)
+                        if trans_coding != "":
+                            positions = re.findall(r"\d+", trans_coding)
                             ppos = int(positions[0]) - 1
 
-                        if prot_coding != '':
-                            positions = re.findall(r'\d+', prot_coding)
+                        if prot_coding != "":
+                            positions = re.findall(r"\d+", prot_coding)
                             tpos = int(positions[0]) - 1
 
-                        #TODO with the new epytope release we will support transcript IDs with version
+                        # TODO with the new epytope release we will support transcript IDs with version
                         transcript_id = transcript_id.split(".")[0]
-                        if 'NM' in transcript_id:
+                        if "NM" in transcript_id:
                             ID_SYSTEM_USED = EIdentifierTypes.REFSEQ
 
                         # take online coding variants into account, epytope cannot deal with stop gain variants right now
-                        if not prot_coding or 'stop_gained' in a_mut_type:
+                        if not prot_coding or "stop_gained" in a_mut_type:
                             continue
 
-                        coding[transcript_id] = MutationSyntax(
-                            transcript_id, ppos, tpos, trans_coding, prot_coding)
+                        coding[transcript_id] = MutationSyntax(transcript_id, ppos, tpos, trans_coding, prot_coding)
                         transcript_ids.append(transcript_id)
                 else:
                     if not vep_header_available:
                         logger.warning("No CSQ definition found in header, trying to map to default VEP format string.")
                     for annotation in record.INFO[VEP_KEY]:
-                        split_annotation = annotation.split('|')
-                        isSynonymous = 'synonymous' in split_annotation[vep_fields['consequence']]
-                        gene = split_annotation[vep_fields['gene']]
+                        split_annotation = annotation.split("|")
+                        isSynonymous = "synonymous" in split_annotation[vep_fields["consequence"]]
+                        gene = split_annotation[vep_fields["gene"]]
                         c_coding = split_annotation[vep_fields["hgvsc"]]
                         p_coding = split_annotation[vep_fields["hgvsp"]]
                         cds_pos = split_annotation[vep_fields["cds_position"]]
@@ -393,44 +434,50 @@ def read_vcf(filename, pass_only=True):
                         if cds_pos:
                             ppos = -1
                             prot_coding = ""
-                            split_coding_c = c_coding.split(':')
-                            split_coding_p = p_coding.split(':')
+                            split_coding_c = c_coding.split(":")
+                            split_coding_p = p_coding.split(":")
                             # we still need the new functionality here in epytope to query with IDs with version (ENTxxx.x)
-                            transcript_id = split_coding_c[0] if split_coding_c[0] else split_annotation[vep_fields["feature"]]
-                            transcript_id = transcript_id.split('.')[0]
+                            transcript_id = (
+                                split_coding_c[0] if split_coding_c[0] else split_annotation[vep_fields["feature"]]
+                            )
+                            transcript_id = transcript_id.split(".")[0]
 
-                            tpos = int(cds_pos.split('/')[0].split('-')[0]) - 1
+                            tpos = int(cds_pos.split("/")[0].split("-")[0]) - 1
                             if split_annotation[vep_fields["protein_position"]]:
-                                ppos = int(split_annotation[vep_fields["protein_position"]].split('-')[0].split('/')[0]) - 1
+                                ppos = (
+                                    int(split_annotation[vep_fields["protein_position"]].split("-")[0].split("/")[0])
+                                    - 1
+                                )
 
                             coding[transcript_id] = MutationSyntax(
-                                transcript_id, tpos, ppos, split_coding_c[-1], split_coding_p[-1])
+                                transcript_id, tpos, ppos, split_coding_c[-1], split_coding_p[-1]
+                            )
                             transcript_ids.append(transcript_id)
                 if coding:
-                    pos, reference, alternative = get_epytope_annotation(
-                        vt, genomic_position, reference, str(alt))
-                    var = Variant("line" + str(num), vt, chr, pos, reference,
-                                alternative, coding, isHomozygous, isSynonymous)
+                    pos, reference, alternative = get_epytope_annotation(vt, genomic_position, reference, str(alt))
+                    var = Variant(
+                        "line" + str(num), vt, chr, pos, reference, alternative, coding, isHomozygous, isSynonymous
+                    )
                     var.gene = gene
                     var.log_metadata("vardbid", variation_dbid)
                     final_metadata_list.append("vardbid")
                     for metadata_name in metadata_list:
                         if metadata_name in record.INFO:
                             final_metadata_list.append(metadata_name)
-                            var.log_metadata(
-                                metadata_name, record.INFO[metadata_name])
+                            var.log_metadata(metadata_name, record.INFO[metadata_name])
                     for sample in record.samples:
                         for format_key in format_list:
                             if getattr(sample.data, format_key, None) is None:
-                                logger.warning("FORMAT entry {entry} not defined for {genotype}. Skipping.".format(
-                                    entry=format_key, genotype=sample.sample))
+                                logger.warning(
+                                    "FORMAT entry {entry} not defined for {genotype}. Skipping.".format(
+                                        entry=format_key, genotype=sample.sample
+                                    )
+                                )
                                 continue
-                            format_header = '{}.{}'.format(
-                                sample.sample, format_key)
+                            format_header = "{}.{}".format(sample.sample, format_key)
                             final_metadata_list.append(format_header)
                             if isinstance(sample[format_key], list):
-                                format_value = ','.join(
-                                    [str(i) for i in sample[format_key]])
+                                format_value = ",".join([str(i) for i in sample[format_key]])
                             else:
                                 format_value = sample[format_key]
                             var.log_metadata(format_header, format_value)
@@ -1249,8 +1296,7 @@ def __main__():
 
     metadata = []
     proteins = []
-    references = {'GRCh37': 'http://feb2014.archive.ensembl.org',
-                  'GRCh38': 'http://aug2017.archive.ensembl.org'}
+    references = {"GRCh37": "http://feb2014.archive.ensembl.org", "GRCh38": "http://aug2017.archive.ensembl.org"}
 
     global transcriptProteinMap
     global transcriptSwissProtMap
