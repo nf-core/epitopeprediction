@@ -23,7 +23,6 @@ from epytope.IO.ADBAdapter import EIdentifierTypes
 from epytope.IO.UniProtAdapter import UniProtDB
 from epytope.Core.Allele import Allele
 from epytope.Core.Peptide import Peptide
-from epytope.IO import FileReader
 from Bio import SeqUtils
 from datetime import datetime
 from string import Template
@@ -86,6 +85,44 @@ def check_min_req_GSvar(row):
         return True
     return False
 
+
+def determine_variant_type(record, alternative):
+    vt = VariationType.UNKNOWN
+    if record.is_snp:
+        vt = VariationType.SNP
+    elif record.is_indel:
+        if len(alternative) % 3 == 0: # no frameshift
+            if record.is_deletion:
+                vt = VariationType.DEL
+            else:
+                vt = VariationType.INS
+        else: # frameshift
+            if record.is_deletion:
+                vt = VariationType.FSDEL
+            else:
+                vt = VariationType.FSINS
+    return vt
+
+
+def determine_zygosity(record):
+    genotye_dict = {"het": False, "hom": True, "ref": True}
+    isHomozygous = False
+    if "HOM" in record.INFO:
+        isHomozygous = record.INFO["HOM"] == 1
+    elif "SGT" in record.INFO:
+        zygosity = record.INFO["SGT"].split("->")[1]
+        if zygosity in genotye_dict:
+            isHomozygous = genotye_dict[zygosity]
+        else:
+            if zygosity[0] == zygosity[1]:
+                isHomozygous = True
+            else:
+                isHomozygous = False
+    else:
+        for sample in record.samples:
+            if "GT" in sample.data:
+                isHomozygous = sample.data["GT"] == "1/1"
+    return isHomozygous
 
 def read_GSvar(filename, pass_only=True):
     """
@@ -302,7 +339,6 @@ def read_vcf(filename, pass_only=True):
     dict_vars = {}
     list_vars = []
     transcript_ids = []
-    genotye_dict = {"het": False, "hom": True, "ref": True}
 
     for num, record in enumerate(vl):
         chr = record.CHROM.strip("chr")
@@ -326,40 +362,9 @@ def read_vcf(filename, pass_only=True):
         DELETION => s = slice(pos, pos+len(ref)) (create slice that will be removed)
 		            del seq[s] (remove)
         """
-        vt = VariationType.UNKNOWN
-        if record.is_snp:
-            vt = VariationType.SNP
-        elif record.is_indel:
-            # @TODO Potential bug here if v_list is really list
-            if len(alternative_list[0]) % 3 == 0:  # no frameshift
-                if record.is_deletion:
-                    vt = VariationType.DEL
-                else:
-                    vt = VariationType.INS
-            else:  # frameshift
-                if record.is_deletion:
-                    vt = VariationType.FSDEL
-                else:
-                    vt = VariationType.FSINS
-        gene = ""
-
         for alt in alternative_list:
-            isHomozygous = False
-            if "HOM" in record.INFO:
-                isHomozygous = record.INFO["HOM"] == 1
-            elif "SGT" in record.INFO:
-                zygosity = record.INFO["SGT"].split("->")[1]
-                if zygosity in genotye_dict:
-                    isHomozygous = genotye_dict[zygosity]
-                else:
-                    if zygosity[0] == zygosity[1]:
-                        isHomozygous = True
-                    else:
-                        isHomozygous = False
-            else:
-                for sample in record.samples:
-                    if "GT" in sample.data:
-                        isHomozygous = sample.data["GT"] == "1/1"
+            isHomozygous = determine_zygosity(record)
+            vt = determine_variant_type(record, alt)
 
             # check if we have SNPEFF or VEP annotated variants, otherwise abort
             if record.INFO.get(SNPEFF_KEY, False) or record.INFO.get(VEP_KEY, False):
@@ -527,9 +532,9 @@ def read_peptide_input(filename):
     return peptides, metadata
 
 
-# parse protein_groups of MaxQuant output to get protein intensitiy values
+# parse protein_groups of MaxQuant output to get protein intensity values
 def read_protein_quant(filename):
-    # protein id: sample1: intensity, sample2: instensity:
+    # protein id: sample1: intensity, sample2: intensity:
     intensities = {}
 
     with open(filename, "r") as inp:
@@ -1400,7 +1405,6 @@ def __main__():
     try:
         complete_df = pd.concat(pred_dataframes, sort=True)
         # replace method names with method names with version
-        # complete_df.replace({'method': methods}, inplace=True)
         complete_df["method"] = complete_df["method"].apply(lambda x: x.lower() + "-" + methods[x.lower()])
         predictions_available = True
     except:
@@ -1410,6 +1414,9 @@ def __main__():
 
     # include wild type sequences to dataframe if specified
     if args.wild_type:
+        if args.peptides:
+            logger.warning("Wildtype sequence generation not available with peptide input.")
+            pass
         wt_sequences = generate_wt_seqs(all_peptides_filtered)
         complete_df["wt sequence"] = complete_df.apply(
             lambda row: create_wt_seq_column_value(row, wt_sequences), axis=1
@@ -1439,6 +1446,7 @@ def __main__():
             "variant type",
             "method",
         ]
+
     for c in complete_df.columns:
         if c not in columns_tiles:
             columns_tiles.append(c)
