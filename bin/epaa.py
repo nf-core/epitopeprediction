@@ -600,29 +600,17 @@ def create_transcript_column_value(pep):
 
 
 def create_mutationsyntax_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
     syntaxes = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
-    # transcript_ids = set([t.split(":")[0] for t in transcript_ids])
     for v in set(pep_dictionary[pep]):
         for c in v.coding:
-            # if c in transcript_ids:
             syntaxes.append(v.coding[c])
     return ",".join(set([y.aaMutationSyntax for y in syntaxes]))
 
 
 def create_mutationsyntax_genome_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
     syntaxes = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
-    # transcript_ids = set([t.split(":")[0] for t in transcript_ids])
     for v in set(pep_dictionary[pep]):
         for c in v.coding:
-            # if c in transcript_ids:
             syntaxes.append(v.coding[c])
     return ",".join(set([y.cdsMutationSyntax for y in syntaxes]))
 
@@ -634,68 +622,35 @@ def create_variationfilelinenumber_column_value(pep):
 
 
 def create_gene_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set([y.gene for y in set(pep_dictionary[pep])]))
 
 
 def create_variant_pos_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set(["{}".format(y.genomePos) for y in set(pep_dictionary[pep])]))
 
 
 def create_variant_chr_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set(["{}".format(y.chrom) for y in set(pep_dictionary[pep])]))
 
 
 def create_variant_type_column_value(pep, pep_dictionary):
     types = {0: "SNP", 1: "DEL", 2: "INS", 3: "FSDEL", 4: "FSINS", 5: "UNKNOWN"}
-
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set([types[y.type] for y in set(pep_dictionary[pep])]))
 
 
 def create_variant_syn_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set([str(y.isSynonymous) for y in set(pep_dictionary[pep])]))
 
 
 def create_variant_hom_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set([str(y.isHomozygous) for y in set(pep_dictionary[pep])]))
 
 
 def create_coding_column_value(pep, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep.get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep.get_variants_by_protein(t)])
     return ",".join(set([str(y.coding) for y in set(pep_dictionary[pep])]))
 
 
 def create_metadata_column_value(pep, c, pep_dictionary):
-    # transcript_ids = [x.transcript_id for x in set(pep[0].get_all_transcripts())]
-    # variants = []
-    # for t in transcript_ids:
-    #    variants.extend([v for v in pep[0].get_variants_by_protein(t)])
     meta = set([str(y.get_metadata(c)[0]) for y in set(pep_dictionary[pep[0]]) if len(y.get_metadata(c)) != 0])
     if len(meta) is 0:
         return np.nan
@@ -730,8 +685,6 @@ def create_quant_column_value(row, dict):
 # L = exon length in base-pairs for a gene
 # C = Number of reads mapped to a gene in a single sample
 # N = total (unique)mapped reads in the sample
-
-
 def create_expression_column_value_for_result(row, dict, deseq, gene_id_lengths):
     ts = row["gene"].split(",")
     values = []
