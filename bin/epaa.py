@@ -615,12 +615,6 @@ def create_mutationsyntax_genome_column_value(pep, pep_dictionary):
     return ",".join(set([y.cdsMutationSyntax for y in syntaxes]))
 
 
-def create_variationfilelinenumber_column_value(pep):
-    v = [x.vars.values() for x in pep.get_all_transcripts()]
-    vf = list(itertools.chain.from_iterable(v))
-    return ",".join([str(int(y.id.replace("line", "")) + 1) for y in vf])
-
-
 def create_gene_column_value(pep, pep_dictionary):
     return ",".join(set([y.gene for y in set(pep_dictionary[pep])]))
 
