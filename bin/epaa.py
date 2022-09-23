@@ -653,12 +653,12 @@ def create_metadata_column_value(pep, c, pep_dictionary):
 
 
 def create_wt_seq_column_value(pep, wtseqs):
-    transcripts = [x for x in set(pep.get_all_transcripts())]
+    transcripts = [x for x in set(pep['sequence'].get_all_transcripts())]
     wt = set(
         [
-            str(wtseqs["{}_{}".format(str(pep), t.transcript_id)])
+            str(wtseqs["{}_{}".format(str(pep['sequence']), t.transcript_id)])
             for t in transcripts
-            if bool(t.vars) and "{}_{}".format(str(pep), t.transcript_id) in wtseqs
+            if bool(t.vars) and "{}_{}".format(str(pep['sequence']), t.transcript_id) in wtseqs
         ]
     )
     if len(wt) is 0:
@@ -996,8 +996,8 @@ def make_predictions_from_variants(
             df = results[0]
         else:
             continue
-
         df = pd.concat(results)
+
         # create method index and remove it from multi-column
         df = df.stack(level=1)
 
