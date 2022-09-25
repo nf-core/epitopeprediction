@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from symbol import testlist
 import sys
 import logging
 import csv
@@ -927,6 +928,15 @@ def create_peptide_variant_dictionary(peptides):
         pep_to_variants[pep] = variants
     return pep_to_variants
 
+def is_created_by_variant(peptide):
+    transcript_ids = [x.transcript_id for x in set(peptide.get_all_transcripts())]
+    for t in transcript_ids:
+        prot = peptide.proteins[t]
+        for start_pos in peptide.proteinPos[t]:
+            for i in range(start_pos,  start_pos+len(peptide)):
+                if i in prot.vars.keys():
+                    return True
+    return False
 
 def make_predictions_from_variants(
     variants_all,
@@ -963,10 +973,10 @@ def make_predictions_from_variants(
     for peplen in range(minlength, maxlength):
         peptide_gen = generator.generate_peptides_from_proteins(prots, peplen)
 
-        peptides_var = [x for x in peptide_gen]
+        logger.info("Generated peptides at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
-        # remove peptides which are not 'variant relevant'
-        peptides = [x for x in peptides_var if any(x.get_variants_by_protein(y) for y in x.proteins.keys())]
+        peptides_var = [x for x in peptide_gen]
+        peptides = [p for p in peptides_var if is_created_by_variant(p)]
 
         # filter out self peptides
         selfies = [str(p) for p in peptides if protein_db.exists(str(p))]
