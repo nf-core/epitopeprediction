@@ -654,12 +654,12 @@ def create_metadata_column_value(pep, c, pep_dictionary):
 
 
 def create_wt_seq_column_value(pep, wtseqs):
-    transcripts = [x for x in set(pep['sequence'].get_all_transcripts())]
+    transcripts = [x for x in set(pep["sequence"].get_all_transcripts())]
     wt = set(
         [
-            str(wtseqs["{}_{}".format(str(pep['sequence']), t.transcript_id)])
+            str(wtseqs["{}_{}".format(str(pep["sequence"]), t.transcript_id)])
             for t in transcripts
-            if bool(t.vars) and "{}_{}".format(str(pep['sequence']), t.transcript_id) in wtseqs
+            if bool(t.vars) and "{}_{}".format(str(pep["sequence"]), t.transcript_id) in wtseqs
         ]
     )
     if len(wt) is 0:
@@ -928,15 +928,17 @@ def create_peptide_variant_dictionary(peptides):
         pep_to_variants[pep] = variants
     return pep_to_variants
 
+
 def is_created_by_variant(peptide):
     transcript_ids = [x.transcript_id for x in set(peptide.get_all_transcripts())]
     for t in transcript_ids:
         prot = peptide.proteins[t]
         for start_pos in peptide.proteinPos[t]:
-            for i in range(start_pos,  start_pos+len(peptide)):
+            for i in range(start_pos, start_pos + len(peptide)):
                 if i in prot.vars.keys():
                     return True
     return False
+
 
 def make_predictions_from_variants(
     variants_all,
