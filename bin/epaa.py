@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-from symbol import testlist
 import sys
 import logging
 import csv
@@ -90,7 +89,7 @@ def determine_variant_type(record, alternative):
     if record.is_snp:
         vt = VariationType.SNP
     elif record.is_indel:
-        if len(alternative) % 3 == 0:  # no frameshift
+        if abs(len(alternative) - len(record.REF)) % 3 == 0:  # no frameshift
             if record.is_deletion:
                 vt = VariationType.DEL
             else:
@@ -932,11 +931,18 @@ def create_peptide_variant_dictionary(peptides):
 def is_created_by_variant(peptide):
     transcript_ids = [x.transcript_id for x in set(peptide.get_all_transcripts())]
     for t in transcript_ids:
-        prot = peptide.proteins[t]
-        for start_pos in peptide.proteinPos[t]:
-            for i in range(start_pos, start_pos + len(peptide)):
-                if i in prot.vars.keys():
-                    return True
+        p = peptide.proteins[t]
+        varmap = p.vars
+        for pos, vars in varmap.items():
+            for var in vars:
+                if var.type in [VariationType.FSDEL, VariationType.FSINS]:
+                    if peptide.proteinPos[t][0] + len(peptide) > pos:
+                        return True
+                else:
+                    for start_pos in peptide.proteinPos[t]:
+                        positions = list(range(start_pos, start_pos+len(peptide)))
+                        if pos in positions:
+                            return True
     return False
 
 
@@ -975,7 +981,6 @@ def make_predictions_from_variants(
     for peplen in range(minlength, maxlength):
         peptide_gen = generator.generate_peptides_from_proteins(prots, peplen)
 
-        logger.info("Generated peptides at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
         peptides_var = [x for x in peptide_gen]
         peptides = [p for p in peptides_var if is_created_by_variant(p)]
