@@ -940,7 +940,7 @@ def is_created_by_variant(peptide):
                         return True
                 else:
                     for start_pos in peptide.proteinPos[t]:
-                        positions = list(range(start_pos, start_pos+len(peptide)))
+                        positions = list(range(start_pos, start_pos + len(peptide)))
                         if pos in positions:
                             return True
     return False
@@ -980,7 +980,6 @@ def make_predictions_from_variants(
 
     for peplen in range(minlength, maxlength):
         peptide_gen = generator.generate_peptides_from_proteins(prots, peplen)
-
 
         peptides_var = [x for x in peptide_gen]
         peptides = [p for p in peptides_var if is_created_by_variant(p)]
