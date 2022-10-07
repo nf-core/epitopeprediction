@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Add support for `VEP` annotated VCF files [#172](https://github.com/nf-core/epitopeprediction/issues/140)
+
 ### `Changed`
 
 - [#177](https://github.com/nf-core/epitopeprediction/pull/177) - Update to nf-core template `2.5.1`
 - [#178](https://github.com/nf-core/epitopeprediction/pull/178) - Update MultiQC to `1.13`
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Update to nf-core template `2.6`
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Improve runtime for VCF-based predictions
 
 ### `Fixed`
+
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Fix issue with `frameshift` determination
 
 ## v2.1.0 - Nordring - 2022-08-02
 
