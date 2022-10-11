@@ -312,10 +312,10 @@ def read_vcf(filename, pass_only=True):
     VEP_KEY = "CSQ"
     SNPEFF_KEY = "ANN"
 
-    vl = list()
+    variants = list()
     with open(filename, "rt") as tsvfile:
         vcf_reader = vcf.Reader(tsvfile)
-        vl = [r for r in vcf_reader]
+        variants = [r for r in vcf_reader]
 
     # list of mandatory (meta)data
     exclusion_list = ["ANN", "CSQ"]
@@ -340,15 +340,15 @@ def read_vcf(filename, pass_only=True):
     list_vars = []
     transcript_ids = []
 
-    for num, record in enumerate(vl):
+    for num, record in enumerate(variants):
         chromosome = record.CHROM.strip("chr")
         genomic_position = record.POS
         variation_dbid = record.ID
         reference = str(record.REF)
         alternative_list = record.ALT
-        filter = record.FILTER
+        record_filter = record.FILTER
 
-        if pass_only and filter:
+        if pass_only and record_filter:
             continue
 
         """
@@ -591,61 +591,69 @@ def read_lig_ID_values(filename):
 
 
 def create_protein_column_value(pep):
-    all_proteins = [transcriptProteinMap[x.transcript_id.split(":")[0]] for x in set(pep.get_all_transcripts())]
+    all_proteins = [
+        transcriptProteinMap[transcript.transcript_id.split(":")[0]] for transcript in set(pep.get_all_transcripts())
+    ]
     return ",".join(set([item for sublist in all_proteins for item in sublist]))
 
 
 def create_transcript_column_value(pep):
-    return ",".join(set([x.transcript_id.split(":")[0] for x in set(pep.get_all_transcripts())]))
+    return ",".join(set([transcript.transcript_id.split(":")[0] for transcript in set(pep.get_all_transcripts())]))
 
 
 def create_mutationsyntax_column_value(pep, pep_dictionary):
     syntaxes = []
-    for v in set(pep_dictionary[pep]):
-        for c in v.coding:
-            syntaxes.append(v.coding[c])
-    return ",".join(set([y.aaMutationSyntax for y in syntaxes]))
+    for variant in set(pep_dictionary[pep]):
+        for coding in variant.coding:
+            syntaxes.append(variant.coding[coding])
+    return ",".join(set([mutationSyntax.aaMutationSyntax for mutationSyntax in syntaxes]))
 
 
 def create_mutationsyntax_genome_column_value(pep, pep_dictionary):
     syntaxes = []
-    for v in set(pep_dictionary[pep]):
-        for c in v.coding:
-            syntaxes.append(v.coding[c])
-    return ",".join(set([y.cdsMutationSyntax for y in syntaxes]))
+    for variant in set(pep_dictionary[pep]):
+        for coding in variant.coding:
+            syntaxes.append(v.coding[coding])
+    return ",".join(set([mutationSyntax.cdsMutationSyntax for mutationSyntax in syntaxes]))
 
 
 def create_gene_column_value(pep, pep_dictionary):
-    return ",".join(set([y.gene for y in set(pep_dictionary[pep])]))
+    return ",".join(set([variant.gene for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_pos_column_value(pep, pep_dictionary):
-    return ",".join(set(["{}".format(y.genomePos) for y in set(pep_dictionary[pep])]))
+    return ",".join(set(["{}".format(variant.genomePos) for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_chr_column_value(pep, pep_dictionary):
-    return ",".join(set(["{}".format(y.chrom) for y in set(pep_dictionary[pep])]))
+    return ",".join(set(["{}".format(variant.chrom) for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_type_column_value(pep, pep_dictionary):
     types = {0: "SNP", 1: "DEL", 2: "INS", 3: "FSDEL", 4: "FSINS", 5: "UNKNOWN"}
-    return ",".join(set([types[y.type] for y in set(pep_dictionary[pep])]))
+    return ",".join(set([types[variant.type] for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_syn_column_value(pep, pep_dictionary):
-    return ",".join(set([str(y.isSynonymous) for y in set(pep_dictionary[pep])]))
+    return ",".join(set([str(variant.isSynonymous) for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_hom_column_value(pep, pep_dictionary):
-    return ",".join(set([str(y.isHomozygous) for y in set(pep_dictionary[pep])]))
+    return ",".join(set([str(variant.isHomozygous) for variant in set(pep_dictionary[pep])]))
 
 
 def create_coding_column_value(pep, pep_dictionary):
-    return ",".join(set([str(y.coding) for y in set(pep_dictionary[pep])]))
+    return ",".join(set([str(variant.coding) for variant in set(pep_dictionary[pep])]))
 
 
 def create_metadata_column_value(pep, c, pep_dictionary):
-    meta = set([str(y.get_metadata(c)[0]) for y in set(pep_dictionary[pep[0]]) if len(y.get_metadata(c)) != 0])
+    meta = set(
+        [
+            str(variant.get_metadata(c)[0])
+            for variant in set(pep_dictionary[pep[0]])
+            if len(variant.get_metadata(c)) != 0
+        ]
+    )
     if len(meta) is 0:
         return np.nan
     else:
@@ -653,18 +661,18 @@ def create_metadata_column_value(pep, c, pep_dictionary):
 
 
 def create_wt_seq_column_value(pep, wtseqs):
-    transcripts = [x for x in set(pep["sequence"].get_all_transcripts())]
-    wt = set(
+    transcripts = [transcript for transcript in set(pep["sequence"].get_all_transcripts())]
+    wild_type = set(
         [
-            str(wtseqs["{}_{}".format(str(pep["sequence"]), t.transcript_id)])
-            for t in transcripts
-            if bool(t.vars) and "{}_{}".format(str(pep["sequence"]), t.transcript_id) in wtseqs
+            str(wtseqs["{}_{}".format(str(pep["sequence"]), transcript.transcript_id)])
+            for transcript in transcripts
+            if bool(transcript.vars) and "{}_{}".format(str(pep["sequence"]), transcript.transcript_id) in wtseqs
         ]
     )
-    if len(wt) is 0:
+    if len(wild_type) is 0:
         return np.nan
     else:
-        return ",".join(wt)
+        return ",".join(wild_type)
 
 
 def create_quant_column_value(row, dict):
@@ -917,6 +925,7 @@ def generate_wt_seqs(peptides):
     return wt_dict
 
 
+# TODO potential improvement in epytope
 def create_peptide_variant_dictionary(peptides):
     pep_to_variants = {}
     for pep in peptides:
@@ -928,6 +937,7 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
+# TODO replace by epytope function once released
 def is_created_by_variant(peptide):
     transcript_ids = [x.transcript_id for x in set(peptide.get_all_transcripts())]
     for t in transcript_ids:
@@ -1076,8 +1086,8 @@ def make_predictions_from_variants(
         df.columns = df.columns.str.replace("Score", "score")
         df.columns = df.columns.str.replace("Rank", "rank")
 
-        for c in set(metadata):
-            df[c] = df.apply(lambda row: create_metadata_column_value(row, c, pep_to_variants), axis=1)
+        for col in set(metadata):
+            df[col] = df.apply(lambda row: create_metadata_column_value(row, col, pep_to_variants), axis=1)
 
         pred_dataframes.append(df)
 
@@ -1301,9 +1311,9 @@ def __main__():
         peptides, metadata = read_peptide_input(args.peptides)
     else:
         if args.somatic_mutations.endswith(".GSvar") or args.somatic_mutations.endswith(".tsv"):
-            vl, transcripts, metadata = read_GSvar(args.somatic_mutations)
+            variant_list, transcripts, metadata = read_GSvar(args.somatic_mutations)
         elif args.somatic_mutations.endswith(".vcf"):
-            vl, transcripts, metadata = read_vcf(args.somatic_mutations)
+            variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
 
         transcripts = list(set(transcripts))
         transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(
@@ -1377,7 +1387,7 @@ def __main__():
         )
     else:
         pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(
-            vl,
+            variant_list,
             methods,
             thresholds,
             args.use_affinity_thresholds,
