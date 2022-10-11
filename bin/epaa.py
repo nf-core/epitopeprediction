@@ -255,9 +255,9 @@ def read_GSvar(filename, pass_only=True):
     transToVar = {}
 
     # fix because of memory/timing issues due to combinatorial explosion
-    for v in list_vars:
-        for trans_id in v.coding.keys():
-            transToVar.setdefault(trans_id, []).append(v)
+    for variant in list_vars:
+        for trans_id in variant.coding.keys():
+            transToVar.setdefault(trans_id, []).append(variant)
 
     for tId, vs in transToVar.items():
         if len(vs) > 10:
@@ -503,9 +503,9 @@ def read_vcf(filename, pass_only=True):
 
     # fix because of memory/timing issues due to combinatorial explosion
 
-    for v in list_vars:
-        for trans_id in v.coding.keys():
-            transToVar.setdefault(trans_id, []).append(v)
+    for variant in list_vars:
+        for trans_id in variant.coding.keys():
+            transToVar.setdefault(trans_id, []).append(variant)
 
     for tId, vs in transToVar.items():
         if len(vs) > 10:
@@ -613,7 +613,7 @@ def create_mutationsyntax_genome_column_value(pep, pep_dictionary):
     syntaxes = []
     for variant in set(pep_dictionary[pep]):
         for coding in variant.coding:
-            syntaxes.append(v.coding[coding])
+            syntaxes.append(variant.coding[coding])
     return ",".join(set([mutationSyntax.cdsMutationSyntax for mutationSyntax in syntaxes]))
 
 
