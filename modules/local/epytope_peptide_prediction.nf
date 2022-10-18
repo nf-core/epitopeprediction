@@ -12,8 +12,8 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     output:
     tuple val(meta), path("*.json"), emit: json
-    tuple val(meta), path("*.tsv"), emit: predicted optional true
-    tuple val(meta), path("*.fasta"), emit: fasta optional true
+    tuple val(meta), path("*.tsv"), optional: true, emit: predicted
+    tuple val(meta), path("*.fasta"), optional: true, emit: fasta
     path "versions.yml", emit: versions
 
     script:
