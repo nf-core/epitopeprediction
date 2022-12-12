@@ -504,7 +504,7 @@ def read_vcf(filename, pass_only=True):
                     list_vars.append(var)
             else:
                 logger.error("No supported variant annotation string found. Aborting.")
-                sys.exit("No supported variant annotation string found. Aborting.")
+                sys.exit("No supported variant annotation string found. Input VCFs require annotation with SNPEff or VEP prior to running the epitope prediction pipeline.")
     transToVar = {}
 
     # fix because of memory/timing issues due to combinatorial explosion
