@@ -1303,6 +1303,7 @@ def __main__():
         sys.exit("Provide at least one argument to epaa.py.")
 
     logger.addHandler(logging.FileHandler("{}_prediction.log".format(args.identifier)))
+    logger.info("Running Epitope Prediction And Annotation version: " + str(VERSION))
     logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
     metadata = []
