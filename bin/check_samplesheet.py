@@ -159,7 +159,7 @@ def sniff_format(handle):
     sniffer = csv.Sniffer()
     if not sniffer.has_header(peek):
         logger.critical("The given sample sheet does not appear to contain a header.")
-        sys.exit("The given sample sheet does not appear to contain a header.")
+        sys.exit(1)
     dialect = sniffer.sniff(peek)
     return dialect
 
@@ -199,7 +199,7 @@ def print_error(error, context="Line", context_str=""):
             error, context.strip(), context_str.strip()
         )
     print(error_str)
-    sys.exit()
+    sys.exit(1)
 
 
 def check_allele_nomenclature(allele):
@@ -325,7 +325,7 @@ def main(argv=None):
     logging.basicConfig(level=args.log_level, format="[%(levelname)s] %(message)s")
     if not args.file_in.is_file():
         logger.error(f"The given input file {args.file_in} was not found!")
-        sys.exit(f"The given input file {args.file_in} was not found!")
+        sys.exit(2)
     args.file_out.parent.mkdir(parents=True, exist_ok=True)
     check_samplesheet(args.file_in, args.file_out)
 
