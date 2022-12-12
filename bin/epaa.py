@@ -31,8 +31,14 @@ VERSION = "1.1"
 # instantiate global logger object
 logger = logging.getLogger(__name__)
 # turn off passing of messages to root logger
-logger.propagate = False
+# logger.propagate = False
 logger.setLevel(logging.DEBUG)
+
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+logger.addHandler(handler)
 
 ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
 transcriptProteinMap = {}
@@ -498,7 +504,7 @@ def read_vcf(filename, pass_only=True):
                     list_vars.append(var)
             else:
                 logger.error("No supported variant annotation string found. Aborting.")
-                sys.exit(1)
+                sys.exit(1, "No supported variant annotation string found. Aborting.")
     transToVar = {}
 
     # fix because of memory/timing issues due to combinatorial explosion
@@ -1294,7 +1300,7 @@ def __main__():
 
     if len(sys.argv) <= 1:
         parser.print_help()
-        sys.exit(1)
+        sys.exit(1, "Provide at least one argument.")
 
     logger.addHandler(logging.FileHandler("{}_prediction.log".format(args.identifier)))
     logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
@@ -1308,9 +1314,11 @@ def __main__():
 
     # read in variants or peptides
     if args.peptides:
+        logger.info("Running epaa for peptides...")
         peptides, metadata = read_peptide_input(args.peptides)
     else:
         if args.somatic_mutations.endswith(".GSvar") or args.somatic_mutations.endswith(".tsv"):
+            logger.info("Running epaa for variants...")
             variant_list, transcripts, metadata = read_GSvar(args.somatic_mutations)
         elif args.somatic_mutations.endswith(".vcf"):
             variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
