@@ -504,7 +504,7 @@ def read_vcf(filename, pass_only=True):
                     list_vars.append(var)
             else:
                 logger.error("No supported variant annotation string found. Aborting.")
-                sys.exit(1, "No supported variant annotation string found. Aborting.")
+                sys.exit("No supported variant annotation string found. Aborting.")
     transToVar = {}
 
     # fix because of memory/timing issues due to combinatorial explosion
@@ -1300,7 +1300,7 @@ def __main__():
 
     if len(sys.argv) <= 1:
         parser.print_help()
-        sys.exit(1, "Provide at least one argument.")
+        sys.exit("Provide at least one argument to epaa.py.")
 
     logger.addHandler(logging.FileHandler("{}_prediction.log".format(args.identifier)))
     logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
