@@ -1302,7 +1302,11 @@ def __main__():
         parser.print_help()
         sys.exit("Provide at least one argument to epaa.py.")
 
-    logger.addHandler(logging.FileHandler("{}_prediction.log".format(args.identifier)))
+    filehandler = logging.FileHandler("{}_prediction.log".format(args.identifier))
+    filehandler.setLevel(logging.DEBUG)
+    filehandler.setFormatter(formatter)
+    logger.addHandler(filehandler)
+
     logger.info("Running Epitope Prediction And Annotation version: " + str(VERSION))
     logger.info("Starting predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
 
