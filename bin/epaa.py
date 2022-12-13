@@ -36,7 +36,7 @@ logger.setLevel(logging.DEBUG)
 
 handler = logging.StreamHandler(sys.stdout)
 handler.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 handler.setFormatter(formatter)
 logger.addHandler(handler)
 
@@ -504,7 +504,9 @@ def read_vcf(filename, pass_only=True):
                     list_vars.append(var)
             else:
                 logger.error("No supported variant annotation string found. Aborting.")
-                sys.exit("No supported variant annotation string found. Input VCFs require annotation with SNPEff or VEP prior to running the epitope prediction pipeline.")
+                sys.exit(
+                    "No supported variant annotation string found. Input VCFs require annotation with SNPEff or VEP prior to running the epitope prediction pipeline."
+                )
     transToVar = {}
 
     # fix because of memory/timing issues due to combinatorial explosion
