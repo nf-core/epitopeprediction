@@ -460,6 +460,7 @@ workflow EPITOPEPREDICTION {
         ch_multiqc_logo.toList()
     )
     multiqc_report = MULTIQC.out.report.toList()
+    }
 }
 
 /*
