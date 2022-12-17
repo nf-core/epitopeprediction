@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Added`
 
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Add support for `VEP` annotated VCF files [#172](https://github.com/nf-core/epitopeprediction/issues/172)
+- [#186](https://github.com/nf-core/epitopeprediction/pull/186) - Log messages from `epaa.py` script to stdout and provide `sys.exit` error messages.
 
 ### `Changed`
 
@@ -15,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#178](https://github.com/nf-core/epitopeprediction/pull/178) - Update MultiQC to `1.13`
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Update to nf-core template `2.6`
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Improve runtime for VCF-based predictions
+- [#187](https://github.com/nf-core/epitopeprediction/pull/187) - Update to nf-core template `2.7.1`
 
 ### `Fixed`
 
