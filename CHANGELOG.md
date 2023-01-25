@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Update to nf-core template `2.6`
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Improve runtime for VCF-based predictions
 - [#187](https://github.com/nf-core/epitopeprediction/pull/187) - Update to nf-core template `2.7.1`
+- [#189](https://github.com/nf-core/epitopeprediction/pull/189) - Update to nf-core template `2.7.2`
 
 ### `Fixed`
 

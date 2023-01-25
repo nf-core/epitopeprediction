@@ -4,7 +4,7 @@
 process EXTERNAL_TOOLS_IMPORT {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::coreutils=9.1" : null)
+    conda "conda-forge::coreutils=9.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
         'biocontainers/biocontainers:v1.2.0_cv1' }"

@@ -150,7 +150,7 @@ workflow EPITOPEPREDICTION {
 
     if (tools.isEmpty()) { exit 1, "No valid tools specified." }
 
-    if (params.enable_conda && params.tools.contains("netmhc")) {
+    if (params.conda.enabled && params.tools.contains("netmhc")) {
             log.warn("Please note: if you want to use external prediction tools with conda it might be necessary to set --netmhc_system to darwin depending on your system.")
     }
 
