@@ -1,4 +1,3 @@
-
 #!/usr/bin/env python
 # Written by Sabrina Krakau, Christopher Mohr and released under the MIT license.
 
