@@ -26,7 +26,7 @@ process GET_PREDICTION_VERSIONS {
     IFS=',' read -r -a external_tools <<< \"$external_tools\"
     if ! [ -z "${external_tool_versions}" ]; then
         for TOOL in "\${external_tools[@]}"; do
-            echo "\$TOOL" >> versions.csv
+            echo "\$TOOL" >> versions.yml
         done
     fi
     """
