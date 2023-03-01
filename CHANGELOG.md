@@ -5,8 +5,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v2.2.0 - WaldhaeuserOst - 2023-03-01
 
-3c0bc64d3535759e067e9872711e362fadae18e1
-
 ### `Added`
 
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Add support for `VEP` annotated VCF files [#172](https://github.com/nf-core/epitopeprediction/issues/172)
