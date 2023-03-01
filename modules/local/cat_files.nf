@@ -24,7 +24,7 @@ process CAT_FILES {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        cat: \$(echo \$(cat --version 2>&1) | sed 's/^.*coreutils) //; s/ .*\$//')
+        cat: \$(echo \$(cat --version 2>&1) | sed 's/^.*BusyBox //; s/ .*\$//')
     END_VERSIONS
     """
 }
