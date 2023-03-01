@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Written by Christopher Mohr and released under the MIT license.
 
 import argparse
 import logging
