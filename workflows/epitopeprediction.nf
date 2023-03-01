@@ -50,7 +50,7 @@ include { SNPSIFT_SPLIT}                                                        
 include { CSVTK_SPLIT}                                                              from '../modules/local/csvtk_split'
 
 include { EPYTOPE_GENERATE_PEPTIDES }                                               from '../modules/local/epytope_generate_peptides'
-include { SPLIT_PEPTIDES }                                                          from '../modules/local/split_peptides'
+include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PEPTIDES }                                                          from '../modules/local/split_peptides'
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                                from '../modules/local/split_peptides'
 
 include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/epytope_peptide_prediction'
@@ -326,11 +326,10 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null))
 
     // split peptide data
-    // TODO: Add the appropriate container to remove the warning
-    SPLIT_PEPTIDES(
+    SPLIT_PEPTIDES_PEPTIDES(
         ch_samples_uncompressed.peptide
     )
-    ch_versions = ch_versions.mix( SPLIT_PEPTIDES.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions.ifEmpty(null) )
 
     /*
     ========================================================================================
@@ -353,7 +352,7 @@ workflow EPITOPEPREDICTION {
 
     // Run epitope prediction for peptides
     EPYTOPE_PEPTIDE_PREDICTION_PEP(
-        SPLIT_PEPTIDES
+        SPLIT_PEPTIDES_PEPTIDES
             .out
             .splitted
             .combine( ch_prediction_tool_versions )
