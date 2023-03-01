@@ -6,7 +6,7 @@ import sys
 import csv
 import argparse
 
-from Fred2.EpitopePrediction import EpitopePredictorFactory
+from epytope.EpitopePrediction import EpitopePredictorFactory
 
 
 def convert_allele_back(allele):
