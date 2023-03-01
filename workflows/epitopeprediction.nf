@@ -165,7 +165,7 @@ workflow EPITOPEPREDICTION {
         .collect()
 
     // get versions of all prediction tools
-    GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty(null))
+    GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty(""))
     ch_prediction_tool_versions = GET_PREDICTION_VERSIONS.out.versions.ifEmpty(null)
 
     // TODO I guess it would be better to have two subworkflows for the if else parts (CM)
