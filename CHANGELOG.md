@@ -3,6 +3,27 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v2.2.0 - WaldhaeuserOst - 2023-03-03
+
+### `Added`
+
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Add support for `VEP` annotated VCF files [#172](https://github.com/nf-core/epitopeprediction/issues/172)
+- [#186](https://github.com/nf-core/epitopeprediction/pull/186) - Log messages from `epaa.py` script to stdout and provide `sys.exit` error messages.
+
+### `Changed`
+
+- [#177](https://github.com/nf-core/epitopeprediction/pull/177) - Update to nf-core template `2.5.1`
+- [#178](https://github.com/nf-core/epitopeprediction/pull/178) - Update MultiQC to `1.13`
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Update to nf-core template `2.6`
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Improve runtime for VCF-based predictions
+- [#187](https://github.com/nf-core/epitopeprediction/pull/187) - Update to nf-core template `2.7.1`
+- [#189](https://github.com/nf-core/epitopeprediction/pull/189) - Update to nf-core template `2.7.2`
+
+### `Fixed`
+
+- [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Fix issue with `frameshift` determination
+- [#194](https://github.com/nf-core/epitopeprediction/pull/194) - Fix software versions collection and add script licenses
+
 ## v2.1.0 - Nordring - 2022-08-02
 
 ### `Added`

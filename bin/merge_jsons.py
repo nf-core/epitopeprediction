@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Written by Sabrina Krakau, Christopher Mohr, Gisela Gabernet and released under the MIT license (2022).
+
 
 import os
 import sys
@@ -7,9 +9,7 @@ import argparse
 
 
 def __main__():
-    parser = argparse.ArgumentParser(
-        description="Merge multiple JSON reports into one."
-    )
+    parser = argparse.ArgumentParser(description="Merge multiple JSON reports into one.")
     parser.add_argument("-s", "--single_input", help="Single input JSON report")
     parser.add_argument("-i", "--input", help="Input directory with JSON reports")
     parser.add_argument("-p", "--prefix", help="Prefix for output")
@@ -58,18 +58,12 @@ def __main__():
     data["prediction_methods"] = ",".join(set(list(flatten(data["prediction_methods"]))))
     # tool thresholds is the same for all runs i.e. for all JSON parts
     data["tool_thresholds"] = json_content["tool_thresholds"]
-    data["number_of_unique_peptides"] = len(
-        set(list(flatten(data["number_of_unique_peptides"])))
-    )
+    data["number_of_unique_peptides"] = len(set(list(flatten(data["number_of_unique_peptides"]))))
     data["number_of_unique_peptides_after_filtering"] = len(
         set(list(flatten(data["number_of_unique_peptides_after_filtering"])))
     )
-    data["number_of_unique_nonbinders"] = len(
-        set(list(flatten(data["number_of_unique_nonbinders"])))
-    )
-    data["number_of_unique_binders"] = len(
-        set(list(flatten(data["number_of_unique_binders"])))
-    )
+    data["number_of_unique_nonbinders"] = len(set(list(flatten(data["number_of_unique_nonbinders"]))))
+    data["number_of_unique_binders"] = len(set(list(flatten(data["number_of_unique_binders"]))))
     data["number_of_nonbinders"] = sum(list(flatten(data["number_of_nonbinders"])))
     data["number_of_binders"] = sum(list(flatten(data["number_of_binders"])))
     data["number_of_predictions"] = sum(list(flatten(data["number_of_predictions"])))

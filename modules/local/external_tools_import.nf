@@ -4,7 +4,7 @@
 process EXTERNAL_TOOLS_IMPORT {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::coreutils=9.1" : null)
+    conda "conda-forge::coreutils=9.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
         'biocontainers/biocontainers:v1.2.0_cv1' }"
@@ -14,7 +14,7 @@ process EXTERNAL_TOOLS_IMPORT {
 
     output:
     path "${toolname}", emit: nonfree_tools
-    val  "v_*.txt", emit: versions
+    path  "versions.yml", emit: versions
 
     script:
     """
@@ -75,7 +75,8 @@ process EXTERNAL_TOOLS_IMPORT {
     #
     # CREATE VERSION FILE
     #
-    echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
-
+    cat <<-END_VERSIONS > versions.yml
+        ${toolname}: ${toolversion}
+    END_VERSIONS
     """
 }

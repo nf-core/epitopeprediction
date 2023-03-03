@@ -4,6 +4,7 @@
     nf-core/epitopeprediction
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     Github : https://github.com/nf-core/epitopeprediction
+
     Website: https://nf-co.re/epitopeprediction
     Slack  : https://nfcore.slack.com/channels/epitopeprediction
 ----------------------------------------------------------------------------------------
