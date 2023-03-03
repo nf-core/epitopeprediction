@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# Written by Christopher Mohr and released under the MIT license.
+# Written by Christopher Mohr and released under the MIT license (2022).
 
 import os
 import sys
