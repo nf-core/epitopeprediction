@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
-- [#196](https://github.com/nf-core/epitopeprediction/pull/196) - Revert versions changes that caused bug. Also made prediction not optional to make CI tests fail in case prediction files are not generated.
+- [#196](https://github.com/nf-core/epitopeprediction/pull/196) - Revert versions changes that caused bug with external tools predictions missing.
 
 ## v2.2.0 - WaldhaeuserOst - 2023-03-03
 

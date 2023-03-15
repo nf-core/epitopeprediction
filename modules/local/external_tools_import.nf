@@ -14,7 +14,7 @@ process EXTERNAL_TOOLS_IMPORT {
 
     output:
     path "${toolname}", emit: nonfree_tools
-    val "v_*.txt", emit: versions
+    path "versions.yml", emit: versions
 
     script:
     """
@@ -78,6 +78,7 @@ process EXTERNAL_TOOLS_IMPORT {
     echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
 
     cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
         ${toolname}: ${toolversion}
     END_VERSIONS
     """

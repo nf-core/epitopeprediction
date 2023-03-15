@@ -10,7 +10,7 @@ process CAT_FILES {
     tuple val(meta), path(input)
 
     output:
-    tuple val(meta), path("*_prediction*"), emit: output
+    tuple val(meta), path("*_prediction{_result,_proteins}*"), emit: output
     path "versions.yml", emit: versions
 
     script:
