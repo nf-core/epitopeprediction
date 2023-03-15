@@ -271,7 +271,7 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
-    ch_versions = ch_versions.mix(EXTERNAL_TOOLS_IMPORT.out.versions.ifEmpty([]))
+    ch_versions = ch_versions.mix(EXTERNAL_TOOLS_IMPORT.out.versions.ifEmpty(null))
 
     /*
     ========================================================================================
