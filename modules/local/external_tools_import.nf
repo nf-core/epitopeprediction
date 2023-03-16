@@ -75,7 +75,6 @@ process EXTERNAL_TOOLS_IMPORT {
     #
     # CREATE VERSION FILE
     #
-    echo "${toolname} ${toolversion}" > "v_${toolname}.txt"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
