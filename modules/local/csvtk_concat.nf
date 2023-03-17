@@ -10,7 +10,7 @@ process CSVTK_CONCAT {
     tuple val(meta), path(predicted)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: predicted
+    tuple val(meta), path("*prediction_result.tsv"), emit: predicted
     path "versions.yml", emit: versions
 
     script:

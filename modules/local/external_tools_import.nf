@@ -14,7 +14,7 @@ process EXTERNAL_TOOLS_IMPORT {
 
     output:
     path "${toolname}", emit: nonfree_tools
-    path  "versions.yml", emit: versions
+    path "versions.yml", emit: versions
 
     script:
     """
@@ -75,7 +75,9 @@ process EXTERNAL_TOOLS_IMPORT {
     #
     # CREATE VERSION FILE
     #
+
     cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
         ${toolname}: ${toolversion}
     END_VERSIONS
     """
