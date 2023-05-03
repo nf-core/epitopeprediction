@@ -49,7 +49,7 @@ process EXTERNAL_TOOLS_IMPORT {
     # Substitution 3: NMHOME should be the folder in which the tcsh script itself resides
     #
     sed -i.bak \
-        -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
+        -e 's_bin/tcsh.*\$_opt/conda/bin/tcsh_' \
         -e "s_/scratch_/tmp_" \
         -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_ " "${toolname}/${toolbinaryname}"
 

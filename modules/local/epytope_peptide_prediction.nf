@@ -2,9 +2,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     label 'process_low'
 
     conda "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.1.0 conda-forge::gawk=5.1.0 conda-forge::perl=5.32.1"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-11bbf0d242ea96f7b9c08d5b5bc26f2cd5ac5943:3419f320edefe6077631798f50d7bd4f8dc4763f-0' :
-        'quay.io/biocontainers/mulled-v2-11bbf0d242ea96f7b9c08d5b5bc26f2cd5ac5943:3419f320edefe6077631798f50d7bd4f8dc4763f-0' }"
+    container 'ghcr.io/jonasscheid/epitopeprediction-2:0.1.0'
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
