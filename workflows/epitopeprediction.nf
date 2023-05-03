@@ -50,7 +50,7 @@ include { SNPSIFT_SPLIT}                                                        
 include { CSVTK_SPLIT}                                                              from '../modules/local/csvtk_split'
 
 include { EPYTOPE_GENERATE_PEPTIDES }                                               from '../modules/local/epytope_generate_peptides'
-include { SPLIT_PEPTIDES }                                                          from '../modules/local/split_peptides'
+include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PEPTIDES }                                                          from '../modules/local/split_peptides'
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                                from '../modules/local/split_peptides'
 
 include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/epytope_peptide_prediction'
@@ -129,7 +129,7 @@ workflow EPITOPEPREDICTION {
     GUNZIP_VCF (
         ch_samples_from_sheet.variant_compressed
     )
-    ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
+    ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions.ifEmpty(null))
 
     ch_variants_uncompressed = GUNZIP_VCF.out.gunzip
         .mix(ch_samples_from_sheet.variant_uncompressed)
@@ -165,8 +165,8 @@ workflow EPITOPEPREDICTION {
         .collect()
 
     // get versions of all prediction tools
-    GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty([]))
-    ch_prediction_tool_versions = GET_PREDICTION_VERSIONS.out.versions.ifEmpty("")
+    GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty(""))
+    ch_prediction_tool_versions = GET_PREDICTION_VERSIONS.out.versions.ifEmpty(null)
 
     // TODO I guess it would be better to have two subworkflows for the if else parts (CM)
     if (params.show_supported_models) {
@@ -177,6 +177,7 @@ workflow EPITOPEPREDICTION {
                 .combine(ch_prediction_tool_versions)
                 .first()
         )
+        ch_versions = ch_versions.mix(SHOW_SUPPORTED_MODELS.out.versions.ifEmpty(null))
     }
 
     else {
@@ -192,13 +193,14 @@ workflow EPITOPEPREDICTION {
         ch_samples_uncompressed.variant,
         ch_prediction_tool_versions
     )
+    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS.out.versions.ifEmpty(null))
 
     // perform the check requested models on the protein files
     EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN(
         ch_samples_uncompressed.protein,
         ch_prediction_tool_versions
     )
-
+    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN.out.versions.ifEmpty(null))
     // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
     EPYTOPE_CHECK_REQUESTED_MODELS_PEP(
         ch_samples_uncompressed
@@ -206,6 +208,7 @@ workflow EPITOPEPREDICTION {
             .map { meta_data, input_file -> tuple( meta_data, input_file ) },
         ch_prediction_tool_versions
     )
+    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS_PEP.out.versions.ifEmpty(null))
 
     // Return a warning if this is raised
     EPYTOPE_CHECK_REQUESTED_MODELS
@@ -268,6 +271,7 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
+    ch_versions = ch_versions.mix(EXTERNAL_TOOLS_IMPORT.out.versions.ifEmpty(null))
 
     /*
     ========================================================================================
@@ -314,20 +318,19 @@ workflow EPITOPEPREDICTION {
     EPYTOPE_GENERATE_PEPTIDES(
         ch_samples_uncompressed.protein
     )
+    ch_versions = ch_versions.mix(EPYTOPE_GENERATE_PEPTIDES.out.versions.ifEmpty(null))
+
 
     SPLIT_PEPTIDES_PROTEIN(
         EPYTOPE_GENERATE_PEPTIDES.out.splitted
     )
-
-    ch_versions = ch_versions.mix( EPYTOPE_GENERATE_PEPTIDES.out.versions.ifEmpty(null) )
-    ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null))
 
     // split peptide data
-    // TODO: Add the appropriate container to remove the warning
-    SPLIT_PEPTIDES(
+    SPLIT_PEPTIDES_PEPTIDES(
         ch_samples_uncompressed.peptide
     )
-    ch_versions = ch_versions.mix( SPLIT_PEPTIDES.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions.ifEmpty(null) )
 
     /*
     ========================================================================================
@@ -345,16 +348,20 @@ workflow EPITOPEPREDICTION {
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null) )
+
 
     // Run epitope prediction for peptides
     EPYTOPE_PEPTIDE_PREDICTION_PEP(
-        SPLIT_PEPTIDES
+        SPLIT_PEPTIDES_PEPTIDES
             .out
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
+
 
     // Run epitope prediction for variants
     EPYTOPE_PEPTIDE_PREDICTION_VAR(
@@ -366,11 +373,7 @@ workflow EPITOPEPREDICTION {
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
-
-    // collect prediction script versions
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null) )
-    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
-    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null) )
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
     EPYTOPE_PEPTIDE_PREDICTION_PEP
@@ -392,6 +395,8 @@ workflow EPITOPEPREDICTION {
     CAT_TSV(
         ch_predicted_peptides.single
     )
+    ch_versions = ch_versions.mix( CAT_TSV.out.versions.ifEmpty(null) )
+
     CSVTK_CONCAT(
         ch_predicted_peptides.multi
     )
@@ -405,6 +410,7 @@ workflow EPITOPEPREDICTION {
             .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.fasta, EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.fasta )
             .groupTuple()
     )
+    ch_versions = ch_versions.mix( CAT_FASTA.out.versions.ifEmpty(null) )
 
     EPYTOPE_PEPTIDE_PREDICTION_PEP
         .out
@@ -426,10 +432,11 @@ workflow EPITOPEPREDICTION {
     MERGE_JSON_SINGLE(
         ch_json_reports.single
     )
+    ch_versions = ch_versions.mix( MERGE_JSON_SINGLE.out.versions.ifEmpty(null) )
+
     MERGE_JSON_MULTI(
         ch_json_reports.multi
     )
-    ch_versions = ch_versions.mix( MERGE_JSON_SINGLE.out.versions.ifEmpty(null) )
     ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions.ifEmpty(null) )
 
     //

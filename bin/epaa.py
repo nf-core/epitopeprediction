@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# Written by Christopher Mohr and released under the MIT license (2022).
 
 import os
 import sys
@@ -30,8 +31,6 @@ VERSION = "1.1"
 
 # instantiate global logger object
 logger = logging.getLogger(__name__)
-# turn off passing of messages to root logger
-# logger.propagate = False
 logger.setLevel(logging.DEBUG)
 
 handler = logging.StreamHandler(sys.stdout)

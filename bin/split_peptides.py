@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# Written by Sabrina Krakau, Christopher Mohr and released under the MIT license (2022).
+
 
 import math
 import argparse

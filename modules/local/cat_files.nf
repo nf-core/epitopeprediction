@@ -10,7 +10,8 @@ process CAT_FILES {
     tuple val(meta), path(input)
 
     output:
-    tuple val(meta), path("*_prediction*"), emit: output
+    tuple val(meta), path("*_prediction{_result,_proteins}*"), emit: output
+    path "versions.yml", emit: versions
 
     script:
     def fileExt = input[0].name.tokenize("\\.")[-1]
@@ -20,5 +21,10 @@ process CAT_FILES {
 
     """
     cat $input > ${prefix}_${type}.${fileExt}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        cat: \$(echo \$(cat --version 2>&1) | sed 's/^.*BusyBox //; s/ .*\$//')
+    END_VERSIONS
     """
 }

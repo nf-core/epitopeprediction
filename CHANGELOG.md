@@ -3,7 +3,13 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.2.0dev - [name] - [date]
+## v2.2.1 - WaldhaeuserOst Hotfix - 2023-03-16
+
+### `Fixed`
+
+- [#196](https://github.com/nf-core/epitopeprediction/pull/196) - Revert versions changes that caused bug with external tools predictions missing.
+
+## v2.2.0 - WaldhaeuserOst - 2023-03-03
 
 ### `Added`
 
@@ -22,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Fixed`
 
 - [#180](https://github.com/nf-core/epitopeprediction/pull/180) - Fix issue with `frameshift` determination
+- [#194](https://github.com/nf-core/epitopeprediction/pull/194) - Fix software versions collection and add script licenses
 
 ## v2.1.0 - Nordring - 2022-08-02
 

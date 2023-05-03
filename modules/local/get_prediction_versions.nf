@@ -10,7 +10,7 @@ process GET_PREDICTION_VERSIONS {
     val external_tool_versions
 
     output:
-    path "versions.csv", emit: versions
+    path "versions.csv", emit: versions // this versions.csv is needed by a downstream process as well. TODO: fix to use versions.yml
 
     script:
     def external_tools = external_tool_versions.join(",")

@@ -217,7 +217,6 @@ def make_dir(path):
 
 
 def check_samplesheet(file_in, file_out):
-
     """
     sample,alleles,mhc_class,filename
     GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
@@ -244,7 +243,6 @@ def check_samplesheet(file_in, file_out):
 
     sample_run_dict = {}
     with open(file_in, "r") as fin:
-
         ## Check header
         COL_NUM = 4
         HEADER = ["sample", "alleles", "mhc_class", "filename"]
