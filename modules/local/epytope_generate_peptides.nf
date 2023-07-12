@@ -5,7 +5,7 @@ process EPYTOPE_GENERATE_PEPTIDES {
     conda "bioconda::epytope=3.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/epytope:3.1.0--pyh5e36f6f_0' :
-        'quay.io/biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
+        'biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
 
     input:
     tuple val(meta), path(raw)
@@ -13,6 +13,9 @@ process EPYTOPE_GENERATE_PEPTIDES {
     output:
     tuple val(meta), path("*.tsv"), emit: splitted
     path "versions.yml", emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}_peptides"

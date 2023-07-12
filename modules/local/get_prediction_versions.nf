@@ -4,13 +4,16 @@ process GET_PREDICTION_VERSIONS {
     conda "bioconda::epytope=3.1.0"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/epytope:3.1.0--pyh5e36f6f_0' :
-        'quay.io/biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
+        'biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
 
     input:
     val external_tool_versions
 
     output:
     path "versions.csv", emit: versions // this versions.csv is needed by a downstream process as well. TODO: fix to use versions.yml
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     def external_tools = external_tool_versions.join(",")
