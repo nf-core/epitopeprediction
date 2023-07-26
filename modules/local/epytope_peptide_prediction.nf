@@ -2,7 +2,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     label 'process_low'
 
     conda "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.1.0 conda-forge::gawk=5.1.0 conda-forge::perl=5.32.1"
-    container 'ghcr.io/jonasscheid/epitopeprediction-2:0.2.0'
+    container 'ghcr.io/jonasscheid/epitopeprediction-2:0.3.0'
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
