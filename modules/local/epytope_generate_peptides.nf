@@ -14,6 +14,9 @@ process EPYTOPE_GENERATE_PEPTIDES {
     tuple val(meta), path("*.tsv"), emit: splitted
     path "versions.yml", emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}_peptides"
     def min_length = (meta.mhcclass == "I") ? params.min_peptide_length : params.min_peptide_length_class2

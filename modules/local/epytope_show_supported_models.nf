@@ -5,13 +5,16 @@ process EPYTOPE_SHOW_SUPPORTED_MODELS {
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/epytope:3.3.1--pyh7cba7a3_0' :
         'quay.io/biocontainers/epytope:3.3.1--pyh7cba7a3_0' }"
-
+        
     input:
     tuple val(meta), path(raw), path(software_versions)
 
     output:
     path '*.txt', emit: txt // model_report.txt
     path "versions.yml", emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     """

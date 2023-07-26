@@ -12,6 +12,9 @@ process GET_PREDICTION_VERSIONS {
     output:
     path "versions.csv", emit: versions // this versions.csv is needed by a downstream process as well. TODO: fix to use versions.yml
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def external_tools = external_tool_versions.join(",")
 

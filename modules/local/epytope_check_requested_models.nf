@@ -15,6 +15,9 @@ process EPYTOPE_CHECK_REQUESTED_MODELS {
     path '*.log', emit: log // model_warnings.log
     path "versions.yml", emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     def argument = task.ext.args
 

@@ -14,6 +14,9 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     tuple val(meta), path("*.fasta"), emit: fasta, optional: true
     path "versions.yml", emit: versions
 
+    when:
+    task.ext.when == null || task.ext.when
+
     script:
     // Additions to the argument command need to go to the beginning.
     // Argument list needs to end with --peptides or --somatic_mutation
