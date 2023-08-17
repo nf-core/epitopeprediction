@@ -113,16 +113,16 @@ workflow EPITOPEPREDICTION {
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
 
-    INPUT_CHECK.out.reads
+    INPUT_CHECK.out.meta
                 .branch {
                     meta_data, input_file ->
-                        variant_compressed : meta_data.inputtype == 'variant_compressed'
+                        variant_compressed : meta_data.file_type == 'variant_compressed'
                             return [ meta_data, input_file ]
-                        variant_uncompressed :  meta_data.inputtype == 'variant'
+                        variant_uncompressed :  meta_data.file_type == 'variant'
                             return [ meta_data, input_file ]
-                        peptide :  meta_data.inputtype == 'peptide'
+                        peptide :  meta_data.file_type == 'peptide'
                             return [ meta_data, input_file ]
-                        protein :  meta_data.inputtype == 'protein'
+                        protein :  meta_data.file_type == 'protein'
                             return [ meta_data, input_file ]
                     }
                 .set { ch_samples_from_sheet }
@@ -143,9 +143,9 @@ workflow EPITOPEPREDICTION {
         .mix(ch_variants_uncompressed)
         .branch {
                 meta_data, input_file ->
-                variant :  meta_data.inputtype == 'variant' | meta_data.inputtype == 'variant_compressed'
-                peptide :  meta_data.inputtype == 'peptide'
-                protein :  meta_data.inputtype == 'protein'
+                variant :  meta_data.file_type == 'variant' | meta_data.file_type == 'variant_compressed'
+                peptide :  meta_data.file_type == 'peptide'
+                protein :  meta_data.file_type == 'protein'
             }
 
     tools = params.tools?.tokenize(',')
