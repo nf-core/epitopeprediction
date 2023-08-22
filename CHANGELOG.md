@@ -123,3 +123,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v1.0.0 - purple-nickel-shrimp - 2019-12-05
 
 - Initial release of nf-core/epitopeprediction, created with the [nf-core](http://nf-co.re/) template.
+
+### `Changed`
+
+- [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.

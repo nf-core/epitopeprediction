@@ -154,12 +154,13 @@ def get_file_type(file):
         elif extension in ['tsv', 'GSvar']:
             # Check if the file is a variant annotation file or a peptide file
             header_columns = [col.strip() for col in file[0].split('\t')]
+            print(header_columns)
 
             required_variant_columns = ['#chr', 'start', 'end']
 
             file_type = 'peptide'
 
-            if all(col in required_variant_columns for col in header_columns):
+            if all(col in header_columns for col in required_variant_columns):
                 file_type = 'variant'
             elif 'sequence' not in header_columns:
                 raise AssertionError("Peptide input file does not contain mandatory column 'sequence'")
