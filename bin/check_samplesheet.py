@@ -12,6 +12,7 @@ import csv
 from pathlib import Path
 import urllib.request
 
+
 class RowChecker:
     """
     Define a service that can validate and transform each given row.
@@ -22,12 +23,7 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS = (
-        ".tsv",
-        ".fasta",
-        ".vcf",
-        "GSvar"
-    )
+    VALID_FORMATS = (".tsv", ".fasta", ".vcf", "GSvar")
 
     def __init__(
         self,
@@ -70,7 +66,9 @@ class RowChecker:
         self._validate_allele(row)
         self._validate_mhc_class(row)
         self._validate_file(row[self._filename_col])
-        self._seen.add((row[self._sample_col], row[self._alleles_col], row[self._mhc_class_col], row[self._filename_col]))
+        self._seen.add(
+            (row[self._sample_col], row[self._alleles_col], row[self._mhc_class_col], row[self._filename_col])
+        )
         self.rows.append(row)
         self._validate_unique_row()
         self._validate_unique_sample()
@@ -88,21 +86,26 @@ class RowChecker:
         if len(row[self._alleles_col]) <= 0:
             raise AssertionError(f"No alleles specified.\nLine: {row}")
         if (
-                not os.path.isfile(row[self._alleles_col])
-                and (row[self._mhc_class_col] == "I"
-                and any(substring in row[self._alleles_col] for substring in valid_class2_loci))
-                or (row[self._mhc_class_col] == "II"
-                and any(substring in row[self._alleles_col] for substring in valid_class1_loci))
-            ):
-                raise AssertionError(f"Samplesheet contains invalid mhc class and allele combination!\nLine: {row} \
-                                      \nValid loci: {valid_class1_loci if row[self._mhc_class_col] == 'I' else valid_class2_loci}")
+            not os.path.isfile(row[self._alleles_col])
+            and (
+                row[self._mhc_class_col] == "I"
+                and any(substring in row[self._alleles_col] for substring in valid_class2_loci)
+            )
+            or (
+                row[self._mhc_class_col] == "II"
+                and any(substring in row[self._alleles_col] for substring in valid_class1_loci)
+            )
+        ):
+            raise AssertionError(
+                f"Samplesheet contains invalid mhc class and allele combination!\nLine: {row} \
+                                      \nValid loci: {valid_class1_loci if row[self._mhc_class_col] == 'I' else valid_class2_loci}"
+            )
 
     def _validate_mhc_class(self, row):
         """Assert that the mhc_class has the right format."""
-        valid_classes = ["I","II","H-2"]
+        valid_classes = ["I", "II", "H-2"]
         if row[self._mhc_class_col] not in valid_classes:
             raise AssertionError(f"MHC class must be one of: {valid_classes}\nLine: {row}")
-
 
     def _validate_file(self, filename):
         """Assert that a given filename has one of the expected FASTQ extensions."""
@@ -123,52 +126,55 @@ class RowChecker:
             raise AssertionError(f"Duplicate row found: {self.rows[-1]}")
 
     def _validate_unique_sample(self):
-        """ Assert that the combination sample names are unique."""
+        """Assert that the combination sample names are unique."""
         sample_names = [row[self._sample_col] for row in self.rows]
         if len(set(sample_names)) != len(sample_names):
             raise AssertionError(f"Duplicate sample name found: {self.rows[-1]}")
 
 
 def get_file_type(file):
-    """ Read file extension and return file type"""
+    """Read file extension and return file type"""
     extension = file.split(".")[-1]
-    #check input file is empty
-    #it needs to be distinguished if there's a given local file or internet address
+    # check input file is empty
+    # it needs to be distinguished if there's a given local file or internet address
     if str(file).startswith("http"):
         with urllib.request.urlopen(file) as response:
-            file = response.read().decode('utf-8').split('\n')
+            file = response.read().decode("utf-8").split("\n")
             if len(file) == 0:
                 raise AssertionError(f"Input file {file} is empty.")
     else:
-        file = open(file, 'r').readlines()
+        file = open(file, "r").readlines()
         if file == 0:
             raise AssertionError(f"Input file {file} is empty.")
 
     try:
-        if extension == 'vcf.gz':
-            file_type = 'compressed_variant'
-        elif extension == 'vcf':
-            file_type = 'variant'
-        elif extension == 'fasta':
-            file_type = 'protein'
-        elif extension in ['tsv', 'GSvar']:
+        if extension == "vcf.gz":
+            file_type = "compressed_variant"
+        elif extension == "vcf":
+            file_type = "variant"
+        elif extension == "fasta":
+            file_type = "protein"
+        elif extension in ["tsv", "GSvar"]:
             # Check if the file is a variant annotation file or a peptide file
-            header_columns = [col.strip() for col in file[0].split('\t')]
+            header_columns = [col.strip() for col in file[0].split("\t")]
             print(header_columns)
 
-            required_variant_columns = ['#chr', 'start', 'end']
+            required_variant_columns = ["#chr", "start", "end"]
 
-            file_type = 'peptide'
+            file_type = "peptide"
 
             if all(col in header_columns for col in required_variant_columns):
-                file_type = 'variant'
-            elif 'sequence' not in header_columns:
+                file_type = "variant"
+            elif "sequence" not in header_columns:
                 raise AssertionError("Peptide input file does not contain mandatory column 'sequence'")
 
         return file_type
 
     except Exception as e:
-        raise AssertionError(f"Error with checking samplesheet: {e}. Check correct format for input file {file} in documentation.")
+        raise AssertionError(
+            f"Error with checking samplesheet: {e}. Check correct format for input file {file} in documentation."
+        )
+
 
 def parse_args(argv=None):
     """Define and immediately parse command line arguments."""
@@ -213,7 +219,6 @@ def make_dir(path):
 
 
 def check_samplesheet(file_in, file_out):
-
     """
     sample,alleles,mhc_class,filename
     GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_anno.vcf|gbm_1_peps.tsv|gbm_1_prot.fasta
@@ -238,14 +243,19 @@ def check_samplesheet(file_in, file_out):
     - Variant VCF format => https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants.vcf
     """
 
-    with open(file_in, newline="", ) as samplesheet:
+    with open(
+        file_in,
+        newline="",
+    ) as samplesheet:
         reader = csv.reader(samplesheet)
 
         ## Check header
         valid_header = ["sample", "alleles", "mhc_class", "filename"]
         header = [x.strip('"') for x in samplesheet.readline().strip().split(",")]
         if len(header) != 4:
-            raise ValueError(f"Invalid number of header columns! Make sure the samplesheet is properly comma-separated.")
+            raise ValueError(
+                f"Invalid number of header columns! Make sure the samplesheet is properly comma-separated."
+            )
         elif header != valid_header:
             raise AssertionError(f"Invalid samplesheet header (valid = {valid_header})!")
 
@@ -254,7 +264,7 @@ def check_samplesheet(file_in, file_out):
         rows = []
         for i, row in enumerate(reader):
             checker.validate(row)
-            #here an allele check with mhcgnomes would be suitable
+            # here an allele check with mhcgnomes would be suitable
             row.append(get_file_type(row[3]))
             rows.append(row)
 
@@ -268,6 +278,7 @@ def check_samplesheet(file_in, file_out):
             fout.write(",".join(valid_header) + ",file_type\n")
             for row in rows:
                 fout.write(",".join(row) + "\n")
+
 
 def main(argv=None):
     """Coordinate argument parsing and program execution."""
