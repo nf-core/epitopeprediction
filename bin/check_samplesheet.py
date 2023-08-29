@@ -251,6 +251,7 @@ def check_samplesheet(file_in, file_out):
         ## Check header
         valid_header = ["sample", "alleles", "mhc_class", "filename"]
         header = [x.strip('"') for x in samplesheet.readline().strip().split(",")]
+        print(header)
         if len(header) != 4:
             raise ValueError(
                 f"Invalid number of header columns! Make sure the samplesheet is properly comma-separated."
@@ -274,8 +275,7 @@ def check_samplesheet(file_in, file_out):
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
         with open(file_out, "w") as fout:
-            valid_header = valid_header.append('file_type')
-            fout.write(",".join(valid_header) + "\n")
+            fout.write(",".join(valid_header) + ",file_type\n")
             for row in rows:
                 fout.write(",".join(row) + "\n")
 

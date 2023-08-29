@@ -30,7 +30,7 @@ def get_samplesheet_paths(LinkedHashMap row) {
     meta.sample         = row.sample
     meta.alleles        = row.alleles
     meta.mhcclass       = row.mhc_class
-    meta.file_type      = row.file_type
+    meta.inputtype      = row.inputtype
 
     def array = []
     if (!file(row.filename).exists()) {
