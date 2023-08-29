@@ -251,7 +251,6 @@ def check_samplesheet(file_in, file_out):
         ## Check header
         valid_header = ["sample", "alleles", "mhc_class", "filename"]
         header = [x.strip('"') for x in samplesheet.readline().strip().split(",")]
-        print(header)
         if len(header) != 4:
             raise ValueError(
                 f"Invalid number of header columns! Make sure the samplesheet is properly comma-separated."
