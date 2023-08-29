@@ -113,7 +113,7 @@ workflow EPITOPEPREDICTION {
     // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
     // ! There is currently no tooling to help you write a sample sheet schema
 
-    INPUT_CHECK.out.reads
+    INPUT_CHECK.out.meta
                 .branch {
                     meta_data, input_file ->
                         variant_compressed : meta_data.inputtype == 'variant_compressed'
