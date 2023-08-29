@@ -274,7 +274,8 @@ def check_samplesheet(file_in, file_out):
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
         with open(file_out, "w") as fout:
-            fout.write(",".join(valid_header) + ",file_type\n")
+            valid_header.append('file_type')
+            fout.write(",".join(valid_header) + "\n")
             for row in rows:
                 fout.write(",".join(row) + "\n")
 
