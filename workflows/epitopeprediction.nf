@@ -116,13 +116,13 @@ workflow EPITOPEPREDICTION {
     INPUT_CHECK.out.meta
                 .branch {
                     meta_data, input_file ->
-                        variant_compressed : meta_data.file_type == 'variant_compressed'
+                        variant_compressed : meta_data.inputtype == 'variant_compressed'
                             return [ meta_data, input_file ]
-                        variant_uncompressed :  meta_data.file_type == 'variant'
+                        variant_uncompressed :  meta_data.inputtype == 'variant'
                             return [ meta_data, input_file ]
-                        peptide :  meta_data.file_type == 'peptide'
+                        peptide :  meta_data.inputtype == 'peptide'
                             return [ meta_data, input_file ]
-                        protein :  meta_data.file_type == 'protein'
+                        protein :  meta_data.inputtype == 'protein'
                             return [ meta_data, input_file ]
                     }
                 .set { ch_samples_from_sheet }
@@ -143,9 +143,9 @@ workflow EPITOPEPREDICTION {
         .mix(ch_variants_uncompressed)
         .branch {
                 meta_data, input_file ->
-                variant :  meta_data.file_type == 'variant' | meta_data.file_type == 'variant_compressed'
-                peptide :  meta_data.file_type == 'peptide'
-                protein :  meta_data.file_type == 'protein'
+                variant :  meta_data.inputtype == 'variant' | meta_data.inputtype == 'variant_compressed'
+                peptide :  meta_data.inputtype == 'peptide'
+                protein :  meta_data.inputtype == 'protein'
             }
 
     tools = params.tools?.tokenize(',')
