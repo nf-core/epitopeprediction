@@ -53,7 +53,7 @@ include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PEPTIDES }                           
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN }                                from '../modules/local/split_peptides'
 
 include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/epytope_peptide_prediction'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PEP }            from '../modules/local/epytope_peptide_prediction'
+//include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PEP }            from '../modules/local/epytope_peptide_prediction'
 include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR }            from '../modules/local/epytope_peptide_prediction'
 
 include { CAT_FILES as CAT_TSV }                                                    from '../modules/local/cat_files'
@@ -67,6 +67,7 @@ include { MERGE_JSON as MERGE_JSON_MULTI }                                      
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 
 include { INPUT_CHECK } from '../subworkflows/local/input_check'
+include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_prediction'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -136,7 +137,6 @@ workflow EPITOPEPREDICTION {
     ch_variants_uncompressed = GUNZIP_VCF.out.gunzip
         .mix(ch_samples_from_sheet.variant_uncompressed)
 
-
     // (re)combine different input file types
     ch_samples_uncompressed = ch_samples_from_sheet.protein
         .mix(ch_samples_from_sheet.peptide)
@@ -190,6 +190,11 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
 
+    /*
+    #We will be changing the implementation of check requested models so it doesn't depend on epytope
+    (this is necessary to work with newer versions of tools that aren't updated in epytope)
+    # The new check requested models will be implemented in the input_check.nf script
+
     // perform the check requested models on the variant files
     EPYTOPE_CHECK_REQUESTED_MODELS(
         ch_samples_uncompressed.variant,
@@ -228,6 +233,7 @@ workflow EPITOPEPREDICTION {
                 }
             }
     }
+    */
 
     // Retrieve meta data for external tools
     tools.each {
@@ -340,6 +346,7 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
 
+
     // not sure if this is the best solution to also have a extra process for protein, but I think we need it for cases when we have both in one sheet? (CM)
     // run epitope prediction for proteins
     EPYTOPE_PEPTIDE_PREDICTION_PROTEIN(
@@ -354,6 +361,7 @@ workflow EPITOPEPREDICTION {
 
 
     // Run epitope prediction for peptides
+    /*
     EPYTOPE_PEPTIDE_PREDICTION_PEP(
         SPLIT_PEPTIDES_PEPTIDES
             .out
@@ -363,7 +371,22 @@ workflow EPITOPEPREDICTION {
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
+    */
 
+    ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES
+            .out
+            .splitted
+            .combine( ch_prediction_tool_versions )
+            .transpose()
+
+    MHC_BINDING_PREDICTION(
+            ch_prediction_input)
+
+    ch_predicted_peptides = MHC_BINDING_PREDICTION
+                                    .out
+                                    .predicted
+
+    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions.ifEmpty(null))
 
     // Run epitope prediction for variants
     EPYTOPE_PEPTIDE_PREDICTION_VAR(
@@ -378,7 +401,7 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null) )
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
-    EPYTOPE_PEPTIDE_PREDICTION_PEP
+    /*EPYTOPE_PEPTIDE_PREDICTION_PEP
         .out
         .predicted
         .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.predicted, EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.predicted )
@@ -392,13 +415,15 @@ workflow EPITOPEPREDICTION {
                     return [ meta_data, predicted ]
         }
         .set { ch_predicted_peptides }
+*/
 
     // Combine epitope prediction results
     CAT_TSV(
-        ch_predicted_peptides.single
+        ch_predicted_peptides
     )
     ch_versions = ch_versions.mix( CAT_TSV.out.versions.ifEmpty(null) )
 
+/*
     CSVTK_CONCAT(
         ch_predicted_peptides.multi
     )
@@ -440,6 +465,7 @@ workflow EPITOPEPREDICTION {
         ch_json_reports.multi
     )
     ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions.ifEmpty(null) )
+    */
 
     //
     // MODULE: Pipeline reporting
