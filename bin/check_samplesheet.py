@@ -157,7 +157,6 @@ def get_file_type(file):
         elif extension in ["tsv", "GSvar"]:
             # Check if the file is a variant annotation file or a peptide file
             header_columns = [col.strip() for col in file[0].split("\t")]
-            print(header_columns)
 
             required_variant_columns = ["#chr", "start", "end"]
 
@@ -275,7 +274,8 @@ def check_samplesheet(file_in, file_out):
         out_dir = os.path.dirname(file_out)
         make_dir(out_dir)
         with open(file_out, "w") as fout:
-            fout.write(",".join(valid_header) + ",file_type\n")
+            valid_header = valid_header.append('file_type')
+            fout.write(",".join(valid_header) + "\n")
             for row in rows:
                 fout.write(",".join(row) + "\n")
 

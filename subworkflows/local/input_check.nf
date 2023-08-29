@@ -15,7 +15,7 @@ workflow INPUT_CHECK {
         .map { get_samplesheet_paths(it) }
         .set { meta }
 
-    emit: meta                  // channel: [ val(metadata), [ files ] ]
+    emit: meta                  // channel: [ val(meta), [ files ] ]
     versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
 
@@ -26,10 +26,9 @@ def get_samplesheet_paths(LinkedHashMap row) {
     // and return a list of meta and the filename.
     //---------
 
-    def allele_string = generate_allele_string(row.alleles, row.mhc_class)
     def meta = [:]
     meta.sample         = row.sample
-    meta.alleles        = allele_string
+    meta.alleles        = row.alleles
     meta.mhcclass       = row.mhc_class
     meta.file_type      = row.file_type
 
