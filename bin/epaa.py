@@ -15,6 +15,7 @@ import numpy as np
 import epytope.Core.Generator as generator
 import math
 import json
+import urllib.request
 
 from epytope.IO.MartsAdapter import MartsAdapter
 from epytope.Core.Variant import Variant, VariationType, MutationSyntax
@@ -1335,8 +1336,12 @@ def __main__():
         )
 
     # get the alleles
-    # alleles = FileReader.read_lines(args.alleles, in_type=Allele)
-    alleles = [Allele(a) for a in args.alleles.split(";")]
+    if args.alleles.startswith("http"):
+        alleles = [Allele(a) for a in urllib.request.urlopen(args.alleles).read().decode("utf-8").splitlines()]
+    elif args.alleles.endswith(".txt"):
+        alleles = [Allele(a) for a in open(args.alleles, "r").read().splitlines()]
+    else:
+        alleles = [Allele(a) for a in args.alleles.split(";")]
 
     # initialize MartsAdapter, GRCh37 or GRCh38 based
     ma = MartsAdapter(biomart=references[args.reference])
