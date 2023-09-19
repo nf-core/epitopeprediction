@@ -1,19 +1,19 @@
 process NETMHCIIPAN {
     label 'process_single'
-    tag "${metadata.sample}"
+    tag "${meta.sample}"
 
 
     container 'ghcr.io/jonasscheid/epitopeprediction-2:netmhc'
 
     input:
-    tuple val(metadata), path(peptide_file)
+    tuple val(meta), path(peptide_file)
 
     output:
-    tuple val(metadata), path("*.tsv"), emit: predicted
+    tuple val(meta), path("*.tsv"), emit: predicted
     path "versions.yml", emit: versions
 
     script:
-    if (metadata.mhc_class != "II") {
+    if (meta.mhc_class != "II") {
         error "NETMHCIIPAN only supports MHC class II. Use NETMHCPAN for MHC class I, or adjust the samplesheet accordingly."
     }
 
@@ -22,7 +22,7 @@ process NETMHCIIPAN {
 
     stub:
     """
-    touch ${metadata.sample}_predicted_netmhciipan.tsv
+    touch ${meta.sample}_predicted_netmhciipan.tsv
     touch versions.yml
     """
 }

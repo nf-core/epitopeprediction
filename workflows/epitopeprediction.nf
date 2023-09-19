@@ -376,7 +376,7 @@ workflow EPITOPEPREDICTION {
     ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES
             .out
             .splitted
-            .combine( ch_prediction_tool_versions )
+            //.combine( ch_prediction_tool_versions )
             .transpose()
 
     MHC_BINDING_PREDICTION(

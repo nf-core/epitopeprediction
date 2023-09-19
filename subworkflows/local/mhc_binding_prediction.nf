@@ -9,7 +9,7 @@ include { NETMHCPAN } from '../../modules/local/netmhcpan'
 include { NETMHCIIPAN } from '../../modules/local/netmhciipan'
 include { EXTERNAL_TOOLS_IMPORT} from '../../modules/local/external_tools_import'
 include { MERGE_PREDICTIONS } from '../../modules/local/merge_predictions'
-
+include { PREPARE_PREDICTION_INPUT } from '../../modules/local/prepare_prediction_input'
 
 workflow MHC_BINDING_PREDICTION {
     take:
@@ -23,49 +23,64 @@ workflow MHC_BINDING_PREDICTION {
 
         tools = params.tools.split(',')
 
-        if ( "syfpeithi" in tools )
-        {
-        SYFPEITHI ( metadata_and_file )
+        //prepare the input file
+        PREPARE_PREDICTION_INPUT( metadata_and_file )
+            .prepared
+            .set { prepared_metadata_and_file }
+
+        prepared_metadata_and_file
+            .branch {
+                meta, peptide_file ->
+                    syfpeithi : peptide_file.toString().contains("syfpeithi_input.csv")
+                        return [meta, peptide_file]
+                    mhcflurry : peptide_file.toString().contains("mhcflurry_input.csv")
+                        return [meta, peptide_file]
+                    mhcnuggets : peptide_file.toString().contains("mhcnuggets_input.csv")
+                        return [meta, peptide_file]
+                    netmhcpan: peptide_file.toString().contains("netmhcpan_input.csv")
+                        return [meta, peptide_file]
+                    netmhciipan: peptide_file.toString().contains("netmhciipan_input.csv")
+                        return [meta, peptide_file]
+                    }
+            .set{ prepared }
+
+        SYFPEITHI ( prepared.syfpeithi )
         ch_versions = ch_versions.mix(SYFPEITHI.out.versions)
         ch_combined_predictions = ch_combined_predictions.join(SYFPEITHI.out.predicted, remainder: true)
-        }
-        if ( "mhcflurry" in tools )
-        {
-        MHCFLURRY ( metadata_and_file )
+
+        MHCFLURRY ( prepared.mhcflurry )
         ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
         ch_combined_predictions = ch_combined_predictions.join(MHCFLURRY.out.predicted, remainder: true)
-        }
-        if ( "mhcnuggets" in tools )
-        {
-        MHCNUGGETS ( metadata_and_file )
+
+        MHCNUGGETS ( prepared.mhcnuggets )
         ch_versions = ch_versions.mix(MHCNUGGETS.out.versions)
         ch_combined_predictions = ch_combined_predictions.join(MHCNUGGETS.out.predicted, remainder: true)
-        }
+
         if ( "netmhcpan" in tools )
         {
-        EXTERNAL_TOOLS_IMPORT (parse_netmhc_params("netmhcpan", "4.1"))
-        NETMHCPAN (metadata_and_file.combine(EXTERNAL_TOOLS_IMPORT.out.nonfree_tools))
-        ch_versions = ch_versions.mix(NETMHCPAN.out.versions)
-        ch_combined_predictions = ch_combined_predictions.join(NETMHCPAN.out.predicted, remainder: true)
+            EXTERNAL_TOOLS_IMPORT (parse_netmhc_params("netmhcpan", "4.1"))
+            NETMHCPAN (prepared.combine(EXTERNAL_TOOLS_IMPORT.out.nonfree_tools))
+            ch_versions = ch_versions.mix(NETMHCPAN.out.versions)
+            ch_combined_predictions = ch_combined_predictions.join(NETMHCPAN.out.predicted, remainder: true)
         }
+        // TODO: External tools import for netmhciipan
         if ( "netmhciipan" in tools )
         {
-        // TODO: External tools import for netmhciipan
-        NETMHCIIPAN (metadata_and_file)
-        ch_versions = ch_versions.mix(NETMHCIIPAN.out.versions)
-        ch_combined_predictions = ch_combined_predictions.join(NETMHCIIPAN.out.predicted, remainder: true)
+            NETMHCIIPAN ( prepared_metadata_and_file.netmhciipan )
+            ch_versions = ch_versions.mix(NETMHCIIPAN.out.versions)
+            ch_combined_predictions = ch_combined_predictions.join(NETMHCIIPAN.out.predicted, remainder: true)
         }
 
     //remove the null (it[1]) in the channel output and join metadata and input channel with metadata and output channel
-    ch_combined_predictions = ch_combined_predictions.map{ it -> [it[0], it[2..-1]]}.join(metadata_and_file, remainder: true)
+    ch_combined_predictions = ch_combined_predictions.map{ it -> [it[0], it[2..-1]]}.join(prepared_metadata_and_file, remainder: true)
 
     //merge the prediction output of all tools into one output merged_prediction.tsv
-    MERGE_PREDICTIONS (ch_combined_predictions)
-
-    ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
+    //MERGE_PREDICTIONS (ch_combined_predictions)
+    //ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
 
     emit:
-    predicted = MERGE_PREDICTIONS.out.merged
+    //predicted = MERGE_PREDICTIONS.out.merged
+    predicted = Channel.empty()
     versions = ch_versions
 }
 

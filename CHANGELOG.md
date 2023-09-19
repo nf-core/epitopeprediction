@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.9`
 - [203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.8`
 - [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.
+- [#205](https://github.com/nf-core/epitopeprediction/issues/205) - Update general structure of MHC binding subworkflow
 
 ## v2.2.1 - WaldhaeuserOst Hotfix - 2023-03-16
 
