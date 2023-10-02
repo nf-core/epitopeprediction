@@ -231,7 +231,7 @@ def read_GSvar(filename, pass_only=True):
                     mut_type = a_mut_type
 
                 # TODO with the next epytope release we can deal with transcript id version
-                transcript_id = transcript_id.split(".")[0]
+                transcript_id = transcript_id #.split(".")[0]
 
                 coding[transcript_id] = MutationSyntax(
                     transcript_id, int(trans_pos.split("_")[0]) - 1, int(prot_start) - 1, trans_coding, prot_coding
@@ -600,13 +600,14 @@ def read_lig_ID_values(filename):
 
 def create_protein_column_value(pep):
     all_proteins = [
-        transcriptProteinMap[transcript.transcript_id.split(":")[0]] for transcript in set(pep.get_all_transcripts())
+        #transcriptProteinMap[transcript.transcript_id.split(":")[0]]["ensembl_id"] for transcript in set(pep.get_all_transcripts())
+        transcriptProteinMap.query(f'transcript_id == "{transcript.transcript_id.split(":")[0]}"')["ensembl_id"] for transcript in set(pep.get_all_transcripts())
     ]
     return ",".join(set([item for sublist in all_proteins for item in sublist]))
 
 
 def create_transcript_column_value(pep):
-    return ",".join(set([transcript.transcript_id.split(":")[0] for transcript in set(pep.get_all_transcripts())]))
+    return ",".join(set([transcript.transcript_id for transcript in set(pep.get_all_transcripts())]))
 
 
 def create_mutationsyntax_column_value(pep, pep_dictionary):
@@ -1314,10 +1315,14 @@ def __main__():
 
     metadata = []
     proteins = []
-    references = {"GRCh37": "http://feb2014.archive.ensembl.org", "GRCh38": "http://apr2018.archive.ensembl.org"}
+    references = {"GRCh37": "http://grch37.ensembl.org", "GRCh38": "http://ensembl.org"}
+    #"GRCh372": "http://feb2014.archive.ensembl.org", "GRCh38": "http://apr2018.archive.ensembl.org"}
 
     global transcriptProteinMap
     global transcriptSwissProtMap
+
+    # initialize MartsAdapter, GRCh37 or GRCh38 based
+    ma = MartsAdapter(biomart=references[args.reference])
 
     # read in variants or peptides
     if args.peptides:
@@ -1331,9 +1336,12 @@ def __main__():
             variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
 
         transcripts = list(set(transcripts))
-        transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(
-            ID_SYSTEM_USED, transcripts, references[args.reference], args.reference
-        )
+
+        # use function provided by epytope to retrieve protein IDs (different systems) for transcript IDs
+        transcriptProteinMap = ma.get_protein_ids_from_transcripts(transcripts)
+        #transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(
+        #    ID_SYSTEM_USED, transcripts, references[args.reference], args.reference
+        #)
 
     # get the alleles
     if args.alleles.startswith("http"):
@@ -1342,9 +1350,6 @@ def __main__():
         alleles = [Allele(a) for a in open(args.alleles, "r").read().splitlines()]
     else:
         alleles = [Allele(a) for a in args.alleles.split(";")]
-
-    # initialize MartsAdapter, GRCh37 or GRCh38 based
-    ma = MartsAdapter(biomart=references[args.reference])
 
     # create protein db instance for filtering self-peptides
     up_db = UniProtDB("sp")
