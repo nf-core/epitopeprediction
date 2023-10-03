@@ -598,13 +598,15 @@ def read_lig_ID_values(filename):
 def create_protein_column_value(pep):
     # retrieve Ensembl protein ID for given transcript IDs, if we want to provide additional protein ID types, adapt here
     all_proteins = [
+        # split by : otherwise epytope generator suffix included
         transcriptProteinTable.query(f'transcript_id == "{transcript.transcript_id.split(":")[0]}"')["ensembl_id"] for transcript in set(pep.get_all_transcripts())
     ]
     return ",".join(set([item for sublist in all_proteins for item in sublist]))
 
 
 def create_transcript_column_value(pep):
-    return ",".join(set([transcript.transcript_id for transcript in set(pep.get_all_transcripts())]))
+    # split by : otherwise epytope generator suffix included
+    return ",".join(set([transcript.transcript_id.split(":")[0] for transcript in set(pep.get_all_transcripts())]))
 
 
 def create_mutationsyntax_column_value(pep, pep_dictionary):
