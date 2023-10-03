@@ -41,7 +41,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
-transcriptProteinMap = {}
+transcriptProteinTable = {}
 transcriptSwissProtMap = {}
 
 
@@ -230,9 +230,7 @@ def read_GSvar(filename, pass_only=True):
                 if not mut_type:
                     mut_type = a_mut_type
 
-                # TODO with the next epytope release we can deal with transcript id version
-                transcript_id = transcript_id #.split(".")[0]
-
+                # with the latest epytope release (3.3.1), we can now handle full transcript IDs
                 coding[transcript_id] = MutationSyntax(
                     transcript_id, int(trans_pos.split("_")[0]) - 1, int(prot_start) - 1, trans_coding, prot_coding
                 )
@@ -420,8 +418,7 @@ def read_vcf(filename, pass_only=True):
                             positions = re.findall(r"\d+", prot_coding)
                             tpos = int(positions[0]) - 1
 
-                        # TODO with the new epytope release we will support transcript IDs with version
-                        transcript_id = transcript_id.split(".")[0]
+                        # with the latest epytope release (3.3.1), we can now handle full transcript IDs
                         if "NM" in transcript_id:
                             ID_SYSTEM_USED = EIdentifierTypes.REFSEQ
 
@@ -599,9 +596,9 @@ def read_lig_ID_values(filename):
 
 
 def create_protein_column_value(pep):
+    # retrieve Ensembl protein ID for given transcript IDs, if we want to provide additional protein ID types, adapt here
     all_proteins = [
-        #transcriptProteinMap[transcript.transcript_id.split(":")[0]]["ensembl_id"] for transcript in set(pep.get_all_transcripts())
-        transcriptProteinMap.query(f'transcript_id == "{transcript.transcript_id.split(":")[0]}"')["ensembl_id"] for transcript in set(pep.get_all_transcripts())
+        transcriptProteinTable.query(f'transcript_id == "{transcript.transcript_id.split(":")[0]}"')["ensembl_id"] for transcript in set(pep.get_all_transcripts())
     ]
     return ",".join(set([item for sublist in all_proteins for item in sublist]))
 
@@ -977,7 +974,7 @@ def make_predictions_from_variants(
     protein_db,
     identifier,
     metadata,
-    transcriptProteinMap,
+    transcriptProteinTable,
 ):
     # list for all peptides and filtered peptides
     all_peptides = []
@@ -1315,10 +1312,11 @@ def __main__():
 
     metadata = []
     proteins = []
+    # in previous version, these were the defaults "GRCh37": "http://feb2014.archive.ensembl.org" (broken)
+    # "GRCh38": "http://apr2018.archive.ensembl.org" (different dataset table scheme, could potentially be fixed on BiomartAdapter level if needed )
     references = {"GRCh37": "http://grch37.ensembl.org", "GRCh38": "http://ensembl.org"}
-    #"GRCh372": "http://feb2014.archive.ensembl.org", "GRCh38": "http://apr2018.archive.ensembl.org"}
 
-    global transcriptProteinMap
+    global transcriptProteinTable
     global transcriptSwissProtMap
 
     # initialize MartsAdapter, GRCh37 or GRCh38 based
@@ -1338,10 +1336,7 @@ def __main__():
         transcripts = list(set(transcripts))
 
         # use function provided by epytope to retrieve protein IDs (different systems) for transcript IDs
-        transcriptProteinMap = ma.get_protein_ids_from_transcripts(transcripts)
-        #transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(
-        #    ID_SYSTEM_USED, transcripts, references[args.reference], args.reference
-        #)
+        transcriptProteinTable = ma.get_protein_ids_from_transcripts(transcripts, type=ID_SYSTEM_USED)
 
     # get the alleles
     if args.alleles.startswith("http"):
@@ -1422,7 +1417,7 @@ def __main__():
             up_db,
             args.identifier,
             metadata,
-            transcriptProteinMap,
+            transcriptProteinTable,
         )
 
     # concat dataframes for all peptide lengths
