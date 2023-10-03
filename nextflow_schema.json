@@ -48,12 +48,11 @@
             "description": "Options for the genome and proteome reference.",
             "fa_icon": "fas fa-stream",
             "properties": {
-                "genome_version": {
+                "genome_reference": {
                     "type": "string",
-                    "default": "GRCh37",
-                    "help_text": "This defines against which human reference genome the pipeline performs the analysis including the incorporation of genetic variants e.g..",
-                    "enum": ["GRCh37", "GRCh38"],
-                    "description": "Specifies  the human reference genome version."
+                    "default": "grch37",
+                    "help_text": "This defines against which human Ensembl genome reference the pipeline performs the analysis including the incorporation of genetic variants e.g.. If `grch37` or `grch37` are specified the most recent Ensembl Biomart version for genome versions will be used. Alternatively, an Ensembl Biomart (archive) version can be specified, e.g. http://jan2020.archive.ensembl.org/.",
+                    "description": "Specifies the Ensembl genome reference version that will be used."
                 },
                 "proteome": {
                     "type": "string",

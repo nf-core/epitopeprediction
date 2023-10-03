@@ -1162,11 +1162,10 @@ def __main__():
     parser.add_argument("-a", "--alleles", help="<Required> MHC Alleles", required=True, type=str)
     parser.add_argument(
         "-r",
-        "--reference",
+        "--genome_reference",
         help="Reference, retrieved information will be based on this ensembl version",
         required=False,
-        default="GRCh37",
-        choices=["GRCh37", "GRCh38"],
+        default="https://grch37.ensembl.org/",
     )
     parser.add_argument(
         "-f", "--filter_self", help="Filter peptides against human proteom", required=False, action="store_true"
@@ -1210,15 +1209,14 @@ def __main__():
 
     metadata = []
     proteins = []
-    # in previous version, these were the defaults "GRCh37": "http://feb2014.archive.ensembl.org" (broken)
-    # "GRCh38": "http://apr2018.archive.ensembl.org" (different dataset table scheme, could potentially be fixed on BiomartAdapter level if needed )
-    references = {"GRCh37": "http://grch37.ensembl.org", "GRCh38": "http://ensembl.org"}
 
     global transcriptProteinTable
     global transcriptSwissProtMap
 
-    # initialize MartsAdapter, GRCh37 or GRCh38 based
-    ma = MartsAdapter(biomart=references[args.reference])
+    # initialize MartsAdapter
+    # in previous version, these were the defaults "GRCh37": "http://feb2014.archive.ensembl.org" (broken)
+    # "GRCh38": "http://apr2018.archive.ensembl.org" (different dataset table scheme, could potentially be fixed on BiomartAdapter level if needed )
+    ma = MartsAdapter(biomart=args.genome_reference)
 
     # read in variants or peptides
     if args.peptides:
