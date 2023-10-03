@@ -860,25 +860,6 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
-# TODO replace by epytope function once released
-def is_created_by_variant(peptide):
-    transcript_ids = [x.transcript_id for x in set(peptide.get_all_transcripts())]
-    for t in transcript_ids:
-        p = peptide.proteins[t]
-        varmap = p.vars
-        for pos, vars in varmap.items():
-            for var in vars:
-                if var.type in [VariationType.FSDEL, VariationType.FSINS]:
-                    if peptide.proteinPos[t][0] + len(peptide) > pos:
-                        return True
-                else:
-                    for start_pos in peptide.proteinPos[t]:
-                        positions = list(range(start_pos, start_pos + len(peptide)))
-                        if pos in positions:
-                            return True
-    return False
-
-
 def make_predictions_from_variants(
     variants_all,
     methods,
@@ -915,7 +896,7 @@ def make_predictions_from_variants(
         peptide_gen = generator.generate_peptides_from_proteins(prots, peplen)
 
         peptides_var = [x for x in peptide_gen]
-        peptides = [p for p in peptides_var if is_created_by_variant(p)]
+        peptides = [p for p in peptides_var if p.is_created_by_variant()]
 
         # filter out self peptides
         selfies = [str(p) for p in peptides if protein_db.exists(str(p))]
