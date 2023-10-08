@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- [213](https://github.com/nf-core/epitopeprediction/pull/203) - Rename param `genome_version` to `genome_reference`, add functionality to handle BioMart archive urls
+- [213](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.10`
 - [203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.9`
 - [203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.8`
 - [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.
