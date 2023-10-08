@@ -16,11 +16,13 @@ You will need to create a samplesheet with information about the samples you wou
 
 ### Input Formats
 
-The pipeline currently accepts three different types of input that are genomic variants, peptides and proteins. The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
-
-:warning: Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.github.io/SnpEff/). Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
+The pipeline currently accepts three different types of input that are genomic variants, peptides and proteins.
 
 #### Genomic variants
+
+The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
+
+:warning: Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.github.io/SnpEff/). Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
 
 `tsv` files with genomic variants have to provide the following columns:
 
@@ -31,6 +33,14 @@ chr1 12954870 12954870 C T . 0 NORMAL:414,TUMOR:8 . missense_variant 0.5 transcr
 ...
 
 ```
+
+For genomic variants, reference information from `Ensembl BioMart` is used. The default database version is the most recent `GRCh37` version. If you want to do the predictions based on `GRCh38` as the reference genome, please specify `--genome_reference grch37` in your pipeline call.
+
+You can also specify valid `Ensembl BioMart` archive version urls as `--genome_reference` value, e.g. [the archive version of December 2021](http://dec2021.archive.ensembl.org/).
+
+:::note
+Please note that old archive versions are regularly retired, therefore it might be possible that a used version is not available anymore at a later point.
+:::
 
 #### Peptide sequences
 
@@ -81,7 +91,7 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/epitopeprediction --input ./samplesheet.csv --outdir ./results --genome GRCh37 -profile docker
+nextflow run nf-core/epitopeprediction --input ./samplesheet.csv --outdir ./results -profile docker
 ```
 
 This will launch the pipeline with the `docker` configuration profile and default options (`syfpeithi` by default). See below for more information about profiles.
@@ -114,7 +124,6 @@ with `params.yaml` containing:
 ```yaml
 input: './samplesheet.csv'
 outdir: './results/'
-genome: 'GRCh37'
 <...>
 ```
 
