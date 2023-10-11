@@ -22,7 +22,9 @@ The pipeline currently accepts three different types of input that are genomic v
 
 The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
 
-:warning: Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.github.io/SnpEff/). Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
+> [!IMPORTANT]
+> Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/).
+> Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
 
 `tsv` files with genomic variants have to provide the following columns:
 
@@ -38,9 +40,8 @@ For genomic variants, reference information from `Ensembl BioMart` is used. The 
 
 You can also specify valid `Ensembl BioMart` archive version urls as `--genome_reference` value, e.g. [the archive version of December 2021](http://dec2021.archive.ensembl.org/).
 
-:::note
-Please note that old archive versions are regularly retired, therefore it might be possible that a used version is not available anymore at a later point.
-:::
+> [!IMPORTANT]
+> Please note that old archive versions are regularly retired, therefore it might be possible that a used version is not available anymore at a later point.
 
 #### Peptide sequences
 
@@ -109,9 +110,8 @@ If you wish to repeatedly use the same parameters for multiple runs, rather than
 
 Pipeline settings can be provided in a `yaml` or `json` file via `-params-file <file>`.
 
-:::warning
-Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
-:::
+> [!WARNING]
+> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
 
 The above pipeline run specified with a params file in yaml format:
 
@@ -166,9 +166,8 @@ If you wish to share such profile (such as upload as supplementary material for 
 
 ## Core Nextflow arguments
 
-:::note
-These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen).
-:::
+> [!NOTE]
+> These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen).
 
 ### `-profile`
 
