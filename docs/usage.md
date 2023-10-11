@@ -16,11 +16,15 @@ You will need to create a samplesheet with information about the samples you wou
 
 ### Input Formats
 
-The pipeline currently accepts three different types of input that are genomic variants, peptides and proteins. The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
-
-:warning: Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.github.io/SnpEff/). Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
+The pipeline currently accepts three different types of input that are genomic variants, peptides and proteins.
 
 #### Genomic variants
+
+The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
+
+> [!IMPORTANT]
+> Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/).
+> Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
 
 `tsv` files with genomic variants have to provide the following columns:
 
@@ -31,6 +35,13 @@ chr1 12954870 12954870 C T . 0 NORMAL:414,TUMOR:8 . missense_variant 0.5 transcr
 ...
 
 ```
+
+For genomic variants, reference information from `Ensembl BioMart` is used. The default database version is the most recent `GRCh37` version. If you want to do the predictions based on `GRCh38` as the reference genome, please specify `--genome_reference grch37` in your pipeline call.
+
+You can also specify valid `Ensembl BioMart` archive version urls as `--genome_reference` value, e.g. [the archive version of December 2021](http://dec2021.archive.ensembl.org/).
+
+> [!IMPORTANT]
+> Please note that old archive versions are regularly retired, therefore it might be possible that a used version is not available anymore at a later point.
 
 #### Peptide sequences
 
@@ -81,7 +92,7 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 The typical command for running the pipeline is as follows:
 
 ```bash
-nextflow run nf-core/epitopeprediction --input ./samplesheet.csv --outdir ./results --genome GRCh37 -profile docker
+nextflow run nf-core/epitopeprediction --input ./samplesheet.csv --outdir ./results -profile docker
 ```
 
 This will launch the pipeline with the `docker` configuration profile and default options (`syfpeithi` by default). See below for more information about profiles.
@@ -99,7 +110,8 @@ If you wish to repeatedly use the same parameters for multiple runs, rather than
 
 Pipeline settings can be provided in a `yaml` or `json` file via `-params-file <file>`.
 
-> ⚠️ Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
+> [!WARNING]
+> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
 
 The above pipeline run specified with a params file in yaml format:
 
@@ -112,7 +124,6 @@ with `params.yaml` containing:
 ```yaml
 input: './samplesheet.csv'
 outdir: './results/'
-genome: 'GRCh37'
 <...>
 ```
 
@@ -149,11 +160,14 @@ This version number will be logged in reports when you run the pipeline, so that
 
 To further assist in reproducbility, you can use share and re-use [parameter files](#running-the-pipeline) to repeat pipeline runs with the same settings without having to write out a command with every single parameter.
 
-> 💡 If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
+:::tip
+If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
+:::
 
 ## Core Nextflow arguments
 
-> **NB:** These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen).
+> [!NOTE]
+> These options are part of Nextflow and use a _single_ hyphen (pipeline parameters use a double-hyphen).
 
 ### `-profile`
 
@@ -161,7 +175,9 @@ Use this parameter to choose a configuration profile. Profiles can give configur
 
 Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Docker, Singularity, Podman, Shifter, Charliecloud, Apptainer, Conda) - see below.
 
-> We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however, Conda is also supported as an alternative.
+:::info
+We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however when this is not possible, Conda is also supported.
+:::
 
 The pipeline dynamically loads configurations from [https://github.com/nf-core/configs](https://github.com/nf-core/configs) when it runs, making multiple config profiles for various institutional clusters available at run time. For more information, and to see if your system is available in these configs, please see the [nf-core/configs documentation](https://github.com/nf-core/configs#documentation).
 

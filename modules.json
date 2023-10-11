@@ -7,7 +7,12 @@
                 "nf-core": {
                     "custom/dumpsoftwareversions": {
                         "branch": "master",
-                        "git_sha": "911696ea0b62df80e900ef244d7867d177971f73",
+                        "git_sha": "05c280924b6c768d484c7c443dad5e605c4ff4b4",
+                        "installed_by": ["modules"]
+                    },
+                    "fastqc": {
+                        "branch": "master",
+                        "git_sha": "a33464f205fa15305bfe268546f6607b6f4d4753",
                         "installed_by": ["modules"]
                     },
                     "gunzip": {
@@ -17,7 +22,7 @@
                     },
                     "multiqc": {
                         "branch": "master",
-                        "git_sha": "911696ea0b62df80e900ef244d7867d177971f73",
+                        "git_sha": "a6e11ac655e744f7ebc724be669dd568ffdc0e80",
                         "installed_by": ["modules"]
                     }
                 }

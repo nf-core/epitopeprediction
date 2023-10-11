@@ -41,7 +41,7 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 
 ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
-transcriptProteinMap = {}
+transcriptProteinTable = {}
 transcriptSwissProtMap = {}
 
 
@@ -230,9 +230,7 @@ def read_GSvar(filename, pass_only=True):
                 if not mut_type:
                     mut_type = a_mut_type
 
-                # TODO with the next epytope release we can deal with transcript id version
-                transcript_id = transcript_id.split(".")[0]
-
+                # with the latest epytope release (3.3.1), we can now handle full transcript IDs
                 coding[transcript_id] = MutationSyntax(
                     transcript_id, int(trans_pos.split("_")[0]) - 1, int(prot_start) - 1, trans_coding, prot_coding
                 )
@@ -420,8 +418,7 @@ def read_vcf(filename, pass_only=True):
                             positions = re.findall(r"\d+", prot_coding)
                             tpos = int(positions[0]) - 1
 
-                        # TODO with the new epytope release we will support transcript IDs with version
-                        transcript_id = transcript_id.split(".")[0]
+                        # with the latest epytope release (3.3.1), we can now handle full transcript IDs
                         if "NM" in transcript_id:
                             ID_SYSTEM_USED = EIdentifierTypes.REFSEQ
 
@@ -599,13 +596,17 @@ def read_lig_ID_values(filename):
 
 
 def create_protein_column_value(pep):
+    # retrieve Ensembl protein ID for given transcript IDs, if we want to provide additional protein ID types, adapt here
     all_proteins = [
-        transcriptProteinMap[transcript.transcript_id.split(":")[0]] for transcript in set(pep.get_all_transcripts())
+        # split by : otherwise epytope generator suffix included
+        transcriptProteinTable.query(f'transcript_id == "{transcript.transcript_id.split(":")[0]}"')["ensembl_id"]
+        for transcript in set(pep.get_all_transcripts())
     ]
     return ",".join(set([item for sublist in all_proteins for item in sublist]))
 
 
 def create_transcript_column_value(pep):
+    # split by : otherwise epytope generator suffix included
     return ",".join(set([transcript.transcript_id.split(":")[0] for transcript in set(pep.get_all_transcripts())]))
 
 
@@ -773,91 +774,6 @@ def create_ligandomics_column_value_for_result(row, lig_id, val, wild_type):
         return ""
 
 
-def get_protein_ids_for_transcripts(idtype, transcripts, ensembl_url, reference):
-    result = {}
-    result_swissProt = {}
-
-    biomart_url = "{}/biomart/martservice?query=".format(ensembl_url)
-    biomart_head = """
-    <?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE Query>
-        <Query client="true" processor="TSV" limit="-1" header="1" uniqueRows = "1" >
-            <Dataset name="%s" config="%s">
-    """.strip()
-    biomart_tail = """
-            </Dataset>
-        </Query>
-    """.strip()
-    biomart_filter = """<Filter name="%s" value="%s" filter_list=""/>"""
-    biomart_attribute = """<Attribute name="%s"/>"""
-
-    ENSEMBL = False
-    if idtype == EIdentifierTypes.ENSEMBL:
-        idname = "ensembl_transcript_id"
-        ENSEMBL = True
-    elif idtype == EIdentifierTypes.REFSEQ:
-        idname = "refseq_mrna"
-
-    input_lists = []
-
-    # too long requests will fail
-    if len(transcripts) > 200:
-        input_lists = [transcripts[i : i + 3] for i in range(0, len(transcripts), 3)]
-
-    else:
-        input_lists += [transcripts]
-
-    attribut_swissprot = "uniprot_swissprot_accession" if reference == "GRCh37" else "uniprotswissprot"
-
-    tsvselect = []
-    for l in input_lists:
-        rq_n = (
-            biomart_head % ("hsapiens_gene_ensembl", "default")
-            + biomart_filter % (idname, ",".join(l))
-            + biomart_attribute % ("ensembl_peptide_id")
-            + biomart_attribute % (attribut_swissprot)
-            + biomart_attribute % ("refseq_peptide")
-            + biomart_attribute % (idname)
-            + biomart_tail
-        )
-
-        # DictReader returns byte object that is transformed into a string by '.decode('utf-8')'
-        tsvreader = csv.DictReader(
-            urllib.request.urlopen(biomart_url + urllib.parse.quote(rq_n)).read().decode("utf-8").splitlines(),
-            dialect="excel-tab",
-        )
-
-        tsvselect += [x for x in tsvreader]
-
-    swissProtKey = "UniProt/SwissProt Accession" if reference == "GRCh37" else "UniProtKB/Swiss-Prot ID"
-
-    if ENSEMBL:
-        key = "Ensembl Transcript ID" if reference == "GRCh37" else "Transcript stable ID"
-        protein_key = "Ensembl Protein ID" if reference == "GRCh37" else "Protein stable ID"
-        for dic in tsvselect:
-            if dic[key] in result:
-                merged = result[dic[key]] + [dic[protein_key]]
-                merged_swissProt = result_swissProt[dic[key]] + [dic[swissProtKey]]
-                result[dic[key]] = merged
-                result_swissProt[dic[key]] = merged_swissProt
-            else:
-                result[dic[key]] = [dic[protein_key]]
-                result_swissProt[dic[key]] = [dic[swissProtKey]]
-    else:
-        key = "RefSeq mRNA [e.g. NM_001195597]"
-        for dic in tsvselect:
-            if dic[key] in result:
-                merged = result[dic[key]] + [dic["RefSeq Protein ID [e.g. NP_001005353]"]]
-                merged_swissProt = result_swissProt[dic[key]] + [dic[swissProtKey]]
-                result[dic[key]] = merged
-                result_swissProt[dic[key]] = merged_swissProt
-            else:
-                result[dic[key]] = [dic["RefSeq Protein ID [e.g. NP_001005353]"]]
-                result_swissProt[dic[key]] = [dic[swissProtKey]]
-
-    return result, result_swissProt
-
-
 def get_matrix_max_score(allele, length):
     allele_model = "%s_%i" % (allele, length)
     try:
@@ -945,25 +861,6 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
-# TODO replace by epytope function once released
-def is_created_by_variant(peptide):
-    transcript_ids = [x.transcript_id for x in set(peptide.get_all_transcripts())]
-    for t in transcript_ids:
-        p = peptide.proteins[t]
-        varmap = p.vars
-        for pos, vars in varmap.items():
-            for var in vars:
-                if var.type in [VariationType.FSDEL, VariationType.FSINS]:
-                    if peptide.proteinPos[t][0] + len(peptide) > pos:
-                        return True
-                else:
-                    for start_pos in peptide.proteinPos[t]:
-                        positions = list(range(start_pos, start_pos + len(peptide)))
-                        if pos in positions:
-                            return True
-    return False
-
-
 def make_predictions_from_variants(
     variants_all,
     methods,
@@ -976,7 +873,7 @@ def make_predictions_from_variants(
     protein_db,
     identifier,
     metadata,
-    transcriptProteinMap,
+    transcriptProteinTable,
 ):
     # list for all peptides and filtered peptides
     all_peptides = []
@@ -1000,7 +897,7 @@ def make_predictions_from_variants(
         peptide_gen = generator.generate_peptides_from_proteins(prots, peplen)
 
         peptides_var = [x for x in peptide_gen]
-        peptides = [p for p in peptides_var if is_created_by_variant(p)]
+        peptides = [p for p in peptides_var if p.is_created_by_variant()]
 
         # filter out self peptides
         selfies = [str(p) for p in peptides if protein_db.exists(str(p))]
@@ -1266,11 +1163,10 @@ def __main__():
     parser.add_argument("-a", "--alleles", help="<Required> MHC Alleles", required=True, type=str)
     parser.add_argument(
         "-r",
-        "--reference",
+        "--genome_reference",
         help="Reference, retrieved information will be based on this ensembl version",
         required=False,
-        default="GRCh37",
-        choices=["GRCh37", "GRCh38"],
+        default="https://grch37.ensembl.org/",
     )
     parser.add_argument(
         "-f", "--filter_self", help="Filter peptides against human proteom", required=False, action="store_true"
@@ -1314,10 +1210,14 @@ def __main__():
 
     metadata = []
     proteins = []
-    references = {"GRCh37": "http://feb2014.archive.ensembl.org", "GRCh38": "http://apr2018.archive.ensembl.org"}
 
-    global transcriptProteinMap
+    global transcriptProteinTable
     global transcriptSwissProtMap
+
+    # initialize MartsAdapter
+    # in previous version, these were the defaults "GRCh37": "http://feb2014.archive.ensembl.org" (broken)
+    # "GRCh38": "http://apr2018.archive.ensembl.org" (different dataset table scheme, could potentially be fixed on BiomartAdapter level if needed )
+    ma = MartsAdapter(biomart=args.genome_reference)
 
     # read in variants or peptides
     if args.peptides:
@@ -1331,9 +1231,9 @@ def __main__():
             variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
 
         transcripts = list(set(transcripts))
-        transcriptProteinMap, transcriptSwissProtMap = get_protein_ids_for_transcripts(
-            ID_SYSTEM_USED, transcripts, references[args.reference], args.reference
-        )
+
+        # use function provided by epytope to retrieve protein IDs (different systems) for transcript IDs
+        transcriptProteinTable = ma.get_protein_ids_from_transcripts(transcripts, type=ID_SYSTEM_USED)
 
     # get the alleles
     if args.alleles.startswith("http"):
@@ -1342,9 +1242,6 @@ def __main__():
         alleles = [Allele(a) for a in open(args.alleles, "r").read().splitlines()]
     else:
         alleles = [Allele(a) for a in args.alleles.split(";")]
-
-    # initialize MartsAdapter, GRCh37 or GRCh38 based
-    ma = MartsAdapter(biomart=references[args.reference])
 
     # create protein db instance for filtering self-peptides
     up_db = UniProtDB("sp")
@@ -1417,7 +1314,7 @@ def __main__():
             up_db,
             args.identifier,
             metadata,
-            transcriptProteinMap,
+            transcriptProteinTable,
         )
 
     # concat dataframes for all peptide lengths
