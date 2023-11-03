@@ -8,7 +8,7 @@ process MERGE_PREDICTIONS {
         'quay.io/biocontainers/mhcgnomes:1.8.4--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(prediction_files), path(metadata_file)
+    tuple val(meta), path(prediction_files), path(tsv)
 
     output:
     tuple val(meta), path("*.tsv"), emit: merged

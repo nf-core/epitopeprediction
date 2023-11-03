@@ -18,8 +18,8 @@ process PREPARE_PREDICTION_INPUT {
 
     script:
     //TODO handle the thresholds (parse the --tools_thresholds and --use_affinity_thresholds)
-    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_mhc_I : params.min_peptide_length_mhc_II
-    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length_mhc_I : params.max_peptide_length_mhc_II
+    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length : params.min_peptide_length_class2
+    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length : params.max_peptide_length_class2
     //tools über params.tools ziehen
 
     """
@@ -27,7 +27,7 @@ process PREPARE_PREDICTION_INPUT {
 
     stub:
     """
-    touch syfpeithi_input.csv
+    touch prepared_input.csv
     touch versions.yml
     """
 }
