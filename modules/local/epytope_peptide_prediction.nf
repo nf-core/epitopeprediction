@@ -7,6 +7,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     input:
     tuple val(meta), path(splitted), path(software_versions)
     val netmhc_paths
+    path(expression)
 
     output:
     tuple val(meta), path("*.json"), emit: json
@@ -40,6 +41,10 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     if (params.use_affinity_thresholds) {
         argument = "--use_affinity_thresholds " + argument
+    }
+
+    if (expression) {
+        argument = "--expression ${expression} " + argument
     }
 
     def netmhc_paths_string = netmhc_paths.join(",")

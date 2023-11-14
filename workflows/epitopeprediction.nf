@@ -115,7 +115,7 @@ workflow EPITOPEPREDICTION {
 
     INPUT_CHECK.out.meta
                 .branch {
-                    meta_data, input_file ->
+                    meta_data, expression, input_file ->
                         variant_compressed : meta_data.inputtype == 'variant_compressed'
                             return [ meta_data, input_file ]
                         variant_uncompressed :  meta_data.inputtype == 'variant'
@@ -126,6 +126,9 @@ workflow EPITOPEPREDICTION {
                             return [ meta_data, input_file ]
                     }
                 .set { ch_samples_from_sheet }
+
+    ch_expression = INPUT_CHECK.out.reads
+                        .map { meta_data, expression, input_file -> expression }
 
     // gunzip variant files
     GUNZIP_VCF (
@@ -348,7 +351,8 @@ workflow EPITOPEPREDICTION {
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([]),
+            ch_expression
     )
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null) )
 
@@ -360,7 +364,8 @@ workflow EPITOPEPREDICTION {
             .splitted
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([]),
+            ch_expression
     )
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
 
@@ -373,7 +378,8 @@ workflow EPITOPEPREDICTION {
             .mix( ch_split_variants.splitted )
             .combine( ch_prediction_tool_versions )
             .transpose(),
-            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
+            EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([]),
+            ch_expression
     )
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null) )
 
