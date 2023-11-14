@@ -42,7 +42,7 @@
             "binary_name": "netMHCpan"
         },
         "4.1": {
-            "version": 4.0,
+            "version": 4.1,
             "software_md5": "5f6eab43feb80a24e32eb02b22e9db5f",
             "data_url": "https://services.healthtech.dtu.dk/services/NetMHCpan-4.1/data.tar.gz",
             "data_md5": "4bdd3944cb4c5b8ba4d8900dae074c85",

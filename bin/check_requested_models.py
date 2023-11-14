@@ -1,9 +1,12 @@
 #!/usr/bin/env python
+# Written by Sabrina Krakau, Christopher Mohr and released under the MIT license.
+
 
 import sys
 import csv
 import argparse
 import logging
+import urllib.request
 
 from epytope.Core.Allele import Allele
 from epytope.Core.Peptide import Peptide
@@ -72,7 +75,12 @@ def __main__():
         }
 
     # get the alleles
-    alleles = [Allele(a) for a in args.alleles.split(";")]
+    if args.alleles.startswith("http"):
+        alleles = [Allele(a) for a in urllib.request.urlopen(args.alleles).read().decode("utf-8").splitlines()]
+    elif args.alleles.endswith(".txt"):
+        alleles = [Allele(a) for a in open(args.alleles, "r").read().splitlines()]
+    else:
+        alleles = [Allele(a) for a in args.alleles.split(";")]
 
     peptide_lengths = []
     if args.peptides:

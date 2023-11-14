@@ -11,25 +11,26 @@ workflow INPUT_CHECK {
     main:
     SAMPLESHEET_CHECK ( samplesheet )
         .csv
-        .splitCsv ( header:true, sep:',' )
+        .splitCsv ( header:true )
         .map { get_samplesheet_paths(it) }
-        .set { reads }
+        .set { meta }
 
-    emit:
-    reads                                     // channel: [ val(meta), [ reads ] ]
+    emit: meta                  // channel: [ val(meta), [ files ] ]
     versions = SAMPLESHEET_CHECK.out.versions // channel: [ versions.yml ]
 }
 
 // Function to get list of [ meta, filenames ]
 def get_samplesheet_paths(LinkedHashMap row) {
+    //---------
+    // Save sample, alleles, mhc_class and file_type in a dictionary (metadata)
+    // and return a list of meta and the filename.
+    //---------
 
-    def allele_string = generate_allele_string(row.alleles, row.mhc_class)
-    def type = determine_input_type(row.filename)
     def meta = [:]
     meta.sample         = row.sample
-    meta.alleles        = allele_string
+    meta.alleles        = row.alleles
     meta.mhcclass       = row.mhc_class
-    meta.inputtype      = type
+    meta.inputtype      = row.inputtype
     expression = row.expression ? file(row.expression, checkIfExists: true) : []
 
     def array = []
@@ -37,7 +38,7 @@ def get_samplesheet_paths(LinkedHashMap row) {
         exit 1, "ERROR: Please check input samplesheet -> file does not exist!\n${row.Filename}"
     }
     else {
-        array = [meta, expression, file(row.filename)]
+        array = [meta, file(row.filename)]
     }
     return array
 }
@@ -59,29 +60,4 @@ def generate_allele_string(String alleles, String mhcclass) {
         allele_string = alleles
     }
     return allele_string
-}
-
-def determine_input_type(String filename) {
-    def filetype
-    def input_file = file(filename)
-    def extension = input_file.extension
-
-    if (filename.endsWith("vcf.gz") ) {
-        filetype = "variant_compressed"
-    }
-    else if (extension == "vcf") {
-        filetype = "variant"
-    }
-    else if ( extension == "tsv" | extension == "GSvar" ) {
-        // Check if it is a variant annotation file or a peptide file
-        input_file.withReader {
-            def first_header_col = it.readLine().split('\t')[0]
-            if (first_header_col == "id") { filetype = "peptide" }
-            else if (first_header_col == "#chr") {filetype = "variant"}
-        }
-    }
-    else {
-        filetype = "protein"
-    }
-    return filetype
 }

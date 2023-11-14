@@ -11,6 +11,10 @@ on:
 env:
   NXF_ANSI_LOG: false
 
+concurrency:
+  group: "${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}"
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Run pipeline with test data
@@ -20,11 +24,11 @@ jobs:
     strategy:
       matrix:
         NXF_VER:
-          - "21.10.3"
+          - "23.04.0"
           - "latest-everything"
     steps:
       - name: Check out pipeline code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1
@@ -45,7 +49,7 @@ jobs:
       matrix:
         include:
           # Test pipeline minimum Nextflow version
-          - NXF_VER: "21.10.3"
+          - NXF_VER: "22.10.1"
             NXF_EDGE: ""
           # Test latest edge release of Nextflow
           - NXF_VER: ""
@@ -86,7 +90,7 @@ jobs:
       matrix:
         include:
           # Test pipeline minimum Nextflow version
-          - NXF_VER: "21.10.3"
+          - NXF_VER: "22.10.1"
             NXF_EDGE: ""
           # Test latest edge release of Nextflow
           - NXF_VER: ""

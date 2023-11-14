@@ -1,10 +1,10 @@
 process VARIANT_SPLIT {
     label 'process_low'
 
-    conda (params.enable_conda ? "conda-forge::python=3.8.3" : null)
+    conda "conda-forge::python=3.8.3"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/python:3.8.3' :
-        'quay.io/biocontainers/python:3.8.3' }"
+        'biocontainers/python:3.8.3' }"
 
     input:
     tuple val(meta), path(input_file)
@@ -13,8 +13,10 @@ process VARIANT_SPLIT {
     tuple val(meta), path("*.vcf"), emit: splitted
     path "versions.yml", emit: versions
 
-    script:
+    when:
+    task.ext.when == null || task.ext.when
 
+    script:
     def size_parameter = params.split_by_variants_size != 0 ? "--size ${params.split_by_variants_size}" : ''
     def distance_parameter = params.split_by_variants_distance ? "--distance ${params.split_by_variants_distance}" : ''
 

@@ -1,10 +1,10 @@
 process EPYTOPE_CHECK_REQUESTED_MODELS {
     label 'process_low'
 
-    conda (params.enable_conda ? "bioconda::epytope=3.1.0" : null)
+    conda "bioconda::epytope=3.3.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/epytope:3.1.0--pyh5e36f6f_0' :
-        'quay.io/biocontainers/epytope:3.1.0--pyh5e36f6f_0' }"
+        'https://depot.galaxyproject.org/singularity/epytope:3.3.1--pyh7cba7a3_0' :
+        'biocontainers/epytope:3.3.1--pyh7cba7a3_0' }"
 
     input:
     tuple val(meta), path(input_file)
@@ -14,6 +14,9 @@ process EPYTOPE_CHECK_REQUESTED_MODELS {
     path '*.txt', emit: txt // model_report.txt
     path '*.log', emit: log // model_warnings.log
     path "versions.yml", emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     def argument = task.ext.args
