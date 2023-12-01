@@ -23,7 +23,7 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS = (".tsv", ".fasta", ".vcf", "GSvar")
+    VALID_FORMATS = (".tsv", ".fasta", ".vcf", ".vcf.gz" ".GSvar")
 
     def __init__(
         self,
@@ -134,7 +134,7 @@ class RowChecker:
 
 def get_file_type(file):
     """Read file extension and return file type"""
-    extension = file.split(".")[-1]
+    extension = ''.join(Path(file).suffixes
     # check input file is empty
     # it needs to be distinguished if there's a given local file or internet address
     if str(file).startswith("http"):
@@ -148,13 +148,13 @@ def get_file_type(file):
             raise AssertionError(f"Input file {file} is empty.")
 
     try:
-        if extension == "vcf.gz":
+        if ".vcf.gz" in extension:
             file_type = "compressed_variant"
-        elif extension == "vcf":
+        elif extension == ".vcf":
             file_type = "variant"
-        elif extension == "fasta":
+        elif extension == ".fasta":
             file_type = "protein"
-        elif extension in ["tsv", "GSvar"]:
+        elif extension in [".tsv", ".GSvar"]:
             # Check if the file is a variant annotation file or a peptide file
             header_columns = [col.strip() for col in file[0].split("\t")]
 
