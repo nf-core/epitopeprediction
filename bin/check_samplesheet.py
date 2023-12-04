@@ -11,6 +11,7 @@ import re
 import csv
 from pathlib import Path
 import urllib.request
+from urllib.parse import urlparse
 
 
 class RowChecker:
@@ -82,17 +83,8 @@ class RowChecker:
         """Assert that the alleles have the right format."""
         if len(row[self._alleles_col]) <= 0:
             raise AssertionError(f"No alleles specified.\nLine: {row}")
-        if os.path.isfile(row[self._alleles_col]):
-            logging.info(f"Alleles file found: {row[self._alleles_col]}. Attempting to read file.")
-            try:
-                with open(row[self._alleles_col], "r") as f:
-                    alleles = f.readlines()[0]
-            except Exception as e:
-                raise AssertionError(f"Error with reading alleles file: {e}. Check correct format for input file {row[self._alleles_col]} in documentation.")
-        else:
-            alleles = row[self._alleles_col]
-
-        if not all([check_allele_nomenclature(allele, row[self._mhc_class_col]) for allele in alleles.split(";")]):
+        alleles = read_source(row[self._alleles_col])
+        if not all([self._check_allele_nomenclature(allele, row[self._mhc_class_col]) for allele in alleles.split(";")]):
                 raise AssertionError(f"Alleles {alleles} of MHC-class {row[self._mhc_class_col]} don't have the right format. \nLine: {row}. See the documentation for more information.")
 
     def _validate_mhc_class(self, row):
@@ -125,6 +117,32 @@ class RowChecker:
         if len(set(sample_names)) != len(sample_names):
             raise AssertionError(f"Duplicate sample name found: {self.rows[-1]}")
 
+    def _check_allele_nomenclature(self, allele, mhc_class) -> bool:
+        allele = allele.replace('HLA-','')
+        if mhc_class == 'I':
+            pattern = re.compile("(^[A-E]{1}[\*][0-9]{2}[:][0-9]{2})$")
+        elif mhc_class == 'II':
+            # Check if allele is from two chains
+            if allele.contains("-"):
+                pattern = re.compile("(^(DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2}[-](DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2})$")
+            else:
+                pattern = re.compile("(^(DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2})$")
+        else: # Mouse
+            pattern = re.compile("(^[H]{1}[-][2]{1}[-][A-Za-z]{2,3})$")
+
+        return pattern.match(allele) is not None
+
+
+def read_source(source):
+    """Read the alleles from a file/url or return the string."""
+    if urlparse(source).scheme in ('http', 'https'):
+        with urllib.request.urlopen(source) as response:
+            return response.read().decode('utf-8').splitlines()[0]
+    elif os.path.isfile(source):
+        with open(source, "r") as f:
+            return f.readlines()[0]
+    else:
+        return source
 
 def get_file_type(file):
     """Read file extension and return file type"""
@@ -138,7 +156,8 @@ def get_file_type(file):
             file_type = "protein"
         elif extension in [".tsv", ".GSvar"]:
             # Check if the file is a variant annotation file or a peptide file
-            header_columns = [col.strip() for col in file[0].split("\t")]
+            header = read_source(file)
+            header_columns = [col.strip() for col in header.split("\t")]
 
             required_variant_columns = ["#chr", "start", "end"]
 
@@ -183,22 +202,6 @@ def parse_args(argv=None):
         default="WARNING",
     )
     return parser.parse_args(argv)
-
-
-def check_allele_nomenclature(allele, mhc_class) -> bool:
-    allele = allele.replace('HLA-','')
-    if mhc_class == 'I':
-        pattern = re.compile("(^[A-E]{1}[\*][0-9]{2}[:][0-9]{2})$")
-    elif mhc_class == 'II':
-        # Check if allele is from two chains
-        if allele.contains("-"):
-            pattern = re.compile("(^(DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2}[-](DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2})$")
-        else:
-            pattern = re.compile("(^(DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2})$")
-    else: # Mouse
-        pattern = re.compile("(^[H]{1}[-][2]{1}[-][A-Za-z]{2,3})$")
-
-    return pattern.match(allele) is not None
 
 
 def make_dir(path):
