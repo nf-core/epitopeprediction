@@ -23,7 +23,7 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS = (".tsv", ".fasta", ".vcf", ".vcf.gz" ".GSvar")
+    VALID_FORMATS = (".tsv", ".fasta", ".vcf", ".vcf.gz", ".GSvar")
 
     def __init__(
         self,
@@ -63,8 +63,8 @@ class RowChecker:
         """
         self._validate_row_length(row)
         self._validate_sample(row)
-        self._validate_allele(row)
         self._validate_mhc_class(row)
+        self._validate_allele(row)
         self._validate_file(row[self._filename_col])
         self._seen.add(
             (row[self._sample_col], row[self._alleles_col], row[self._mhc_class_col], row[self._filename_col])
@@ -80,26 +80,20 @@ class RowChecker:
 
     def _validate_allele(self, row):
         """Assert that the alleles have the right format."""
-        valid_class1_loci = ["A*", "B*", "C*", "E*", "G*"]
-        valid_class2_loci = ["DR", "DP", "DQ"]
-
         if len(row[self._alleles_col]) <= 0:
             raise AssertionError(f"No alleles specified.\nLine: {row}")
-        if (
-            not os.path.isfile(row[self._alleles_col])
-            and (
-                row[self._mhc_class_col] == "I"
-                and any(substring in row[self._alleles_col] for substring in valid_class2_loci)
-            )
-            or (
-                row[self._mhc_class_col] == "II"
-                and any(substring in row[self._alleles_col] for substring in valid_class1_loci)
-            )
-        ):
-            raise AssertionError(
-                f"Samplesheet contains invalid mhc class and allele combination!\nLine: {row} \
-                                      \nValid loci: {valid_class1_loci if row[self._mhc_class_col] == 'I' else valid_class2_loci}"
-            )
+        if os.path.isfile(row[self._alleles_col]):
+            logging.info(f"Alleles file found: {row[self._alleles_col]}. Attempting to read file.")
+            try:
+                with open(row[self._alleles_col], "r") as f:
+                    alleles = f.readlines()[0]
+            except Exception as e:
+                raise AssertionError(f"Error with reading alleles file: {e}. Check correct format for input file {row[self._alleles_col]} in documentation.")
+        else:
+            alleles = row[self._alleles_col]
+
+        if not all([check_allele_nomenclature(allele, row[self._mhc_class_col]) for allele in alleles.split(";")]):
+                raise AssertionError(f"Alleles {alleles} of MHC-class {row[self._mhc_class_col]} don't have the right format. \nLine: {row}. See the documentation for more information.")
 
     def _validate_mhc_class(self, row):
         """Assert that the mhc_class has the right format."""
@@ -134,22 +128,10 @@ class RowChecker:
 
 def get_file_type(file):
     """Read file extension and return file type"""
-    extension = ''.join(Path(file).suffixes
-    # check input file is empty
-    # it needs to be distinguished if there's a given local file or internet address
-    if str(file).startswith("http"):
-        with urllib.request.urlopen(file) as response:
-            file = response.read().decode("utf-8").split("\n")
-            if len(file) == 0:
-                raise AssertionError(f"Input file {file} is empty.")
-    else:
-        file = open(file, "r").readlines()
-        if file == 0:
-            raise AssertionError(f"Input file {file} is empty.")
-
+    extension = ''.join(Path(file).suffixes)
     try:
         if ".vcf.gz" in extension:
-            file_type = "compressed_variant"
+            file_type = "variant_compressed"
         elif extension == ".vcf":
             file_type = "variant"
         elif extension == ".fasta":
@@ -203,8 +185,19 @@ def parse_args(argv=None):
     return parser.parse_args(argv)
 
 
-def check_allele_nomenclature(allele):
-    pattern = re.compile("(^[A-Z][\*][0-9][0-9][:][0-9][0-9])$")
+def check_allele_nomenclature(allele, mhc_class) -> bool:
+    allele = allele.replace('HLA-','')
+    if mhc_class == 'I':
+        pattern = re.compile("(^[A-E]{1}[\*][0-9]{2}[:][0-9]{2})$")
+    elif mhc_class == 'II':
+        # Check if allele is from two chains
+        if allele.contains("-"):
+            pattern = re.compile("(^(DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2}[-](DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2})$")
+        else:
+            pattern = re.compile("(^(DR|DP|DQ){1}(A|B){1}[0-9]{1}[\*][0-9]{2}[:][0-9]{2})$")
+    else: # Mouse
+        pattern = re.compile("(^[H]{1}[-][2]{1}[-][A-Za-z]{2,3})$")
+
     return pattern.match(allele) is not None
 
 
