@@ -283,9 +283,9 @@ workflow EPITOPEPREDICTION {
         .variant
         .branch {
             meta_data, input_file ->
-                vcf : input_file.extension == 'vcf' || input_file.extension == 'vcf.gz'
+                vcf : input_file.endsWith('.vcf') || input_file.endsWith('.vcf.gz')
                     return [ meta_data, input_file ]
-                tab :  input_file.extension == 'tsv' || input_file.extension == 'GSvar'
+                tab :  input_file.endsWith('.tsv') || input_file.endsWith('.GSvar')
                     return [ meta_data, input_file ]
         }
         .set { ch_variants }

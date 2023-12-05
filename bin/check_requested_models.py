@@ -54,7 +54,7 @@ def __main__():
         "Write out information about supported models by epytope for installed predictor tool versions."
     )
     parser.add_argument("-p", "--peptides", help="File with one peptide per line")
-    parser.add_argument("-c", "--mhcclass", default=1, help="MHC class I or II")
+    parser.add_argument("-c", "--mhc_class", default=1, help="MHC class I or II")
     parser.add_argument("-l", "--max_length", help="Maximum peptide length", type=int)
     parser.add_argument("-ml", "--min_length", help="Minimum peptide length", type=int)
     parser.add_argument("-a", "--alleles", help="<Required> MHC Alleles", required=True, type=str)
