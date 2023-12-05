@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsSummaryLog; paramsSummaryMap; fromSamplesheet; validateParameters } from 'plugin/nf-validation'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -63,10 +63,6 @@ include { CSVTK_CONCAT }                                                        
 include { MERGE_JSON as MERGE_JSON_SINGLE }                                         from '../modules/local/merge_json'
 include { MERGE_JSON as MERGE_JSON_MULTI }                                          from '../modules/local/merge_json'
 
-//
-// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
-
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -97,35 +93,39 @@ def external_tools_meta = jsonSlurper.parse(file(params.external_tools_meta, che
 
 workflow EPITOPEPREDICTION {
 
+    validateParameters()
+
     ch_versions = Channel.empty()
     ch_software_versions = Channel.empty()
     // Non-free prediction tools
     ch_nonfree_paths = Channel.empty()
 
-    //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    INPUT_CHECK (
-        file(params.input)
-    )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
-    // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
-    // ! There is currently no tooling to help you write a sample sheet schema
+    // Function to read the alleles from a file or stage it from url
+    def readAlleles = { input ->
+        if (input.endsWith(".txt")) {
+            def file = file(input)
+            // Alleles are listed in the first line of the file
+            return file.readLines().get(0)
+        } else {
+            // Not a file path, return the original string
+            return input
+        }
+    }
 
-    INPUT_CHECK.out.meta
-                .branch {
-                    meta_data, input_file ->
-                        variant_compressed : meta_data.inputtype == 'variant_compressed'
-                            return [ meta_data, input_file ]
-                        variant_uncompressed :  meta_data.inputtype == 'variant'
-                            return [ meta_data, input_file ]
-                        peptide :  meta_data.inputtype == 'peptide'
-                            return [ meta_data, input_file ]
-                        protein :  meta_data.inputtype == 'protein'
-                            return [ meta_data, input_file ]
-                    }
-                .set { ch_samples_from_sheet }
+    ch_input = Channel.fromSamplesheet("input")
+    ch_input
+        .branch {
+            sample, alleles, mhc_class, filename ->
+                def allele_list = readAlleles(alleles)
+                variant_compressed : filename.endsWith('.vcf.gz')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant_compressed'], filename ]
+                variant_uncompressed : filename.endsWith('.vcf') || filename.endsWith('.GSvar')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant'], filename ]
+                peptide : filename.endsWith('.tsv')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'peptide'], filename ]
+                protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'protein'], filename ]
+    } .set { ch_samples_from_sheet }
 
     // gunzip variant files
     GUNZIP_VCF (
