@@ -52,7 +52,7 @@
                 "genome_reference": {
                     "type": "string",
                     "default": "grch37",
-                    "enum":["grch37", "grch38"],
+                    "enum": ["grch37", "grch38"],
                     "help_text": "This defines against which human Ensembl genome reference the pipeline performs the analysis including the incorporation of genetic variants e.g.. If `grch37` or `grch38` are specified the most recent Ensembl Biomart version for genome versions will be used. Alternatively, an Ensembl Biomart (archive) version can be specified, e.g. http://jan2020.archive.ensembl.org/.",
                     "description": "Specifies the Ensembl genome reference version that will be used."
                 },
@@ -215,25 +215,29 @@
                 },
                 "netmhcpan_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
                 },
                 "netmhc_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 here."
                 },
                 "netmhciipan_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
                 },
                 "netmhcii_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 here."
                 }
