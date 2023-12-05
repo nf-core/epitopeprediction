@@ -107,7 +107,7 @@
                 },
                 "max_peptide_length": {
                     "type": "integer",
-                    "default": 14,
+                    "default": 11,
                     "description": "Specifies the maximum peptide length.",
                     "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
                 },
@@ -119,12 +119,12 @@
                 },
                 "max_peptide_length_class2": {
                     "type": "integer",
-                    "default": 25,
+                    "default": 16,
                     "description": "Specifies the maximum peptide length for MHC class II peptides."
                 },
                 "min_peptide_length_class2": {
                     "type": "integer",
-                    "default": 9,
+                    "default": 15,
                     "description": "Specifies the minimum peptide length for MHC class II peptides."
                 },
                 "tools": {
