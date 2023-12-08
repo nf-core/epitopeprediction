@@ -23,7 +23,7 @@ class RowChecker:
 
     """
 
-    VALID_FORMATS = (".tsv", ".fasta", ".vcf", "GSvar")
+    VALID_FORMATS = (".tsv", ".fasta", ".vcf", ".vcf.gz")
 
     def __init__(
         self,
@@ -148,24 +148,18 @@ def get_file_type(file):
             raise AssertionError(f"Input file {file} is empty.")
 
     try:
-        if extension == "vcf.gz":
+        if str(file).endswith("vcf.gz"):
             file_type = "compressed_variant"
         elif extension == "vcf":
             file_type = "variant"
         elif extension == "fasta":
             file_type = "protein"
-        elif extension in ["tsv", "GSvar"]:
+        elif extension == "tsv":
             # Check if the file is a variant annotation file or a peptide file
             header_columns = [col.strip() for col in file[0].split("\t")]
-
-            required_variant_columns = ["#chr", "start", "end"]
-
-            file_type = "peptide"
-
-            if all(col in header_columns for col in required_variant_columns):
-                file_type = "variant"
-            elif "sequence" not in header_columns:
+            if "sequence" not in header_columns:
                 raise AssertionError("Peptide input file does not contain mandatory column 'sequence'")
+            file_type = "peptide"
 
         return file_type
 

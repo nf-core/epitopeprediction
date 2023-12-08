@@ -70,26 +70,6 @@ def get_epytope_annotation(vt, p, r, alt):
     return position, reference, alternative
 
 
-def check_min_req_GSvar(row):
-    """
-    checking the presence of mandatory columns
-    :param row: dictionary of a GSvar row
-    :return: boolean, True if min req met
-    """
-    if (
-        "#chr" in row.keys()
-        and "start" in row.keys()
-        and "end" in row.keys()
-        and "ref" in row.keys()
-        and "obs" in row.keys()
-        and (
-            "coding_and_splicing_details" in row.keys() or "coding" in row.keys() or "coding_and_splicing" in row.keys()
-        )
-    ):
-        return True
-    return False
-
-
 def determine_variant_type(record, alternative):
     vt = VariationType.UNKNOWN
     if record.is_snp:
@@ -127,152 +107,6 @@ def determine_zygosity(record):
             if "GT" in sample.data:
                 isHomozygous = sample.data["GT"] == "1/1"
     return isHomozygous
-
-
-def read_GSvar(filename, pass_only=True):
-    """
-    reads GSvar and tsv files (tab sep files in context of genetic variants), omitting and warning about rows missing
-    mandatory columns
-    :param filename: /path/to/file
-    :return: list epytope variants
-    """
-    global ID_SYSTEM_USED
-    RE = re.compile("(\w+):([\w.]+):([&\w]+):\w*:exon(\d+)\D*\d*:(c.\D*([_\d]+)\D*):(p.\D*(\d+)\w*)")
-
-    # list of mandatory (meta)data
-    exclusion_list = [
-        "start",
-        "end",
-        "#chr",
-        "ref",
-        "obs",
-        "gene",
-        "tumour_genotype",
-        "coding_and_splicing_details",
-        "variant_details",
-        "variant_type",
-        "coding_and_splicing",
-    ]
-
-    list_vars = list()
-    lines = list()
-    transcript_ids = []
-    dict_vars = {}
-
-    cases = 0
-
-    with open(filename, "rt") as tsvfile:
-        tsvreader = csv.DictReader((row for row in tsvfile if not row.startswith("##")), delimiter="\t")
-        for row in tsvreader:
-            if not check_min_req_GSvar(row):
-                logger.warning("read_GSvar: Omitted row! Mandatory columns not present in: \n" + str(row) + ".")
-                continue
-            lines.append(row)
-
-    # get list of additional metadata
-    metadata_list = set(tsvreader.fieldnames) - set(exclusion_list)
-
-    for mut_id, line in enumerate(lines):
-        if "filter" in line and pass_only and line["filter"].strip():
-            continue
-        genome_start = int(line["start"]) - 1
-        genome_stop = int(line["end"]) - 1
-        chrom = line["#chr"]
-        ref = line["ref"]
-        alt = line["obs"]
-        gene = line.get("gene", "")
-
-        isHomozygous = (
-            True
-            if (
-                ("tumour_genotype" in line)
-                and (line["tumour_genotype"].split("/")[0] == line["tumour_genotype"].split("/")[1])
-            )
-            else False
-        )
-
-        # old GSvar version
-        if "coding_and_splicing_details" in line:
-            mut_type = line.get("variant_details", "")
-            annots = RE.findall(line["coding_and_splicing_details"])
-        else:
-            mut_type = line.get("variant_type", "")
-            # Gene, transcript number, type, impact, exon/intron number, HGVS.c, HGVS.p, Pfam
-            annots = RE.findall(line["coding_and_splicing"])
-        isyn = mut_type == "synonymous_variant"
-
-        """
-        Enum for variation types:
-        type.SNP, type.DEL, type.INS, type.FSDEL, type.FSINS, type.UNKNOWN
-        """
-        vt = VariationType.UNKNOWN
-        if mut_type == "missense_variant" or "missense_variant" in mut_type:
-            vt = VariationType.SNP
-        elif mut_type == "frameshift_variant":
-            if (ref == "-") or (len(ref) < len(alt)):
-                vt = VariationType.FSINS
-            else:
-                vt = VariationType.FSDEL
-        elif mut_type == "inframe_deletion":
-            vt = VariationType.DEL
-        elif mut_type == "inframe_insertion":
-            vt = VariationType.INS
-
-        coding = dict()
-
-        for annot in annots:
-            a_gene, transcript_id, a_mut_type, exon, trans_coding, trans_pos, prot_coding, prot_start = annot
-            if "NM" in transcript_id:
-                ID_SYSTEM_USED = EIdentifierTypes.REFSEQ
-            if "stop_gained" not in mut_type:
-                if not gene:
-                    gene = a_gene
-                if not mut_type:
-                    mut_type = a_mut_type
-
-                # with the latest epytope release (3.3.1), we can now handle full transcript IDs
-                coding[transcript_id] = MutationSyntax(
-                    transcript_id, int(trans_pos.split("_")[0]) - 1, int(prot_start) - 1, trans_coding, prot_coding
-                )
-                transcript_ids.append(transcript_id)
-        if coding:
-            var = Variant(
-                mut_id,
-                vt,
-                chrom.strip("chr"),
-                int(genome_start),
-                ref.upper(),
-                alt.upper(),
-                coding,
-                isHomozygous,
-                isSynonymous=isyn,
-            )
-            var.gene = gene
-
-            # metadata logging
-            for meta_name in metadata_list:
-                var.log_metadata(meta_name, line.get(meta_name, ""))
-
-            dict_vars[var] = var
-            list_vars.append(var)
-
-    transToVar = {}
-
-    # fix because of memory/timing issues due to combinatorial explosion
-    for variant in list_vars:
-        for trans_id in variant.coding.keys():
-            transToVar.setdefault(trans_id, []).append(variant)
-
-    for tId, vs in transToVar.items():
-        if len(vs) > 10:
-            cases += 1
-            for v in vs:
-                vs_new = Variant(v.id, v.type, v.chrom, v.genomePos, v.ref, v.obs, v.coding, True, v.isSynonymous)
-                vs_new.gene = v.gene
-                for m in metadata_list:
-                    vs_new.log_metadata(m, v.get_metadata(m)[0])
-                dict_vars[v] = vs_new
-    return dict_vars.values(), transcript_ids, metadata_list
 
 
 def read_vcf(filename, pass_only=True):
@@ -1224,11 +1058,10 @@ def __main__():
         logger.info("Running epaa for peptides...")
         peptides, metadata = read_peptide_input(args.peptides)
     else:
-        if args.somatic_mutations.endswith(".GSvar") or args.somatic_mutations.endswith(".tsv"):
-            logger.info("Running epaa for variants...")
-            variant_list, transcripts, metadata = read_GSvar(args.somatic_mutations)
-        elif args.somatic_mutations.endswith(".vcf"):
+        logger.info("Running epaa for variants...")
+        if args.somatic_mutations.endswith(".vcf"):
             variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
+            raise ValueError("File is not in VCF format. Please provide a VCF file.")
 
         transcripts = list(set(transcripts))
 
@@ -1236,6 +1069,7 @@ def __main__():
         transcriptProteinTable = ma.get_protein_ids_from_transcripts(transcripts, type=ID_SYSTEM_USED)
 
     # get the alleles
+    # TODO: remove this in PR of nf-validation
     if args.alleles.startswith("http"):
         alleles = [Allele(a) for a in urllib.request.urlopen(args.alleles).read().decode("utf-8").splitlines()]
     elif args.alleles.endswith(".txt"):
