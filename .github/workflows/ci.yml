@@ -56,8 +56,7 @@ jobs:
             NXF_EDGE: "1"
         tests:
           [
-            "test_variant_tsv",
-            "test_grch38_variant_tsv",
+            "test_grch38",
             "test_peptides",
             "test_peptides_h2",
             "test_proteins",

@@ -1061,6 +1061,7 @@ def __main__():
         logger.info("Running epaa for variants...")
         if args.somatic_mutations.endswith(".vcf"):
             variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
+        else:
             raise ValueError("File is not in VCF format. Please provide a VCF file.")
 
         transcripts = list(set(transcripts))

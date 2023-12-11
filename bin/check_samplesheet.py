@@ -138,10 +138,12 @@ def get_file_type(file):
     # check input file is empty
     # it needs to be distinguished if there's a given local file or internet address
     if str(file).startswith("http"):
-        with urllib.request.urlopen(file) as response:
-            file = response.read().decode("utf-8").split("\n")
-            if len(file) == 0:
-                raise AssertionError(f"Input file {file} is empty.")
+        # Temporarily skip checking gz files, samplesheet check will be replaced by nf-validation in the next PR
+        if not str(file).endswith("vcf.gz"):
+            with urllib.request.urlopen(file) as response:
+                file = response.read().decode("utf-8").split("\n")
+                if len(file) == 0:
+                    raise AssertionError(f"Input file {file} is empty.")
     else:
         file = open(file, "r").readlines()
         if file == 0:
@@ -149,7 +151,7 @@ def get_file_type(file):
 
     try:
         if str(file).endswith("vcf.gz"):
-            file_type = "compressed_variant"
+            file_type = "variant_compressed"
         elif extension == "vcf":
             file_type = "variant"
         elif extension == "fasta":
