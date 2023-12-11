@@ -19,7 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Removed`
 
-- [#221](https://github.com/nf-core/epitopeprediction/pull/221) - Depricate support of `GSvar` and variant `tsv` input files
+- [#221](https://github.com/nf-core/epitopeprediction/pull/221) - Remove support of `GSvar` and variant `tsv` input files
 
 ## v2.2.1 - WaldhaeuserOst Hotfix - 2023-03-16
 
