@@ -46,7 +46,6 @@ include { EPYTOPE_SHOW_SUPPORTED_MODELS }                                       
 
 include { VARIANT_SPLIT}                                                            from '../modules/local/variant_split'
 include { SNPSIFT_SPLIT}                                                            from '../modules/local/snpsift_split'
-include { CSVTK_SPLIT}                                                              from '../modules/local/csvtk_split'
 
 include { EPYTOPE_GENERATE_PEPTIDES }                                               from '../modules/local/epytope_generate_peptides'
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PEPTIDES }                                                          from '../modules/local/split_peptides'
@@ -281,22 +280,10 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
 
-    // Make a division for the variant files and process them further accordingly
-    ch_samples_uncompressed
-        .variant
-        .branch {
-            meta_data, input_file ->
-                vcf : input_file.extension == 'vcf' || input_file.extension == 'vcf.gz'
-                    return [ meta_data, input_file ]
-                tab :  input_file.extension == 'tsv' || input_file.extension == 'GSvar'
-                    return [ meta_data, input_file ]
-        }
-        .set { ch_variants }
-
-    // decide between the split_by_variants and snpsift_split (by chromosome) function (only vcf and vcf.gz variant files)
+    // decide between the split_by_variants and snpsift_split (by chromosome) function
     if (params.split_by_variants) {
         VARIANT_SPLIT(
-            ch_variants.vcf
+            ch_samples_uncompressed.variant
         )
         .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions.ifEmpty(null) )
@@ -304,17 +291,11 @@ workflow EPITOPEPREDICTION {
     }
     else {
         SNPSIFT_SPLIT(
-            ch_variants.vcf
+            ch_samples_uncompressed.variant
         )
         .set { ch_split_variants }
         ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions.ifEmpty(null) )
     }
-    // include the csvtk_split function (only variant files with an tsv and GSvar executable)
-    CSVTK_SPLIT(
-        ch_variants.tab
-    )
-
-    ch_versions = ch_versions.mix( CSVTK_SPLIT.out.versions.ifEmpty(null) )
 
     // process FASTA file and generated peptides
     EPYTOPE_GENERATE_PEPTIDES(
@@ -367,10 +348,8 @@ workflow EPITOPEPREDICTION {
 
     // Run epitope prediction for variants
     EPYTOPE_PEPTIDE_PREDICTION_VAR(
-        CSVTK_SPLIT
-            .out
+        ch_split_variants
             .splitted
-            .mix( ch_split_variants.splitted )
             .combine( ch_prediction_tool_versions )
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
