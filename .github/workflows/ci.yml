@@ -55,14 +55,7 @@ jobs:
           - NXF_VER: ""
             NXF_EDGE: "1"
         tests:
-          [
-            "test_grch38",
-            "test_peptides",
-            "test_peptides_h2",
-            "test_proteins",
-            "test_mhcnuggets",
-            "test_mhcflurry",
-          ]
+          ["test_grch38", "test_peptides", "test_peptides_h2", "test_proteins", "test_mhcnuggets", "test_mhcflurry"]
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v2
