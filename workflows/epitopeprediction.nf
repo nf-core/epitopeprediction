@@ -90,6 +90,17 @@ import groovy.json.JsonSlurper
 def jsonSlurper = new JsonSlurper()
 def external_tools_meta = jsonSlurper.parse(file(params.external_tools_meta, checkIfExists: true))
 
+// Function to check if the alleles are valid for the given mhc class
+def validate_alleles(String alleles, String mhc_class) {
+    valid_class1_loci = ['A*','B*','C*','E*','G*']
+    valid_class2_loci = ['DR','DP','DQ']
+    allele_list = alleles.split(';')
+    if (( mhc_class == 'I'  & allele_list.every { allele -> valid_class2_loci.any { allele.startsWith(it) }}) |
+        ( mhc_class == 'II' & allele_list.every { allele -> valid_class1_loci.any { allele.startsWith(it) }})) {
+        exit 1, "Please check input samplesheet -> Invalid mhc class ${mhc_class} and allele combination ${allele_list} found!"
+    }
+}
+
 workflow EPITOPEPREDICTION {
 
     validateParameters()
@@ -116,6 +127,7 @@ workflow EPITOPEPREDICTION {
         .branch {
             sample, alleles, mhc_class, filename ->
                 def allele_list = readAlleles(alleles)
+                validate_alleles(allele_list, mhc_class)
                 variant_compressed : filename.endsWith('.vcf.gz')
                     return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant_compressed'], filename ]
                 variant_uncompressed : filename.endsWith('.vcf') || filename.endsWith('.GSvar')
