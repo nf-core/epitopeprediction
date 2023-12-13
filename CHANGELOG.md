@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#219](https://github.com/nf-core/epitopeprediction/pull/219) - Fix `EXTERNAL_TOOLS_IMPORT`` container registry and bump version
 
+### `Removed`
+
+- [#221](https://github.com/nf-core/epitopeprediction/pull/221) - Remove support of `GSvar` and variant `tsv` input files
+
 ## v2.2.1 - WaldhaeuserOst Hotfix - 2023-03-16
 
 ### `Fixed`
