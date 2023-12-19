@@ -130,7 +130,7 @@ workflow EPITOPEPREDICTION {
                 validate_alleles(allele_list, mhc_class)
                 variant_compressed : filename.endsWith('.vcf.gz')
                     return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant_compressed'], filename ]
-                variant_uncompressed : filename.endsWith('.vcf') || filename.endsWith('.GSvar')
+                variant_uncompressed : filename.endsWith('.vcf')
                     return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant'], filename ]
                 peptide : filename.endsWith('.tsv')
                     return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'peptide'], filename ]
