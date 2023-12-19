@@ -4,7 +4,7 @@
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-include { paramsSummaryLog; paramsSummaryMap } from 'plugin/nf-validation'
+include { paramsSummaryLog; paramsSummaryMap; fromSamplesheet; validateParameters } from 'plugin/nf-validation'
 
 def logo = NfcoreTemplate.logo(workflow, params.monochrome_logs)
 def citation = '\n' + WorkflowMain.citation(workflow) + '\n'
@@ -62,10 +62,6 @@ include { CSVTK_CONCAT }                                                        
 include { MERGE_JSON as MERGE_JSON_SINGLE }                                         from '../modules/local/merge_json'
 include { MERGE_JSON as MERGE_JSON_MULTI }                                          from '../modules/local/merge_json'
 
-//
-// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
-
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -94,43 +90,59 @@ import groovy.json.JsonSlurper
 def jsonSlurper = new JsonSlurper()
 def external_tools_meta = jsonSlurper.parse(file(params.external_tools_meta, checkIfExists: true))
 
+// Function to check if the alleles are valid for the given mhc class
+def validate_alleles(String alleles, String mhc_class) {
+    valid_class1_loci = ['A*','B*','C*','E*','G*']
+    valid_class2_loci = ['DR','DP','DQ']
+    allele_list = alleles.split(';')
+    if (( mhc_class == 'I'  & allele_list.every { allele -> valid_class2_loci.any { allele.startsWith(it) }}) |
+        ( mhc_class == 'II' & allele_list.every { allele -> valid_class1_loci.any { allele.startsWith(it) }})) {
+        exit 1, "Please check input samplesheet -> Invalid mhc class ${mhc_class} and allele combination ${allele_list} found!"
+    }
+}
+
 workflow EPITOPEPREDICTION {
+
+    validateParameters()
 
     ch_versions = Channel.empty()
     ch_software_versions = Channel.empty()
     // Non-free prediction tools
     ch_nonfree_paths = Channel.empty()
 
-    //
-    // SUBWORKFLOW: Read in samplesheet, validate and stage input files
-    //
-    INPUT_CHECK (
-        file(params.input)
-    )
-    ch_versions = ch_versions.mix(INPUT_CHECK.out.versions)
-    // TODO: OPTIONAL, you can use nf-validation plugin to create an input channel from the samplesheet with Channel.fromSamplesheet("input")
-    // See the documentation https://nextflow-io.github.io/nf-validation/samplesheets/fromSamplesheet/
-    // ! There is currently no tooling to help you write a sample sheet schema
+    // Function to read the alleles from a file or use given string
+    def readAlleles = { input ->
+        if (input.endsWith(".txt")) {
+            def file = file(input)
+            // Alleles are listed in the first line of the file
+            return file.readLines().get(0)
+        } else {
+            // Not a file path, return the original string
+            return input
+        }
+    }
 
-    INPUT_CHECK.out.meta
-                .branch {
-                    meta_data, input_file ->
-                        variant_compressed : meta_data.inputtype == 'variant_compressed'
-                            return [ meta_data, input_file ]
-                        variant_uncompressed :  meta_data.inputtype == 'variant'
-                            return [ meta_data, input_file ]
-                        peptide :  meta_data.inputtype == 'peptide'
-                            return [ meta_data, input_file ]
-                        protein :  meta_data.inputtype == 'protein'
-                            return [ meta_data, input_file ]
-                    }
-                .set { ch_samples_from_sheet }
+    ch_input = Channel.fromSamplesheet("input")
+    ch_input
+        .branch {
+            sample, alleles, mhc_class, filename ->
+                def allele_list = readAlleles(alleles)
+                validate_alleles(allele_list, mhc_class)
+                variant_compressed : filename.endsWith('.vcf.gz')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant_compressed'], filename ]
+                variant_uncompressed : filename.endsWith('.vcf')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant'], filename ]
+                peptide : filename.endsWith('.tsv')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'peptide'], filename ]
+                protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
+                    return [[sample:sample, alleles:allele_list, mhc_class:mhc_class, inputtype:'protein'], filename ]
+    } .set { ch_samples_from_sheet }
 
     // gunzip variant files
     GUNZIP_VCF (
         ch_samples_from_sheet.variant_compressed
     )
-    ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
 
     ch_variants_uncompressed = GUNZIP_VCF.out.gunzip
         .mix(ch_samples_from_sheet.variant_uncompressed)
@@ -151,9 +163,6 @@ workflow EPITOPEPREDICTION {
 
     if (tools.isEmpty()) { exit 1, "No valid tools specified." }
 
-    if (params.conda.enabled && params.tools.contains("netmhc")) {
-            log.warn("Please note: if you want to use external prediction tools with conda it might be necessary to set --netmhc_system to darwin depending on your system.")
-    }
 
     c_purple = params.monochrome_logs ? '' : "\033[0;35m";
     c_reset = params.monochrome_logs ? '' : "\033[0m";
@@ -167,7 +176,7 @@ workflow EPITOPEPREDICTION {
 
     // get versions of all prediction tools
     GET_PREDICTION_VERSIONS(ch_external_versions.ifEmpty(""))
-    ch_prediction_tool_versions = GET_PREDICTION_VERSIONS.out.versions.ifEmpty(null)
+    ch_prediction_tool_versions = GET_PREDICTION_VERSIONS.out.versions
 
     // TODO I guess it would be better to have two subworkflows for the if else parts (CM)
     if (params.show_supported_models) {
@@ -178,7 +187,7 @@ workflow EPITOPEPREDICTION {
                 .combine(ch_prediction_tool_versions)
                 .first()
         )
-        ch_versions = ch_versions.mix(SHOW_SUPPORTED_MODELS.out.versions.ifEmpty(null))
+        ch_versions = ch_versions.mix(SHOW_SUPPORTED_MODELS.out.versions)
     }
 
     else {
@@ -194,14 +203,14 @@ workflow EPITOPEPREDICTION {
         ch_samples_uncompressed.variant,
         ch_prediction_tool_versions
     )
-    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS.out.versions)
 
     // perform the check requested models on the protein files
     EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN(
         ch_samples_uncompressed.protein,
         ch_prediction_tool_versions
     )
-    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS_PROTEIN.out.versions)
     // perform the check requested models on the peptide file where we need the input itself to determine the given peptide lengths
     EPYTOPE_CHECK_REQUESTED_MODELS_PEP(
         ch_samples_uncompressed
@@ -209,7 +218,7 @@ workflow EPITOPEPREDICTION {
             .map { meta_data, input_file -> tuple( meta_data, input_file ) },
         ch_prediction_tool_versions
     )
-    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS_PEP.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(EPYTOPE_CHECK_REQUESTED_MODELS_PEP.out.versions)
 
     // Return a warning if this is raised
     EPYTOPE_CHECK_REQUESTED_MODELS
@@ -272,7 +281,7 @@ workflow EPITOPEPREDICTION {
     EXTERNAL_TOOLS_IMPORT(
         ch_nonfree_paths
     )
-    ch_versions = ch_versions.mix(EXTERNAL_TOOLS_IMPORT.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(EXTERNAL_TOOLS_IMPORT.out.versions)
 
     /*
     ========================================================================================
@@ -286,7 +295,7 @@ workflow EPITOPEPREDICTION {
             ch_samples_uncompressed.variant
         )
         .set { ch_split_variants }
-        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions.ifEmpty(null) )
+        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
 
     }
     else {
@@ -294,26 +303,26 @@ workflow EPITOPEPREDICTION {
             ch_samples_uncompressed.variant
         )
         .set { ch_split_variants }
-        ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions.ifEmpty(null) )
+        ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
     }
 
     // process FASTA file and generated peptides
     EPYTOPE_GENERATE_PEPTIDES(
         ch_samples_uncompressed.protein
     )
-    ch_versions = ch_versions.mix(EPYTOPE_GENERATE_PEPTIDES.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(EPYTOPE_GENERATE_PEPTIDES.out.versions)
 
 
     SPLIT_PEPTIDES_PROTEIN(
         EPYTOPE_GENERATE_PEPTIDES.out.splitted
     )
-    ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions.ifEmpty(null))
+    ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions)
 
     // split peptide data
     SPLIT_PEPTIDES_PEPTIDES(
         ch_samples_uncompressed.peptide
     )
-    ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions )
 
     /*
     ========================================================================================
@@ -331,7 +340,7 @@ workflow EPITOPEPREDICTION {
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
-    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions )
 
 
     // Run epitope prediction for peptides
@@ -343,7 +352,7 @@ workflow EPITOPEPREDICTION {
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
-    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions )
 
 
     // Run epitope prediction for variants
@@ -354,7 +363,7 @@ workflow EPITOPEPREDICTION {
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
-    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions )
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
     EPYTOPE_PEPTIDE_PREDICTION_PEP
@@ -376,12 +385,12 @@ workflow EPITOPEPREDICTION {
     CAT_TSV(
         ch_predicted_peptides.single
     )
-    ch_versions = ch_versions.mix( CAT_TSV.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( CAT_TSV.out.versions )
 
     CSVTK_CONCAT(
         ch_predicted_peptides.multi
     )
-    ch_versions = ch_versions.mix( CSVTK_CONCAT.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( CSVTK_CONCAT.out.versions )
 
     // Combine protein sequences
     CAT_FASTA(
@@ -391,7 +400,7 @@ workflow EPITOPEPREDICTION {
             .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.fasta, EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.fasta )
             .groupTuple()
     )
-    ch_versions = ch_versions.mix( CAT_FASTA.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( CAT_FASTA.out.versions )
 
     EPYTOPE_PEPTIDE_PREDICTION_PEP
         .out
@@ -413,12 +422,12 @@ workflow EPITOPEPREDICTION {
     MERGE_JSON_SINGLE(
         ch_json_reports.single
     )
-    ch_versions = ch_versions.mix( MERGE_JSON_SINGLE.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( MERGE_JSON_SINGLE.out.versions )
 
     MERGE_JSON_MULTI(
         ch_json_reports.multi
     )
-    ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions.ifEmpty(null) )
+    ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions )
 
     //
     // MODULE: Pipeline reporting

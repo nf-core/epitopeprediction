@@ -18,6 +18,7 @@
                     "exists": true,
                     "mimetype": "text/csv",
                     "pattern": "^\\S+\\.csv$",
+                    "schema": "assets/schema_input.json",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
                     "fa_icon": "fas fa-file-csv"
@@ -128,6 +129,7 @@
                 "tools": {
                     "type": "string",
                     "default": "syfpeithi",
+                    "pattern": "^(syfpeithi|mhcnuggets-class-1|mhcnuggets-class-2|mhcflurry|netmhc-4.0|netmhcpan-4.0|netmhcpan-4.1|netmhciipan-4.1|netmhc_darwin-4.0|netmhcpan_darwin-4.0|netmhcpan_darwin-4.1|netmhciipan_darwin-4.1)(,(syfpeithi|mhcnuggets-class-1|mhcnuggets-class-2|mhcflurry|netmhc-4.0|netmhcpan-4.0|netmhcpan-4.1|netmhciipan-4.1|netmhc_darwin-4.0|netmhcpan_darwin-4.0|netmhcpan_darwin-4.1|netmhciipan_darwin-4.1))*$",
                     "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`,`netmhciipan-4.1`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
@@ -207,26 +209,35 @@
                 "netmhc_system": {
                     "type": "string",
                     "default": "linux",
+                    "enum": ["linux", "darwin"],
                     "description": "Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used."
                 },
                 "netmhcpan_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
                 },
                 "netmhc_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 here."
                 },
                 "netmhciipan_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
                 },
                 "netmhcii_path": {
                     "type": "string",
-                    "default": "None",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 here."
                 }
             }

@@ -47,14 +47,14 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     def class1_tools = tools_split.findAll { ! it.matches('.*(?i)(class-2|ii).*') }
     def class2_tools = tools_split.findAll { it.matches('.*(?i)(syf|class-2|ii).*') }
 
-    if (((meta.mhcclass == "I") & class1_tools.empty) | ((meta.mhcclass == "II") & class2_tools.empty)) {
-        exit 1, "No tools specified for mhc class ${meta.mhcclass}"
+    if (((meta.mhc_class == "I") & class1_tools.empty) | ((meta.mhc_class == "II") & class2_tools.empty)) {
+        exit 1, "No tools specified for mhc class ${meta.mhc_class}"
     }
 
-    def min_length = (meta.mhcclass == "I") ? params.min_peptide_length : params.min_peptide_length_class2
-    def max_length = (meta.mhcclass == "I") ? params.max_peptide_length : params.max_peptide_length_class2
+    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length : params.min_peptide_length_class2
+    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length : params.max_peptide_length_class2
 
-    def tools_to_use = ((meta.mhcclass == "I") | (meta.mhcclass == "H-2")) ? class1_tools.join(',') : class2_tools.join(',')
+    def tools_to_use = ((meta.mhc_class == "I") | (meta.mhc_class == "H-2")) ? class1_tools.join(',') : class2_tools.join(',')
 
     """
     # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
