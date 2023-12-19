@@ -110,7 +110,7 @@ workflow EPITOPEPREDICTION {
     // Non-free prediction tools
     ch_nonfree_paths = Channel.empty()
 
-    // Function to read the alleles from a file or stage it from url
+    // Function to read the alleles from a file or use given string
     def readAlleles = { input ->
         if (input.endsWith(".txt")) {
             def file = file(input)
