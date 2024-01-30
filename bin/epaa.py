@@ -283,7 +283,6 @@ def read_vcf(filename, pass_only=True):
                                 split_coding_c[0] if split_coding_c[0] else split_annotation[vep_fields["feature"]]
                             )
                             transcript_id = transcript_id.split(".")[0]
-
                             tpos = int(cds_pos.split("/")[0].split("-")[0]) - 1
                             if split_annotation[vep_fields["protein_position"]]:
                                 ppos = (
@@ -719,7 +718,6 @@ def make_predictions_from_variants(
 
     # list to hold dataframes for all predictions
     pred_dataframes = []
-
     prots = [
         p
         for p in generator.generate_proteins_from_transcripts(
@@ -1061,13 +1059,9 @@ def __main__():
         logger.info("Running epaa for variants...")
         if args.somatic_mutations.endswith(".vcf"):
             variant_list, transcripts, metadata = read_vcf(args.somatic_mutations)
+            transcripts = list(set(transcripts))
         else:
             raise ValueError("File is not in VCF format. Please provide a VCF file.")
-
-        transcripts = list(set(transcripts))
-
-        # use function provided by epytope to retrieve protein IDs (different systems) for transcript IDs
-        transcriptProteinTable = ma.get_protein_ids_from_transcripts(transcripts, type=ID_SYSTEM_USED)
 
     # get the alleles
     # TODO: remove this in PR of nf-validation
@@ -1136,7 +1130,15 @@ def __main__():
         pred_dataframes, statistics = make_predictions_from_peptides(
             peptides, methods, thresholds, args.use_affinity_thresholds, alleles, up_db, args.identifier, metadata
         )
+    elif len(transcripts) == 0:
+        logger.warning(f"No transcripts found for variants in {args.somatic_mutations}")
+        pred_dataframes = []
+        statistics = {}
+        all_peptides_filtered = []
+        proteins = []
     else:
+        # use function provided by epytope to retrieve protein IDs (different systems) for transcript IDs
+        transcriptProteinTable = ma.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
         pred_dataframes, statistics, all_peptides_filtered, proteins = make_predictions_from_variants(
             variant_list,
             methods,
