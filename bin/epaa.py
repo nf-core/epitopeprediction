@@ -195,8 +195,7 @@ def read_vcf(filename, pass_only=True):
 
         SNP => seq[pos] = OBS (replace)
         INSERTION => seqp[pos:pos] = obs (insert at that position)
-        DELETION => s = slice(pos, pos+len(ref)) (create slice that will be removed)
-		            del seq[s] (remove)
+        DELETION => s = slice(pos, pos+len(ref)) (create slice that will be removed) del seq[s] (remove)
         """
         for alt in alternative_list:
             isHomozygous = determine_zygosity(record)
