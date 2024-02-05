@@ -6,6 +6,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v2.3dev - [date]
 
 ### `Changed`
+
 - [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.12`
 - [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.11`
 - [#220](https://github.com/nf-core/epitopeprediction/pull/220) - Switch to nf-validation to parse samplesheet
