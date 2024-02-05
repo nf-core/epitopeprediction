@@ -1,31 +1,29 @@
 #!/usr/bin/env python
 # Written by Christopher Mohr and released under the MIT license (2022).
 
-import os
-import sys
-import logging
-import csv
-import re
-import vcf
 import argparse
-import urllib
+import csv
 import itertools
-import pandas as pd
-import numpy as np
-import epytope.Core.Generator as generator
-import math
 import json
-import urllib.request
+import logging
+import math
+import os
+import re
+import sys
+from datetime import datetime
 
-from epytope.IO.MartsAdapter import MartsAdapter
-from epytope.Core.Variant import Variant, VariationType, MutationSyntax
-from epytope.EpitopePrediction import EpitopePredictorFactory
-from epytope.IO.ADBAdapter import EIdentifierTypes
-from epytope.IO.UniProtAdapter import UniProtDB
+import epytope.Core.Generator as generator
+import numpy as np
+import pandas as pd
+import vcf
+from Bio import SeqUtils
 from epytope.Core.Allele import Allele
 from epytope.Core.Peptide import Peptide
-from Bio import SeqUtils
-from datetime import datetime
+from epytope.Core.Variant import MutationSyntax, Variant, VariationType
+from epytope.EpitopePrediction import EpitopePredictorFactory
+from epytope.IO.ADBAdapter import EIdentifierTypes
+from epytope.IO.MartsAdapter import MartsAdapter
+from epytope.IO.UniProtAdapter import UniProtDB
 
 __author__ = "Christopher Mohr"
 VERSION = "1.1"
@@ -151,7 +149,7 @@ def read_vcf(filename, pass_only=True):
     SNPEFF_KEY = "ANN"
 
     variants = list()
-    with open(filename, "rt") as tsvfile:
+    with open(filename) as tsvfile:
         vcf_reader = vcf.Reader(tsvfile)
         variants = [r for r in vcf_reader]
 
@@ -319,12 +317,10 @@ def read_vcf(filename, pass_only=True):
                         for format_key in format_list:
                             if getattr(sample.data, format_key, None) is None:
                                 logger.warning(
-                                    "FORMAT entry {entry} not defined for {genotype}. Skipping.".format(
-                                        entry=format_key, genotype=sample.sample
-                                    )
+                                    f"FORMAT entry {format_key} not defined for {sample.sample}. Skipping."
                                 )
                                 continue
-                            format_header = "{}.{}".format(sample.sample, format_key)
+                            format_header = f"{sample.sample}.{format_key}"
                             final_metadata_list.append(format_header)
                             if isinstance(sample[format_key], list):
                                 format_value = ",".join([str(i) for i in sample[format_key]])
@@ -363,7 +359,7 @@ def read_peptide_input(filename):
     metadata = []
 
     """expected columns (min required): id sequence"""
-    with open(filename, "r") as peptide_input:
+    with open(filename) as peptide_input:
         # enable listing of protein names for each peptide
         csv.field_size_limit(600000)
         reader = csv.DictReader(peptide_input, delimiter="\t")
@@ -385,7 +381,7 @@ def read_protein_quant(filename):
     # protein id: sample1: intensity, sample2: intensity:
     intensities = {}
 
-    with open(filename, "r") as inp:
+    with open(filename) as inp:
         inpreader = csv.DictReader(inp, delimiter="\t")
         for row in inpreader:
             if "REV" in row["Protein IDs"]:
@@ -406,7 +402,7 @@ def read_diff_expression_values(filename):
     # feature id: log2fold changes
     fold_changes = {}
 
-    with open(filename, "r") as inp:
+    with open(filename) as inp:
         inp.readline()
         for row in inp:
             values = row.strip().split("\t")
@@ -420,7 +416,7 @@ def read_lig_ID_values(filename):
     # sequence: score median intensity
     intensities = {}
 
-    with open(filename, "r") as inp:
+    with open(filename) as inp:
         reader = csv.DictReader(inp, delimiter=",")
         for row in reader:
             seq = re.sub("[\(].*?[\)]", "", row["sequence"])
@@ -465,11 +461,11 @@ def create_gene_column_value(pep, pep_dictionary):
 
 
 def create_variant_pos_column_value(pep, pep_dictionary):
-    return ",".join(set(["{}".format(variant.genomePos) for variant in set(pep_dictionary[pep])]))
+    return ",".join(set([f"{variant.genomePos}" for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_chr_column_value(pep, pep_dictionary):
-    return ",".join(set(["{}".format(variant.chrom) for variant in set(pep_dictionary[pep])]))
+    return ",".join(set([f"{variant.chrom}" for variant in set(pep_dictionary[pep])]))
 
 
 def create_variant_type_column_value(pep, pep_dictionary):
@@ -497,7 +493,7 @@ def create_metadata_column_value(pep, c, pep_dictionary):
             if len(variant.get_metadata(c)) != 0
         ]
     )
-    if len(meta) is 0:
+    if len(meta) == 0:
         return np.nan
     else:
         return ",".join(meta)
@@ -512,7 +508,7 @@ def create_wt_seq_column_value(pep, wtseqs):
             if bool(transcript.vars) and "{}_{}".format(str(pep["sequence"]), transcript.transcript_id) in wtseqs
         ]
     )
-    if len(wild_type) is 0:
+    if len(wild_type) == 0:
         return np.nan
     else:
         return ",".join(wild_type)
@@ -571,13 +567,11 @@ def create_expression_column_value_for_result(row, dict, deseq, gene_id_lengths)
                         )
                     )
                     logger.warning(
-                        "FKPM value will be based on transcript length for {gene}. Because gene could not be found in the DB".format(
-                            gene=t
-                        )
+                        f"FKPM value will be based on transcript length for {t}. Because gene could not be found in the DB"
                     )
             else:
                 values.append(np.nan)
-    values = ["{0:.2f}".format(value) for value in values]
+    values = [f"{value:.2f}" for value in values]
     return ",".join(values)
 
 
@@ -591,7 +585,7 @@ def create_quant_column_value_for_result(row, dict, swissProtDict, key):
                 values.append(math.log(int(dict[p][key]), 2))
             else:
                 values.append(int(dict[p][key]))
-    if len(values) is 0:
+    if len(values) == 0:
         return np.nan
     else:
         return ",".join(set([str(v) for v in values]))
@@ -677,9 +671,9 @@ def generate_wt_seqs(peptides):
                                 wt = SeqUtils.seq1(m.groups()[0])
                                 mut_seq[key] = wt
             if not_available:
-                wt_dict["{}_{}".format(str(x), t.transcript_id)] = np.nan
+                wt_dict[f"{str(x)}_{t.transcript_id}"] = np.nan
             elif variant_available:
-                wt_dict["{}_{}".format(str(x), t.transcript_id)] = "".join(mut_seq)
+                wt_dict[f"{str(x)}_{t.transcript_id}"] = "".join(mut_seq)
     return wt_dict
 
 
@@ -1034,7 +1028,7 @@ def __main__():
         parser.print_help()
         sys.exit("Provide at least one argument to epaa.py.")
 
-    filehandler = logging.FileHandler("{}_prediction.log".format(args.identifier))
+    filehandler = logging.FileHandler(f"{args.identifier}_prediction.log")
     filehandler.setLevel(logging.DEBUG)
     filehandler.setFormatter(formatter)
     logger.addHandler(filehandler)
@@ -1070,13 +1064,7 @@ def __main__():
         transcriptProteinTable = ma.get_protein_ids_from_transcripts(transcripts, type=ID_SYSTEM_USED)
 
     # get the alleles
-    # TODO: remove this in PR of nf-validation
-    if args.alleles.startswith("http"):
-        alleles = [Allele(a) for a in urllib.request.urlopen(args.alleles).read().decode("utf-8").splitlines()]
-    elif args.alleles.endswith(".txt"):
-        alleles = [Allele(a) for a in open(args.alleles, "r").read().splitlines()]
-    else:
-        alleles = [Allele(a) for a in args.alleles.split(";")]
+    alleles = [Allele(a) for a in args.alleles.split(";")]
 
     # create protein db instance for filtering self-peptides
     up_db = UniProtDB("sp")
@@ -1091,7 +1079,7 @@ def __main__():
             up_db.read_seqs(args.reference_proteome)
 
     selected_methods = [item.split("-")[0] if "mhcnuggets" not in item else item for item in args.tools.split(",")]
-    with open(args.versions, "r") as versions_file:
+    with open(args.versions) as versions_file:
         tool_version = [(row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter=":")]
         # NOTE this needs to be updated, if a newer version will be available via epytope and should be used in the future
         tool_version.append(("syfpeithi", "1.0"))
@@ -1123,7 +1111,7 @@ def __main__():
         thresholds.update({"netmhc": 2, "netmhcpan": 2, "netmhcii": 10, "netmhciipan": 5})
 
     if args.tool_thresholds:
-        with open(args.tool_thresholds, "r") as json_file:
+        with open(args.tool_thresholds) as json_file:
             threshold_file = json.load(json_file)
             for tool, thresh in threshold_file.items():
                 if tool in thresholds.keys():
@@ -1228,7 +1216,7 @@ def __main__():
         protein_quant = read_protein_quant(args.protein_quantification)
         first_entry = protein_quant[protein_quant.keys()[0]]
         for k in first_entry.keys():
-            complete_df["{} log2 protein LFQ intensity".format(k)] = complete_df.apply(
+            complete_df[f"{k} log2 protein LFQ intensity"] = complete_df.apply(
                 lambda row: create_quant_column_value_for_result(row, protein_quant, transcriptSwissProtMap, k), axis=1
             )
     # parse (differential) expression analysis results, annotate features (genes/transcripts)
@@ -1237,7 +1225,7 @@ def __main__():
         gene_id_lengths = {}
         col_name = "RNA expression (RPKM)"
 
-        with open(args.gene_reference, "r") as gene_list:
+        with open(args.gene_reference) as gene_list:
             for l in gene_list:
                 ids = l.split("\t")
                 gene_id_in_df = complete_df.iloc[1]["gene"]
@@ -1280,7 +1268,7 @@ def __main__():
             )
     # write mutated protein sequences to fasta file
     if args.fasta_output and predictions_available:
-        with open("{}_prediction_proteins.fasta".format(args.identifier), "w") as protein_outfile:
+        with open(f"{args.identifier}_prediction_proteins.fasta", "w") as protein_outfile:
             for p in proteins:
                 variants = []
                 for v in p.vars:
@@ -1289,15 +1277,15 @@ def __main__():
                 cf = list(itertools.chain.from_iterable(c))
                 cds = ",".join([y.cdsMutationSyntax for y in set(cf)])
                 aas = ",".join([y.aaMutationSyntax for y in set(cf)])
-                protein_outfile.write(">{}:{}:{}\n".format(p.transcript_id, aas, cds))
-                protein_outfile.write("{}\n".format(str(p)))
+                protein_outfile.write(f">{p.transcript_id}:{aas}:{cds}\n")
+                protein_outfile.write(f"{str(p)}\n")
 
     complete_df["binder"] = complete_df[[col for col in complete_df.columns if "binder" in col]].any(axis=1)
 
     # write dataframe to tsv
     complete_df.fillna("")
     if predictions_available:
-        complete_df.to_csv("{}_prediction_result.tsv".format(args.identifier), "\t", index=False)
+        complete_df.to_csv(f"{args.identifier}_prediction_result.tsv", "\t", index=False)
 
     statistics["tool_thresholds"] = thresholds
     statistics["number_of_predictions"] = len(complete_df)
@@ -1306,7 +1294,7 @@ def __main__():
     statistics["number_of_unique_binders"] = list(set(binders))
     statistics["number_of_unique_nonbinders"] = list(set(non_binders) - set(binders))
 
-    with open("{}_report.json".format(args.identifier), "w") as json_out:
+    with open(f"{args.identifier}_report.json", "w") as json_out:
         json.dump(statistics, json_out)
 
     logger.info("Finished predictions at " + str(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
