@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.12`
 - [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.11`
+- [#227](https://github.com/nf-core/epitopeprediction/pull/227) Prevent crash if no transcript is found (in splitted vcf)
 - [#220](https://github.com/nf-core/epitopeprediction/pull/220) - Switch to nf-validation to parse samplesheet
 - [#213](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.10`
 - [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.
