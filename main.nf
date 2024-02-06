@@ -40,7 +40,7 @@ if (params.validate_params) {
     validateParameters()
 }
 
-WorkflowMain.initialise(workflow, params, log)
+WorkflowMain.initialise(workflow, params, log, args)
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

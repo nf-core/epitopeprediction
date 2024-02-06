@@ -4,7 +4,7 @@
   |\\ | |__  __ /  ` /  \\ |__) |__         }  {
   | \\| |       \\__, \\__/ |  \\ |___     \\`-._,-`-,
                                         `._,._,'
-  nf-core/epitopeprediction v${version}
+  nf-core/epitopeprediction ${version}
 ----------------------------------------------------
 Run Name: $runName
 

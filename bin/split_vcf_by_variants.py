@@ -2,14 +2,13 @@
 # Written by Christopher Mohr and released under the MIT license (2022).
 
 import argparse
-import logging
 import csv
+import logging
 import os
-from typing import Optional
 
 
 def determine_split_size(input_file, size):
-    with open(input_file, "r") as variants:
+    with open(input_file) as variants:
         input_lines = variants.readlines()
         num_variants = sum(1 for i in input_lines if not i.startswith("#"))
     if not size:
@@ -57,7 +56,7 @@ def main():
     metadata = ""
     var_group = ""
 
-    with open(args.input, "r") as input_file:
+    with open(args.input) as input_file:
         vcf_file = csv.reader(input_file, delimiter="\t")
 
         for line in vcf_file:

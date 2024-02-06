@@ -3,16 +3,18 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.3dev - 2023-08-29
+## v2.3dev - 2024-02-05
 
 ### `Changed`
 
+- [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.12`
+- [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.11`
 - [#220](https://github.com/nf-core/epitopeprediction/pull/220) - Switch to nf-validation to parse samplesheet
-- [#213](https://github.com/nf-core/epitopeprediction/pull/203) - Rename param `genome_version` to `genome_reference`, add functionality to handle BioMart archive urls
 - [#213](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.10`
+- [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.
+- [#203](https://github.com/nf-core/epitopeprediction/pull/203) - Rename param `genome_version` to `genome_reference`, add functionality to handle BioMart archive urls
 - [#203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.9`
 - [#203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.8`
-- [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.
 
 ### `Fixed`
 
