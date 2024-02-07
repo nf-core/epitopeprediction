@@ -1,1 +1,5 @@
 repository_type: pipeline
+files_unchanged:
+  - assets/nf-core-epitopeprediction_logo_light.png
+  - docs/images/nf-core-epitopeprediction_logo_light.png
+  - docs/images/nf-core-epitopeprediction_logo_dark.png
