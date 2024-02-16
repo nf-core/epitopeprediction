@@ -180,14 +180,14 @@ workflow EPITOPEPREDICTION {
 
     // TODO I guess it would be better to have two subworkflows for the if else parts (CM)
     if (params.show_supported_models) {
-        SHOW_SUPPORTED_MODELS(
+        EPYTOPE_SHOW_SUPPORTED_MODELS(
             ch_samples_uncompressed
                 .protein
                 .mix(ch_samples_uncompressed.variant, ch_samples_uncompressed.peptide)
                 .combine(ch_prediction_tool_versions)
                 .first()
         )
-        ch_versions = ch_versions.mix(SHOW_SUPPORTED_MODELS.out.versions)
+        ch_versions = ch_versions.mix(EPYTOPE_SHOW_SUPPORTED_MODELS.out.versions)
     }
 
     else {
