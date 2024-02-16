@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # Written by Sabrina Krakau, Christopher Mohr and released under the MIT license (2022).
 
-import sys
 import argparse
+
 import pandas as pd
-
 from Bio.SeqIO.FastaIO import SimpleFastaParser
-from epytope.Core import Allele, Peptide, Protein, generate_peptides_from_proteins
-
+from epytope.Core import Protein, generate_peptides_from_proteins
 
 parser = argparse.ArgumentParser("Generating peptides from protein sequences.")
 parser.add_argument(

@@ -3,20 +3,21 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.3dev - 2023-08-29
+## v2.3.0 - Oesterberg - 2024-02-14
 
 ### `Changed`
 
+- [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.12`
+- [#227](https://github.com/nf-core/epitopeprediction/pull/227) Prevent crash if no transcript is found (in splitted vcf)
 - [#220](https://github.com/nf-core/epitopeprediction/pull/220) - Switch to nf-validation to parse samplesheet
-- [#213](https://github.com/nf-core/epitopeprediction/pull/203) - Rename param `genome_version` to `genome_reference`, add functionality to handle BioMart archive urls
-- [#213](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.10`
-- [#203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.9`
-- [#203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.8`
+- [#213](https://github.com/nf-core/epitopeprediction/pull/213) - Update epytope and Ensembl reference handling and update to nf-core template `2.10`
 - [#206](https://github.com/nf-core/epitopeprediction/issues/206) - Update the row checker class.
+- [#203](https://github.com/nf-core/epitopeprediction/pull/203) - Update to nf-core template `2.9`, rename param `genome_version` to `genome_reference`, add functionality to handle BioMart archive urls
 
 ### `Fixed`
 
 - [#219](https://github.com/nf-core/epitopeprediction/pull/219) - Fix `EXTERNAL_TOOLS_IMPORT`` container registry and bump version
+- [#227](https://github.com/nf-core/epitopeprediction/pull/227) - Prevent crash if no transcript is found (in splitted vcf)
 
 ### `Removed`
 

@@ -2,10 +2,10 @@
 # Written by Sabrina Krakau, Christopher Mohr, Gisela Gabernet and released under the MIT license (2022).
 
 
+import argparse
+import json
 import os
 import sys
-import json
-import argparse
 
 
 def __main__():
@@ -43,14 +43,14 @@ def __main__():
     # read in json reports
     data = dict()
     if args.single_input:
-        with open(args.single_input, "r") as infile:
+        with open(args.single_input) as infile:
             json_content = json.load(infile)
             data = combine_dicts(data, json_content)
 
     else:
         for file in os.listdir(args.input):
             if file.endswith(".json"):
-                with open(os.path.join(args.input, file), "r") as infile:
+                with open(os.path.join(args.input, file)) as infile:
                     json_content = json.load(infile)
                     data = combine_dicts(data, json_content)
 
@@ -69,7 +69,7 @@ def __main__():
     data["number_of_predictions"] = sum(list(flatten(data["number_of_predictions"])))
     data["number_of_variants"] = sum(list(flatten(data["number_of_variants"])))
 
-    with open("{}_prediction_report.json".format(args.prefix), "w") as outfile:
+    with open(f"{args.prefix}_prediction_report.json", "w") as outfile:
         json.dump(data, outfile)
 
 

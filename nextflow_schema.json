@@ -203,7 +203,6 @@
             "properties": {
                 "external_tools_meta": {
                     "type": "string",
-                    "default": "${projectDir}/assets/external_tools_meta.json",
                     "description": "Specifies the path to the JSON file with meta information on external prediction tools."
                 },
                 "netmhc_system": {
