@@ -45,7 +45,7 @@
             "filename": {
                 "type": "string",
                 "pattern": "^\\S+\\.(vcf|vcf.gz|tsv|fasta|fa)$",
-                "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'"
+                "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'"
             }
         },
         "required": ["sample", "alleles", "mhc_class", "filename"]
