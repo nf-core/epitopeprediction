@@ -74,12 +74,7 @@ def __main__():
         }
 
     # get the alleles
-    if args.alleles.startswith("http"):
-        alleles = [Allele(a) for a in urllib.request.urlopen(args.alleles).read().decode("utf-8").splitlines()]
-    elif args.alleles.endswith(".txt"):
-        alleles = [Allele(a) for a in open(args.alleles).read().splitlines()]
-    else:
-        alleles = [Allele(a) for a in args.alleles.split(";")]
+    alleles = [Allele(a) for a in args.alleles.split(";")]
 
     peptide_lengths = []
     if args.peptides:

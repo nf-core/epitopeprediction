@@ -23,8 +23,7 @@ The pipeline currently accepts three different types of input that are genomic v
 The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
 
 > [!IMPORTANT]
-> Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/).
-> Support for [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) will be available with one of the upcoming versions.
+> Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/) and [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html).
 
 `tsv` files with genomic variants have to provide the following columns:
 
@@ -36,7 +35,7 @@ chr1 12954870 12954870 C T . 0 NORMAL:414,TUMOR:8 . missense_variant 0.5 transcr
 
 ```
 
-For genomic variants, reference information from `Ensembl BioMart` is used. The default database version is the most recent `GRCh37` version. If you want to do the predictions based on `GRCh38` as the reference genome, please specify `--genome_reference grch37` in your pipeline call.
+For genomic variants, reference information from `Ensembl BioMart` is used. The default database version is the most recent `GRCh37` version. If you want to do the predictions based on `GRCh38` as the reference genome, please specify `--genome_reference grch38` in your pipeline call.
 
 You can also specify valid `Ensembl BioMart` archive version urls as `--genome_reference` value, e.g. [the archive version of December 2021](http://dec2021.archive.ensembl.org/).
 
