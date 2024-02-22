@@ -20,7 +20,7 @@ The pipeline currently accepts three different types of input that are genomic v
 
 #### Genomic variants
 
-The supported file formats for genomic variants are `.vcf`, `.vcf.gz` and `tsv`.
+The supported file formats for genomic variants are `.vcf`, `.vcf.gz`.
 
 > [!IMPORTANT]
 > Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/) and [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html).
@@ -157,7 +157,7 @@ First, go to the [nf-core/epitopeprediction releases page](https://github.com/nf
 
 This version number will be logged in reports when you run the pipeline, so that you'll know what you used when you look back in the future. For example, at the bottom of the MultiQC reports.
 
-To further assist in reproducbility, you can use share and re-use [parameter files](#running-the-pipeline) to repeat pipeline runs with the same settings without having to write out a command with every single parameter.
+To further assist in reproducibility, you can use share and re-use [parameter files](#running-the-pipeline) to repeat pipeline runs with the same settings without having to write out a command with every single parameter.
 
 :::tip
 If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
