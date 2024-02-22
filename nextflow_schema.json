@@ -16,8 +16,6 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
                     "schema": "assets/schema_input.json",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
@@ -52,6 +50,7 @@
                 "genome_reference": {
                     "type": "string",
                     "default": "grch37",
+                    "enum": ["grch37", "grch38"],
                     "help_text": "This defines against which human Ensembl genome reference the pipeline performs the analysis including the incorporation of genetic variants e.g.. If `grch37` or `grch38` are specified the most recent Ensembl Biomart version for genome versions will be used. Alternatively, an Ensembl Biomart (archive) version can be specified, e.g. http://jan2020.archive.ensembl.org/.",
                     "description": "Specifies the Ensembl genome reference version that will be used."
                 },
