@@ -3,10 +3,11 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v2.3.0 - Oesterberg - 2024-02-20
+## v2.3.0 - Oesterberg - 2024-02-23
 
 ### `Changed`
 
+- [#233](https://github.com/nf-core/epitopeprediction/pull/233) - Update to nf-core template `2.13`
 - [#228](https://github.com/nf-core/epitopeprediction/pull/228) - Update to nf-core template `2.12`
 - [#227](https://github.com/nf-core/epitopeprediction/pull/227) Prevent crash if no transcript is found (in splitted vcf)
 - [#220](https://github.com/nf-core/epitopeprediction/pull/220) - Switch to nf-validation to parse samplesheet
