@@ -54,7 +54,8 @@ sample,alleles,mhc_class,filename
 GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
 GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.vcf
 ```
-Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins). 
+
+Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins).
 
 Now, you can run the pipeline using:
 
