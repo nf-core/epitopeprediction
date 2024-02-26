@@ -2,9 +2,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     label 'process_low'
 
     conda "conda-forge::coreutils=9.1 conda-forge::tcsh=6.20.00 bioconda::epytope=3.1.0 conda-forge::gawk=5.1.0 conda-forge::perl=5.32.1"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mulled-v2-11bbf0d242ea96f7b9c08d5b5bc26f2cd5ac5943:3419f320edefe6077631798f50d7bd4f8dc4763f-0' :
-        'quay.io/biocontainers/mulled-v2-11bbf0d242ea96f7b9c08d5b5bc26f2cd5ac5943:3419f320edefe6077631798f50d7bd4f8dc4763f-0' }"
+    container 'ghcr.io/jonasscheid/epitopeprediction-2:0.3.0'
 
     input:
     tuple val(meta), path(splitted), path(software_versions)
@@ -15,6 +13,9 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     tuple val(meta), path("*.tsv"), emit: predicted, optional: true
     tuple val(meta), path("*.fasta"), emit: fasta, optional: true
     path "versions.yml", emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     // Additions to the argument command need to go to the beginning.
@@ -46,14 +47,14 @@ process EPYTOPE_PEPTIDE_PREDICTION {
     def class1_tools = tools_split.findAll { ! it.matches('.*(?i)(class-2|ii).*') }
     def class2_tools = tools_split.findAll { it.matches('.*(?i)(syf|class-2|ii).*') }
 
-    if (((meta.mhcclass == "I") & class1_tools.empty) | ((meta.mhcclass == "II") & class2_tools.empty)) {
-        exit 1, "No tools specified for mhc class ${meta.mhcclass}"
+    if (((meta.mhc_class == "I") & class1_tools.empty) | ((meta.mhc_class == "II") & class2_tools.empty)) {
+        exit 1, "No tools specified for mhc class ${meta.mhc_class}"
     }
 
-    def min_length = (meta.mhcclass == "I") ? params.min_peptide_length : params.min_peptide_length_class2
-    def max_length = (meta.mhcclass == "I") ? params.max_peptide_length : params.max_peptide_length_class2
+    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length : params.min_peptide_length_class2
+    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length : params.max_peptide_length_class2
 
-    def tools_to_use = ((meta.mhcclass == "I") | (meta.mhcclass == "H-2")) ? class1_tools.join(',') : class2_tools.join(',')
+    def tools_to_use = ((meta.mhc_class == "I") | (meta.mhc_class == "H-2")) ? class1_tools.join(',') : class2_tools.join(',')
 
     """
     # create folder for MHCflurry downloads to avoid permission problems when running pipeline with docker profile and mhcflurry selected
@@ -82,7 +83,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         python: \$(python --version 2>&1 | sed 's/Python //g')
         epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
         pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyvcf').version)")
+        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
         mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')
         mhcnuggets: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)")
     END_VERSIONS

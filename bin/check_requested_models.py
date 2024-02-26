@@ -2,14 +2,14 @@
 # Written by Sabrina Krakau, Christopher Mohr and released under the MIT license.
 
 
-import sys
-import csv
 import argparse
+import csv
 import logging
+import sys
+import urllib.request
 
 from epytope.Core.Allele import Allele
 from epytope.Core.Peptide import Peptide
-from epytope.IO import FileReader
 from epytope.EpitopePrediction import EpitopePredictorFactory
 
 # instantiate global logger object
@@ -24,7 +24,7 @@ def read_peptide_input(filename):
     peptides = []
 
     """expected columns (min required): id sequence"""
-    with open(filename, "r") as peptide_input:
+    with open(filename) as peptide_input:
         # enable listing of protein names for each peptide
         csv.field_size_limit(600000)
         reader = csv.DictReader(peptide_input, delimiter="\t")
@@ -53,7 +53,7 @@ def __main__():
         "Write out information about supported models by epytope for installed predictor tool versions."
     )
     parser.add_argument("-p", "--peptides", help="File with one peptide per line")
-    parser.add_argument("-c", "--mhcclass", default=1, help="MHC class I or II")
+    parser.add_argument("-c", "--mhc_class", default=1, help="MHC class I or II")
     parser.add_argument("-l", "--max_length", help="Maximum peptide length", type=int)
     parser.add_argument("-ml", "--min_length", help="Minimum peptide length", type=int)
     parser.add_argument("-a", "--alleles", help="<Required> MHC Alleles", required=True, type=str)
@@ -61,7 +61,7 @@ def __main__():
     parser.add_argument("-v", "--versions", help="<Required> File with used software versions.", required=True)
     args = parser.parse_args()
     selected_methods = [item.split("-")[0] if "mhcnuggets" not in item else item for item in args.tools.split(",")]
-    with open(args.versions, "r") as versions_file:
+    with open(args.versions) as versions_file:
         tool_version = [(row[0].split()[0], str(row[1])) for row in csv.reader(versions_file, delimiter=":")]
         # NOTE this needs to be updated, if a newer version will be available via epytope and should be used in the future
         tool_version.append(("syfpeithi", "1.0"))  # how to handle this?
