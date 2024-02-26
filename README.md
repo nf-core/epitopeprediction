@@ -5,8 +5,8 @@
   </picture>
 </h1>
 
-[![GitHub Actions CI Status](https://github.com/nf-core/epitopeprediction/actions/workflows/ci.yml/badge.svg)](https://github.com/nf-core/epitopeprediction/actions/workflows/ci.yml)
-[![GitHub Actions Linting Status](https://github.com/nf-core/epitopeprediction/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/epitopeprediction/actions/workflows/linting.yml)[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/epitopeprediction/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.3564666-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.3564666)
+[![GitHub Actions CI Status](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20CI/badge.svg)](https://github.com/nf-core/epitopeprediction/actions?query=workflow%3A%22nf-core+CI%22)
+[![GitHub Actions Linting Status](https://github.com/nf-core/epitopeprediction/workflows/nf-core%20linting/badge.svg)](https://github.com/nf-core/epitopeprediction/actions?query=workflow%3A%22nf-core+linting%22)[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/epitopeprediction/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.3564666-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.3564666)
 
 [![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
@@ -45,30 +45,26 @@ On release, automated continuous integration tests run the pipeline on a full-si
 > [!NOTE]
 > If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
 
-> [!NOTE]
-> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how
-> to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline)
-> with `-profile test` before running the workflow on actual data.
-
 First, prepare a samplesheet with your input data that looks as follows:
 
 `samplesheet.csv`:
 
-````csv
+```csv
 sample,alleles,mhc_class,filename
 GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
 GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.vcf
+```
 
 Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins).
 
--->
+Now, you can run the pipeline using:
 
 ```bash
 nextflow run nf-core/epitopeprediction \
    -profile <docker/singularity/.../institute> \
    --input samplesheet.csv \
    --outdir <OUTDIR>
-````
+```
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
