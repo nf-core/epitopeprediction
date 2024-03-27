@@ -29,4 +29,14 @@ process VARIANT_SPLIT {
     END_VERSIONS
     """
 
+    stub:
+    """
+    touch ${input_file.baseName}_1.vcf
+    touch ${input_file.baseName}_2.vcf
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+    END_VERSIONS
+    """
 }

@@ -32,6 +32,17 @@ process GET_PREDICTION_VERSIONS {
         done
     fi
     """
+
+    stub:
+    """
+    touch versions.csv
+
+    cat <<-END_VERSIONS > versions.csv
+    mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')
+    mhcnuggets: \$(python -c "import pkg_resources; print('mhcnuggets' + pkg_resources.get_distribution('mhcnuggets').version)" | sed 's/^mhcnuggets//; s/ .*\$//' )
+    epytope: \$(python -c "import pkg_resources; print('epytope' + pkg_resources.get_distribution('epytope').version)" | sed 's/^epytope//; s/ .*\$//')
+    END_VERSIONS
+    """
 }
 
 
