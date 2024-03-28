@@ -83,4 +83,14 @@ process EXTERNAL_TOOLS_IMPORT {
         ${toolname}: ${toolversion}
     END_VERSIONS
     """
+
+    stub:
+    """
+    mkdir "${toolname}"
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        ${toolname}: ${toolversion}
+    END_VERSIONS
+    """
 }

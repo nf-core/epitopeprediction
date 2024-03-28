@@ -30,4 +30,19 @@ process CAT_FILES {
         cat: \$(echo \$(cat --version 2>&1) | sed 's/^.*BusyBox //; s/ .*\$//')
     END_VERSIONS
     """
+
+    stub:
+    def fileExt = input[0].name.tokenize("\\.")[-1]
+    def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}"
+    def type = fileExt == "tsv" ? "prediction_result" : "prediction_proteins"
+
+    """
+    touch ${prefix}_${type}.${fileExt}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        cat: \$(echo \$(cat --version 2>&1) | sed 's/^.*BusyBox //; s/ .*\$//')
+    END_VERSIONS
+    """
+
 }

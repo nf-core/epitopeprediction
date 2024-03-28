@@ -47,4 +47,17 @@ process EPYTOPE_CHECK_REQUESTED_MODELS {
         epytope: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)"))
     END_VERSIONS
     """
+
+    stub:
+    """
+    touch model_report.txt
+    touch model_warnings.log
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        mhcflurry: \$(echo \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//') )
+        mhcnuggets: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)"))
+        epytope: \$(echo \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)"))
+    END_VERSIONS
+    """
 }

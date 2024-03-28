@@ -119,7 +119,7 @@ workflow EPITOPEPREDICTION {
             protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
                 return [[sample:sample.id, alleles:allele_list, mhc_class:mhc_class, inputtype:'protein'], filename ]}
         .set { ch_samplesheet }
-    ch_samplesheet.peptide.view()
+
     // gunzip variant files
     GUNZIP_VCF (
         ch_samplesheet.variant_compressed

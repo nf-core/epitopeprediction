@@ -26,4 +26,14 @@ process CSVTK_CONCAT {
         csvtk: \$(echo \$( csvtk version | sed -e "s/csvtk v//g" ))
     END_VERSIONS
     """
+
+    stub:
+    """
+    touch ${meta.sample}_prediction_result.tsv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        csvtk: \$(echo \$( csvtk version | sed -e "s/csvtk v//g" ))
+    END_VERSIONS
+    """
 }

@@ -1,7 +1,7 @@
-name: multiqc
+name: custom_dumpsoftwareversions
 channels:
   - conda-forge
   - bioconda
   - defaults
 dependencies:
-  - bioconda::multiqc=1.21
+  - bioconda::multiqc=1.19

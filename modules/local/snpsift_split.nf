@@ -25,4 +25,15 @@ process SNPSIFT_SPLIT {
         snpsift: \$( echo \$(SnpSift split -h 2>&1) | sed 's/^.*version //' | sed 's/(.*//' | sed 's/t//g' )
     END_VERSIONS
     """
+
+    stub:
+    """
+    touch ${input_file.baseName}.chr1.vcf
+    touch ${input_file.baseName}.chr2.vcf
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        snpsift: \$( echo \$(SnpSift split -h 2>&1) | sed 's/^.*version //' | sed 's/(.*//' | sed 's/t//g' )
+    END_VERSIONS
+    """
 }
