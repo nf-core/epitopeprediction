@@ -77,7 +77,7 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         --max_length ${max_length} \
         --min_length ${min_length} \
         --versions ${software_versions} \
-        ${args} ${splitted}
+        ${argument} ${splitted}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
