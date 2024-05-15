@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#243](https://github.com/nf-core/epitopeprediction/pull/243) - Update to nf-core template `2.14.1`
 - [#237](https://github.com/nf-core/epitopeprediction/pull/237) - Update to nf-core template `2.13.1`
 
+### `Fixed`
+
+- [#243](https://github.com/nf-core/epitopeprediction/pull/243) - Add check for protein map to prevent failure if no information is available
+
 ## v2.3.0 - Oesterberg - 2024-02-26
 
 ### `Changed`
