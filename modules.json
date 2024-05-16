@@ -5,11 +5,6 @@
         "https://github.com/nf-core/modules.git": {
             "modules": {
                 "nf-core": {
-                    "custom/dumpsoftwareversions": {
-                        "branch": "master",
-                        "git_sha": "8ec825f465b9c17f9d83000022995b4f7de6fe93",
-                        "installed_by": ["modules"]
-                    },
                     "gunzip": {
                         "branch": "master",
                         "git_sha": "3a5fef109d113b4997c9822198664ca5f2716208",
@@ -31,7 +26,7 @@
                     },
                     "utils_nfcore_pipeline": {
                         "branch": "master",
-                        "git_sha": "5caf7640a9ef1d18d765d55339be751bb0969dfa",
+                        "git_sha": "92de218a329bfc9a9033116eb5f65fd270e72ba3",
                         "installed_by": ["subworkflows"]
                     },
                     "utils_nfvalidation_plugin": {
