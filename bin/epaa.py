@@ -425,9 +425,9 @@ def read_lig_ID_values(filename):
 
 def create_protein_column_value(pep):
     # retrieve Ensembl protein ID for given transcript IDs, if we want to provide additional protein ID types, adapt here
-
     # we have to catch cases where no protein information is available, e.g. if there are issues on BioMart side
     if transcriptProteinTable is None:
+        logger.warning(f"Protein mapping not available for peptide {str(pep)}")
         return ""
 
     all_proteins = [
