@@ -35,4 +35,16 @@ process EPYTOPE_GENERATE_PEPTIDES {
         python: \$(python --version 2>&1 | sed 's/Python //g')
     END_VERSIONS
     """
+
+    stub:
+    def prefix = task.ext.suffix ? "${meta.sample}_${task.ext.suffix}" : "${meta.sample}_peptides"
+    """
+    touch ${prefix}.tsv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+    END_VERSIONS
+    """
 }

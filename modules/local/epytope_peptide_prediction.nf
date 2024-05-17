@@ -44,9 +44,10 @@ process EPYTOPE_PEPTIDE_PREDICTION {
 
     def netmhc_paths_string = netmhc_paths.join(",")
     def tools_split = params.tools.split(',')
+    // TODO: Move to nf-validation
     def class1_tools = tools_split.findAll { ! it.matches('.*(?i)(class-2|ii).*') }
     def class2_tools = tools_split.findAll { it.matches('.*(?i)(syf|class-2|ii).*') }
-
+    // TODO: Move to nf-validation
     if (((meta.mhc_class == "I") & class1_tools.empty) | ((meta.mhc_class == "II") & class2_tools.empty)) {
         exit 1, "No tools specified for mhc class ${meta.mhc_class}"
     }
@@ -77,6 +78,23 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         --min_length ${min_length} \
         --versions ${software_versions} \
         ${argument} ${splitted}
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
+        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
+        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
+        mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')
+        mhcnuggets: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)")
+    END_VERSIONS
+    """
+
+    stub:
+    """
+    touch ${splitted.baseName}.json
+    touch ${splitted.baseName}.tsv
+    touch ${splitted.baseName}.fasta
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
