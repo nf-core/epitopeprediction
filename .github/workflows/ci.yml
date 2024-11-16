@@ -90,7 +90,7 @@ jobs:
     strategy:
       matrix:
         NXF_VER:
-          - "23.04.0"
+          - "24.04.2"
           - "latest-everything"
         tests:
           ["test_grch38", "test_peptides", "test_peptides_h2", "test_proteins", "test_mhcnuggets", "test_mhcflurry"]
@@ -114,7 +114,7 @@ jobs:
     strategy:
       matrix:
         NXF_VER:
-          - "23.04.0"
+          - "24.04.2"
           - "latest-everything"
     steps:
       - name: Check out pipeline code
