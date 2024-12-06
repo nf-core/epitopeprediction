@@ -1,5 +1,5 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/nf-core/epitopeprediction/master/assets/schema_input.json",
     "title": "nf-core/epitopeprediction pipeline - params.input schema",
     "description": "Schema for the file provided with params.input",
@@ -10,7 +10,8 @@
             "sample": {
                 "type": "string",
                 "pattern": "^\\S+$",
-                "errorMessage": "Sample name must be provided and cannot contain spaces"
+                "errorMessage": "Sample name must be provided and cannot contain spaces",
+                "meta": ["id"]
             },
             "alleles": {
                 "anyOf": [
@@ -20,20 +21,32 @@
                     },
                     {
                         "type": "string",
-                        "pattern": "(^[A-Z][*][0-9][0-9][:][0-9][0-9])$"
+                        "pattern": "^([A-E]{1}[*][0-9]{2}[:][0-9]{2})(;[A-E]{1}[*][0-9]{2}[:][0-9]{2})*$"
+                    },
+                    {
+                        "type": "string",
+                        "pattern": "^((DR|DP|DQ)[AB][0-9][*][0-9]{2}[:][0-9]{2})(;(DR|DP|DQ)[AB][0-9][*][0-9]{2}[:][0-9]{2})*$"
+                    },
+                    {
+                        "type": "string",
+                        "pattern": "^((DR|DP|DQ)[AB][0-9][*][0-9]{2}[:][0-9]{2}[-](DR|DP|DQ)[AB][0-9][*][0-9]{2}[:][0-9]{2})(;((DR|DP|DQ)[AB][0-9][*][0-9]{2}[:][0-9]{2}[-](DR|DP|DQ)[AB][0-9][*][0-9]{2}[:][0-9]{2}))*$"
+                    },
+                    {
+                        "type": "string",
+                        "pattern": "^[H][-][2][-][A-Za-z]{2,3}$"
                     }
                 ],
-                "errorMessage": "Alleles must be provided as string or file with extension '.txt''"
+                "errorMessage": "Alleles must be provided as string or file with extension '.txt'. Please check the documentation for more information."
             },
             "mhc_class": {
                 "type": "string",
                 "pattern": "^(I|II|H-2)$",
-                "errorMessage": "The MHC class must be provided. Valid values: "
+                "errorMessage": "The MHC class must be provided. Valid values: 'I', 'II' or 'H-2'"
             },
             "filename": {
                 "type": "string",
-                "pattern": "^\\S+\\.(vcf|tsv|fasta|fa|txt)$",
-                "errorMessage": "Variants/proteins/peptides for sample must be provided and have one of the following extensions:  '.vcf', '.tsv', '.fasta', '.fa', '.txt'"
+                "pattern": "^\\S+\\.(vcf|vcf.gz|tsv|fasta|fa)$",
+                "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'"
             }
         },
         "required": ["sample", "alleles", "mhc_class", "filename"]

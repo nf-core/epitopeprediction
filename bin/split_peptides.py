@@ -2,9 +2,8 @@
 # Written by Sabrina Krakau, Christopher Mohr and released under the MIT license (2022).
 
 
-import math
 import argparse
-
+import math
 
 parser = argparse.ArgumentParser("Split peptides input file.")
 parser.add_argument("-i", "--input", metavar="FILE", type=str, help="Input file containing peptides.")
@@ -17,13 +16,13 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-with open(args.input, "r") as infile:
+with open(args.input) as infile:
     tot_size = sum([1 for _ in infile]) - 1
 
 n = int(min(math.ceil(float(tot_size) / args.min_size), args.max_chunks))
 h = int(max(args.min_size, math.ceil(float(tot_size) / n)))
 
-with open(args.input, "r") as infile:
+with open(args.input) as infile:
     header = next(infile)
     for chunk in range(n):
         with open(args.output_base + ".chunk_" + str(chunk) + ".tsv", "w") as outfile:

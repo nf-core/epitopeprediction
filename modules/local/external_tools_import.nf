@@ -7,7 +7,7 @@ process EXTERNAL_TOOLS_IMPORT {
     conda "conda-forge::coreutils=9.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
-        'biocontainers/biocontainers:v1.2.0_cv1' }"
+        'docker.io/biocontainers/biocontainers:v1.2.0_cv2' }"
 
     input:
     tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname)
@@ -78,6 +78,15 @@ process EXTERNAL_TOOLS_IMPORT {
     #
     # CREATE VERSION FILE
     #
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        ${toolname}: ${toolversion}
+    END_VERSIONS
+    """
+
+    stub:
+    """
+    mkdir "${toolname}"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
