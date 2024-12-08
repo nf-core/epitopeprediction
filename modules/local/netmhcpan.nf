@@ -5,7 +5,7 @@ process NETMHCPAN {
     container 'ghcr.io/jonasscheid/epitopeprediction-2:netmhc'
 
     input:
-    tuple val(meta), path(peptide_file), path(nonfree_tools)
+    tuple val(meta), path(peptide_file), path(software)
 
     output:
     tuple val(meta), path("*.tsv"), emit: predicted
@@ -13,15 +13,23 @@ process NETMHCPAN {
 
     script:
     if (meta.mhc_class != "I") {
-        error "NETMHCPAN only supports MHC class I. Use NETMHCIIPAN for MHC class II, or adjust the samplesheet accordingly."
+        error "NETMHCPAN only supports MHC class I. Use NETMHCIIPAN for MHC class II."
     }
-    def prefix = peptide_file.baseName
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
 
     """
     """
+
     stub:
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
     """
-    touch ${meta.sample}_predicted_netmhcpan.tsv
-    touch versions.yml
+    touch ${prefix}_predicted_netmhcpan.tsv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        netmhcpan \$(cat data/version | sed -s 's/ version/:/g')
+    END_VERSIONS
     """
 }

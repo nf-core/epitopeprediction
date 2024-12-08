@@ -74,6 +74,7 @@ workflow PIPELINE_INITIALISATION {
 
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        //.map { meta, file -> [ meta + [tools: params.tools.tokenize(',')], file ] }
         .set { ch_samplesheet }
 
     emit:
@@ -139,6 +140,41 @@ workflow PIPELINE_COMPLETION {
 //def validateInputParameters() {
 //    genomeExistsError()
 //}
+
+//
+// Prepare import of NetMHC software
+//
+def parse_netmhc_params(tool_name, tool_version) {
+    // Check if the _path parameter was set for this tool
+    if (!params["${tool_name}_path"])
+    {
+        error("--${tool_name}_path not specified, but --tools contains ${tool_name}. Both have to be specified to enable ${tool_name}. Ignoring.")
+    }
+    else if (params["${tool_name}_path"])
+    {
+    // Import mandatory netmhc metadata
+    def jsonSlurper = new groovy.json.JsonSlurper()
+    def external_tools_meta = jsonSlurper.parse(file(params.external_tools_meta, checkIfExists: true))
+    def entry = external_tools_meta[tool_name][tool_version]
+
+    if (params["netmhc_system"] == 'darwin') {
+        entry = external_tools_meta["${tool_name}_darwin"][tool_version]
+    }
+    // If so, add the tool name and user installation path to the external tools import channel
+    ch_nonfree_paths = Channel.empty()
+    ch_nonfree_paths.bind([
+        tool_name,
+        entry.version,
+        entry.software_md5,
+        file(params["${tool_name}_path"], checkIfExists:true),
+        entry.data ? file(params["${tool_name}_data"], checkIfExists:true) : [],
+        entry.data_md5 ? entry.data_md5 : "",
+        entry.binary_name
+    ])
+
+    return ch_nonfree_paths
+    }
+}
 
 //
 // Validate channels from input samplesheet

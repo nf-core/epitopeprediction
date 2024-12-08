@@ -20,9 +20,9 @@ include { EPYTOPE_GENERATE_PEPTIDES                                             
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PEPTIDES                                } from '../modules/local/split_peptides'
 include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN                                 } from '../modules/local/split_peptides'
 
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN }        from '../modules/local/epytope_peptide_prediction'
-//include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PEP }            from '../modules/local/epytope_peptide_prediction'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR }            from '../modules/local/epytope_peptide_prediction'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN         } from '../modules/local/epytope_peptide_prediction'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PEP             } from '../modules/local/epytope_peptide_prediction'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR             } from '../modules/local/epytope_peptide_prediction'
 
 include { CAT_FILES as CAT_TSV                                                     } from '../modules/local/cat_files'
 include { CAT_FILES as CAT_FASTA                                                   } from '../modules/local/cat_files'
@@ -34,7 +34,6 @@ include { MERGE_JSON as MERGE_JSON_MULTI                                        
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 
-include { INPUT_CHECK } from '../subworkflows/local/input_check'
 include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_prediction'
 
 /*
@@ -108,49 +107,39 @@ workflow EPITOPEPREDICTION {
 
     // Load samplesheet and branch channels based on input type
     samplesheet
-        .branch {
-        sample, alleles, mhc_class, filename ->
-            def allele_list = readAlleles(alleles)
-            validate_alleles(allele_list, mhc_class)
+        .branch { meta, filename ->
+            def allele_list = readAlleles(meta.alleles)
+            validate_alleles(allele_list, meta.mhc_class)
             // TODO: Replace sample with id
             variant_compressed : filename.endsWith('.vcf.gz')
-                return [[sample:sample.id, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant_compressed'], filename ]
+                return [meta + [input_type:'variant_compressed'], filename ]
             variant_uncompressed : filename.endsWith('.vcf')
-                return [[sample:sample.id, alleles:allele_list, mhc_class:mhc_class, inputtype:'variant'], filename ]
+                return [meta + [input_type:'variant'], filename ]
             peptide : filename.endsWith('.tsv')
-                return [[sample:sample.id, alleles:allele_list, mhc_class:mhc_class, inputtype:'peptide'], filename ]
+                return [meta + [input_type:'peptide'], filename ]
             protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
-                return [[sample:sample.id, alleles:allele_list, mhc_class:mhc_class, inputtype:'protein'], filename ]}
+                return [meta + [input_type:'protein'], filename ]
+        }
         .set { ch_samplesheet }
 
     // gunzip variant files
-    GUNZIP_VCF (
-        ch_samplesheet.variant_compressed
-    )
+    GUNZIP_VCF ( ch_samplesheet.variant_compressed )
     ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
 
-    ch_variants_uncompressed = GUNZIP_VCF.out.gunzip
-        .mix(ch_samplesheet.variant_uncompressed)
+    ch_variants_uncompressed = GUNZIP_VCF.out.gunzip.mix( ch_samplesheet.variant_uncompressed )
 
     // (re)combine different input file types
     ch_samples_uncompressed = ch_samplesheet.protein
         .mix(ch_samplesheet.peptide)
         .mix(ch_variants_uncompressed)
         .branch {
-                meta_data, input_file ->
-                variant :  meta_data.inputtype == 'variant' | meta_data.inputtype == 'variant_compressed'
-                peptide :  meta_data.inputtype == 'peptide'
-                protein :  meta_data.inputtype == 'protein'
-            }
+            meta_data, input_file ->
+            variant :  meta_data.input_type == 'variant' | meta_data.input_type == 'variant_compressed'
+            peptide :  meta_data.input_type == 'peptide'
+            protein :  meta_data.input_type == 'protein'
+        }
 
-    tools = params.tools?.tokenize(',')
-
-    if (tools.isEmpty()) { exit 1, "No valid tools specified." }
-
-
-    c_purple = params.monochrome_logs ? '' : "\033[0;35m";
-    c_reset = params.monochrome_logs ? '' : "\033[0m";
-
+    tools = params.tools.tokenize(",")
     // get versions of specified external tools
     ch_external_versions = Channel
         .from(tools)
@@ -181,11 +170,6 @@ workflow EPITOPEPREDICTION {
         CHECK AVAILABLE MODELS AND LOAD EXTERNAL TOOLS
     ========================================================================================
     */
-
-    /*
-    #We will be changing the implementation of check requested models so it doesn't depend on epytope
-    (this is necessary to work with newer versions of tools that aren't updated in epytope)
-    # The new check requested models will be implemented in the input_check.nf script
 
     // perform the check requested models on the variant files
     EPYTOPE_CHECK_REQUESTED_MODELS(
@@ -225,7 +209,6 @@ workflow EPITOPEPREDICTION {
                 }
             }
     }
-    */
 
     // Retrieve meta data for external tools
     tools.each {
@@ -281,37 +264,27 @@ workflow EPITOPEPREDICTION {
 
     // decide between the split_by_variants and snpsift_split (by chromosome) function
     if (params.split_by_variants) {
-        VARIANT_SPLIT(
-            ch_samples_uncompressed.variant
-        )
-        .set { ch_split_variants }
+        VARIANT_SPLIT( ch_samples_uncompressed.variant )
+            .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
 
     }
     else {
-        SNPSIFT_SPLIT(
-            ch_samples_uncompressed.variant
-        )
-        .set { ch_split_variants }
+        SNPSIFT_SPLIT( ch_samples_uncompressed.variant )
+            .set { ch_split_variants }
         ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
     }
 
     // process FASTA file and generated peptides
-    EPYTOPE_GENERATE_PEPTIDES(
-        ch_samples_uncompressed.protein
-    )
+    EPYTOPE_GENERATE_PEPTIDES( ch_samples_uncompressed.protein )
     ch_versions = ch_versions.mix(EPYTOPE_GENERATE_PEPTIDES.out.versions)
 
 
-    SPLIT_PEPTIDES_PROTEIN(
-        EPYTOPE_GENERATE_PEPTIDES.out.splitted
-    )
+    SPLIT_PEPTIDES_PROTEIN( EPYTOPE_GENERATE_PEPTIDES.out.splitted )
     ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions)
 
     // split peptide data
-    SPLIT_PEPTIDES_PEPTIDES(
-        ch_samples_uncompressed.peptide
-    )
+    SPLIT_PEPTIDES_PEPTIDES( ch_samples_uncompressed.peptide )
     ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions )
 
     /*
@@ -319,7 +292,6 @@ workflow EPITOPEPREDICTION {
         RUN EPITOPE PREDICTION
     ========================================================================================
     */
-
 
     // not sure if this is the best solution to also have a extra process for protein, but I think we need it for cases when we have both in one sheet? (CM)
     // run epitope prediction for proteins
@@ -333,9 +305,7 @@ workflow EPITOPEPREDICTION {
     )
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions )
 
-
     // Run epitope prediction for peptides
-    /*
     EPYTOPE_PEPTIDE_PREDICTION_PEP(
         SPLIT_PEPTIDES_PEPTIDES
             .out
@@ -344,23 +314,14 @@ workflow EPITOPEPREDICTION {
             .transpose(),
             EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     )
-    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions.ifEmpty(null) )
-    */
+    ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PEP.out.versions )
 
-    ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES
-            .out
-            .splitted
-            //.combine( ch_prediction_tool_versions )
-            .transpose()
+    ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES.out.splitted.transpose()
 
-    MHC_BINDING_PREDICTION(
-            ch_prediction_input)
+    MHC_BINDING_PREDICTION( ch_samples_uncompressed.peptide )
+    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
-    ch_predicted_peptides = MHC_BINDING_PREDICTION
-                                    .out
-                                    .predicted
-
-    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions.ifEmpty(null))
+    ch_predicted_peptides = MHC_BINDING_PREDICTION.out.predicted
 
     // Run epitope prediction for variants
     EPYTOPE_PEPTIDE_PREDICTION_VAR(
@@ -373,7 +334,7 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions )
 
     // Combine the predicted files and save them in a branch to make a distinction between samples with single and multi files
-    /*EPYTOPE_PEPTIDE_PREDICTION_PEP
+    EPYTOPE_PEPTIDE_PREDICTION_PEP
         .out
         .predicted
         .mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.predicted, EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.predicted )
@@ -387,18 +348,12 @@ workflow EPITOPEPREDICTION {
                     return [ meta_data, predicted ]
         }
         .set { ch_predicted_peptides }
-*/
 
     // Combine epitope prediction results
-    CAT_TSV(
-        ch_predicted_peptides
-    )
+    CAT_TSV( ch_predicted_peptides.multi )
     ch_versions = ch_versions.mix( CAT_TSV.out.versions )
 
-/*
-    CSVTK_CONCAT(
-        ch_predicted_peptides.multi
-    )
+    CSVTK_CONCAT( ch_predicted_peptides.multi )
     ch_versions = ch_versions.mix( CSVTK_CONCAT.out.versions )
 
     // Combine protein sequences
@@ -428,18 +383,13 @@ workflow EPITOPEPREDICTION {
         .set { ch_json_reports }
 
     // Combine epitope prediction reports
-    MERGE_JSON_SINGLE(
-        ch_json_reports.single
-    )
+    MERGE_JSON_SINGLE( ch_json_reports.single )
     ch_versions = ch_versions.mix( MERGE_JSON_SINGLE.out.versions )
 
-    MERGE_JSON_MULTI(
-        ch_json_reports.multi
-    )
-    ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions.ifEmpty(null) )
-    */
-
+    MERGE_JSON_MULTI( ch_json_reports.multi )
+    ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions )
     }
+
     //
     // Collate and save software versions
     //
@@ -450,7 +400,6 @@ workflow EPITOPEPREDICTION {
             sort: true,
             newLine: true
         ).set { ch_collated_versions }
-
 
     //
     // MODULE: MultiQC

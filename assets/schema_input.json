@@ -11,7 +11,7 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
-                "meta": ["id"]
+                "meta": ["sample"]
             },
             "alleles": {
                 "anyOf": [
@@ -36,17 +36,20 @@
                         "pattern": "^[H][-][2][-][A-Za-z]{2,3}$"
                     }
                 ],
-                "errorMessage": "Alleles must be provided as string or file with extension '.txt'. Please check the documentation for more information."
+                "errorMessage": "Alleles must be provided as string or file with extension '.txt'. Please check the documentation for more information.",
+                "meta": ["alleles"]
             },
             "mhc_class": {
                 "type": "string",
                 "pattern": "^(I|II|H-2)$",
-                "errorMessage": "The MHC class must be provided. Valid values: 'I', 'II' or 'H-2'"
+                "errorMessage": "The MHC class must be provided. Valid values: 'I', 'II' or 'H-2'",
+                "meta": ["mhc_class"]
             },
             "filename": {
                 "type": "string",
                 "pattern": "^\\S+\\.(vcf|vcf.gz|tsv|fasta|fa)$",
-                "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'"
+                "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'",
+                "exists": true
             }
         },
         "required": ["sample", "alleles", "mhc_class", "filename"]
