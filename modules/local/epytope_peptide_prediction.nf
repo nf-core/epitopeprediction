@@ -52,8 +52,8 @@ process EPYTOPE_PEPTIDE_PREDICTION {
         exit 1, "No tools specified for mhc class ${meta.mhc_class}"
     }
 
-    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length : params.min_peptide_length_class2
-    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length : params.max_peptide_length_class2
+    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_classI : params.min_peptide_length_classII
+    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length_classI : params.max_peptide_length_classII
 
     def tools_to_use = ((meta.mhc_class == "I") | (meta.mhc_class == "H-2")) ? class1_tools.join(',') : class2_tools.join(',')
 

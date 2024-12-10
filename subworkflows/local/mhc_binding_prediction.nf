@@ -1,7 +1,7 @@
 //
 // Check input samplesheet and get read channels
 //
-include { PREPARE_PREDICTION_INPUT } from '../../modules/local/prepare_prediction_input'
+include { PREPARE_PREDICTION_INPUT } from '../../modules/local/prepare_prediction_input/main'
 include { SYFPEITHI } from '../../modules/local/syfpeithi'
 include { MHCFLURRY } from '../../modules/local/mhcflurry'
 include { MHCNUGGETS } from '../../modules/local/mhcnuggets'
@@ -10,7 +10,7 @@ include { NETMHCIIPAN } from '../../modules/local/netmhciipan'
 include { parse_netmhc_params } from '../../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
 include { EXTERNAL_TOOLS_IMPORT as NETMHCPAN_IMPORT;
         EXTERNAL_TOOLS_IMPORT as NETMHCIIPAN_IMPORT} from '../../modules/local/external_tools_import'
-include { MERGE_PREDICTIONS } from '../../modules/local/merge_predictions'
+include { MERGE_PREDICTIONS } from '../../modules/local/merge_predictions/main'
 
 workflow MHC_BINDING_PREDICTION {
     take:
@@ -22,6 +22,7 @@ workflow MHC_BINDING_PREDICTION {
 
         //TODO: Add //"pattern": "^(syfpeithi|mhcnuggets|mhcflurry|netmhcpan|netmhciipan)(,(syfpeithi|mhcnuggets|mhcflurry|netmhcpan|netmhciipan)){0,4}$",
         // to nextflow_schema.json once this subworkflow is completed
+        //TODO: Parse input alleles file to meta.alleles
 
         //prepare the input file
         PREPARE_PREDICTION_INPUT( ch_peptides )
@@ -41,7 +42,7 @@ workflow MHC_BINDING_PREDICTION {
                         return [meta, file]
                     }
             .set{ ch_prediction_input }
-
+        ch_prediction_input.netmhcpan.view()
         SYFPEITHI ( ch_prediction_input.syfpeithi )
         ch_versions = ch_versions.mix(SYFPEITHI.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(SYFPEITHI.out.predicted)
@@ -54,7 +55,7 @@ workflow MHC_BINDING_PREDICTION {
         ch_versions = ch_versions.mix(MHCNUGGETS.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETS.out.predicted)
 
-        if ( "netmhcpan" in params.tools.tokenize(",") )
+        if ( "netmhcpan-4.1" in params.tools.tokenize(",") )
         {
             //TODO: Refactor to support only one netmhc version
             //TODO: Fix parsing version

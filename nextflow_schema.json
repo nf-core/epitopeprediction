@@ -71,27 +71,27 @@
                     "description": "Filter against human proteome.",
                     "help_text": "Specifies that peptides should be filtered against the specified human proteome references."
                 },
-                "max_peptide_length": {
-                    "type": "integer",
-                    "default": 11,
-                    "description": "Specifies the maximum peptide length.",
-                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
-                },
-                "min_peptide_length": {
+                "min_peptide_length_classI": {
                     "type": "integer",
                     "default": 8,
                     "description": "Specifies the minimum peptide length.",
                     "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
                 },
-                "max_peptide_length_class2": {
+                "max_peptide_length_classI": {
                     "type": "integer",
-                    "default": 16,
-                    "description": "Specifies the maximum peptide length for MHC class II peptides."
+                    "default": 11,
+                    "description": "Specifies the maximum peptide length.",
+                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
                 },
-                "min_peptide_length_class2": {
+                "min_peptide_length_classII": {
                     "type": "integer",
                     "default": 15,
                     "description": "Specifies the minimum peptide length for MHC class II peptides."
+                },
+                "max_peptide_length_classII": {
+                    "type": "integer",
+                    "default": 16,
+                    "description": "Specifies the maximum peptide length for MHC class II peptides."
                 },
                 "tools": {
                     "type": "string",
