@@ -56,6 +56,11 @@
             "data_url": "https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.0/data.tar.gz",
             "data_md5": "ec3032cb66aee20ff0f53ff7f1795f47",
             "binary_name": "netMHCIIpan"
+        },
+        "4.3": {
+            "version": 4.3,
+            "software_md5": "477d65f92b6b217fdec2d3af65c2df79",
+            "binary_name": "netMHCIIpan"
         }
     },
     "netmhciipan_darwin": {

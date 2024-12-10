@@ -17,17 +17,25 @@ process PREPARE_PREDICTION_INPUT {
     path "versions.yml", emit: versions
 
     script:
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
     //TODO handle the thresholds (parse the --tools_thresholds and --use_affinity_thresholds)
-    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_mhc_I : params.min_peptide_length_mhc_II
-    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length_mhc_I : params.max_peptide_length_mhc_II
+    def min_length = (meta.mhc_class == "I") ? params.min_peptide_length : params.min_peptide_length_class2
+    def max_length = (meta.mhc_class == "I") ? params.max_peptide_length : params.max_peptide_length_class2
     //tools über params.tools ziehen
 
     """
     """
 
     stub:
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
     """
-    touch syfpeithi_input.csv
+    touch ${prefix}_syfpeithi.csv
+    touch ${prefix}_mhcflurry.csv
+    touch ${prefix}_mhcnuggets.csv
+    touch ${prefix}_netmhcpan.csv
+    touch ${prefix}_netmhciipan.csv
     touch versions.yml
     """
 }

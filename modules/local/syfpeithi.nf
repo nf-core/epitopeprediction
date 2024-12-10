@@ -15,14 +15,21 @@ process SYFPEITHI {
     path "versions.yml", emit: versions
 
     script:
-    def prefix = "${meta.sample}_${peptide_file.baseName}"
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
     """
     """
 
     stub:
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${meta.sample}_predicted_syfpeithi.tsv
-    touch versions.yml
+    touch ${prefix}_predicted_syfpeithi.tsv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        syfpeithi: V1.0.0
+    END_VERSIONS
     """
 
 }

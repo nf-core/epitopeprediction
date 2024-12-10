@@ -1,1 +1,20 @@
+bump_version: null
+lint:
+  files_unchanged:
+    - assets/nf-core-epitopeprediction_logo_light.png
+    - docs/images/nf-core-epitopeprediction_logo_light.png
+    - docs/images/nf-core-epitopeprediction_logo_dark.png
+nf_core_version: 3.0.2
+org_path: null
 repository_type: pipeline
+template:
+  author: Christopher Mohr, Jonas Scheid
+  description: A fully reproducible and state of the art epitope prediction pipeline.
+  force: false
+  is_nfcore: true
+  name: epitopeprediction
+  org: nf-core
+  outdir: .
+  skip_features: null
+  version: 2.3.1
+update: null

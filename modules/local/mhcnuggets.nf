@@ -15,13 +15,20 @@ process MHCNUGGETS {
     path "versions.yml", emit: versions
 
     script:
-    def prefix = "${meta.sample}_${peptide_file.baseName}"
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
     """
     """
 
     stub:
+    def args       = task.ext.args ?: ''
+    def prefix     = task.ext.prefix ?: meta.sample
     """
-    touch ${meta.sample}_predicted_mhcnuggets.tsv
-    touch versions.yml
+    touch ${prefix}_predicted_mhcnuggets.tsv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        mhcnuggets \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)")
+    END_VERSIONS
     """
 }
