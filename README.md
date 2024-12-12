@@ -79,7 +79,7 @@ For more details about the output files and reports, please refer to the
 
 ## Credits
 
-nf-core/epitopeprediction was originally written by Christopher Mohr, Alexander Peltzer.
+nf-core/epitopeprediction was originally written by Christopher Mohr, Jonas Scheid.
 
 We thank the following people for their extensive assistance in the development of this pipeline:
 
