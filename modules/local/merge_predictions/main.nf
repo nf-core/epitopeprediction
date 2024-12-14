@@ -1,6 +1,4 @@
-//and also do the allele name
-
-process PREPARE_PREDICTION_INPUT {
+process MERGE_PREDICTIONS {
     label 'process_single'
     tag "${meta.sample}"
 
@@ -10,26 +8,22 @@ process PREPARE_PREDICTION_INPUT {
         'quay.io/biocontainers/mhcgnomes:1.8.4--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), path(prediction_files)
 
     output:
-    tuple val(meta), path("*.csv|*.tsv"), emit: prepared
+    tuple val(meta), path("*.tsv"), emit: merged
     path "versions.yml", emit: versions
+
 
     script:
     //TODO handle the thresholds (parse the --tools_thresholds and --use_affinity_thresholds)
-
-    template "prepare_prediction_input.py"
+    template "merge_predictions.py"
 
     stub:
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: meta.sample
     """
-    touch ${prefix}_syfpeithi.csv
-    touch ${prefix}_mhcflurry.csv
-    touch ${prefix}_mhcnuggets.csv
-    touch ${prefix}_netmhcpan.csv
-    touch ${prefix}_netmhciipan.csv
+    touch merged_prediction.tsv
     touch versions.yml
     """
 }

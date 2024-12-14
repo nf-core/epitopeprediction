@@ -167,7 +167,7 @@ def parse_netmhc_params(tool_name, tool_version) {
         entry.version,
         entry.software_md5,
         file(params["${tool_name}_path"], checkIfExists:true),
-        entry.data ? file(params["${tool_name}_data"], checkIfExists:true) : [],
+        entry.data_url ? file(entry.data_url, checkIfExists:true) : [],
         entry.data_md5 ? entry.data_md5 : "",
         entry.binary_name
     ])

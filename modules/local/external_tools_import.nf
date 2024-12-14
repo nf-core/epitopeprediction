@@ -22,7 +22,7 @@ process EXTERNAL_TOOLS_IMPORT {
     script:
     """
     #
-    # CHECK IF THE PROVIDED SOFTWARE TARBALL IS A REGULAR FILES
+    # CHECK IF THE PROVIDED SOFTWARE TARBALL IS A REGULAR FILE
     #
     if [ ! -f "$tooltarball" ]; then
         echo "Path specified for ${toolname} does not point to a regular file. Please specify a path to the original tool tarball." >&2

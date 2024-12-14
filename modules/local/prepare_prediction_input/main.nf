@@ -1,5 +1,3 @@
-//and also do the allele name
-
 process PREPARE_PREDICTION_INPUT {
     label 'process_single'
     tag "${meta.sample}"
@@ -13,11 +11,10 @@ process PREPARE_PREDICTION_INPUT {
     tuple val(meta), path(tsv)
 
     output:
-    tuple val(meta), path("*.csv|*.tsv"), emit: prepared
+    tuple val(meta), path("*.{csv,tsv}"), emit: prepared
     path "versions.yml", emit: versions
 
     script:
-    //TODO handle the thresholds (parse the --tools_thresholds and --use_affinity_thresholds)
 
     template "prepare_prediction_input.py"
 

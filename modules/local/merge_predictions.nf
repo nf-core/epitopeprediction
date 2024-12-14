@@ -18,8 +18,7 @@ process MERGE_PREDICTIONS {
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: meta.sample
 
-    """
-    """
+    template "merge_predictions.py"
 
     stub:
     def args       = task.ext.args ?: ''
