@@ -42,7 +42,7 @@ workflow MHC_BINDING_PREDICTION {
                         return [meta, file]
                     }
             .set{ ch_prediction_input }
-        ch_prediction_input.netmhcpan.view()
+        ch_prediction_input.netmhciipan.view()
         SYFPEITHI ( ch_prediction_input.syfpeithi )
         ch_versions = ch_versions.mix(SYFPEITHI.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(SYFPEITHI.out.predicted)
@@ -67,12 +67,12 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCPAN.out.predicted)
         }
 
-        if ( "netmhciipan" in params.tools.tokenize(",") )
+        if ( "netmhciipan-4.3" in params.tools.tokenize(",") )
         {
             // TODO: External tools import for netmhciipan
             NETMHCIIPAN_IMPORT( parse_netmhc_params("netmhciipan", "4.3") )
             //TODO: Update netmhc container
-            NETMHCIIPAN ( ch_prediction_input.netmhcpan.combine(NETMHCIIPAN_IMPORT.out.nonfree_tools) )
+            NETMHCIIPAN ( ch_prediction_input.netmhciipan.combine(NETMHCIIPAN_IMPORT.out.nonfree_tools) )
             ch_versions = ch_versions.mix(NETMHCIIPAN.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
