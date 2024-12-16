@@ -42,7 +42,7 @@ process NETMHCPAN {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        netmhcpan \$(cat data/version | sed -s 's/ version/:/g')
+        \$(cat netmhcpan/data/version | sed -s 's/ version/:/g')
     END_VERSIONS
     """
 }
