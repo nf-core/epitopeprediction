@@ -9,7 +9,6 @@ import typing
 import mhcgnomes
 import pandas as pd
 
-# Create logger object with date and time
 import logging
 
 logging.basicConfig(
@@ -17,6 +16,10 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
+class PredictorBindingThreshold(Enum):
+    NETMHCPAN = 2
+    NETMHCIIPAN = 5
 
 class Arguments:
     """
@@ -83,10 +86,9 @@ class Version:
         return yaml_str
 
 class PredictionResult:
-    def __init__(self, file_path, alleles, threshold=2):
+    def __init__(self, file_path, alleles):
         self.file_path = file_path
         self.alleles = alleles
-        self.threshold = threshold
         self.predictor = None
         self.prediction_df = self._format_prediction_result()
 
@@ -120,7 +122,7 @@ class PredictionResult:
         pass
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        # Map with allele index to allele name
+        # Map with allele index to allele name.NetMHCpan sorts alleles alphabetically
         alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
@@ -142,20 +144,48 @@ class PredictionResult:
         # Pivot table to organize columns properly
         df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
         df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
-        df_pivot['binder'] = df_pivot['EL_Rank'] <= self.threshold
+        df_pivot['binder'] = df_pivot['EL_Rank'] <= PredictorBindingThreshold.NETMHCPAN.value
         df_pivot['predictor'] = 'netmhcpan'
         df_pivot.index.name = ''
 
         return df_pivot
 
-    def _format_netmhciipan_prediction(self, threshold=None):
-        pass
+    def _format_netmhciipan_prediction(self) -> pd.DataFrame:
+        # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
+        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Read the file into a DataFrame with no headers initially
+        df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
+        df = df[df.columns[df.columns.str.contains('Peptide|Rank|Rank_BA')]]
+		# TODO: Naming needs to be harmonized down the line once all predictors are implemented
+        df = df.rename(columns={'Peptide':'sequence','Rank':'Rank.0','Rank_BA':'Rank_BA.0'})
+        # to longformat based on .0|1|2..
+        df_long = pd.melt(
+            df,
+            id_vars=["sequence"],
+            value_vars=[col for col in df.columns if col != "sequence"],
+            var_name="metric",
+            value_name="value",
+        )
+        # Extract the allele information (e.g., .0, .1, etc.)
+        df_long["allele"] = df_long["metric"].str.split('.').str[1]
+        df_long["metric"] = df_long["metric"].str.split('.').str[0]
+
+        # Pivot table to organize columns properly
+        df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
+        df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
+        df_pivot['binder'] = df_pivot['Rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
+        df_pivot['predictor'] = 'netmhciipan'
+        df_pivot.index.name = ''
+
+        return df_pivot
 
 def main():
     args = Arguments()
 
     for file in args.input:
         result = PredictionResult(file, args.alleles)
+
+        logging.info(f"Writing {len(result.prediction_df)} {result.predictor} predictions to file..")
         result.prediction_df.to_csv(f"{args.prefix}_{result.predictor}.tsv", sep="\t", index=False)
 
     # Parse versions

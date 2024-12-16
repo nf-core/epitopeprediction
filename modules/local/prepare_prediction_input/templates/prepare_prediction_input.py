@@ -3,19 +3,27 @@
 import argparse
 import shlex
 from enum import Enum
+import logging
 
 import pandas as pd
 
-
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
 class MinLength(Enum):
     NETMHCPAN = 8
+    NETMHCIIPAN = 8
 
 class MaxLength(Enum):
     NETMHCPAN = 14
+    NETMHCIIPAN = 25
 
 # TODO: Implement
 class MaxNumberOfAlleles(Enum):
-	NETMHCPAN = 50
+    NETMHCPAN = 50
+    NETMHCIIPAN = 50
 
 class Arguments:
     """
@@ -90,15 +98,30 @@ def main():
     args = Arguments()
 
     df = pd.read_csv(args.input, sep="\t")
+    len_df = len(df)
+    logging.info(f"Reading in file with {len(df)} peptides..")
+
+    # Filter peptides based on user-defined length
     if args.mhc_class == "I":
         df = df[df["sequence"].str.len().between(args.min_peptide_length_classI, args.max_peptide_length_classI)]
     else:
         df = df[df["sequence"].str.len().between(args.min_peptide_length_classII, args.max_peptide_length_classII)]
 
+	# Filter peptides based on tool length boundaries and adjust input format
     if "netmhcpan" in args.tools and args.mhc_class == "I":
+        logging.info("Input for NetMHCpan detected. Parsing input..")
         df = df[df["sequence"].str.len().between(MinLength.NETMHCPAN.value, MaxLength.NETMHCPAN.value)]
-        # We only need a file containing the sequences underneath each other
         df[['sequence']].to_csv(f'{args.prefix}_netmhcpan_input.tsv', sep="\t", header=False, index=False)
+
+    if "netmhciipan" in args.tools and args.mhc_class == "II":
+        logging.info("Input for NetMHCIIpan detected. Parsing input..")
+        df = df[df["sequence"].str.len().between(MinLength.NETMHCIIPAN.value, MaxLength.NETMHCIIPAN.value)]
+        df[['sequence']].to_csv(f'{args.prefix}_netmhciipan_input.tsv', sep="\t", header=False, index=False)
+
+    if len(df) == 0:
+        raise ValueError("No peptides left after applying length filters! Aborting..")
+    else:
+        logging.info(f"{len(df)} peptides post-filtering will be predicted..")
 
     # Parse versions
     versions_this_module = {}
