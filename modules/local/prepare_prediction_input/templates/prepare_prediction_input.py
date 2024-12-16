@@ -13,10 +13,12 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 class MinLength(Enum):
+    MHCFLURRY = 5
     NETMHCPAN = 8
     NETMHCIIPAN = 8
 
 class MaxLength(Enum):
+    MHCFLURRY = 15
     NETMHCPAN = 14
     NETMHCIIPAN = 25
 
@@ -27,13 +29,14 @@ class MaxNumberOfAlleles(Enum):
 
 class Arguments:
     """
-    Parses the argments, including the ones coming from $task.ext.args.
+    Parses the arguments, including the ones coming from $task.ext.args.
     """
 
     def __init__(self) -> None:
         self.input = "$tsv"
         self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
         self.mhc_class = "$meta.mhc_class"
+        self.alleles = "$meta.alleles".split(";")
         self.tools = "$params.tools"
         self.min_peptide_length_classI = int("$params.min_peptide_length_classI")
         self.max_peptide_length_classI = int("$params.max_peptide_length_classI")
@@ -97,31 +100,37 @@ class Version:
 def main():
     args = Arguments()
 
-    df = pd.read_csv(args.input, sep="\t")
-    len_df = len(df)
-    logging.info(f"Reading in file with {len(df)} peptides..")
+    df_input = pd.read_csv(args.input, sep="\t")
+    logging.info(f"Reading in file with {len(df_input)} peptides..")
 
     # Filter peptides based on user-defined length
     if args.mhc_class == "I":
-        df = df[df["sequence"].str.len().between(args.min_peptide_length_classI, args.max_peptide_length_classI)]
+        df = df_input[df_input["sequence"].str.len().between(args.min_peptide_length_classI, args.max_peptide_length_classI)]
     else:
-        df = df[df["sequence"].str.len().between(args.min_peptide_length_classII, args.max_peptide_length_classII)]
-
-	# Filter peptides based on tool length boundaries and adjust input format
-    if "netmhcpan" in args.tools and args.mhc_class == "I":
-        logging.info("Input for NetMHCpan detected. Parsing input..")
-        df = df[df["sequence"].str.len().between(MinLength.NETMHCPAN.value, MaxLength.NETMHCPAN.value)]
-        df[['sequence']].to_csv(f'{args.prefix}_netmhcpan_input.tsv', sep="\t", header=False, index=False)
-
-    if "netmhciipan" in args.tools and args.mhc_class == "II":
-        logging.info("Input for NetMHCIIpan detected. Parsing input..")
-        df = df[df["sequence"].str.len().between(MinLength.NETMHCIIPAN.value, MaxLength.NETMHCIIPAN.value)]
-        df[['sequence']].to_csv(f'{args.prefix}_netmhciipan_input.tsv', sep="\t", header=False, index=False)
+        df = df_input[df_input["sequence"].str.len().between(args.min_peptide_length_classII, args.max_peptide_length_classII)]
 
     if len(df) == 0:
         raise ValueError("No peptides left after applying length filters! Aborting..")
-    else:
-        logging.info(f"{len(df)} peptides post-filtering will be predicted..")
+
+    # Filter peptides based on tool length boundaries and adjust input format
+    if "mhcflurry" in args.tools and args.mhc_class == "I":
+        df_mhcflurry = df[df["sequence"].str.len().between(MinLength.MHCFLURRY.value, MaxLength.MHCFLURRY.value)]
+        logging.info(f"Input for NetMHCpan detected. Preparing {len(df_mhcflurry)} peptides for prediction..")
+        # Get every combination of sequence and allele and write them to csv with columns sequence and allele
+        df_mhcflurry['allele'] = [args.alleles] * len(df_mhcflurry)
+        df_mhcflurry = df_mhcflurry.explode('allele').reset_index(drop=True)
+        df_mhcflurry.rename(columns={"sequence": "peptide"}, inplace=True)
+        df_mhcflurry[['peptide','allele']].to_csv(f'{args.prefix}_mhcflurry_input.csv', index=False)
+
+    if "netmhcpan" in args.tools and args.mhc_class == "I":
+        df_netmhcpan = df[df["sequence"].str.len().between(MinLength.NETMHCPAN.value, MaxLength.NETMHCPAN.value)]
+        logging.info(f"Input for NetMHCpan detected. Preparing {len(df_netmhcpan)} peptides for prediction..")
+        df_netmhcpan[['sequence']].to_csv(f'{args.prefix}_netmhcpan_input.tsv', sep="\t", header=False, index=False)
+
+    elif "netmhciipan" in args.tools and args.mhc_class == "II":
+        df_netmhciipan = df[df["sequence"].str.len().between(MinLength.NETMHCIIPAN.value, MaxLength.NETMHCIIPAN.value)]
+        logging.info(f"Input for NetMHCpan detected. Preparing {len(df_netmhciipan)} peptides for prediction..")
+        df_netmhciipan[['sequence']].to_csv(f'{args.prefix}_netmhciipan_input.tsv', sep="\t", header=False, index=False)
 
     # Parse versions
     versions_this_module = {}
