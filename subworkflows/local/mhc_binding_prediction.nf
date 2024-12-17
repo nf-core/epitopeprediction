@@ -42,7 +42,7 @@ workflow MHC_BINDING_PREDICTION {
                         return [meta, file]
                     }
             .set{ ch_prediction_input }
-        ch_prediction_input.netmhciipan.view()
+        ch_prediction_input.mhcflurry.view()
         SYFPEITHI ( ch_prediction_input.syfpeithi )
         ch_versions = ch_versions.mix(SYFPEITHI.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(SYFPEITHI.out.predicted)

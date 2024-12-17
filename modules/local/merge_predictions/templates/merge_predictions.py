@@ -18,6 +18,7 @@ logging.basicConfig(
 )
 
 class PredictorBindingThreshold(Enum):
+    MHCFLURRY = 2
     NETMHCPAN = 2
     NETMHCIIPAN = 5
 
@@ -86,6 +87,7 @@ class Version:
         return yaml_str
 
 class PredictionResult:
+    """ Class to handle prediction results from different predictors. """
     def __init__(self, file_path, alleles):
         self.file_path = file_path
         self.alleles = alleles
@@ -115,13 +117,33 @@ class PredictionResult:
     def _format_syfpeithi_prediction(self):
         pass
 
-    def _format_mhcflurry_prediction(self):
-        pass
+    def _format_mhcflurry_prediction(self) -> pd.DataFrame:
+        """
+        Read in mhcflurry prediction output comprising the columns
+        `peptide,allele,mhcflurry_affinity,mhcflurry_affinity_percentile,mhcflurry_processing_score,
+        mhcflurry_presentation_score,mhcflurry_presentation_percentile`
+
+        Returns: pd.DataFrame with columns `sequence,allele,PS_Rank,BA_Rank,binder,predictor`
+        """
+        df = pd.read_csv(self.file_path)
+        df.rename(columns={"peptide": "sequence", "mhcflurry_presentation_percentile": "PS_Rank", "mhcflurry_affinity_percentile": "BA_Rank"}, inplace=True)
+        df = df[['sequence', 'allele', 'PS_Rank', 'BA_Rank']]
+        df["binder"] = df["PS_Rank"] <= PredictorBindingThreshold.MHCFLURRY.value
+        df["predictor"] = "mhcflurry"
+
+        return df
+
 
     def _format_mhcnuggets_prediction(self):
         pass
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
+        """
+        Read in netmhcpan prediction output comprising the columns
+        `Peptide,Rank,EL_Rank,BA_Rank` for multiple alleles.
+
+        Returns: pd.DataFrame with columns `sequence,allele,EL_Rank,BA_Rank,binder,predictor`
+        """
         # Map with allele index to allele name.NetMHCpan sorts alleles alphabetically
         alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
         # Read the file into a DataFrame with no headers initially
@@ -151,6 +173,12 @@ class PredictionResult:
         return df_pivot
 
     def _format_netmhciipan_prediction(self) -> pd.DataFrame:
+        """
+        Read in netmhciipan prediction output comprising the columns
+        `Peptide,Rank,Rank_BA` for multiple alleles.
+
+        Returns: pd.DataFrame with columns `sequence,allele,Rank,Rank_BA,binder,predictor`
+        """
         # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
         alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
         # Read the file into a DataFrame with no headers initially
@@ -173,7 +201,8 @@ class PredictionResult:
         # Pivot table to organize columns properly
         df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
         df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
-        df_pivot['binder'] = df_pivot['Rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
+        df_pivot.rename(columns={"Rank": "EL_Rank", "Rank_BA": "BA_Rank"}, inplace=True)
+        df_pivot['binder'] = df_pivot['EL_Rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
         df_pivot['predictor'] = 'netmhciipan'
         df_pivot.index.name = ''
 
