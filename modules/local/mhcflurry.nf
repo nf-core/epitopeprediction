@@ -2,12 +2,12 @@ process MHCFLURRY {
     label 'process_single'
     tag "${meta.sample}"
 
-    conda "bioconda::mhcflurry=2.1.1"
+    conda "bioconda::mhcflurry=2.1.4"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mhcflurry:2.1.1--pyh7cba7a3_0' :
-        'quay.io/biocontainers/mhcflurry:2.1.1--pyh7cba7a3_0' }"
+        'https://depot.galaxyproject.org/singularity/mhcflurry:2.1.4--pyh7e72e81_1' :
+        'quay.io/biocontainers/mhcflurry:2.1.4--pyh7e72e81_1' }"
 
-    // userEmulation settings when docker is specified
+    // MHCflurry downloads models always to ~/.local/share/mhcflurry
     containerOptions = (workflow.containerEngine == 'docker') ? '-u $(id -u) -e "HOME=${HOME}" -v /etc/passwd:/etc/passwd:ro -v /etc/shadow:/etc/shadow:ro -v /etc/group:/etc/group:ro -v $HOME:$HOME' : ''
 
     input:
@@ -36,7 +36,6 @@ process MHCFLURRY {
         \$(mhcflurry-predict --version)
     END_VERSIONS
     """
-
 
     stub:
     def args   = task.ext.args ?: ''
