@@ -66,7 +66,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Custom validation for pipeline parameters
     //
-    //validateInputParameters()
+    validateInputParameters()
 
     //
     // Create channel from input file provided through params.input
@@ -137,9 +137,31 @@ workflow PIPELINE_COMPLETION {
 //
 // Check and validate pipeline parameters
 //
-//def validateInputParameters() {
-//    genomeExistsError()
-//}
+def validateInputParameters() {
+    validate_tools_param()
+}
+
+//
+// Check if supported tools are specified
+//
+def validate_tools_param() {
+    // List of valid tools
+    //def valid_tools = [
+    //    'syfpeithi', 'mhcnuggets-class-1', 'mhcnuggets-class-2', 'mhcflurry',
+    //    'netmhc-4.0', 'netmhcpan-4.0', 'netmhcpan-4.1', 'netmhciipan-4.3',
+    //    'netmhc_darwin-4.0', 'netmhcpan_darwin-4.0', 'netmhcpan_darwin-4.1', 'netmhciipan_darwin-4.1'
+    //]
+    valid_tools = [
+        'syfpeithi', 'mhcnuggets', 'mhcflurry','netmhcpan-4.1', 'netmhciipan-4.3'
+    ]
+    tools = params.tools.tokenize(',')
+
+    // Validate each tool in tools if it's in valid_tools
+    def invalid_tools = tools.findAll { it.trim() !in valid_tools }
+    if (invalid_tools) {
+        throw new IllegalArgumentException("Invalid tools found: ${invalid_tools.join(', ')}")
+    }
+}
 
 //
 // Prepare import of NetMHC software
