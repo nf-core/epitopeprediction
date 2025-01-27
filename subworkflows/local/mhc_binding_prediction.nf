@@ -42,7 +42,7 @@ workflow MHC_BINDING_PREDICTION {
                         return [meta, file]
                     }
             .set{ ch_prediction_input }
-        ch_prediction_input.mhcflurry.view()
+
         SYFPEITHI ( ch_prediction_input.syfpeithi )
         ch_versions = ch_versions.mix(SYFPEITHI.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(SYFPEITHI.out.predicted)
@@ -76,8 +76,8 @@ workflow MHC_BINDING_PREDICTION {
             ch_versions = ch_versions.mix(NETMHCIIPAN.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
-    ch_binding_predictors_out.groupTuple().view()
-    MERGE_PREDICTIONS (ch_binding_predictors_out.groupTuple())
+
+    MERGE_PREDICTIONS( ch_binding_predictors_out.groupTuple() )
     ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
 
     emit:

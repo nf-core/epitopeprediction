@@ -14,11 +14,14 @@ logging.basicConfig(
 )
 class MinLength(Enum):
     MHCFLURRY = 5
+    MHCNUGGETS = 1
     NETMHCPAN = 8
     NETMHCIIPAN = 8
 
 class MaxLength(Enum):
     MHCFLURRY = 15
+    MHCNUGGETS_CLASSI = 15
+    MHCNUGGETS_CLASSII = 30
     NETMHCPAN = 14
     NETMHCIIPAN = 25
 
@@ -121,6 +124,14 @@ def main():
         df_mhcflurry = df_mhcflurry.explode('allele').reset_index(drop=True)
         df_mhcflurry.rename(columns={"sequence": "peptide"}, inplace=True)
         df_mhcflurry[['peptide','allele']].to_csv(f'{args.prefix}_mhcflurry_input.csv', index=False)
+
+    if "mhcnuggets" in args.tools:
+        if args.mhc_class == "I":
+            df_mhcnuggets = df[df["sequence"].str.len().between(MinLength.MHCNUGGETS.value, MaxLength.MHCNUGGETS_CLASSI.value)]
+        else:
+            df_mhcnuggets = df[df["sequence"].str.len().between(MinLength.MHCNUGGETS.value, MaxLength.MHCNUGGETS_CLASSII.value)]
+        logging.info(f"Input for MHCnuggets detected. Preparing {len(df_mhcnuggets)} peptides for prediction..")
+        df_mhcnuggets[['sequence']].to_csv(f'{args.prefix}_mhcnuggets_input.tsv', sep="\t", header=False, index=False)
 
     if "netmhcpan" in args.tools and args.mhc_class == "I":
         df_netmhcpan = df[df["sequence"].str.len().between(MinLength.NETMHCPAN.value, MaxLength.NETMHCPAN.value)]

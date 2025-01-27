@@ -5,10 +5,11 @@ import shlex
 from enum import Enum
 import sys
 import typing
+import math
 
-import mhcgnomes
 import pandas as pd
 
+# Create logger object with date and time
 import logging
 
 logging.basicConfig(
@@ -18,8 +19,9 @@ logging.basicConfig(
 )
 
 class PredictorBindingThreshold(Enum):
-    MHCFLURRY = 2
-    NETMHCPAN = 2
+    MHCFLURRY   = 2
+    MHCNUGGETS  = 0.425
+    NETMHCPAN   = 2
     NETMHCIIPAN = 5
 
 class Arguments:
@@ -29,7 +31,7 @@ class Arguments:
 
     def __init__(self) -> None:
         self.input = "$prediction_files".split(" ")
-        self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.sample"
+        self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
         self.alleles = sorted("$meta.alleles".split(';'))
         self.parse_ext_args("$task.ext.args")
 
@@ -86,15 +88,35 @@ class Version:
                 yaml_str += f"{spaces}{key}: {value}\\n"
         return yaml_str
 
+class Utils:
+    @staticmethod
+    def ic50toBA(ic50: float) -> float:
+        """Scale IC50 to binding affinity (BA) ranging between 0-1."""
+        ic50 = min(ic50, 50000)  # Cap IC50 at 50000
+        return 1 - (math.log10(ic50)/math.log10(50000))
+
+    @staticmethod
+    def BAtoic50(BA: float) -> float:
+        """Convert binding affinity (BA) to IC50."""
+        return 10 ** ((1 - BA) * math.log10(50000))
+
 class PredictionResult:
-    """ Class to handle prediction results from different predictors. """
-    def __init__(self, file_path, alleles):
+    def __init__(self, file_path, alleles, threshold=2):
         self.file_path = file_path
         self.alleles = alleles
+        self.threshold = threshold
         self.predictor = None
         self.prediction_df = self._format_prediction_result()
 
     def _format_prediction_result(self):
+        """
+        Returns a harmonized DataFrame with the prediction results. Output format:
+        +----------+---------+-------+-------+--------+-----------+
+        | sequence | allele  | BA    | rank  | binder | predictor |
+        +----------+---------+-------+-------+--------+-----------+
+        |    ...   |   ...   |  ...  |  ...  |  ...   |     ...   |
+        +----------+---------+-------+-------+--------+-----------+
+        """
         if 'syfpeithi' in self.file_path:
             self.predictor = 'syfpeithi'
             return self._format_syfpeithi_prediction()
@@ -122,35 +144,40 @@ class PredictionResult:
         Read in mhcflurry prediction output comprising the columns
         `peptide,allele,mhcflurry_affinity,mhcflurry_affinity_percentile,mhcflurry_processing_score,
         mhcflurry_presentation_score,mhcflurry_presentation_percentile`
-
-        Returns: pd.DataFrame with columns `sequence,allele,PS_Rank,BA_Rank,binder,predictor`
         """
         df = pd.read_csv(self.file_path)
-        df.rename(columns={"peptide": "sequence", "mhcflurry_presentation_percentile": "PS_Rank", "mhcflurry_affinity_percentile": "BA_Rank"}, inplace=True)
-        df = df[['sequence', 'allele', 'PS_Rank', 'BA_Rank']]
-        df["binder"] = df["PS_Rank"] <= PredictorBindingThreshold.MHCFLURRY.value
+        # Convert IC50 to BA
+        df['BA'] = df['mhcflurry_affinity'].apply(Utils.ic50toBA)
+        # Harmonize df to desired output structure
+        df.rename(columns={"peptide": "sequence", "mhcflurry_presentation_percentile": "rank"}, inplace=True)
+        df = df[['sequence', 'allele', 'rank', 'BA']]
+        df["binder"] = df["rank"] <= PredictorBindingThreshold.MHCFLURRY.value
         df["predictor"] = "mhcflurry"
 
         return df
 
+    def _format_mhcnuggets_prediction(self) -> pd.DataFrame:
+        """Read in mhcnuggets prediction output comprising the columns `peptide,ic50,human_proteome_rank,allele`"""
+        df = pd.read_csv(self.file_path)
+        # Convert IC50 to BA
+        df['BA'] = df['ic50'].apply(Utils.ic50toBA)
+        # Harmonize df to desired output structure
+        df.rename(columns={"peptide": "sequence", "human_proteome_rank": "rank"}, inplace=True)
+        df = df[['sequence', 'allele', 'rank', 'BA']]
+        # Use IC50 < 500 as threshold since mhcnuggets provides a different ranking compared to other predictors
+        df["binder"] = df["BA"] >= PredictorBindingThreshold.MHCNUGGETS.value
+        df["predictor"] = "mhcnuggets"
 
-    def _format_mhcnuggets_prediction(self):
-        pass
+        return df
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        """
-        Read in netmhcpan prediction output comprising the columns
-        `Peptide,Rank,EL_Rank,BA_Rank` for multiple alleles.
-
-        Returns: pd.DataFrame with columns `sequence,allele,EL_Rank,BA_Rank,binder,predictor`
-        """
-        # Map with allele index to allele name.NetMHCpan sorts alleles alphabetically
+        # Map with allele index to allele name
         alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
-        df = df[df.columns[df.columns.str.contains('Peptide|EL_Rank|BA_Rank')]]
-		# TODO: Naming needs to be harmonized down the line once all predictors are implemented
-        df = df.rename(columns={'Peptide':'sequence','EL_Rank':'EL_Rank.0','BA_Rank':'BA_Rank.0'})
+        # Extract Peptide, percentile rank, binding affinity
+        df = df[df.columns[df.columns.str.contains('Peptide|EL_Rank|BA-score')]]
+        df = df.rename(columns={'Peptide':'sequence','EL_Rank':'EL_Rank.0','BA-score':'BA-score.0'})
         # to longformat based on .0|1|2..
         df_long = pd.melt(
             df,
@@ -159,14 +186,15 @@ class PredictionResult:
             var_name="metric",
             value_name="value",
         )
+
         # Extract the allele information (e.g., .0, .1, etc.)
         df_long["allele"] = df_long["metric"].str.split('.').str[1]
-        df_long["metric"] = df_long["metric"].str.split('.').str[0]
+        df_long["metric"] = df_long["metric"].apply(lambda x: x.split('.')[0].replace('EL_Rank','rank').replace('BA-score','BA'))
 
         # Pivot table to organize columns properly
         df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
         df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
-        df_pivot['binder'] = df_pivot['EL_Rank'] <= PredictorBindingThreshold.NETMHCPAN.value
+        df_pivot['binder'] = df_pivot['rank'] <= self.threshold
         df_pivot['predictor'] = 'netmhcpan'
         df_pivot.index.name = ''
 
@@ -174,18 +202,16 @@ class PredictionResult:
 
     def _format_netmhciipan_prediction(self) -> pd.DataFrame:
         """
-        Read in netmhciipan prediction output comprising the columns
-        `Peptide,Rank,Rank_BA` for multiple alleles.
-
-        Returns: pd.DataFrame with columns `sequence,allele,Rank,Rank_BA,binder,predictor`
+        Read in netmhciipan prediction output and extract the columns
+        `Peptide,Rank,Score_BA` for multiple alleles.
         """
         # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
         alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
-        df = df[df.columns[df.columns.str.contains('Peptide|Rank|Rank_BA')]]
-		# TODO: Naming needs to be harmonized down the line once all predictors are implemented
-        df = df.rename(columns={'Peptide':'sequence','Rank':'Rank.0','Rank_BA':'Rank_BA.0'})
+        # Extract Peptide, percentile rank, binding affinity
+        df = df[df.columns[df.columns.str.contains('Peptide|Rank(?!_BA)|Score_BA')]]
+        df = df.rename(columns={'Peptide':'sequence','Rank':'Rank.0','Score_BA':'Score_BA.0'})
         # to longformat based on .0|1|2..
         df_long = pd.melt(
             df,
@@ -196,13 +222,12 @@ class PredictionResult:
         )
         # Extract the allele information (e.g., .0, .1, etc.)
         df_long["allele"] = df_long["metric"].str.split('.').str[1]
-        df_long["metric"] = df_long["metric"].str.split('.').str[0]
+        df_long["metric"] = df_long["metric"].apply(lambda x: x.split('.')[0].replace('Rank','rank').replace('Score_BA','BA'))
 
         # Pivot table to organize columns properly
         df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
         df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
-        df_pivot.rename(columns={"Rank": "EL_Rank", "Rank_BA": "BA_Rank"}, inplace=True)
-        df_pivot['binder'] = df_pivot['EL_Rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
+        df_pivot['binder'] = df_pivot['rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
         df_pivot['predictor'] = 'netmhciipan'
         df_pivot.index.name = ''
 
@@ -211,11 +236,16 @@ class PredictionResult:
 def main():
     args = Arguments()
 
+    # Iterate over each file predicted by multiple predictors, harmonize and merge output
+    output_df = []
     for file in args.input:
         result = PredictionResult(file, args.alleles)
 
         logging.info(f"Writing {len(result.prediction_df)} {result.predictor} predictions to file..")
-        result.prediction_df.to_csv(f"{args.prefix}_{result.predictor}.tsv", sep="\t", index=False)
+        output_df.append(result.prediction_df)
+
+    output_df = pd.concat(output_df)
+    output_df.to_csv(f'{args.prefix}_predictions.tsv', sep='\t', index=False)
 
     # Parse versions
     versions_this_module = {}

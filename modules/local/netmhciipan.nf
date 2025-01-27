@@ -16,7 +16,7 @@ process NETMHCIIPAN {
         error "NETMHCIIPAN only supports MHC class II. Use NETMHCIIPAN for MHC class II."
     }
     def args       = task.ext.args ?: ''
-    def prefix     = task.ext.prefix ?: meta.sample
+    def prefix     = task.ext.prefix ?: "${meta.id}"
     // Adjust for netMHCIIpan allele format
     def alleles = meta.alleles.tokenize(';').collect {
                     it.contains('DRB') ?

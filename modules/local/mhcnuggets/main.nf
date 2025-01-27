@@ -4,21 +4,19 @@ process MHCNUGGETS {
 
     conda "bioconda::mhcnuggets=2.4.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mhcnuggets:2.4.1--pyh7cba7a3_0' :
-        'quay.io/biocontainers/mhcnuggets:2.4.1--pyh7cba7a3_0' }"
+        'https://depot.galaxyproject.org/singularity/mhcnuggets:2.4.0--pyh7cba7a3_0' :
+        'quay.io/biocontainers/mhcnuggets:2.4.0--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(peptide_file)
+    tuple val(meta), path(tsv)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*_predicted_mhcnuggets.csv"), emit: predicted
+    path "versions.yml"                                , emit: versions
 
     script:
-    def args       = task.ext.args ?: ''
-    def prefix     = task.ext.prefix ?: meta.sample
-    """
-    """
+
+    template "mhcnuggets.py"
 
     stub:
     def args       = task.ext.args ?: ''
