@@ -106,6 +106,9 @@ workflow EPITOPEPREDICTION {
     ch_multiqc_files = Channel.empty()
     ch_nonfree_paths = Channel.empty()
 
+    // Load supported alleles file
+    supported_alleles_json = file("$projectDir/assets/supported_alleles.json", checkIfExists: true)
+
     // Load samplesheet and branch channels based on input type
     samplesheet
         .branch { meta, filename ->
@@ -343,7 +346,7 @@ workflow EPITOPEPREDICTION {
     //MERGE_JSON_MULTI( ch_json_reports.multi )
     //ch_versions = ch_versions.mix( MERGE_JSON_MULTI.out.versions )
 
-    MHC_BINDING_PREDICTION( ch_samples_uncompressed.peptide )
+    MHC_BINDING_PREDICTION( ch_samples_uncompressed.peptide, supported_alleles_json )
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
     ch_predicted_peptides = MHC_BINDING_PREDICTION.out.predicted

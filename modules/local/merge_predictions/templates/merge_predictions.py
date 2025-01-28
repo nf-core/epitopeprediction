@@ -8,6 +8,7 @@ import typing
 import math
 
 import pandas as pd
+import mhcgnomes
 
 # Create logger object with date and time
 import logging
@@ -124,7 +125,7 @@ class PredictionResult:
             self.predictor = 'mhcflurry'
             return self._format_mhcflurry_prediction()
         elif 'mhcnuggets' in self.file_path:
-            self.predictor = 'mhcnuggets'
+            self.predictor = 'mhcnuggetsii' if 'mhcnuggetsii' in self.file_path else 'mhcnuggets'
             return self._format_mhcnuggets_prediction()
         elif 'netmhcpan' in self.file_path:
             self.predictor = 'netmhcpan'
@@ -152,7 +153,7 @@ class PredictionResult:
         df.rename(columns={"peptide": "sequence", "mhcflurry_presentation_percentile": "rank"}, inplace=True)
         df = df[['sequence', 'allele', 'rank', 'BA']]
         df["binder"] = df["rank"] <= PredictorBindingThreshold.MHCFLURRY.value
-        df["predictor"] = "mhcflurry"
+        df["predictor"] = self.predictor
 
         return df
 
@@ -166,7 +167,7 @@ class PredictionResult:
         df = df[['sequence', 'allele', 'rank', 'BA']]
         # Use IC50 < 500 as threshold since mhcnuggets provides a different ranking compared to other predictors
         df["binder"] = df["BA"] >= PredictorBindingThreshold.MHCNUGGETS.value
-        df["predictor"] = "mhcnuggets"
+        df["predictor"] = self.predictor
 
         return df
 
@@ -195,7 +196,7 @@ class PredictionResult:
         df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
         df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
         df_pivot['binder'] = df_pivot['rank'] <= self.threshold
-        df_pivot['predictor'] = 'netmhcpan'
+        df_pivot['predictor'] = self.predictor
         df_pivot.index.name = ''
 
         return df_pivot
@@ -228,7 +229,7 @@ class PredictionResult:
         df_pivot = df_long.pivot_table(index=["sequence", "allele"], columns="metric", values="value").reset_index()
         df_pivot['allele'] = [alleles_dict[int(index.strip("."))] for index in df_pivot['allele']]
         df_pivot['binder'] = df_pivot['rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
-        df_pivot['predictor'] = 'netmhciipan'
+        df_pivot['predictor'] = self.predictor
         df_pivot.index.name = ''
 
         return df_pivot
@@ -245,11 +246,13 @@ def main():
         output_df.append(result.prediction_df)
 
     output_df = pd.concat(output_df)
+    # Normalize allele names and write to file
+    output_df['allele'] = output_df['allele'].apply(lambda x : mhcgnomes.parse(x).to_string())
     output_df.to_csv(f'{args.prefix}_predictions.tsv', sep='\t', index=False)
 
     # Parse versions
     versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd])
+    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd, mhcgnomes])
     with open("versions.yml", "w") as f:
         f.write(Version.format_yaml_like(versions_this_module))
 

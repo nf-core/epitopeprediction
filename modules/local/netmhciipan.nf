@@ -17,12 +17,13 @@ process NETMHCIIPAN {
     }
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
-    // Adjust for netMHCIIpan allele format
-    def alleles = meta.alleles.tokenize(';').collect {
-                    it.contains('DRB') ?
-                        it.replace('*', '_').replace(':', '') :
-                        ('HLA-' + it.replace('*', '').replace(':', ''))
-                }.join(',')
+    // Adjust for netMHCIIpan allele format (e.g. DRB1_0101, HLA-DPA10103-DPB10101)
+    def alleles = meta.alleles_supported.tokenize(';')
+                    .collect {
+                        it.contains('DRB') ?
+                            it.replace('*', '_').replace(':', '').replace('HLA-', '') :
+                            it.replace('*', '').replace(':', '').replace('/','-')
+                    }.join(',')
 
     """
     netmhciipan/netMHCIIpan \
