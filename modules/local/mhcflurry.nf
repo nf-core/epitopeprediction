@@ -15,14 +15,14 @@ process MHCFLURRY {
 
     output:
     tuple val(meta), path("*.csv"), emit: predicted
-    path "versions.yml", emit: versions
+    path "versions.yml"           , emit: versions
 
     script:
     if (meta.mhc_class == "II") {
         error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
     }
     def args   = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: meta.sample
+    def prefix = task.ext.prefix ?: "${meta.sample}"
 
     """
     mhcflurry-downloads fetch models_class1_presentation

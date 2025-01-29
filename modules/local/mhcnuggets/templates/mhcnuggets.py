@@ -22,7 +22,7 @@ class Arguments:
         self.input = "$tsv"
         self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
         self.mhc_class = "$meta.mhc_class"
-        self.alleles = "$meta.alleles".split(";")
+        self.alleles = "$meta.alleles_supported".split(";")
         self.parse_ext_args("$task.ext.args")
 
     def parse_ext_args(self, args_string: str) -> None:
@@ -87,7 +87,7 @@ def main():
     # Predict and load written tsv file
     predicted_df = []
     for allele in args.alleles:
-        mhcnuggets_allele = 'HLA-'+allele.replace('*','')
+        mhcnuggets_allele = allele.replace('*','')
         predict(class_=args.mhc_class, peptides_path = args.input, mhc=mhcnuggets_allele,
                 output=f'{args.prefix}_{allele}.csv', rank_output=True)
 
@@ -97,7 +97,8 @@ def main():
 
     # Append dataframe per allele and write file
     predicted_df = pd.concat(predicted_df)
-    predicted_df.to_csv(f'{args.prefix}_predicted_mhcnuggets.csv', index=False)
+    filename_out = f'{args.prefix}_predicted_mhcnuggets.csv' if args.mhc_class == 'I' else f'{args.prefix}_predicted_mhcnuggetsii.csv'
+    predicted_df.to_csv(filename_out, index=False)
 
     # Parse versions
     versions_this_module = {}
@@ -106,7 +107,7 @@ def main():
         f.write(Version.format_yaml_like(versions_this_module))
         # No __version__ dunder or similar available, need to hardcode version
         f.write('mhcnuggets: 2.4.0')
-        
+
 
 if __name__ == "__main__":
     main()

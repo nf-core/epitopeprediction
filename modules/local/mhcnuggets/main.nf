@@ -11,7 +11,7 @@ process MHCNUGGETS {
     tuple val(meta), path(tsv)
 
     output:
-    tuple val(meta), path("*_predicted_mhcnuggets.csv"), emit: predicted
+    tuple val(meta), path("*{_predicted_mhcnuggets.csv,_predicted_mhcnuggetsii.csv}"), emit: predicted
     path "versions.yml"                                , emit: versions
 
     script:
@@ -20,7 +20,7 @@ process MHCNUGGETS {
 
     stub:
     def args       = task.ext.args ?: ''
-    def prefix     = task.ext.prefix ?: meta.sample
+    def prefix     = task.ext.prefix ?: "${meta.sample}"
     """
     touch ${prefix}_predicted_mhcnuggets.tsv
 

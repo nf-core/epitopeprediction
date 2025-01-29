@@ -2,20 +2,20 @@ process PREPARE_PREDICTION_INPUT {
     label 'process_single'
     tag "${meta.sample}"
 
-    conda "bioconda::mhcgnomes=1.8.4"
+    conda "bioconda::mhcgnomes=1.8.6"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.4--pyh7cba7a3_0' :
-        'quay.io/biocontainers/mhcgnomes:1.8.4--pyh7cba7a3_0' }"
+        'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
+        'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
 
     input:
     tuple val(meta), path(tsv)
+    path(supported_alleles_json)
 
     output:
-    tuple val(meta), path("*.{csv,tsv}"), emit: prepared
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*.json"), path("*.{csv,tsv}"), emit: prepared
+    path "versions.yml"                                 , emit: versions
 
     script:
-
     template "prepare_prediction_input.py"
 
     stub:

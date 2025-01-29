@@ -152,7 +152,7 @@ def validate_tools_param() {
     //    'netmhc_darwin-4.0', 'netmhcpan_darwin-4.0', 'netmhcpan_darwin-4.1', 'netmhciipan_darwin-4.1'
     //]
     valid_tools = [
-        'syfpeithi', 'mhcnuggets', 'mhcflurry','netmhcpan-4.1', 'netmhciipan-4.3'
+        'syfpeithi', 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry','netmhcpan-4.1', 'netmhciipan-4.3'
     ]
     tools = params.tools.tokenize(',')
 
@@ -196,6 +196,13 @@ def parse_netmhc_params(tool_name, tool_version) {
 
     return ch_nonfree_paths
     }
+}
+
+// Groovy function to parse JSON and return a map
+def json2map(jsonString) {
+    def jsonSlurper = new groovy.json.JsonSlurper()
+    def parsedJson = jsonSlurper.parse(file(jsonString, checkIfExists: true))
+    return parsedJson
 }
 
 //

@@ -17,8 +17,7 @@ process NETMHCPAN {
     }
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: meta.sample
-    // A*01:217 to HLA-A01:217 for meta.alleles: Add HLA- to the allele names and strip the *.
-    def alleles    = meta.alleles.tokenize(';').collect { 'HLA-' + it.replace('*', '') }.join(',')
+    def alleles    = meta.alleles_supported.tokenize(';').collect { it.replace('*', '') }.join(',')
 
     """
     netmhcpan/netMHCpan \
