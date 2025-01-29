@@ -2,7 +2,7 @@ process MHCFLURRY {
     label 'process_single'
     tag "${meta.sample}"
 
-    conda "bioconda::mhcflurry=2.1.4"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcflurry:2.1.4--pyh7e72e81_1' :
         'quay.io/biocontainers/mhcflurry:2.1.4--pyh7e72e81_1' }"

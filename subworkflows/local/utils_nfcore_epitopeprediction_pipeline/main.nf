@@ -66,7 +66,7 @@ workflow PIPELINE_INITIALISATION {
     //
     // Custom validation for pipeline parameters
     //
-    validateInputParameters()
+    //validateInputParameters()
 
     //
     // Create channel from input file provided through params.input
@@ -137,73 +137,9 @@ workflow PIPELINE_COMPLETION {
 //
 // Check and validate pipeline parameters
 //
-def validateInputParameters() {
-    validate_tools_param()
-}
-
-//
-// Check if supported tools are specified
-//
-def validate_tools_param() {
-    // List of valid tools
-    //def valid_tools = [
-    //    'syfpeithi', 'mhcnuggets-class-1', 'mhcnuggets-class-2', 'mhcflurry',
-    //    'netmhc-4.0', 'netmhcpan-4.0', 'netmhcpan-4.1', 'netmhciipan-4.3',
-    //    'netmhc_darwin-4.0', 'netmhcpan_darwin-4.0', 'netmhcpan_darwin-4.1', 'netmhciipan_darwin-4.1'
-    //]
-    valid_tools = [
-        'syfpeithi', 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry','netmhcpan-4.1', 'netmhciipan-4.3'
-    ]
-    tools = params.tools.tokenize(',')
-
-    // Validate each tool in tools if it's in valid_tools
-    def invalid_tools = tools.findAll { it.trim() !in valid_tools }
-    if (invalid_tools) {
-        throw new IllegalArgumentException("Invalid tools found: ${invalid_tools.join(', ')}")
-    }
-}
-
-//
-// Prepare import of NetMHC software
-//
-def parse_netmhc_params(tool_name, tool_version) {
-    // Check if the _path parameter was set for this tool
-    if (!params["${tool_name}_path"])
-    {
-        error("--${tool_name}_path not specified, but --tools contains ${tool_name}. Both have to be specified to enable ${tool_name}. Ignoring.")
-    }
-    else if (params["${tool_name}_path"])
-    {
-    // Import mandatory netmhc metadata
-    def jsonSlurper = new groovy.json.JsonSlurper()
-    def external_tools_meta = jsonSlurper.parse(file(params.external_tools_meta, checkIfExists: true))
-    def entry = external_tools_meta[tool_name][tool_version]
-
-    if (params["netmhc_system"] == 'darwin') {
-        entry = external_tools_meta["${tool_name}_darwin"][tool_version]
-    }
-    // If so, add the tool name and user installation path to the external tools import channel
-    ch_nonfree_paths = Channel.empty()
-    ch_nonfree_paths.bind([
-        tool_name,
-        entry.version,
-        entry.software_md5,
-        file(params["${tool_name}_path"], checkIfExists:true),
-        entry.data_url ? file(entry.data_url, checkIfExists:true) : [],
-        entry.data_md5 ? entry.data_md5 : "",
-        entry.binary_name
-    ])
-
-    return ch_nonfree_paths
-    }
-}
-
-// Groovy function to parse JSON and return a map
-def json2map(jsonString) {
-    def jsonSlurper = new groovy.json.JsonSlurper()
-    def parsedJson = jsonSlurper.parse(file(jsonString, checkIfExists: true))
-    return parsedJson
-}
+//def validateInputParameters() {
+//    pass
+//}
 
 //
 // Validate channels from input samplesheet

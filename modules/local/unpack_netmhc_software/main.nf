@@ -1,7 +1,7 @@
 /*
 * Copy non-free software provided by the user into the working directory
 */
-process EXTERNAL_TOOLS_IMPORT {
+process UNPACK_NETMHC_SOFTWARE {
     label 'process_low'
 
     conda "conda-forge::coreutils=9.1"
