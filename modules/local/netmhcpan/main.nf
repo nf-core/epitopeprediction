@@ -2,7 +2,10 @@ process NETMHCPAN {
     label 'process_single'
     tag "${meta.sample}"
 
-    container 'ghcr.io/jonasscheid/epitopeprediction-2:netmhc'
+    conda "${moduleDir}/environment.yml"
+    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
+        'oras://community.wave.seqera.io/library/bash_gawk_perl_tcsh:59b949a8a9f0816b' :
+        'community.wave.seqera.io/library/bash_gawk_perl_tcsh:a941b4e9bd4b8805' }"
 
     input:
     tuple val(meta), path(peptide_file), path(software)

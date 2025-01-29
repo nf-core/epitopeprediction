@@ -206,12 +206,12 @@ def main():
         logging.info(f"Input for MHCnuggets II detected. Preparing {len(df_mhcnuggets_ii)} peptides for prediction..")
         df_mhcnuggets_ii[['sequence']].to_csv(f'{args.prefix}_mhcnuggetsii_input.tsv', sep="\t", header=False, index=False)
 
-    if "netmhcpan-4.1" in args.tools and args.mhc_class == "I":
+    if "netmhcpan" in args.tools and args.mhc_class == "I":
         df_netmhcpan = df[df[args.peptide_col_name].str.len().between(MinLength.NETMHCPAN.value, MaxLength.NETMHCPAN.value)]
         logging.info(f"Input for NetMHCpan detected. Preparing {len(df_netmhcpan)} peptides for prediction..")
         df_netmhcpan[['sequence']].to_csv(f'{args.prefix}_netmhcpan_input.tsv', sep="\t", header=False, index=False)
 
-    elif "netmhciipan-4.3" in args.tools and args.mhc_class == "II":
+    elif "netmhciipan" in args.tools and args.mhc_class == "II":
         df_netmhciipan = df[df[args.peptide_col_name].str.len().between(MinLength.NETMHCIIPAN.value, MaxLength.NETMHCIIPAN.value)]
         logging.info(f"Input for NetMHCIIpan detected. Preparing {len(df_netmhciipan)} peptides for prediction..")
         df_netmhciipan[['sequence']].to_csv(f'{args.prefix}_netmhciipan_input.tsv', sep="\t", header=False, index=False)

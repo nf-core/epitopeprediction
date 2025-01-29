@@ -26,12 +26,10 @@ Supported prediction tools:
 
 - `syfpeithi`
 - `mhcflurry`
-- `mhcnuggets-class-1`
-- `mhcnuggets-class-2`
-- `netmhcpan-4.0`
-- `netmhcpan-4.1`
-- `netmhc-4.0`
-- `netmhciipan-4.1`
+- `mhcnuggets`
+- `mhcnuggetsii`
+- `netmhcpan`
+- `netmhciipan`
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
