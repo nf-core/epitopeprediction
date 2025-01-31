@@ -1,1 +1,0 @@
-${task.process}:\n  argparse: 1.1\n  pandas: 1.5.3\n
