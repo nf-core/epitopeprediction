@@ -6,14 +6,14 @@
 //
 // MODULE: Local to the pipeline
 //
-include { VARIANT_SPLIT                                                } from '../modules/local/variant_split'
-include { SNPSIFT_SPLIT                                                } from '../modules/local/snpsift_split'
-include { FASTA2PEPTIDES                                               } from '../modules/local/fasta2peptides'
-include { SPLIT_PEPTIDES                                               } from '../modules/local/split_peptides'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR } from '../modules/local/epytope_peptide_prediction'
-include { CAT_FILES as CAT_TSV                                         } from '../modules/local/cat_files'
-include { CAT_FILES as CAT_FASTA                                       } from '../modules/local/cat_files'
-include { CSVTK_CONCAT                                                 } from '../modules/nf-core/csvtk/concat'
+include { VARIANT_SPLIT               } from '../modules/local/variant_split'
+include { SNPSIFT_SPLIT               } from '../modules/local/snpsift_split'
+include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
+include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
+include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
+include { CAT_FILES as CAT_TSV        } from '../modules/local/cat_files'
+include { CAT_FILES as CAT_FASTA      } from '../modules/local/cat_files'
+include { CSVTK_CONCAT                } from '../modules/nf-core/csvtk/concat'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -53,7 +53,6 @@ workflow EPITOPEPREDICTION {
     // Initialise needed channels
     ch_versions      = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    ch_nonfree_paths = Channel.empty()
 
     // Load supported alleles file
     supported_alleles_json = file("$projectDir/assets/supported_alleles.json", checkIfExists: true)
