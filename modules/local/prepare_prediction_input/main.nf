@@ -20,7 +20,7 @@ process PREPARE_PREDICTION_INPUT {
 
     stub:
     def args       = task.ext.args ?: ''
-    def prefix     = task.ext.prefix ?: meta.sample
+    def prefix     = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_syfpeithi.csv
     touch ${prefix}_mhcflurry.csv

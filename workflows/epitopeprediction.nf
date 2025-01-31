@@ -6,19 +6,14 @@
 //
 // MODULE: Local to the pipeline
 //
-include { VARIANT_SPLIT                                                            } from '../modules/local/variant_split'
-include { SNPSIFT_SPLIT                                                            } from '../modules/local/snpsift_split'
-include { EPYTOPE_GENERATE_PEPTIDES                                                } from '../modules/local/epytope_generate_peptides'
-include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PEPTIDES                                } from '../modules/local/split_peptides'
-include { SPLIT_PEPTIDES as SPLIT_PEPTIDES_PROTEIN                                 } from '../modules/local/split_peptides'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PROTEIN         } from '../modules/local/epytope_peptide_prediction'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_PEP             } from '../modules/local/epytope_peptide_prediction'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR             } from '../modules/local/epytope_peptide_prediction'
-include { CAT_FILES as CAT_TSV                                                     } from '../modules/local/cat_files'
-include { CAT_FILES as CAT_FASTA                                                   } from '../modules/local/cat_files'
-include { CSVTK_CONCAT                                                             } from '../modules/local/csvtk_concat'
-include { MERGE_JSON as MERGE_JSON_SINGLE                                          } from '../modules/local/merge_json'
-include { MERGE_JSON as MERGE_JSON_MULTI                                           } from '../modules/local/merge_json'
+include { VARIANT_SPLIT                                                } from '../modules/local/variant_split'
+include { SNPSIFT_SPLIT                                                } from '../modules/local/snpsift_split'
+include { FASTA2PEPTIDES                                               } from '../modules/local/fasta2peptides'
+include { SPLIT_PEPTIDES                                               } from '../modules/local/split_peptides'
+include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR } from '../modules/local/epytope_peptide_prediction'
+include { CAT_FILES as CAT_TSV                                         } from '../modules/local/cat_files'
+include { CAT_FILES as CAT_FASTA                                       } from '../modules/local/cat_files'
+include { CSVTK_CONCAT                                                 } from '../modules/nf-core/csvtk/concat'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -132,18 +127,8 @@ workflow EPITOPEPREDICTION {
     //    RUN EPITOPE PREDICTION
     //========================================================================================
     //*/
-    // TODO: Implement Fasta parsing
-    //// not sure if this is the best solution to also have a extra process for protein, but I think we need it for cases when we have both in one sheet? (CM)
-    //// run epitope prediction for proteins
-    //EPYTOPE_PEPTIDE_PREDICTION_PROTEIN(
-    //    SPLIT_PEPTIDES_PROTEIN
-    //        .out
-    //        .splitted
-    //        .combine( ch_prediction_tool_versions )
-    //        .transpose(),
-    //        EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
-    //)
-    //ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_PROTEIN.out.versions )
+    FASTA2PEPTIDES( ch_samples_uncompressed.protein )
+    ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
     //ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES.out.splitted.transpose()
 
@@ -157,11 +142,27 @@ workflow EPITOPEPREDICTION {
     //        EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
     //)
     //ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions )
+    // TODO: Speed up prediction by splitting large files
+    ch_to_predict = ch_samples_uncompressed.peptide
+                        .mix(FASTA2PEPTIDES.out.tsv.transpose())
 
-    MHC_BINDING_PREDICTION( ch_samples_uncompressed.peptide, params.tools, supported_alleles_json, netmhc_software_meta)
+    // Split tsv if size exceeds params.peptides_split_minchunksize
+    SPLIT_PEPTIDES(ch_to_predict)
+    ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
+
+    //
+    // SUBWORKFLOW: MHC Binding Prediction
+    //
+    MHC_BINDING_PREDICTION( SPLIT_PEPTIDES.out.splitted.transpose(),
+                            params.tools,
+                            supported_alleles_json,
+                            netmhc_software_meta)
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
-    ch_predicted_peptides = MHC_BINDING_PREDICTION.out.predicted
 
+    // TODO: Fix meta.id / meta.sample
+    CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
+                    .map { meta, file -> [meta.subMap('sample','alleles','mhc_class'), file] }
+                    .groupTuple(), "tsv", "tsv")
 
     //
     // Collate and save software versions
