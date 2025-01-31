@@ -1,34 +1,49 @@
-#!/usr/bin/env python
-# Written by Sabrina Krakau, Christopher Mohr and released under the MIT license (2022).
-
+#!/usr/bin/env python3
+# Written by Jonas Scheid the MIT license (2025).
 
 import argparse
 import math
+from pathlib import Path
 
-parser = argparse.ArgumentParser("Split peptides input file.")
-parser.add_argument("-i", "--input", metavar="FILE", type=str, help="Input file containing peptides.")
-parser.add_argument("-o", "--output_base", type=str, help="Base filename for output files.")
-parser.add_argument(
-    "-s", "--min_size", metavar="N", type=int, help="Minimum number of peptides that should be written into one file."
-)
-parser.add_argument(
-    "-c", "--max_chunks", metavar="N", type=int, help="Maximum number of chunks that should be created."
-)
-args = parser.parse_args()
+def split_peptides(input_file, output_base, min_size, max_chunks):
+    """Splits the peptide input file into smaller chunks in a single pass."""
+    input_path = Path(input_file)
+    output_base = Path(output_base)
 
-with open(args.input) as infile:
-    tot_size = sum([1 for _ in infile]) - 1
+    with input_path.open("r") as infile:
+        lines = infile.readlines()  # Read all lines into memory
 
-n = int(min(math.ceil(float(tot_size) / args.min_size), args.max_chunks))
-h = int(max(args.min_size, math.ceil(float(tot_size) / n)))
+    header, data_lines = lines[0], lines[1:]  # Separate header
+    total_size = len(data_lines)  # Number of peptides (excluding header)
 
-with open(args.input) as infile:
-    header = next(infile)
-    for chunk in range(n):
-        with open(args.output_base + ".chunk_" + str(chunk) + ".tsv", "w") as outfile:
+    if total_size == 0:
+        raise ValueError("Input file contains no peptides.")
+
+    # Determine number of chunks & chunk size
+    num_chunks = min(math.ceil(total_size / min_size), max_chunks)
+    chunk_size = max(min_size, math.ceil(total_size / num_chunks))
+
+    for chunk_idx in range(num_chunks):
+        chunk_file = output_base.with_name(f"{output_base.stem}_chunk_{chunk_idx}.tsv")
+        start = chunk_idx * chunk_size
+        end = start + chunk_size
+
+        with chunk_file.open("w") as outfile:
             outfile.write(header)
-            for _ in range(h):
-                try:
-                    outfile.write(next(infile))
-                except StopIteration:
-                    break
+            outfile.writelines(data_lines[start:end])
+
+        if end >= total_size:
+            break  # Stop if we've written all data
+
+def main():
+    parser = argparse.ArgumentParser(description="Split a peptide file into smaller chunks.")
+    parser.add_argument("-i", "--input", required=True, help="Input file containing peptides.")
+    parser.add_argument("-o", "--output_base", required=True, help="Base filename for output files.")
+    parser.add_argument("--min_size", type=int, required=True, help="Minimum peptides per file.")
+    parser.add_argument("--max_chunks", type=int, required=True, help="Maximum number of chunks.")
+
+    args = parser.parse_args()
+    split_peptides(args.input, args.output_base, args.min_size, args.max_chunks)
+
+if __name__ == "__main__":
+    main()
