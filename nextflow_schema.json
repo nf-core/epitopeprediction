@@ -124,10 +124,11 @@
                     "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
                     "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences."
                 },
-                "show_supported_models": {
+                "wide_format_output": {
                     "type": "boolean",
-                    "description": "Writes out supported prediction models.",
-                    "help_text": "Writes out supported models. Does not run any predictions."
+                    "default": false,
+                    "description": "Specifies that the output file will be in wide format.",
+                    "help_text": "Transforms output file such that for each predictor and allele a column `predictor_allele_predictionMetric` is created."
                 }
             }
         },
