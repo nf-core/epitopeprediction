@@ -1,13 +1,13 @@
-include { PREPARE_PREDICTION_INPUT                  } from '../../../modules/local/prepare_prediction_input'
-include { SYFPEITHI                                 } from '../../../modules/local/syfpeithi'
-include { MHCFLURRY                                 } from '../../../modules/local/mhcflurry'
+include { PREPARE_PREDICTION_INPUT                   } from '../../../modules/local/prepare_prediction_input'
+include { SYFPEITHI                                  } from '../../../modules/local/syfpeithi'
+include { MHCFLURRY                                  } from '../../../modules/local/mhcflurry'
 include { MHCNUGGETS;
-        MHCNUGGETS as MHCNUGGETSII                  } from '../../../modules/local/mhcnuggets'
-include { NETMHCPAN                                 } from '../../../modules/local/netmhcpan'
-include { NETMHCIIPAN                               } from '../../../modules/local/netmhciipan'
+        MHCNUGGETS as MHCNUGGETSII                   } from '../../../modules/local/mhcnuggets'
+include { NETMHCPAN                                  } from '../../../modules/local/netmhcpan'
+include { NETMHCIIPAN                                } from '../../../modules/local/netmhciipan'
 include { UNPACK_NETMHC_SOFTWARE as NETMHCPAN_IMPORT;
-        UNPACK_NETMHC_SOFTWARE as NETMHCIIPAN_IMPORT} from '../../../modules/local/unpack_netmhc_software'
-include { MERGE_PREDICTIONS                         } from '../../../modules/local/merge_predictions'
+        UNPACK_NETMHC_SOFTWARE as NETMHCIIPAN_IMPORT } from '../../../modules/local/unpack_netmhc_software'
+include { MERGE_PREDICTIONS                          } from '../../../modules/local/merge_predictions'
 
 workflow MHC_BINDING_PREDICTION {
     take:
@@ -22,8 +22,13 @@ workflow MHC_BINDING_PREDICTION {
 
         validate_tools_param(tools)
 
+        // Add filename to meta to prevent overwriting identically named files
+        ch_peptides
+            .map { meta, file -> [meta + [file_id: meta.sample + '_' + file.baseName], file] }
+            .set { ch_peptides_to_predict }
+
         //prepare the input file
-        PREPARE_PREDICTION_INPUT( ch_peptides, supported_alleles_json)
+        PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
             .transpose()
             .branch {
@@ -70,17 +75,19 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
-    MERGE_PREDICTIONS( ch_binding_predictors_out
-        .map { meta, file -> [meta.subMap('sample','alleles','mhc_class','input_type'), file] }
-        .groupTuple())
+    ch_binding_predictors_out
+        .map { meta, file -> [meta.subMap('sample','alleles','mhc_class','input_type','file_id'), file] }
+        .groupTuple()
+        .join(ch_peptides_to_predict)
+        .set { ch_binding_predictors_out_meta}
+
+    MERGE_PREDICTIONS( ch_binding_predictors_out_meta )
     ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
 
     emit:
     predicted = MERGE_PREDICTIONS.out.merged
     versions = ch_versions
 }
-
-
 
 //
 // Auxiliar Functions

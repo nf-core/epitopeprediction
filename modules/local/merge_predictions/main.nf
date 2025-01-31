@@ -8,12 +8,11 @@ process MERGE_PREDICTIONS {
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(prediction_files)
+    tuple val(meta), path(prediction_files), path(source_file)
 
     output:
     tuple val(meta), path("*.tsv"), emit: merged
-    path "versions.yml", emit: versions
-
+    path "versions.yml"           , emit: versions
 
     script:
     //TODO handle the thresholds (parse the --tools_thresholds and --use_affinity_thresholds)
@@ -21,7 +20,7 @@ process MERGE_PREDICTIONS {
 
     stub:
     def args       = task.ext.args ?: ''
-    def prefix     = task.ext.prefix ?: meta.sample
+    def prefix     = task.ext.prefix ?: "${meta.id}"
     """
     touch merged_prediction.tsv
     touch versions.yml

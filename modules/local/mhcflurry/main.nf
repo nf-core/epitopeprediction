@@ -11,7 +11,7 @@ process MHCFLURRY {
     containerOptions = (workflow.containerEngine == 'docker') ? '-u $(id -u) -e "HOME=${HOME}" -v /etc/passwd:/etc/passwd:ro -v /etc/shadow:/etc/shadow:ro -v /etc/group:/etc/group:ro -v $HOME:$HOME' : ''
 
     input:
-    tuple val(meta), path(peptide_file)
+    tuple val(meta), path(csv)
 
     output:
     tuple val(meta), path("*.csv"), emit: predicted
@@ -22,12 +22,12 @@ process MHCFLURRY {
         error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
     }
     def args   = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.sample}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     mhcflurry-downloads fetch models_class1_presentation
     mhcflurry-predict \\
-        $peptide_file \\
+        $csv \\
         --out ${prefix}_predicted_mhcflurry.csv \\
         $args
 
@@ -38,8 +38,7 @@ process MHCFLURRY {
     """
 
     stub:
-    def args   = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: meta.sample
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predicted_mhcflurry.csv
 

@@ -19,8 +19,8 @@ process MHCNUGGETS {
     template "mhcnuggets.py"
 
     stub:
-    def args       = task.ext.args ?: ''
-    def prefix     = task.ext.prefix ?: "${meta.sample}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
+
     """
     touch ${prefix}_predicted_mhcnuggets.tsv
 

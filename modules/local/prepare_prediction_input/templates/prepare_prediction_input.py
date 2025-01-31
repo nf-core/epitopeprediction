@@ -2,9 +2,10 @@
 
 import argparse
 import shlex
-from enum import Enum
-import logging
 import json
+import logging
+from enum import Enum
+from pathlib import Path
 
 import pandas as pd
 import mhcgnomes
@@ -144,23 +145,16 @@ class Utils:
 
         return tool_allele_input
 
+    def has_valid_aas(peptide: str) -> bool:
+        """
+        Check if a peptide contains only valid amino acids.
+        """
+        valid_aas = "ACDEFGHIKLMNPQRSTVWY"
+        return all(aa in valid_aas for aa in peptide)
+
 
 def main():
     args = Arguments()
-
-    ### DEBUGGING INPUT
-    #args.input = '/mnt/volume/data/epitopeprediction/peptides.tsv'
-    #args.supported_alleles_json = '/mnt/volume/dev/mhcgnomes/supported_alleles.json'
-    #args.mhc_class = 'I'
-    #args.alleles='/mnt/volume/dev/epitopeprediction-2/modules/local/check_supported_alleles/templates/test_alleles.txt'
-    #args.tools = ['mhcflurry', 'mhcnuggets', 'mhcnuggetsii', 'netmhcpan','netmhciipan']
-    #args.prefix = "test"
-    #args.min_peptide_length_classI = 8
-    #args.max_peptide_length_classI = 12
-    #args.min_peptide_length_classII = 12
-    #args.max_peptide_length_classII = 25
-    #args.peptide_col_name = "sequence"
-    ###
 
     # Parse alleles to uniform format
     alleles_normalized = Utils.parse_alleles(args.alleles)
@@ -176,13 +170,13 @@ def main():
     # Parse input file to desired format of tools
     df_input = pd.read_csv(args.input, sep="\t")
     logging.info(f"Read file with {len(df_input)} peptides.")
-
+    # Filter peptides with invalid amino acids
+    df_input = df_input[df_input[args.peptide_col_name].apply(Utils.has_valid_aas)]
     # Filter peptides based on user-defined length
     if args.mhc_class == "I":
         df = df_input[df_input[args.peptide_col_name].str.len().between(args.min_peptide_length_classI, args.max_peptide_length_classI)]
     else:
         df = df_input[df_input[args.peptide_col_name].str.len().between(args.min_peptide_length_classII, args.max_peptide_length_classII)]
-
     if len(df) == 0:
         raise ValueError("No peptides left after applying length filters! Aborting..")
 
