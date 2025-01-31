@@ -21,13 +21,15 @@ process FASTA2PEPTIDES {
     def prefix = task.ext.prefix ?: "${meta.sample}"
     def min_length = meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
+    def pep_col = params.peptide_col_name ? "${params.peptide_col_name}" : "sequence"
 
     """
     fasta2peptides.py \\
         -i $fasta \\
         -o ${prefix} \\
         -minl ${min_length} \\
-        -maxl ${max_length}
+        -maxl ${max_length} \\
+        -pepcol ${pep_col} \\
 
 
     cat <<-END_VERSIONS > versions.yml

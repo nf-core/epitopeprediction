@@ -66,6 +66,11 @@
             "description": "Options for the peptide prediction step.",
             "fa_icon": "far fa-chart-bar",
             "properties": {
+                "peptide_col_name": {
+                    "type": "string",
+                    "default": "sequence",
+                    "description": "Specifies the column name in the input file that contains the peptide sequences."
+                },
                 "filter_self": {
                     "type": "boolean",
                     "description": "Filter against human proteome.",
