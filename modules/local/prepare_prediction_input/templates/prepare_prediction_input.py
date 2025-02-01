@@ -19,7 +19,7 @@ class MinLength(Enum):
     MHCFLURRY = 5
     MHCNUGGETS = 1
     NETMHCPAN = 8
-    NETMHCIIPAN = 8
+    NETMHCIIPAN = 9
 
 class MaxLength(Enum):
     MHCFLURRY = 15

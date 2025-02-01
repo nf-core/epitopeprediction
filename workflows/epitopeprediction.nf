@@ -108,19 +108,10 @@ workflow EPITOPEPREDICTION {
     //        .set { ch_split_variants }
     //    ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
     //}
-//
-    //// process FASTA file and generated peptides
-    //EPYTOPE_GENERATE_PEPTIDES( ch_samples_uncompressed.protein )
-    //ch_versions = ch_versions.mix(EPYTOPE_GENERATE_PEPTIDES.out.versions)
-//
-//
-    //SPLIT_PEPTIDES_PROTEIN( EPYTOPE_GENERATE_PEPTIDES.out.splitted )
-    //ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions)
-//
-    //// split peptide data
-    //SPLIT_PEPTIDES_PEPTIDES( ch_samples_uncompressed.peptide )
-    //ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions )
-//
+
+    // Generate mutated peptides from VCF
+    EPYTOPE_VARIANT_PREDICTION(ch_samples_uncompressed.variant)
+    ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
     ///*
     //========================================================================================
     //    RUN EPITOPE PREDICTION
@@ -129,21 +120,9 @@ workflow EPITOPEPREDICTION {
     FASTA2PEPTIDES( ch_samples_uncompressed.protein )
     ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
-    //ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES.out.splitted.transpose()
-
-    // TODO: Run variant prediction with old epaa script
-    // Run epitope prediction for variants
-    //EPYTOPE_PEPTIDE_PREDICTION_VAR(
-    //    ch_split_variants
-    //        .splitted
-    //        .combine( ch_prediction_tool_versions )
-    //        .transpose(),
-    //        EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
-    //)
-    //ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions )
-    // TODO: Speed up prediction by splitting large files
     ch_to_predict = ch_samples_uncompressed.peptide
                         .mix(FASTA2PEPTIDES.out.tsv.transpose())
+                        .mix(EPYTOPE_VARIANT_PREDICTION.out.tsv)
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
