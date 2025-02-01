@@ -7,7 +7,6 @@
 // MODULE: Local to the pipeline
 //
 include { VARIANT_SPLIT               } from '../modules/local/variant_split'
-include { SNPSIFT_SPLIT               } from '../modules/local/snpsift_split'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
@@ -31,7 +30,7 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 //
 include { MULTIQC                     } from '../modules/nf-core/multiqc'
 include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
-
+include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
 include { paramsSummaryMap       } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -97,20 +96,20 @@ workflow EPITOPEPREDICTION {
     */
 
     // decide between the split_by_variants and snpsift_split (by chromosome) function
-    //if (params.split_by_variants) {
-    //    VARIANT_SPLIT( ch_samples_uncompressed.variant )
-    //        .set { ch_split_variants }
-    //    ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
-//
-    //}
-    //else {
-    //    SNPSIFT_SPLIT( ch_samples_uncompressed.variant )
-    //        .set { ch_split_variants }
-    //    ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
-    //}
+    if (params.split_by_variants) {
+        VARIANT_SPLIT( ch_samples_uncompressed.variant )
+            .set { ch_split_variants }
+        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
+
+    }
+    else {
+        SNPSIFT_SPLIT( ch_samples_uncompressed.variant )
+            .set { ch_split_variants }
+        ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
+    }
 
     // Generate mutated peptides from VCF
-    EPYTOPE_VARIANT_PREDICTION(ch_samples_uncompressed.variant)
+    EPYTOPE_VARIANT_PREDICTION( ch_split_variants )
     ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
     ///*
     //========================================================================================

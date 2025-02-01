@@ -24,6 +24,10 @@ from epytope.IO.MartsAdapter import MartsAdapter
 __author__ = "Christopher Mohr, Jonas Scheid"
 VERSION = "2.0"
 
+# Define global variables
+ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
+transcriptProteinTable = {}
+
 # Set up logging (epytope uses logging as well, so we have to adapt the existing logger)
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -49,14 +53,10 @@ def parse_args():
     parser.add_argument("--max_length", help="Maximum peptide length of mutated peptides", type=int, default=14)
     parser.add_argument("--genome_reference", help="Reference, retrieved information will be based on this ensembl version", default="https://grch37.ensembl.org/")
     parser.add_argument("--proteome_reference", help="Specify reference proteome fasta for self-filtering peptides from variants")
+    parser.add_argument("--peptide_col_name", help="Name of the column containing the peptide sequences", type=str, default="sequence")
     parser.add_argument("--version", help="Script version", action="version", version=VERSION)
 
     return parser.parse_args()
-
-ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
-transcriptProteinTable = {}
-transcriptSwissProtMap = {}
-
 
 def get_epytope_annotation(vt, p, r, alt):
     if vt == VariationType.SNP:
@@ -513,7 +513,7 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
     Generate mutated peptides ranging between min and max length from a list of epytore.Core.Variants.
     Args:
         variants: List of epytope.Core.Variant objects.
-        martsadapter: MartsAdapter object for quering biomart.
+        martsadapter: epytope.IO.MartsAdapter object for quering biomart.
         metadata: List of metadata columns to include in the output.
         minlength: Minimum length of peptides to generate.
         maxlength: Maximum length of peptides to generate.
@@ -521,7 +521,7 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
         mutated_peptides_df: DataFrame containing mutated peptides and metadata.
         prots: List of mutated proteins.
     """
-    # Generate mutated proteins affected by variants
+    # Query biomart to generate mutated proteins affected by variants
     prots = [ p for p in generator.generate_proteins_from_transcripts(
                 generator.generate_transcripts_from_variants(variants, martsadapter, ID_SYSTEM_USED)) ]
 
@@ -557,6 +557,7 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
         for col in set(metadata):
             mutated_peptides_len_df[col] = mutated_peptides_len_df.apply(lambda row: create_metadata_column_value(row, col, peptide_variants_dict), axis=1)
         # Add wild type sequences to mutated peptides if Protein ID is available
+        # TODO: Investigate if mapping can be improved -> ensemble_id is present
         try:
             wt_sequences = generate_wt_seqs(mutated_peptides)
             mutated_peptides_len_df["wildtype"] = [create_wt_seq_column_value(p, wt_sequences) for p in mutated_peptides]
@@ -584,7 +585,6 @@ def __main__():
     logger.info("Running variant prediction version: " + str(VERSION))
 
     global transcriptProteinTable
-    global transcriptSwissProtMap
 
 	# Read VCF file
     variant_list, transcripts, variants_metadata = read_vcf(args.input)
@@ -613,6 +613,7 @@ def __main__():
         logger.info(f"Filtered out {num_mutated_peptides_pre_filter - mutated_peptides_df.shape[0]} peptides that were found in the reference proteome.")
 
     # Write to file
+    mutated_peptides_df = mutated_peptides_df.rename(columns={"sequence": args.peptide_col_name})
     mutated_peptides_df.to_csv(f"{args.prefix}.tsv", index=False, sep="\t")
 
     # write mutated protein sequences to fasta file
