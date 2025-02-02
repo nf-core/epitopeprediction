@@ -89,7 +89,7 @@ workflow MHC_BINDING_PREDICTION {
 
     // Join predicted file and subworkflow input file to add inputfile metadata
     ch_binding_predictors_out
-        .map { meta, file -> [meta.findAll { k, v -> k != 'alleles_supported' }, file] }
+        .map { meta, file -> [meta.findAll { k, v -> k != 'alleles_supported' }, file] } // drop alleles_supported from meta
         .groupTuple()
         .join( ch_peptides_to_predict )
         .set { ch_binding_predictors_out_meta}

@@ -1,5 +1,5 @@
 process SPLIT_PEPTIDES {
-    label 'process_low'
+    label 'process_single'
     tag "${meta.sample}"
 
     conda "${moduleDir}/environment.yml"

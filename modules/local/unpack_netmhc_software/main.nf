@@ -2,7 +2,7 @@
 * Copy non-free software provided by the user into the working directory
 */
 process UNPACK_NETMHC_SOFTWARE {
-    label 'process_low'
+    label 'process_single'
 
     conda "conda-forge::coreutils=9.1"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?

@@ -71,7 +71,7 @@ workflow EPITOPEPREDICTION {
         }
         .set { ch_samplesheet }
 
-    // gunzip variant files
+    // gunzip VCF files
     GUNZIP_VCF ( ch_samplesheet.variant_compressed )
     ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
 

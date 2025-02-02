@@ -586,9 +586,9 @@ def __main__():
 
     global transcriptProteinTable
 
-	# Read VCF file
+    # Read VCF file
     variant_list, transcripts, variants_metadata = read_vcf(args.input)
-    print(type(variants_metadata))
+
     transcripts = list(set(transcripts))
 
     if len(transcripts) == 0:
