@@ -1,5 +1,8 @@
+//==============================================================================
+// Predict MHC binding for a set of peptides using different predictors.
+//==============================================================================
+
 include { PREPARE_PREDICTION_INPUT                   } from '../../../modules/local/prepare_prediction_input'
-include { SYFPEITHI                                  } from '../../../modules/local/syfpeithi'
 include { MHCFLURRY                                  } from '../../../modules/local/mhcflurry'
 include { MHCNUGGETS;
         MHCNUGGETS as MHCNUGGETSII                   } from '../../../modules/local/mhcnuggets'
@@ -8,6 +11,15 @@ include { NETMHCIIPAN                                } from '../../../modules/lo
 include { UNPACK_NETMHC_SOFTWARE as NETMHCPAN_IMPORT;
         UNPACK_NETMHC_SOFTWARE as NETMHCIIPAN_IMPORT } from '../../../modules/local/unpack_netmhc_software'
 include { MERGE_PREDICTIONS                          } from '../../../modules/local/merge_predictions'
+
+// Input:
+//     ch_peptides: Channel of peptides to predict
+//     tools: Comma-separated list of tools to use for prediction
+//     supported_alleles_json: JSON file with supported alleles for each predictor
+//     netmhc_software_meta_json: JSON file with metadata for NetMHC software
+// Output:
+//     predicted: Channel of predicted MHC binding
+//     versions: Channel of software versions
 
 workflow MHC_BINDING_PREDICTION {
     take:
@@ -22,12 +34,12 @@ workflow MHC_BINDING_PREDICTION {
 
         validate_tools_param(tools)
 
-        // Add filename to meta to prevent overwriting identically named files
+        // Add file identifier to meta to prevent overwriting identically named files
         ch_peptides
             .map { meta, file -> [meta + [file_id: meta.sample + '_' + file.baseName], file] }
             .set { ch_peptides_to_predict }
 
-        //prepare the input file
+        // Prepare predictor-tailored input file and alleles supported by the predictor
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
             .transpose()
@@ -75,12 +87,14 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
+    // Join predicted file and subworkflow input file to add inputfile metadata
     ch_binding_predictors_out
-        .map { meta, file -> [meta.subMap('sample','alleles','mhc_class','input_type','file_id'), file] }
+        .map { meta, file -> [meta.findAll { k, v -> k != 'alleles_supported' }, file] }
         .groupTuple()
-        .join(ch_peptides_to_predict)
+        .join( ch_peptides_to_predict )
         .set { ch_binding_predictors_out_meta}
 
+    // Merge predictions from different predictors
     MERGE_PREDICTIONS( ch_binding_predictors_out_meta )
     ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
 
@@ -89,13 +103,11 @@ workflow MHC_BINDING_PREDICTION {
     versions = ch_versions
 }
 
-//
-// Auxiliar Functions
-//
+//==============================================================================
+//                            Auxiliar Functions
+//==============================================================================
 
-//
 // Check if supported tools are specified
-//
 def validate_tools_param(tools) {
     valid_tools = [ 'syfpeithi', 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan' ]
     tool_list = tools.tokenize(',')
@@ -106,9 +118,7 @@ def validate_tools_param(tools) {
     }
 }
 
-//
 // Prepare import of NetMHC software
-//
 def parse_netmhc_params(tool_name, netmhc_software_meta) {
     // Check if the _path parameter was set for this tool
     if (!params["${tool_name}_path"])

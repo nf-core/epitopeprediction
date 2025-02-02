@@ -592,7 +592,12 @@ def __main__():
     transcripts = list(set(transcripts))
 
     if len(transcripts) == 0:
-        raise ValueError("No transcripts found in VCF file. Please check the VCF file for correct annotation.")
+        logger.warning("No transcripts found in VCF file possibly due to wrong variant annotation. Please check your VCF file.")
+        # Create empty output files
+        open(f"{args.prefix}.tsv", "w").close()
+        if args.fasta_output:
+            open(f"{args.prefix}.fasta", "w").close()
+        return  # Exit early
 
     # initialize MartsAdapter
     # in previous version, these were the defaults "GRCh37": "http://feb2014.archive.ensembl.org" (broken)

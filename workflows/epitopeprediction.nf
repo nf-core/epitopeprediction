@@ -10,9 +10,6 @@ include { VARIANT_SPLIT               } from '../modules/local/variant_split'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
-include { CAT_FILES as CAT_TSV        } from '../modules/local/cat_files'
-include { CAT_FILES as CAT_FASTA      } from '../modules/local/cat_files'
-include { CSVTK_CONCAT                } from '../modules/nf-core/csvtk/concat'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -31,10 +28,11 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 include { MULTIQC                     } from '../modules/nf-core/multiqc'
 include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
 include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
+include { CSVTK_CONCAT                } from '../modules/nf-core/csvtk/concat'
+include { paramsSummaryMap            } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -91,11 +89,11 @@ workflow EPITOPEPREDICTION {
 
     /*
     ========================================================================================
-        PREPARE INPUT FOR PREDICTION
+        GENERATE MUTATED PEPTIDES FROM VCF
     ========================================================================================
     */
 
-    // decide between the split_by_variants and snpsift_split (by chromosome) function
+    // decide between the split_by_variants and snpsift_split (by chromosome)
     if (params.split_by_variants) {
         VARIANT_SPLIT( ch_samples_uncompressed.variant )
             .set { ch_split_variants }
@@ -103,17 +101,24 @@ workflow EPITOPEPREDICTION {
 
     }
     else {
-        SNPSIFT_SPLIT( ch_samples_uncompressed.variant )
+        SNPSIFT_SPLIT( ch_samples_uncompressed.variant
+            .map {meta, vcf -> [meta + [split: true], vcf]} ) // need to add split: true to meta to trigger splitting (nf-core module)
+            .out_vcfs
             .set { ch_split_variants }
         ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
     }
 
-    // Generate mutated peptides from VCF
-    EPYTOPE_VARIANT_PREDICTION( ch_split_variants )
+    // Generate mutated peptides from VCF and filter out empty files
+    EPYTOPE_VARIANT_PREDICTION( ch_split_variants.transpose() )
+        .tsv
+        .filter { meta, file -> file.size() > 0 }
+        .set { ch_peptides_from_variants }
     ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
+    // TODO: Merge optional fasta output of EPYTOPE_VARIANT_PREDICTION since they are splited
+
     ///*
     //========================================================================================
-    //    RUN EPITOPE PREDICTION
+    //    GENERATE MUTATED PEPTIDES FROM VCF
     //========================================================================================
     //*/
     FASTA2PEPTIDES( ch_samples_uncompressed.protein )
@@ -121,7 +126,7 @@ workflow EPITOPEPREDICTION {
 
     ch_to_predict = ch_samples_uncompressed.peptide
                         .mix(FASTA2PEPTIDES.out.tsv.transpose())
-                        .mix(EPYTOPE_VARIANT_PREDICTION.out.tsv)
+                        .mix(ch_peptides_from_variants)
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)

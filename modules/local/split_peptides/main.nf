@@ -18,12 +18,10 @@ process SPLIT_PEPTIDES {
     task.ext.when == null || task.ext.when
 
     script:
-    def prefix = task.ext.suffix ?: "${tsv.baseName}"
 
     """
     split_peptides.py \\
         --input $tsv \\
-        --output_base "${prefix}" \\
         --min_size ${params.peptides_split_minchunksize} \\
         --max_chunks ${params.peptides_split_maxchunks} \\
 
