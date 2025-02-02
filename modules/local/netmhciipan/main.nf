@@ -25,7 +25,7 @@ process NETMHCIIPAN {
                     .collect {
                         it.contains('DRB') ?
                             it.replace('*', '_').replace(':', '').replace('HLA-', '') :
-                            it.replace('*', '').replace(':', '').replace('/','-')
+                            it.replace('*', '').replace(':', '').replace('/','-').replace('H2','H-2')
                     }.join(',')
 
     """

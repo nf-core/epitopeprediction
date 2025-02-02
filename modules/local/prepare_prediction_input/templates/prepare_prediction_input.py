@@ -167,6 +167,7 @@ def main():
     with open(f"{args.prefix}_allele_input.json", "w") as f:
         json.dump(tools_allele_input, f)
 
+
     # Parse input file to desired format of tools
     df_input = pd.read_csv(args.input, sep="\t")
     logging.info(f"Read file with {len(df_input)} peptides.")
@@ -179,6 +180,8 @@ def main():
         df = df_input[df_input[args.peptide_col_name].str.len().between(args.min_peptide_length_classII, args.max_peptide_length_classII)]
     if len(df) == 0:
         raise ValueError("No peptides left after applying length filters! Aborting..")
+    logging.info(f"Filtered peptides based on length. {len(df)} peptides left for prediction..")
+
 
     # Filter peptides based on tool length boundaries and adjust input format
     if "mhcflurry" in args.tools and args.mhc_class == "I":
