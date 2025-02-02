@@ -15,7 +15,6 @@ process MERGE_PREDICTIONS {
     path "versions.yml"           , emit: versions
 
     script:
-    //TODO handle the thresholds (parse the --tools_thresholds and --use_affinity_thresholds)
     template "merge_predictions.py"
 
     stub:

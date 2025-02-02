@@ -48,7 +48,7 @@ def parse_args():
     )
     parser.add_argument("-i", "--input", help="SnpEff or VEP annotated variants in VCF format", type=str, required=True)
     parser.add_argument("-p", "--prefix", help="Prefix of output files", type=str, required=True)
-    parser.add_argument("--fasta_output", help="Create FASTA file with protein sequences", type=str)
+    parser.add_argument("--fasta_output", help="Create FASTA file with protein sequences", default=False, action="store_true")
     parser.add_argument("--min_length", help="Minimum peptide length of mutated peptides", type=int, default=8)
     parser.add_argument("--max_length", help="Maximum peptide length of mutated peptides", type=int, default=14)
     parser.add_argument("--genome_reference", help="Reference, retrieved information will be based on this ensembl version", default="https://grch37.ensembl.org/")
