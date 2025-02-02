@@ -534,6 +534,8 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
         # Filter out peptides that are not created by a variant
         mutated_peptides = [p for p in all_peptides_from_mutated_proteins if p.is_created_by_variant()]
         logger.info(f"Generated {len(mutated_peptides)} peptides of length {peplen} that were created by a variant.")
+        if len(mutated_peptides) == 0:
+            continue
 
         # Add metadata to mutated peptides
         peptide_variants_dict = create_peptide_variant_dictionary(mutated_peptides)
@@ -566,9 +568,12 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
 
         mutated_peptides_df.append(mutated_peptides_len_df)
 
-    mutated_peptides_df = pd.concat(mutated_peptides_df)
-
-    return mutated_peptides_df, prots
+    if len(mutated_peptides_df) == 0:
+        logger.warning("No mutated peptides found.")
+        return pd.DataFrame(), []
+    else:
+        mutated_peptides_df = pd.concat(mutated_peptides_df)
+        return mutated_peptides_df, prots
 
 def parse_fasta(fasta_file: str) -> Dict[str, str]:
     """
@@ -579,6 +584,13 @@ def parse_fasta(fasta_file: str) -> Dict[str, str]:
         A dictionary with the sequence id as key and the sequence as value.
     """
     return {record.id: str(record.seq) for record in SeqIO.parse(fasta_file, "fasta")}
+
+def write_empty_files(args: argparse.Namespace):
+    """Write empty files to the output directory."""
+    open(f"{args.prefix}.tsv", "w").close()
+    if args.fasta_output:
+        open(f"{args.prefix}.fasta", "w").close()
+
 
 def __main__():
     args = parse_args()
@@ -594,9 +606,7 @@ def __main__():
     if len(transcripts) == 0:
         logger.warning("No transcripts found in VCF file possibly due to wrong variant annotation. Please check your VCF file.")
         # Create empty output files
-        open(f"{args.prefix}.tsv", "w").close()
-        if args.fasta_output:
-            open(f"{args.prefix}.fasta", "w").close()
+        write_empty_files(args)
         return  # Exit early
 
     # initialize MartsAdapter
@@ -609,6 +619,11 @@ def __main__():
     # Generate mutated peptides from variants
     mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, martsadapter, variants_metadata, args.min_length, args.max_length + 1)
 
+    # Check if mutated_peptides_df is empty after filtering and write empty files
+    if mutated_peptides_df.empty:
+        write_empty_files(args)
+        return  # Exit early
+
     # Filtering peptides found in user-provided reference proteome
     if args.proteome_reference:
         fasta_dict = parse_fasta(args.proteome_reference)
@@ -616,6 +631,9 @@ def __main__():
         # filter out peptides found in reference proteome
         mutated_peptides_df = mutated_peptides_df[mutated_peptides_df["sequence"].apply(lambda pep: any([pep in prot for prot in fasta_dict.values()]))]
         logger.info(f"Filtered out {num_mutated_peptides_pre_filter - mutated_peptides_df.shape[0]} peptides that were found in the reference proteome.")
+        if mutated_peptides_df.empty:
+            write_empty_files(args)
+            return  # Exit early
 
     # Write to file
     mutated_peptides_df = mutated_peptides_df.rename(columns={"sequence": args.peptide_col_name})
