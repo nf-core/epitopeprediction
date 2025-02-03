@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Changed`
 
 - [#247](https://github.com/nf-core/epitopeprediction/pull/247) - Update to nf-core template `3.0.2`
+- [#255](https://github.com/nf-core/epitopeprediction/pull/256) - Update to nf-core template `3.1.2`
 
 ## v2.3.1 - Oesterberg - 2024-05-17
 
