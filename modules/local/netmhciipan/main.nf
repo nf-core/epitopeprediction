@@ -31,7 +31,7 @@ process NETMHCIIPAN {
     """
     netmhciipan/netMHCIIpan \
         -f $tsv \
-		-inptype 1 \
+        -inptype 1 \
         -a $alleles \
         -xls \
         -xlsfile ${prefix}_predicted_netmhciipan.xls \

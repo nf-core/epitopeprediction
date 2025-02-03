@@ -54,7 +54,7 @@ workflow EPITOPEPREDICTION {
 
     // Load supported alleles file
     supported_alleles_json = file("$projectDir/assets/supported_alleles.json", checkIfExists: true)
-	netmhc_software_meta   = file("$projectDir/assets/netmhc_software_meta.json", checkIfExists: true)
+    netmhc_software_meta   = file("$projectDir/assets/netmhc_software_meta.json", checkIfExists: true)
 
     // Load samplesheet and branch channels based on input type
     samplesheet
