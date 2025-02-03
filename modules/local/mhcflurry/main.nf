@@ -17,7 +17,7 @@ process MHCFLURRY {
     tuple val(meta), path("*.csv"), emit: predicted
     path "versions.yml"           , emit: versions
 
-    script:
+script:
     if (meta.mhc_class == "II") {
         error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
     }
@@ -25,7 +25,16 @@ process MHCFLURRY {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    mhcflurry-downloads fetch models_class1_presentation
+    # Create MHCflurry data directory to avoid permission issues
+    mkdir -p mhcflurry-data
+    export MHCFLURRY_DATA_DIR=./mhcflurry-data
+    export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=2.2.0
+
+    # Check if models are already available
+    if ! mhcflurry-downloads info | grep -qE '\\bYES\\b'; then
+        mhcflurry-downloads fetch models_class1_presentation
+    fi
+
     mhcflurry-predict \\
         $csv \\
         --out ${prefix}_predicted_mhcflurry.csv \\

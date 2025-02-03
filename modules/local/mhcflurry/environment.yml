@@ -1,5 +1,5 @@
 channels:
-- conda-forge
-- bioconda
+  - conda-forge
+  - bioconda
 dependencies:
-- bioconda::mhcflurry=2.1.4
+  - bioconda::mhcflurry=2.1.4

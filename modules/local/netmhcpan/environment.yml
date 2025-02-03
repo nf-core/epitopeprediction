@@ -1,8 +1,8 @@
 channels:
-- conda-forge
-- bioconda
+  - conda-forge
+  - bioconda
 dependencies:
-- conda-forge::bash=5.2.21
-- conda-forge::gawk=5.3.1
-- conda-forge::perl=5.32.1
-- conda-forge::tcsh=6.24.14
+  - conda-forge::bash=5.2.21
+  - conda-forge::gawk=5.3.1
+  - conda-forge::perl=5.32.1
+  - conda-forge::tcsh=6.24.14

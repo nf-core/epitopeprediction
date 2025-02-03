@@ -1,11 +1,9 @@
-bump_version: null
 lint:
   files_unchanged:
     - assets/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_dark.png
-nf_core_version: 3.0.2
-org_path: null
+nf_core_version: 3.2.0
 repository_type: pipeline
 template:
   author: Christopher Mohr, Jonas Scheid
@@ -15,6 +13,4 @@ template:
   name: epitopeprediction
   org: nf-core
   outdir: .
-  skip_features: null
   version: 2.3.1
-update: null

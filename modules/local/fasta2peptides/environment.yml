@@ -1,5 +1,5 @@
 channels:
-- conda-forge
-- bioconda
+  - conda-forge
+  - bioconda
 dependencies:
-- bioconda::biopython=1.85
+  - bioconda::biopython=1.85
