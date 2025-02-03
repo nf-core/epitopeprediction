@@ -20,7 +20,7 @@ process NETMHCPAN {
     }
     def args    = task.ext.args ?: ''
     def prefix  = task.ext.prefix ?: "${meta.id}"
-    def alleles = meta.alleles_supported.tokenize(';').collect { it.replace('*', '') }.join(',')
+    def alleles = meta.alleles_supported.tokenize(';').collect { it.replace('*', '').replace('H2','H-2') }.join(',')
 
     """
     netmhcpan/netMHCpan \

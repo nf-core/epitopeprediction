@@ -5,6 +5,7 @@ import shlex
 import logging
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 from mhcnuggets.src.predict import predict
 
@@ -82,17 +83,20 @@ class Version:
 def main():
     args = Arguments()
 
-    df_input = pd.read_csv(args.input, sep="\t")
-    logging.info(f"Reading in file with {len(df_input)} peptides..")
-
     # Predict and load written tsv file
     predicted_df = []
     for allele in args.alleles:
-        mhcnuggets_allele = allele.replace('*','')
+        mhcnuggets_allele = allele.replace('*','').replace('H2','H-2')
+        # MHCnuggets cannot compute ranks for mouse alleles
+        compute_rank = 'H-2' not in mhcnuggets_allele
         predict(class_=args.mhc_class, peptides_path = args.input, mhc=mhcnuggets_allele,
-                output=f'{args.prefix}_{allele}.csv', rank_output=True)
-
-        tmp_df = pd.read_csv(f'{args.prefix}_{allele}_ranks.csv')
+                output=f'{args.prefix}_{allele}.csv', rank_output=compute_rank)
+        if compute_rank:
+            tmp_df = pd.read_csv(f'{args.prefix}_{allele}_ranks.csv')
+        else:
+            tmp_df = pd.read_csv(f'{args.prefix}_{allele}.csv')
+            # Mock rank column
+            tmp_df['rank'] = np.nan
         tmp_df['allele'] = allele
         predicted_df.append(tmp_df)
 

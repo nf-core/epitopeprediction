@@ -6,14 +6,10 @@
 //
 // MODULE: Local to the pipeline
 //
-include { VARIANT_SPLIT                                                } from '../modules/local/variant_split'
-include { SNPSIFT_SPLIT                                                } from '../modules/local/snpsift_split'
-include { FASTA2PEPTIDES                                               } from '../modules/local/fasta2peptides'
-include { SPLIT_PEPTIDES                                               } from '../modules/local/split_peptides'
-include { EPYTOPE_PEPTIDE_PREDICTION as EPYTOPE_PEPTIDE_PREDICTION_VAR } from '../modules/local/epytope_peptide_prediction'
-include { CAT_FILES as CAT_TSV                                         } from '../modules/local/cat_files'
-include { CAT_FILES as CAT_FASTA                                       } from '../modules/local/cat_files'
-include { CSVTK_CONCAT                                                 } from '../modules/nf-core/csvtk/concat'
+include { VARIANT_SPLIT               } from '../modules/local/variant_split'
+include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
+include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
+include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -31,11 +27,13 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 //
 include { MULTIQC                     } from '../modules/nf-core/multiqc'
 include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
-
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
+include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
+include { CAT_CAT as CAT_FASTA        } from '../modules/nf-core/cat/cat/main'
+include { CSVTK_CONCAT                } from '../modules/nf-core/csvtk/concat'
+include { paramsSummaryMap            } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -53,7 +51,6 @@ workflow EPITOPEPREDICTION {
     // Initialise needed channels
     ch_versions      = Channel.empty()
     ch_multiqc_files = Channel.empty()
-    ch_nonfree_paths = Channel.empty()
 
     // Load supported alleles file
     supported_alleles_json = file("$projectDir/assets/supported_alleles.json", checkIfExists: true)
@@ -74,7 +71,7 @@ workflow EPITOPEPREDICTION {
         }
         .set { ch_samplesheet }
 
-    // gunzip variant files
+    // gunzip VCF files
     GUNZIP_VCF ( ch_samplesheet.variant_compressed )
     ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
 
@@ -93,66 +90,61 @@ workflow EPITOPEPREDICTION {
 
     /*
     ========================================================================================
-        PREPARE INPUT FOR PREDICTION
+        GENERATE MUTATED PEPTIDES FROM VCF
     ========================================================================================
     */
 
-    // decide between the split_by_variants and snpsift_split (by chromosome) function
-    //if (params.split_by_variants) {
-    //    VARIANT_SPLIT( ch_samples_uncompressed.variant )
-    //        .set { ch_split_variants }
-    //    ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
-//
-    //}
-    //else {
-    //    SNPSIFT_SPLIT( ch_samples_uncompressed.variant )
-    //        .set { ch_split_variants }
-    //    ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
-    //}
-//
-    //// process FASTA file and generated peptides
-    //EPYTOPE_GENERATE_PEPTIDES( ch_samples_uncompressed.protein )
-    //ch_versions = ch_versions.mix(EPYTOPE_GENERATE_PEPTIDES.out.versions)
-//
-//
-    //SPLIT_PEPTIDES_PROTEIN( EPYTOPE_GENERATE_PEPTIDES.out.splitted )
-    //ch_versions = ch_versions.mix(SPLIT_PEPTIDES_PROTEIN.out.versions)
-//
-    //// split peptide data
-    //SPLIT_PEPTIDES_PEPTIDES( ch_samples_uncompressed.peptide )
-    //ch_versions = ch_versions.mix( SPLIT_PEPTIDES_PEPTIDES.out.versions )
-//
-    ///*
-    //========================================================================================
-    //    RUN EPITOPE PREDICTION
-    //========================================================================================
-    //*/
+    // decide between the split_by_variants and snpsift_split (by chromosome)
+    if (params.split_by_variants) {
+        VARIANT_SPLIT( ch_samples_uncompressed.variant )
+            .set { ch_split_variants }
+        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
+
+    }
+    else {
+        SNPSIFT_SPLIT( ch_samples_uncompressed.variant
+            .map {meta, vcf -> [meta + [split: true], vcf]} ) // need to add split: true to meta to trigger splitting (nf-core module)
+            .out_vcfs
+            .set { ch_split_variants }
+        ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
+    }
+
+    // Generate mutated peptides from VCF and filter out empty files
+    EPYTOPE_VARIANT_PREDICTION( ch_split_variants.transpose() )
+        .tsv
+        .filter { meta, file -> file.size() > 0 }
+        .set { ch_peptides_from_variants }
+    ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
+
+    // Merge optional fasta output of EPYTOPE_VARIANT_PREDICTION (containing mutated protein sequences) since they are splited
+    if (params.fasta_output) {
+        ch_fasta_from_variants = EPYTOPE_VARIANT_PREDICTION.out.fasta
+                                    .map { meta, fasta -> [meta.subMap('sample'), fasta] }
+                                    .groupTuple()
+        CAT_FASTA( ch_fasta_from_variants )
+        ch_versions = ch_versions.mix(CAT_FASTA.out.versions)
+    }
+    /*
+    ========================================================================================
+        GENERATE PEPTIDES FROM PROTEIN SEQUENCES
+    ========================================================================================
+    */
     FASTA2PEPTIDES( ch_samples_uncompressed.protein )
     ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
-    //ch_prediction_input = SPLIT_PEPTIDES_PEPTIDES.out.splitted.transpose()
-
-    // TODO: Run variant prediction with old epaa script
-    // Run epitope prediction for variants
-    //EPYTOPE_PEPTIDE_PREDICTION_VAR(
-    //    ch_split_variants
-    //        .splitted
-    //        .combine( ch_prediction_tool_versions )
-    //        .transpose(),
-    //        EXTERNAL_TOOLS_IMPORT.out.nonfree_tools.collect().ifEmpty([])
-    //)
-    //ch_versions = ch_versions.mix( EPYTOPE_PEPTIDE_PREDICTION_VAR.out.versions )
-    // TODO: Speed up prediction by splitting large files
     ch_to_predict = ch_samples_uncompressed.peptide
                         .mix(FASTA2PEPTIDES.out.tsv.transpose())
+                        .mix(ch_peptides_from_variants)
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
     ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
 
-    //
-    // SUBWORKFLOW: MHC Binding Prediction
-    //
+    /*
+    ========================================================================================
+        PREDICT MHC BINDING OF PEPTIDES
+    ========================================================================================
+    */
     MHC_BINDING_PREDICTION( SPLIT_PEPTIDES.out.splitted.transpose(),
                             params.tools,
                             supported_alleles_json,
@@ -160,6 +152,7 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
     // TODO: Fix meta.id / meta.sample
+    // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
                     .map { meta, file -> [meta.subMap('sample','alleles','mhc_class'), file] }
                     .groupTuple(), "tsv", "tsv")

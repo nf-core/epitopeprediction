@@ -1,5 +1,5 @@
 process MHCNUGGETS {
-    label 'process_low'
+    label 'process_single'
     tag "${meta.sample}"
 
     conda "bioconda::mhcnuggets=2.4.1"
