@@ -17,28 +17,34 @@ process MHCFLURRY {
     tuple val(meta), path("*.csv"), emit: predicted
     path "versions.yml"           , emit: versions
 
-    script:
-        if (meta.mhc_class == "II") {
-            error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
-        }
-        def args   = task.ext.args ?: ''
-        def prefix = task.ext.prefix ?: "${meta.id}"
+script:
+    if (meta.mhc_class == "II") {
+        error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
+    }
+    def args   = task.ext.args ?: ''
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
-        """
-        if ! mhcflurry-downloads info | grep -qE '\\bYES\\b'; then
-            mhcflurry-downloads fetch models_class1_presentation
-        fi
+    """
+    # Create MHCflurry data directory to avoid permission issues
+    mkdir -p mhcflurry-data
+    export MHCFLURRY_DATA_DIR=./mhcflurry-data
+    export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=\$(mhcflurry-predict --version)
 
-        mhcflurry-predict \\
-            $csv \\
-            --out ${prefix}_predicted_mhcflurry.csv \\
-            $args
+    # Check if models are already available
+    if ! mhcflurry-downloads info | grep -qE '\\bYES\\b'; then
+        mhcflurry-downloads fetch models_class1_presentation
+    fi
 
-        cat <<-END_VERSIONS > versions.yml
-        "${task.process}":
-            \$(mhcflurry-predict --version)
-        END_VERSIONS
-        """
+    mhcflurry-predict \\
+        $csv \\
+        --out ${prefix}_predicted_mhcflurry.csv \\
+        $args
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        \$(mhcflurry-predict --version)
+    END_VERSIONS
+    """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
