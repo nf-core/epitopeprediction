@@ -18,24 +18,27 @@ process MHCFLURRY {
     path "versions.yml"           , emit: versions
 
     script:
-    if (meta.mhc_class == "II") {
-        error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
-    }
-    def args   = task.ext.args ?: ''
-    def prefix = task.ext.prefix ?: "${meta.id}"
+        if (meta.mhc_class == "II") {
+            error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
+        }
+        def args   = task.ext.args ?: ''
+        def prefix = task.ext.prefix ?: "${meta.id}"
 
-    """
-    mhcflurry-downloads fetch models_class1_presentation
-    mhcflurry-predict \\
-        $csv \\
-        --out ${prefix}_predicted_mhcflurry.csv \\
-        $args
+        """
+        if ! mhcflurry-downloads info | grep -qE '\\bYES\\b'; then
+            mhcflurry-downloads fetch models_class1_presentation
+        fi
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(mhcflurry-predict --version)
-    END_VERSIONS
-    """
+        mhcflurry-predict \\
+            $csv \\
+            --out ${prefix}_predicted_mhcflurry.csv \\
+            $args
+
+        cat <<-END_VERSIONS > versions.yml
+        "${task.process}":
+            \$(mhcflurry-predict --version)
+        END_VERSIONS
+        """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
