@@ -133,10 +133,6 @@ jobs:
         uses: nf-core/setup-nextflow@v1
         with:
           version: "${{ matrix.NXF_VER }}"
-
-      - name: Run pipeline with NetMHC
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_netmhc,docker --outdir ./results
       - name: Run pipeline with NetMHCpan
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker --outdir ./results
