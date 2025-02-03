@@ -28,7 +28,7 @@ script:
     # Create MHCflurry data directory to avoid permission issues
     mkdir -p mhcflurry-data
     export MHCFLURRY_DATA_DIR=./mhcflurry-data
-    export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=\$(mhcflurry-predict --version)
+    export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=2.2.0
 
     # Check if models are already available
     if ! mhcflurry-downloads info | grep -qE '\\bYES\\b'; then
