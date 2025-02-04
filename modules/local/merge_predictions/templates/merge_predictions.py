@@ -288,15 +288,25 @@ def main():
 
     # Read in source file to annotate source metadata
     source_df = pd.read_csv(args.source_file, sep='\t')
+    # In the rare occurence that the source file has exactly the same col than output file, rename the source file column
+    source_df = source_df.rename(columns={col: col+'_metadata' for col in source_df.columns if col != args.peptide_col_name and col in output_df.columns})
     # Merge the prediction results with the source file
     output_df = pd.merge(output_df, source_df, on=args.peptide_col_name, how='left')
 
     # Transform output to wide format if specified
     if args.wide_format_output:
         output_df = Utils.longTowide(output_df)
+        # Add consensus binder column
+        output_df['binder'] = output_df[[col for col in output_df.columns if 'binder' in col]].any(axis=1)
 
     # Write output file
     output_df.to_csv(f'{args.prefix}_predictions.tsv', sep='\t', index=False)
+
+    # Parse versions
+    versions_this_module = {}
+    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd])
+    with open("versions.yml", "w") as f:
+        f.write(Version.format_yaml_like(versions_this_module))
 
     # Parse versions
     versions_this_module = {}
