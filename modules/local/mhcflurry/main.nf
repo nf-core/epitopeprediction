@@ -17,7 +17,7 @@ process MHCFLURRY {
     tuple val(meta), path("*.csv"), emit: predicted
     path "versions.yml"           , emit: versions
 
-script:
+    script:
     if (meta.mhc_class == "II") {
         error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
     }
