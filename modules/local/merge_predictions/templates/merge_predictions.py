@@ -155,10 +155,7 @@ class PredictionResult:
         |    ...   |   ...   |  ...  |  ...  |  ...   |     ...   |
         +----------+---------+-------+-------+--------+-----------+
         """
-        if 'syfpeithi' in self.file_path:
-            self.predictor = 'syfpeithi'
-            return self._format_syfpeithi_prediction()
-        elif 'mhcflurry' in self.file_path:
+        if 'mhcflurry' in self.file_path:
             self.predictor = 'mhcflurry'
             return self._format_mhcflurry_prediction()
         elif 'mhcnuggets' in self.file_path:
@@ -173,9 +170,6 @@ class PredictionResult:
         else:
             logging.error(f'Unsupported predictor type in file: {self.file_path}.')
             sys.exit(1)
-
-    def _format_syfpeithi_prediction(self):
-        pass
 
     def _format_mhcflurry_prediction(self) -> pd.DataFrame:
         """

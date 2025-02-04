@@ -22,11 +22,11 @@ process PREPARE_PREDICTION_INPUT {
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_syfpeithi.csv
-    touch ${prefix}_mhcflurry.csv
-    touch ${prefix}_mhcnuggets.csv
-    touch ${prefix}_netmhcpan.csv
-    touch ${prefix}_netmhciipan.csv
+    touch ${prefix}_mhcflurry_input.csv
+    touch ${prefix}_mhcnuggets_input.tsv
+    touch ${prefix}_mhcnuggetsii_input.tsv
+    touch ${prefix}_netmhcpan_input.tsv
+    touch ${prefix}_netmhciipan_input.tsv
     touch versions.yml
     """
 }
