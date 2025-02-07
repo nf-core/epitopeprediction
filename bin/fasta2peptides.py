@@ -64,10 +64,12 @@ def write_output(peptides, output_file, peptide_col_name):
 
 def parse_args() -> argparse.Namespace:
     """Parse CLI args"""
-    parser = argparse.ArgumentParser(description="Split a peptide file into smaller chunks.")
+    parser = argparse.ArgumentParser(description="Generate peptides from a protein fasta file.")
     parser.add_argument("-i", "--input", required=True, help="Input file containing peptides.")
-    parser.add_argument("--min_size", type=int, required=True, help="Minimum peptides per file.")
-    parser.add_argument("--max_chunks", type=int, required=True, help="Maximum number of chunks.")
+    parser.add_argument("-o", "--output_prefix", required=True, help="Output file prefix (each length will have its own file)")
+    parser.add_argument("-minl", "--min_length", type=int, required=True, help="Maximum length of peptides to be generated from protein.")
+    parser.add_argument("-maxl", "--max_length", type=int, required=True, help="Maximum length of peptides to be generated from protein.")
+    parser.add_argument("-pepcol","--peptide_col_name", type=str, required=True, help="Peptide column name")
     args = parser.parse_args()
     return args
 
