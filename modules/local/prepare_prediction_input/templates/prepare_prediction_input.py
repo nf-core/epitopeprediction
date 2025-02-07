@@ -26,12 +26,11 @@ class MaxLength(Enum):
     MHCNUGGETS_CLASSI = 15
     MHCNUGGETS_CLASSII = 30
     NETMHCPAN = 14
-    NETMHCIIPAN = 25
+    NETMHCIIPAN = 50
 
 # TODO: Implement
 class MaxNumberOfAlleles(Enum):
     NETMHCPAN = 50
-    NETMHCIIPAN = 50
 
 class Arguments:
     """
@@ -206,8 +205,11 @@ def main():
 
             logging.info(f"Input for {tool} detected. Preparing {len(df_tool)} peptides for prediction..")
 
+            # If NetMHC is specified, check if number of alleles doesnt exceed tool boundary
+            if tool in ['netmhcpan','netmhciipan'] and len(args.alleles.split(";")) > MaxNumberOfAlleles.NETMHCPAN.value:
+                raise ValueError(f"Number of alleles {len(args.alleles)} exceeds NetMHCpan limit of 50. Aborting..")
             # Special case for MHCflurry, which requires long format as input
-            if tool == "mhcflurry":
+            elif tool == "mhcflurry":
                 df_tool['allele'] = [tools_allele_input[tool].split(';')] * len(df_tool)
                 df_tool = df_tool.explode('allele').reset_index(drop=True)
                 df_tool.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)

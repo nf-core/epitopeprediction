@@ -119,7 +119,7 @@ workflow EPITOPEPREDICTION {
     // Merge optional fasta output of EPYTOPE_VARIANT_PREDICTION (containing mutated protein sequences) since they are splited
     if (params.fasta_output) {
         ch_fasta_from_variants = EPYTOPE_VARIANT_PREDICTION.out.fasta
-                                    .map { meta, fasta -> [meta.subMap('sample'), fasta] }
+                                    .map { meta, fasta -> [meta.subMap('id'), fasta] }
                                     .groupTuple()
         CAT_FASTA( ch_fasta_from_variants )
         ch_versions = ch_versions.mix(CAT_FASTA.out.versions)
@@ -151,10 +151,10 @@ workflow EPITOPEPREDICTION {
                             netmhc_software_meta)
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
-    // TODO: Fix meta.id / meta.sample
+    // TODO: Fix meta.id / meta.id
     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
-                    .map { meta, file -> [meta.subMap('sample','alleles','mhc_class'), file] }
+                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple(), "tsv", "tsv")
 
     //

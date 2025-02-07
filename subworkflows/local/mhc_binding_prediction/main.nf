@@ -36,7 +36,7 @@ workflow MHC_BINDING_PREDICTION {
 
         // Add file identifier to meta to prevent overwriting identically named files
         ch_peptides
-            .map { meta, file -> [meta + [file_id: meta.sample + '_' + file.baseName], file] }
+            .map { meta, file -> [meta + [file_id: meta.id + '_' + file.baseName], file] }
             .set { ch_peptides_to_predict }
 
         // Prepare predictor-tailored input file and alleles supported by the predictor

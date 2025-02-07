@@ -1,6 +1,6 @@
 process MHCNUGGETS {
     label 'process_single'
-    tag "${meta.sample}"
+    tag "${meta.id}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
