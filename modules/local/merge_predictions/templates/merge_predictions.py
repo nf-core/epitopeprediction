@@ -298,12 +298,6 @@ def main():
 
     # Parse versions
     versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd])
-    with open("versions.yml", "w") as f:
-        f.write(Version.format_yaml_like(versions_this_module))
-
-    # Parse versions
-    versions_this_module = {}
     versions_this_module["${task.process}"] = Version.get_versions([argparse, pd, mhcgnomes])
     with open("versions.yml", "w") as f:
         f.write(Version.format_yaml_like(versions_this_module))
