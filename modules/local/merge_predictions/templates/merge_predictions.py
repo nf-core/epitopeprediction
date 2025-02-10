@@ -285,7 +285,7 @@ def main():
     # In the rare occurence that the source file has exactly the same col than output file, rename the source file column
     source_df = source_df.rename(columns={col: col+'_metadata' for col in source_df.columns if col != args.peptide_col_name and col in output_df.columns})
     # Merge the prediction results with the source file
-    output_df = pd.merge(output_df, source_df, on=args.peptide_col_name, how='left')
+    output_df = pd.merge(source_df, output_df, on=args.peptide_col_name, how='left')
 
     # Transform output to wide format if specified
     if args.wide_format_output:
