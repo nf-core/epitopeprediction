@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 class MinLength(Enum):
     MHCFLURRY = 5
-    MHCNUGGETS = 1
+    MHCNUGGETS = 5
     NETMHCPAN = 8
     NETMHCIIPAN = 9
 
