@@ -109,7 +109,7 @@ workflow MHC_BINDING_PREDICTION {
 
 // Check if supported tools are specified
 def validate_tools_param(tools) {
-    valid_tools = [ 'syfpeithi', 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan' ]
+    valid_tools = [ 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan' ]
     tool_list = tools.tokenize(',')
     // Validate each tool in tools if it's in valid_tools
     def invalid_tools = tool_list.findAll { it.trim() !in valid_tools }
