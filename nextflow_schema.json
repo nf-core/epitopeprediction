@@ -57,7 +57,7 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides from variants."
+                    "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides derived from provided genomic variants."
                 }
             }
         },
