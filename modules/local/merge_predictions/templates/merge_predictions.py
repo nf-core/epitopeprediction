@@ -122,7 +122,7 @@ class Utils:
         meta_columns = [col for col in df.columns if col not in ['predictor', 'allele', 'BA', 'rank', 'binder']]
 
         # Pivot to wide format
-        df_wide = df.pivot_table(
+        df_pivot = df.pivot_table(
             index=meta_columns,
             columns=['predictor', 'allele'],
             values=['BA', 'rank', 'binder'],
@@ -130,10 +130,10 @@ class Utils:
         )
 
         # Flatten the MultiIndex columns
-        df_wide.columns = [f"{pred}_{allele}_{val}" for val, pred, allele in df_wide.columns]
-
-        # Reset index
-        df_wide.reset_index(inplace=True)
+        df_pivot.columns = [f"{pred}_{allele}_{val}" for val, pred, allele in df_pivot.columns]
+        df_pivot.reset_index(inplace=True)
+        # Merge with original metadata to ensure peptides are being kept that could not be predicted
+        df_wide = df[meta_columns].drop_duplicates().merge(df_pivot, on=meta_columns, how="left")
 
         return df_wide
 
