@@ -16,7 +16,7 @@ process NETMHCIIPAN {
 
     script:
     if (meta.mhc_class != "II") {
-        error "NETMHCIIPAN only supports MHC class II. Use NETMHCIIPAN for MHC class II."
+        error "NETMHCIIPAN only supports MHC class II. Use NETMHCPAN for MHC class I."
     }
     def args    = task.ext.args ?: ''
     def prefix  = task.ext.prefix ?: "${meta.id}"
