@@ -62,18 +62,22 @@ def write_output(peptides, output_file, peptide_col_name):
 
     logging.info(f"Wrote {len(peptides):,.0f} peptides to {output_file} in {time() - start_time:.2f} seconds")
 
-def main():
-    parser = argparse.ArgumentParser(description="Generate peptides of different lengths from a FASTA file and save as separate TSV files.")
-    parser.add_argument("-i", "--input", required=True, help="Input FASTA file")
+def parse_args() -> argparse.Namespace:
+    """Parse CLI args"""
+    parser = argparse.ArgumentParser(description="Generate peptides from a protein fasta file.")
+    parser.add_argument("-i", "--input", required=True, help="Input file containing peptides.")
     parser.add_argument("-o", "--output_prefix", required=True, help="Output file prefix (each length will have its own file)")
-    parser.add_argument("-minl","--min_length", type=int, required=True, help="Minimum peptide length")
-    parser.add_argument("-maxl","--max_length", type=int, required=True, help="Maximum peptide length")
+    parser.add_argument("-minl", "--min_length", type=int, required=True, help="Maximum length of peptides to be generated from protein.")
+    parser.add_argument("-maxl", "--max_length", type=int, required=True, help="Maximum length of peptides to be generated from protein.")
     parser.add_argument("-pepcol","--peptide_col_name", type=str, required=True, help="Peptide column name")
-
     args = parser.parse_args()
+    return args
 
+def main():
+    args = parse_args()
     fasta_map = parse_fasta(args.input)
 
+	# Write output for each peptide length
     for k in range(args.min_length, args.max_length + 1):
         peptides_set = generate_peptides(fasta_map, k)
         peptides = group_peptides(peptides_set, args.peptide_col_name)

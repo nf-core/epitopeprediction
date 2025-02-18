@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 class MinLength(Enum):
     MHCFLURRY = 5
-    MHCNUGGETS = 1
+    MHCNUGGETS = 5
     NETMHCPAN = 8
     NETMHCIIPAN = 9
 
@@ -26,12 +26,11 @@ class MaxLength(Enum):
     MHCNUGGETS_CLASSI = 15
     MHCNUGGETS_CLASSII = 30
     NETMHCPAN = 14
-    NETMHCIIPAN = 25
+    NETMHCIIPAN = 50
 
 # TODO: Implement
 class MaxNumberOfAlleles(Enum):
     NETMHCPAN = 50
-    NETMHCIIPAN = 50
 
 class Arguments:
     """
@@ -138,6 +137,8 @@ class Utils:
             tool_allele_input: List of supported alleles for the given tool
         """
         tool_allele_input = [allele for allele in allele_ls if allele in supported_alleles_tool]
+        # Print warning if allele not in supported alleles
+        logging.warning(f"Ignoring not supported alleles for {tool}: {set(allele_ls) - set(tool_allele_input)}")
         if len(tool_allele_input) == 0:
             logging.warning(f"No supported alleles for {tool} found. Aborting..")
         elif len(tool_allele_input) < len(allele_ls):
@@ -152,66 +153,69 @@ class Utils:
         valid_aas = "ACDEFGHIKLMNPQRSTVWY"
         return all(aa in valid_aas for aa in peptide)
 
+    def filter_by_length(df: pd.DataFrame, min_length: int, max_length: int, peptide_col: str) -> pd.DataFrame:
+        """Filter dataframe based on length constraints."""
+        return df[df[peptide_col].str.len().between(min_length, max_length)]
+
 
 def main():
     args = Arguments()
 
-    # Parse alleles to uniform format
+    # Parse alleles and save supported alleles per tool
     alleles_normalized = Utils.parse_alleles(args.alleles)
     supported_alleles_dict = json.load(open(args.supported_alleles_json))
-    # Filter alleles based on supported alleles for each tool and write to json
-    tools_allele_input = {}
-    for tool in args.tools:
-        tool_allele_input = Utils.keep_supported_alleles(alleles_normalized, tool, supported_alleles_dict[tool])
-        tools_allele_input[tool] = ';'.join(tool_allele_input)
+    tools_allele_input = {
+        tool: ';'.join(Utils.keep_supported_alleles(alleles_normalized, tool, supported_alleles_dict[tool]))
+        for tool in args.tools
+    }
     with open(f"{args.prefix}_allele_input.json", "w") as f:
         json.dump(tools_allele_input, f)
 
-
-    # Parse input file to desired format of tools
+    # Read input peptides and filter invalid amino acids
     df_input = pd.read_csv(args.input, sep="\t")
     logging.info(f"Read file with {len(df_input)} peptides.")
-    # Filter peptides with invalid amino acids
     df_input = df_input[df_input[args.peptide_col_name].apply(Utils.has_valid_aas)]
-    # Filter peptides based on user-defined length
-    if args.mhc_class == "I":
-        df = df_input[df_input[args.peptide_col_name].str.len().between(args.min_peptide_length_classI, args.max_peptide_length_classI)]
-    else:
-        df = df_input[df_input[args.peptide_col_name].str.len().between(args.min_peptide_length_classII, args.max_peptide_length_classII)]
-    if len(df) == 0:
-        raise ValueError("No peptides left after applying length filters! Aborting..")
-    logging.info(f"Filtered peptides based on length. {len(df)} peptides left for prediction..")
 
+    # Step 1: Apply *general MHC class length filtering* before tool-specific filtering
+    min_length = args.min_peptide_length_classI if args.mhc_class == "I" else args.min_peptide_length_classII
+    max_length = args.max_peptide_length_classI if args.mhc_class == "I" else args.max_peptide_length_classII
+    df_filtered = Utils.filter_by_length(df_input, min_length, max_length, args.peptide_col_name)
 
-    # Filter peptides based on tool length boundaries and adjust input format
-    if "mhcflurry" in args.tools and args.mhc_class == "I":
-        df_mhcflurry = df[df[args.peptide_col_name].str.len().between(MinLength.MHCFLURRY.value, MaxLength.MHCFLURRY.value)]
-        logging.info(f"Input for MHCflurry detected. Preparing {len(df_mhcflurry)} peptides for prediction..")
-        # Get every combination of sequence and allele and write them to csv with columns sequence and allele
-        df_mhcflurry['allele'] = [tools_allele_input['mhcflurry'].split(';')] * len(df_mhcflurry)
-        df_mhcflurry = df_mhcflurry.explode('allele').reset_index(drop=True)
-        df_mhcflurry.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
-        df_mhcflurry[['peptide','allele']].to_csv(f'{args.prefix}_mhcflurry_input.csv', index=False)
+    if df_filtered.empty:
+        raise ValueError("No peptides left after applying MHC class length filters! Aborting..")
 
-    if "mhcnuggets" in args.tools and args.mhc_class == "I":
-        df_mhcnuggets = df[df[args.peptide_col_name].str.len().between(MinLength.MHCNUGGETS.value, MaxLength.MHCNUGGETS_CLASSI.value)]
-        logging.info(f"Input for MHCnuggets detected. Preparing {len(df_mhcnuggets)} peptides for prediction..")
-        df_mhcnuggets[['sequence']].to_csv(f'{args.prefix}_mhcnuggets_input.tsv', sep="\t", header=False, index=False)
+    logging.info(f"Filtered peptides based on MHC class length. {len(df_filtered)} peptides left for prediction..")
 
-    if "mhcnuggetsii" in args.tools and args.mhc_class == "II":
-        df_mhcnuggets_ii = df[df[args.peptide_col_name].str.len().between(MinLength.MHCNUGGETS.value, MaxLength.MHCNUGGETS_CLASSII.value)]
-        logging.info(f"Input for MHCnuggets II detected. Preparing {len(df_mhcnuggets_ii)} peptides for prediction..")
-        df_mhcnuggets_ii[['sequence']].to_csv(f'{args.prefix}_mhcnuggetsii_input.tsv', sep="\t", header=False, index=False)
+    # Define tool-specific configurations
+    tool_configs = {
+        "mhcflurry":    {"min": MinLength.MHCFLURRY.value,   "max": MaxLength.MHCFLURRY.value,          "suffix": "mhcflurry_input.csv",    "mhc_class": "I"},
+        "mhcnuggets":   {"min": MinLength.MHCNUGGETS.value,  "max": MaxLength.MHCNUGGETS_CLASSI.value,  "suffix": "mhcnuggets_input.tsv",   "mhc_class": "I"},
+        "mhcnuggetsii": {"min": MinLength.MHCNUGGETS.value,  "max": MaxLength.MHCNUGGETS_CLASSII.value, "suffix": "mhcnuggetsii_input.tsv", "mhc_class": "II"},
+        "netmhcpan":    {"min": MinLength.NETMHCPAN.value,   "max": MaxLength.NETMHCPAN.value,          "suffix": "netmhcpan_input.tsv",    "mhc_class": "I"},
+        "netmhciipan":  {"min": MinLength.NETMHCIIPAN.value, "max": MaxLength.NETMHCIIPAN.value,        "suffix": "netmhciipan_input.tsv",  "mhc_class": "II"},
+    }
 
-    if "netmhcpan" in args.tools and args.mhc_class == "I":
-        df_netmhcpan = df[df[args.peptide_col_name].str.len().between(MinLength.NETMHCPAN.value, MaxLength.NETMHCPAN.value)]
-        logging.info(f"Input for NetMHCpan detected. Preparing {len(df_netmhcpan)} peptides for prediction..")
-        df_netmhcpan[['sequence']].to_csv(f'{args.prefix}_netmhcpan_input.tsv', sep="\t", header=False, index=False)
+    # Step 2: Apply tool-specific length filtering** on top of MHC class filtering
+    for tool, config in tool_configs.items():
+        if tool in args.tools and config["mhc_class"] == args.mhc_class:
+            df_tool = Utils.filter_by_length(df_filtered, config["min"], config["max"], args.peptide_col_name)
+            if df_tool.empty:
+                logging.info(f"No peptides found for {tool}, skipping...")
+                continue
 
-    elif "netmhciipan" in args.tools and args.mhc_class == "II":
-        df_netmhciipan = df[df[args.peptide_col_name].str.len().between(MinLength.NETMHCIIPAN.value, MaxLength.NETMHCIIPAN.value)]
-        logging.info(f"Input for NetMHCIIpan detected. Preparing {len(df_netmhciipan)} peptides for prediction..")
-        df_netmhciipan[['sequence']].to_csv(f'{args.prefix}_netmhciipan_input.tsv', sep="\t", header=False, index=False)
+            logging.info(f"Input for {tool} detected. Preparing {len(df_tool)} peptides for prediction..")
+
+            # If NetMHC is specified, check if number of alleles doesnt exceed tool boundary
+            if tool in ['netmhcpan','netmhciipan'] and len(args.alleles.split(";")) > MaxNumberOfAlleles.NETMHCPAN.value:
+                raise ValueError(f"Number of alleles {len(args.alleles)} exceeds NetMHCpan limit of 50. Aborting..")
+            # Special case for MHCflurry, which requires long format as input
+            elif tool == "mhcflurry":
+                df_tool['allele'] = [tools_allele_input[tool].split(';')] * len(df_tool)
+                df_tool = df_tool.explode('allele').reset_index(drop=True)
+                df_tool.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
+                df_tool[['peptide', 'allele']].to_csv(f'{args.prefix}_{config["suffix"]}', index=False)
+            else:
+                df_tool[['sequence']].to_csv(f'{args.prefix}_{config["suffix"]}', sep="\t", header=False, index=False)
 
     # Parse versions
     versions_this_module = {}

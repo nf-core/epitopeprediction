@@ -1,6 +1,6 @@
 process MHCFLURRY {
     label 'process_single'
-    tag "${meta.sample}"
+    tag "${meta.id}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -19,7 +19,7 @@ process MHCFLURRY {
 
     script:
     if (meta.mhc_class == "II") {
-        error("MHCflurry prediction of ${meta.sample} is not possible with MHC class II!")
+        error("MHCflurry prediction of ${meta.id} is not possible with MHC class II!")
     }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"

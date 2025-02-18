@@ -34,13 +34,17 @@ def split_peptides(input_file, min_size, max_chunks):
         if end >= total_size:
             break  # Stop if we've written all data
 
-def main():
+def parse_args() -> argparse.Namespace:
+    """Parse CLI args"""
     parser = argparse.ArgumentParser(description="Split a peptide file into smaller chunks.")
     parser.add_argument("-i", "--input", required=True, help="Input file containing peptides.")
     parser.add_argument("--min_size", type=int, required=True, help="Minimum peptides per file.")
     parser.add_argument("--max_chunks", type=int, required=True, help="Maximum number of chunks.")
-
     args = parser.parse_args()
+    return args
+
+def main():
+    args = parse_args()
     split_peptides(args.input, args.min_size, args.max_chunks)
 
 if __name__ == "__main__":

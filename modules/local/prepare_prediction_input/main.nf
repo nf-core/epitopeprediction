@@ -1,8 +1,8 @@
 process PREPARE_PREDICTION_INPUT {
     label 'process_single'
-    tag "${meta.sample}"
+    tag "${meta.id}"
 
-    conda "bioconda::mhcgnomes=1.8.6"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
@@ -22,11 +22,11 @@ process PREPARE_PREDICTION_INPUT {
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_syfpeithi.csv
-    touch ${prefix}_mhcflurry.csv
-    touch ${prefix}_mhcnuggets.csv
-    touch ${prefix}_netmhcpan.csv
-    touch ${prefix}_netmhciipan.csv
+    touch ${prefix}_mhcflurry_input.csv
+    touch ${prefix}_mhcnuggets_input.tsv
+    touch ${prefix}_mhcnuggetsii_input.tsv
+    touch ${prefix}_netmhcpan_input.tsv
+    touch ${prefix}_netmhciipan_input.tsv
     touch versions.yml
     """
 }

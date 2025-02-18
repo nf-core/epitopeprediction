@@ -122,7 +122,7 @@ class Utils:
         meta_columns = [col for col in df.columns if col not in ['predictor', 'allele', 'BA', 'rank', 'binder']]
 
         # Pivot to wide format
-        df_wide = df.pivot_table(
+        df_pivot = df.pivot_table(
             index=meta_columns,
             columns=['predictor', 'allele'],
             values=['BA', 'rank', 'binder'],
@@ -130,10 +130,10 @@ class Utils:
         )
 
         # Flatten the MultiIndex columns
-        df_wide.columns = [f"{pred}_{allele}_{val}" for val, pred, allele in df_wide.columns]
-
-        # Reset index
-        df_wide.reset_index(inplace=True)
+        df_pivot.columns = [f"{pred}_{allele}_{val}" for val, pred, allele in df_pivot.columns]
+        df_pivot.reset_index(inplace=True)
+        # Merge with original metadata to ensure peptides are being kept that could not be predicted
+        df_wide = df[meta_columns].drop_duplicates().merge(df_pivot, on=meta_columns, how="left")
 
         return df_wide
 
@@ -155,10 +155,7 @@ class PredictionResult:
         |    ...   |   ...   |  ...  |  ...  |  ...   |     ...   |
         +----------+---------+-------+-------+--------+-----------+
         """
-        if 'syfpeithi' in self.file_path:
-            self.predictor = 'syfpeithi'
-            return self._format_syfpeithi_prediction()
-        elif 'mhcflurry' in self.file_path:
+        if 'mhcflurry' in self.file_path:
             self.predictor = 'mhcflurry'
             return self._format_mhcflurry_prediction()
         elif 'mhcnuggets' in self.file_path:
@@ -173,9 +170,6 @@ class PredictionResult:
         else:
             logging.error(f'Unsupported predictor type in file: {self.file_path}.')
             sys.exit(1)
-
-    def _format_syfpeithi_prediction(self):
-        pass
 
     def _format_mhcflurry_prediction(self) -> pd.DataFrame:
         """
@@ -288,12 +282,16 @@ def main():
 
     # Read in source file to annotate source metadata
     source_df = pd.read_csv(args.source_file, sep='\t')
+    # In the rare occurence that the source file has exactly the same col than output file, rename the source file column
+    source_df = source_df.rename(columns={col: col+'_metadata' for col in source_df.columns if col != args.peptide_col_name and col in output_df.columns})
     # Merge the prediction results with the source file
-    output_df = pd.merge(output_df, source_df, on=args.peptide_col_name, how='left')
+    output_df = pd.merge(source_df, output_df, on=args.peptide_col_name, how='left')
 
     # Transform output to wide format if specified
     if args.wide_format_output:
         output_df = Utils.longTowide(output_df)
+        # Add consensus binder column
+        output_df['binder'] = output_df[[col for col in output_df.columns if 'binder' in col]].any(axis=1)
 
     # Write output file
     output_df.to_csv(f'{args.prefix}_predictions.tsv', sep='\t', index=False)

@@ -4,7 +4,7 @@
 process UNPACK_NETMHC_SOFTWARE {
     label 'process_single'
 
-    conda "conda-forge::coreutils=9.1"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
         'docker.io/biocontainers/biocontainers:v1.2.0_cv2' }"

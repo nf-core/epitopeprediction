@@ -1,6 +1,6 @@
 process FASTA2PEPTIDES {
     label 'process_single'
-    tag "${meta.sample}"
+    tag "${meta.id}"
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
@@ -18,10 +18,9 @@ process FASTA2PEPTIDES {
     task.ext.when == null || task.ext.when
 
     script:
-    def prefix = task.ext.prefix ?: "${meta.sample}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def min_length = meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
-    def pep_col = params.peptide_col_name ? "${params.peptide_col_name}" : "sequence"
 
     """
     fasta2peptides.py \\
@@ -29,7 +28,7 @@ process FASTA2PEPTIDES {
         -o ${prefix} \\
         -minl ${min_length} \\
         -maxl ${max_length} \\
-        -pepcol ${pep_col} \\
+        -pepcol ${params.peptide_col_name} \\
 
 
     cat <<-END_VERSIONS > versions.yml
@@ -40,7 +39,7 @@ process FASTA2PEPTIDES {
     """
 
     stub:
-    def prefix = task.ext.prefix ?: "${meta.sample}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     def min_length = meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
 
