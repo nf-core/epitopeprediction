@@ -42,9 +42,7 @@ jobs:
         run: |
           wget -qO- get.nextflow.io | bash
           sudo mv nextflow /usr/local/bin/
-      - name: Run pipeline with NetMHC
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_netmhc,docker --outdir ./results
+        # TODO: Add netmhciipan test
       - name: Run pipeline with NetMHCpan
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker --outdir ./results

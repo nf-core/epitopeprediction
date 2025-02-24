@@ -53,10 +53,11 @@
                     "help_text": "This defines against which human Ensembl genome reference the pipeline performs the analysis including the incorporation of genetic variants. If `grch37` or `grch38` are specified, the most recent Ensembl Biomart version for genome versions will be used. Alternatively, an Ensembl Biomart (archive) version can be specified, e.g. http://jan2020.archive.ensembl.org/.",
                     "description": "Specifies the Ensembl genome reference version that will be used."
                 },
-                "proteome": {
+                "proteome_reference": {
                     "type": "string",
-                    "help_text": "Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).",
-                    "description": "Specifies the reference proteome."
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides derived from provided genomic variants."
                 }
             }
         },
@@ -66,49 +67,38 @@
             "description": "Options for the peptide prediction step.",
             "fa_icon": "far fa-chart-bar",
             "properties": {
-                "filter_self": {
-                    "type": "boolean",
-                    "description": "Filter against human proteome.",
-                    "help_text": "Specifies that peptides should be filtered against the specified human proteome references."
+                "peptide_col_name": {
+                    "type": "string",
+                    "default": "sequence",
+                    "description": "Specifies the column name in the input file that contains the peptide sequences."
                 },
-                "max_peptide_length": {
-                    "type": "integer",
-                    "default": 11,
-                    "description": "Specifies the maximum peptide length.",
-                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
-                },
-                "min_peptide_length": {
+                "min_peptide_length_classI": {
                     "type": "integer",
                     "default": 8,
                     "description": "Specifies the minimum peptide length.",
                     "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
                 },
-                "max_peptide_length_class2": {
+                "max_peptide_length_classI": {
                     "type": "integer",
-                    "default": 16,
-                    "description": "Specifies the maximum peptide length for MHC class II peptides."
+                    "default": 12,
+                    "description": "Specifies the maximum peptide length.",
+                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
                 },
-                "min_peptide_length_class2": {
+                "min_peptide_length_classII": {
                     "type": "integer",
-                    "default": 15,
+                    "default": 8,
                     "description": "Specifies the minimum peptide length for MHC class II peptides."
+                },
+                "max_peptide_length_classII": {
+                    "type": "integer",
+                    "default": 25,
+                    "description": "Specifies the maximum peptide length for MHC class II peptides."
                 },
                 "tools": {
                     "type": "string",
-                    "default": "syfpeithi",
-                    "pattern": "^(syfpeithi|mhcnuggets-class-1|mhcnuggets-class-2|mhcflurry|netmhc-4.0|netmhcpan-4.0|netmhcpan-4.1|netmhciipan-4.1|netmhc_darwin-4.0|netmhcpan_darwin-4.0|netmhcpan_darwin-4.1|netmhciipan_darwin-4.1)(,(syfpeithi|mhcnuggets-class-1|mhcnuggets-class-2|mhcflurry|netmhc-4.0|netmhcpan-4.0|netmhcpan-4.1|netmhciipan-4.1|netmhc_darwin-4.0|netmhcpan_darwin-4.0|netmhcpan_darwin-4.1|netmhciipan_darwin-4.1))*$",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`,`netmhciipan-4.1`.",
+                    "default": "mhcflurry",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`,`netmhcpan`,`netmhciipan`.",
                     "description": "Specifies the prediction tool(s) to use."
-                },
-                "tool_thresholds": {
-                    "type": "string",
-                    "description": "Specifies tool-specific binder thresholds in a JSON file. This can be used to override the given default binder threshold values.",
-                    "help_text": "Default thresholds to determine whether a peptide is considered as a binder are the following: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 2, `netmhcpan` <= 2, `netmhcii` <= 5, `netmhciipan` <= 5. Note that the default threshold for NetMHC tools is based on the rank metric. The remaining predictors thresholds are based on affinities. Thresholds can be customized in a JSON file: `tool-name:value`"
-                },
-                "use_affinity_thresholds": {
-                    "type": "boolean",
-                    "description": "Specifies the affinity metric instead of the rank metric used for determining whether a peptide is considered as a binder.",
-                    "help_text": "Switches the prediction metric of netMHC tools from rank to affinity. Default: `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500."
                 },
                 "wild_type": {
                     "type": "boolean",
@@ -117,13 +107,15 @@
                 },
                 "fasta_output": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
                     "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences."
                 },
-                "show_supported_models": {
+                "wide_format_output": {
                     "type": "boolean",
-                    "description": "Writes out supported prediction models.",
-                    "help_text": "Writes out supported models. Does not run any predictions."
+                    "default": false,
+                    "description": "Specifies that the output file will be in wide format.",
+                    "help_text": "Transforms output file such that for each predictor and allele a column `predictor_allele_predictionMetric` is created."
                 }
             }
         },
@@ -140,13 +132,15 @@
                 "split_by_variants_size": {
                     "type": "integer",
                     "default": 0,
-                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten"
+                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten",
+                    "hidden": true
                 },
                 "split_by_variants_distance": {
                     "type": "integer",
                     "default": 110000,
                     "description": "Number of nucleotides between previous and current variant across split.",
-                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. "
+                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. ",
+                    "hidden": true
                 },
                 "peptides_split_maxchunks": {
                     "type": "integer",
@@ -170,7 +164,8 @@
             "properties": {
                 "external_tools_meta": {
                     "type": "string",
-                    "description": "Specifies the path to the JSON file with meta information on external prediction tools."
+                    "description": "Specifies the path to the JSON file with meta information on external prediction tools.",
+                    "hidden": true
                 },
                 "netmhc_system": {
                     "type": "string",
@@ -185,26 +180,12 @@
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
                 },
-                "netmhc_path": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 here."
-                },
                 "netmhciipan_path": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
-                },
-                "netmhcii_path": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 here."
                 }
             }
         },

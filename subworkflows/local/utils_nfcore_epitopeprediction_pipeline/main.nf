@@ -68,12 +68,23 @@ workflow PIPELINE_INITIALISATION {
     //
     //validateInputParameters()
 
+    // Function to read the alleles from a file or use given string
+    def readAlleles = { allele_input ->
+        if (allele_input.endsWith(".txt")) {
+            def file = file(allele_input)
+            // Read all lines, strip whitespace, and join them with semicolons
+            return file.readLines()*.trim().join(";")
+        } else {
+            // Not a file path, return the original string
+            return allele_input
+        }
+}
     //
     // Create channel from input file provided through params.input
     //
-
     Channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .map { meta, file -> [meta + [alleles: readAlleles(meta.alleles)], file]} // Parse alleles from file
         .set { ch_samplesheet }
 
     emit:
@@ -138,7 +149,7 @@ workflow PIPELINE_COMPLETION {
 // Check and validate pipeline parameters
 //
 //def validateInputParameters() {
-//    genomeExistsError()
+//    pass
 //}
 
 //

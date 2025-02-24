@@ -24,14 +24,11 @@ The pipeline performs epitope predictions for a given set of variants or peptide
 
 Supported prediction tools:
 
-- `syfpeithi`
 - `mhcflurry`
-- `mhcnuggets-class-1`
-- `mhcnuggets-class-2`
-- `netmhcpan-4.0`
-- `netmhcpan-4.1`
-- `netmhc-4.0`
-- `netmhciipan-4.1`
+- `mhcnuggets`
+- `mhcnuggetsii`
+- `netmhcpan`
+- `netmhciipan`
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
@@ -80,9 +77,9 @@ For more details about the output files and reports, please refer to the
 
 ## Credits
 
-nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) from [Boehringer Ingelheim](https://www.boehringer-ingelheim.de) and [Alexander Peltzer](https://github.com/apeltzer) from [Boehringer Ingelheim](https://www.boehringer-ingelheim.de). Further contributions were made by [Sabrina Krakau](https://github.com/skrakau) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/) and [Leon Kuchenbecker](https://github.com/lkuchenb) from the [Kohlbacher Lab](https://kohlbacherlab.org/).
+nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) and [Alexander Peltzer](https://github.com/apeltzer). Further contributions were made by [Sabrina Krakau](https://github.com/skrakau) and [Leon Kuchenbecker](https://github.com/lkuchenb).
 
-The pipeline was converted to Nextflow DSL2 by [Christopher Mohr](https://github.com/christopher-mohr), [Marissa Dubbelaar](https://github.com/marissaDubbelaar) from [Clinical Collaboration Unit Translational Immunology](https://www.medizin.uni-tuebingen.de/en-de/das-klinikum/einrichtungen/kliniken/medizinische-klinik/kke-translationale-immunologie) and [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/), [Gisela Gabernet](https://github.com/ggabernet) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/), and [Jonas Scheid](https://github.com/jonasscheid) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/)
+The pipeline was converted to Nextflow DSL2 by [Christopher Mohr](https://github.com/christopher-mohr), [Marissa Dubbelaar](https://github.com/marissaDubbelaar), [Gisela Gabernet](https://github.com/ggabernet), and [Jonas Scheid](https://github.com/jonasscheid) and further modularized by [Jonas Scheid](https://github.com/jonasscheid) and [Alina Bauer](https://github.com/alina-bauer).
 
 ## Contributions and Support
 

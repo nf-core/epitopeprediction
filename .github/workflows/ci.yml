@@ -94,8 +94,7 @@ jobs:
         NXF_VER:
           - "24.04.2"
           - "latest-everything"
-        tests:
-          ["test_grch38", "test_peptides", "test_peptides_h2", "test_proteins", "test_mhcnuggets", "test_mhcflurry"]
+        tests: ["test_grch38", "test_peptides", "test_proteins", "test_mhcnuggets", "test_mhcflurry"]
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v3
@@ -133,10 +132,6 @@ jobs:
         uses: nf-core/setup-nextflow@v1
         with:
           version: "${{ matrix.NXF_VER }}"
-
-      - name: Run pipeline with NetMHC
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_netmhc,docker --outdir ./results
       - name: Run pipeline with NetMHCpan
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker --outdir ./results
