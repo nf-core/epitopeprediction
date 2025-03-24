@@ -110,7 +110,7 @@ jobs:
 
   nonfree:
     name: Run NetMHC tool family tests
-    if: ${{ ( github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction' ) || github.event.pull_request.head.repo.full_name == 'nf-core/epitopeprediction' }}
+    if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -125,8 +125,7 @@ jobs:
         env:
           DECRYPT_PASSPHRASE: ${{ secrets.TEST_NETMHC }}
         run: |
-          mkdir -v non-free
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | ${GITHUB_WORKSPACE}/bin/decrypt | tar -C non-free -v -x
+          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | ${GITHUB_WORKSPACE}/bin/decrypt
 
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1
