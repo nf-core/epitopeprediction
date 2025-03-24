@@ -126,7 +126,7 @@ jobs:
           DECRYPT_PASSPHRASE: ${{ secrets.TEST_NETMHC }}
         run: |
           mkdir -v non-free
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/non-free-software.tar.gpg | ${GITHUB_WORKSPACE}/bin/decrypt | tar -C non-free -v -x
+          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | ${GITHUB_WORKSPACE}/bin/decrypt | tar -C non-free -v -x
 
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1

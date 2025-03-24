@@ -7,4 +7,4 @@ gpg \
     --yes \
     --decrypt \
     --passphrase="$DECRYPT_PASSPHRASE" \
-    --output -
+    --output netMHCpan-4.1b.Linux.tar.gz
