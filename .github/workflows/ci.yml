@@ -108,29 +108,33 @@ jobs:
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile ${{ matrix.tests }},docker --outdir ./results
 
-  nonfree:
-    name: Run NetMHC tool family tests
-    if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}"
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        NXF_VER:
-          - "24.04.2"
-          - "latest-everything"
-    steps:
-      - name: Check out pipeline code
-        uses: actions/checkout@v3
+nonfree:
+  name: Run NetMHC tool family tests
+  if: "${{ github.event_name != 'push' || (github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction') }}"
+  runs-on: ubuntu-latest
+  strategy:
+    matrix:
+      NXF_VER:
+        - "24.04.2"
+        - "latest-everything"
+  steps:
+    - name: Check out pipeline code
+      uses: actions/checkout@v3
 
-      - name: Install non-free software
-        env:
-          DECRYPT_PASSPHRASE: ${{ secrets.TEST_NETMHC }}
-        run: |
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | ${GITHUB_WORKSPACE}/bin/decrypt
+    - name: Import GPG private key
+      run: |
+        echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
 
-      - name: Install Nextflow
-        uses: nf-core/setup-nextflow@v1
-        with:
-          version: "${{ matrix.NXF_VER }}"
-      - name: Run pipeline with NetMHCpan
-        run: |
-          nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker --outdir ./results
+    - name: Install non-free software
+      env:
+        GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+      run: |
+        curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt
+    - name: Install Nextflow
+      uses: nf-core/setup-nextflow@v1
+      with:
+        version: "${{ matrix.NXF_VER }}"
+
+    - name: Run pipeline with NetMHCpan
+      run: |
+        nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker --outdir ./results
