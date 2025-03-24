@@ -121,15 +121,10 @@ jobs:
       - name: Check out pipeline code
         uses: actions/checkout@v3
   
-      - name: Import GPG private key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-  
       - name: Install non-free software
-        env:
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | gpg --batch --yes --passphrase "$GPG_PASSPHRASE" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt
+          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | gpg --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt
+  
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1
         with:
