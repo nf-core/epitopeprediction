@@ -123,7 +123,8 @@ jobs:
 
       - name: Install non-free software
         run: |
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | gpg --batch --yes --pinentry-mode=loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt
+          curl -L -o netMHCpan-4.1b.Linux.tar.gz.gpg https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netMHCpan-4.1b.Linux.tar.gz.gpg
+          gpg --batch --yes --pinentry-mode=loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt netMHCpan-4.1b.Linux.tar.gz.gpg
 
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1
