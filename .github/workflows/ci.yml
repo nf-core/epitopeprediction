@@ -120,16 +120,16 @@ jobs:
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v3
-  
+
       - name: Install non-free software
         run: |
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | gpg --batch --yes --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt
-  
+          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netmhcpan41b.tar.gz.gpg | gpg --batch --yes --pinentry-mode=loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt
+
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1
         with:
           version: "${{ matrix.NXF_VER }}"
-  
+
       - name: Run pipeline with NetMHCpan
         run: |
           nextflow run ${GITHUB_WORKSPACE} -profile test_netmhcpan,docker --outdir ./results
