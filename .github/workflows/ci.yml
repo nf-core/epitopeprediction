@@ -125,8 +125,8 @@ jobs:
         env:
           DECRYPT_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
         run: |
-          mkdir -v non-free
-          curl -L https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netMHCpan-4.1b.Linux.tar.gz.gpg | ${GITHUB_WORKSPACE}/bin/decrypt | tar -C non-free -v -x
+          curl -L -o netMHCpan-4.1b.Linux.tar.gz.gpg https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/software/netMHCpan-4.1b.Linux.tar.gz.gpg
+          gpg --batch --yes --pinentry-mode=loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${GITHUB_WORKSPACE}/netMHCpan-4.1b.Linux.tar.gz --decrypt netMHCpan-4.1b.Linux.tar.gz.gpg
 
       - name: Install Nextflow
         uses: nf-core/setup-nextflow@v1
