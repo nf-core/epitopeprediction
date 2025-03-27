@@ -79,7 +79,9 @@ workflow EPITOPEPREDICTION {
     ch_variants_uncompressed = GUNZIP_VCF.out.gunzip.mix( ch_samplesheet.variant_uncompressed )
 
     // Generate Variant Stats for QC report
-    BCFTOOLS_STATS(ch_variants_uncompressed.map{ meta, vcf -> [ meta, vcf, [] ] }, [[:],[]], [[:],[]], [[:],[]], [[:],[]], [[:],[]])
+    BCFTOOLS_STATS(
+        ch_variants_uncompressed
+                .map{ meta, vcf -> [ meta, vcf, [] ] }, [[:],[]], [[:],[]], [[:],[]], [[:],[]], [[:],[]])
     ch_versions = ch_versions.mix(BCFTOOLS_STATS.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ meta, stats -> stats })
 
