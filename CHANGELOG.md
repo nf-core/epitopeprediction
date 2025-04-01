@@ -6,7 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## v3.0.0dev [date]
 
 ### `Added`
--  [#275](https://github.com/nf-core/epitopeprediction/pull/275) - Added bcftools/stats to add MultiQC plots for variant input
+
+- [#275](https://github.com/nf-core/epitopeprediction/pull/275) - Added bcftools/stats to add MultiQC plots for variant input
 
 ### `Changed`
 
