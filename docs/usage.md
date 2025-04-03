@@ -72,8 +72,8 @@ A final samplesheet file consisting of both allele data and different input type
 ```console
 sample,alleles,mhc_class,filename
 GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
-GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.vcf
-GBM_1,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,I,gbm_1_proteins.vcf
+GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.tsv
+GBM_1,A*01:01;A*24:01;B*07:02;B*08:01;C*03:01;C*07:01,I,gbm_1_proteins.fasta
 GBM_2,alleles.txt,I,gbm_2_variants.vcf
 ```
 
