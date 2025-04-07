@@ -59,16 +59,17 @@ workflow EPITOPEPREDICTION {
 
     // Load samplesheet and branch channels based on input type
     samplesheet
-        .branch { meta, filename ->
+        .branch { meta, file ->
+            def filename = file.name
             // TODO: Replace sample with id
             variant_compressed : filename.endsWith('.vcf.gz')
-                return [meta + [input_type:'variant_compressed'], filename ]
+                return [meta + [input_type:'variant_compressed'], file ]
             variant_uncompressed : filename.endsWith('.vcf')
-                return [meta + [input_type:'variant'], filename ]
+                return [meta + [input_type:'variant'], file ]
             peptide : filename.endsWith('.tsv')
-                return [meta + [input_type:'peptide'], filename ]
+                return [meta + [input_type:'peptide'], file ]
             protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
-                return [meta + [input_type:'protein'], filename ]
+                return [meta + [input_type:'protein'], file ]
         }
         .set { ch_samplesheet }
 
