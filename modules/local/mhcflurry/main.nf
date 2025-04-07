@@ -42,7 +42,7 @@ process MHCFLURRY {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$(mhcflurry-predict --version)
+        \$(mhcflurry-predict --version | cut -d' ' -f2)
     END_VERSIONS
     """
 
@@ -53,7 +53,7 @@ process MHCFLURRY {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        \$(mhcflurry-predict --version)
+        \$(mhcflurry-predict --version | cut -d' ' -f2)
     END_VERSIONS
     """
 }

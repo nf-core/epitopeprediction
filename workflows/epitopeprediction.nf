@@ -10,6 +10,7 @@ include { VARIANT_SPLIT               } from '../modules/local/variant_split'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
+include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -151,11 +152,15 @@ workflow EPITOPEPREDICTION {
                             netmhc_software_meta)
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
-    // TODO: Fix meta.id / meta.id
     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple(), "tsv", "tsv")
+
+    // Summarize prediction statistics for MultiQC report
+    SUMMARIZE_RESULTS(CSVTK_CONCAT.out.csv)
+    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ it[1] })
 
     //
     // Collate and save software versions
