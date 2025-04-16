@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## v2.4.0dev [date]
 
+### `Added`
+
+- [#279](https://github.com/nf-core/epitopeprediction/pull/279) - Add `SUMMARIZE_RESULTS` module and MultiQC plots
+
 ### `Changed`
 
 - [#247](https://github.com/nf-core/epitopeprediction/pull/247) - Update to nf-core template `3.0.2`
