@@ -118,7 +118,7 @@ def write_mqc_ba_distribution(df, input_basename, peptide_col_name):
 def wideToLong(df: pd.DataFrame, peptide_col_name: str) -> pd.DataFrame:
     """
     Transforms a wide-format DataFrame with columns following 'predictor_allele_metric' pattern
-    into a long-format DataFrame with peptide sequence, 'predictor', 'allele', and separate columns 
+    into a long-format DataFrame with peptide sequence, 'predictor', 'allele', and separate columns
     for metrics ('BA', 'rank', 'binder').
     
     Parameters:
