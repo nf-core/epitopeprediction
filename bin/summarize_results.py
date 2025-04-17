@@ -120,23 +120,23 @@ def wideToLong(df: pd.DataFrame, peptide_col_name: str) -> pd.DataFrame:
     Transforms a wide-format DataFrame with columns following 'predictor_allele_metric' pattern
     into a long-format DataFrame with peptide sequence, 'predictor', 'allele', and separate columns
     for metrics ('BA', 'rank', 'binder').
-    
+
     Parameters:
     df (pd.DataFrame): The original wide-format DataFrame.
     peptide_col_name (str): Name of the column containing peptide sequences. Default is 'sequence'.
-    
+
     Returns:
     pd.DataFrame: Transformed long-format DataFrame.
-    """   
+    """
     # Create a new dataframe for the long format result
     result_rows = []
     pattern = r"(.+)_(.+)_(BA|rank|binder)$"
-    
+
     # Process each row in the input dataframe
     for _, row in df.iterrows():
         peptide_sequence = row[peptide_col_name]
         predictor_allele_dict = {}
-        
+
         # Process each column in the row
         for col in df.columns:
             match = re.match(pattern, col)
@@ -144,35 +144,35 @@ def wideToLong(df: pd.DataFrame, peptide_col_name: str) -> pd.DataFrame:
                 predictor = match.group(1)
                 allele = match.group(2)
                 metric = match.group(3)
-                
+
                 # Initialize dict entry if not exists
                 if (predictor, allele) not in predictor_allele_dict:
                     predictor_allele_dict[(predictor, allele)] = {}
-                
+
                 # Add metric value
                 predictor_allele_dict[(predictor, allele)][metric] = row[col]
-        
+
         # Create a row for each predictor-allele combination
         for (predictor, allele), metrics in predictor_allele_dict.items():
             # Skip if all values are NaN
             if all(pd.isna(value) for value in metrics.values()):
                 continue
-                
+
             new_row = {
                 peptide_col_name: peptide_sequence,
                 'predictor': predictor,
                 'allele': allele
             }
-            
+
             # Add each metric
             for metric, value in metrics.items():
                 new_row[metric] = value
-                
+
             result_rows.append(new_row)
-    
+
     # Create and return the long-format DataFrame
     result_df = pd.DataFrame(result_rows)
-    
+
     # Ensure standard column order with peptide column first
     column_order = [peptide_col_name, 'predictor', 'allele', 'BA', 'rank', 'binder']
     return result_df[column_order]
