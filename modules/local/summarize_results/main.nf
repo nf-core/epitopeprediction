@@ -11,7 +11,7 @@ process SUMMARIZE_RESULTS {
     tuple val(meta), path(csv)
 
     output:
-	tuple val(meta), path("*.tsv") , emit: tsv
+    tuple val(meta), path("*.tsv") , emit: tsv
     tuple val(meta), path("*.json"), emit: json
     path "versions.yml"            , emit: versions
 

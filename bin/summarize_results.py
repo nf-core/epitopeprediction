@@ -44,7 +44,7 @@ class MultiQC:
         }
         with open(f'{input_basename}_stats_mqc.json', 'w') as f:
             json.dump(mqc_summary_counts_dict, f, indent=2)
-    
+
     def write_mqc_length_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
@@ -63,7 +63,7 @@ class MultiQC:
         }
         with open(f'{input_basename}_len_dist_mqc.json', 'w') as f:
             json.dump(mqc_length_distribution_dict, f, indent=2)
-    
+
     def write_mqc_rank_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
@@ -91,7 +91,7 @@ class MultiQC:
         }
         with open(f'{input_basename}_rank_dist_mqc.json', 'w') as f:
             json.dump(mqc_rank_distribution_dict, f, indent=2)
-    
+
     def write_mqc_ba_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
