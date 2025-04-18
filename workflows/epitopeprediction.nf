@@ -152,15 +152,17 @@ workflow EPITOPEPREDICTION {
                             netmhc_software_meta)
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
-    // Concatenate splitted predictions on sample
+/*     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
-                    .groupTuple(), "tsv", "tsv")
+                    .groupTuple(), "tsv", "tsv") */
 
     // Summarize prediction statistics for MultiQC report
-    SUMMARIZE_RESULTS(CSVTK_CONCAT.out.csv)
-    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
+    SUMMARIZE_RESULTS(MHC_BINDING_PREDICTION.out.predicted
+                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
+                    .groupTuple())
     ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ it[1] })
+    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
     //
     // Collate and save software versions

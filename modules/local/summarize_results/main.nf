@@ -8,11 +8,12 @@ process SUMMARIZE_RESULTS {
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), path(csv)
 
     output:
+	tuple val(meta), path("*.tsv") , emit: tsv
     tuple val(meta), path("*.json"), emit: json
-    path "versions.yml"           , emit: versions
+    path "versions.yml"            , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,7 +24,8 @@ process SUMMARIZE_RESULTS {
 
     """
     summarize_results.py \\
-        --input $tsv \\
+        --input . \\
+        --prefix ${prefix} \\
         --peptide_col_name ${params.peptide_col_name} \\
         $wide_format_output
 

@@ -1,12 +1,15 @@
 #!/usr/bin/env python
+# Written by Jonas Scheid under the MIT license
 
 import argparse
+import math
 import shlex
-from enum import Enum
 import sys
 import typing
-import math
+from pathlib import Path
+from enum import Enum
 
+import numpy as np
 import pandas as pd
 import mhcgnomes
 
@@ -93,6 +96,9 @@ class Version:
                 yaml_str += f"{spaces}{key}: {value}\\n"
         return yaml_str
 
+# -------------------------------------------
+#           Utility Functions
+# -------------------------------------------
 class Utils:
     @staticmethod
     def ic50toBA(ic50: float) -> float:
@@ -105,39 +111,9 @@ class Utils:
         """Convert binding affinity (BA) to IC50."""
         return 10 ** ((1 - BA) * math.log10(50000))
 
-    @staticmethod
-    def longTowide(df: pd.DataFrame) -> pd.DataFrame:
-        """
-        Transforms a long-format DataFrame into a wide-format DataFrame,
-        where 'predictor-allele-BA', 'predictor-allele-rank', and 'predictor-allele-binder'
-        become separate columns.
-
-        Parameters:
-            df (pd.DataFrame): The original long-format DataFrame.
-
-        Returns:
-            pd.DataFrame: Transformed wide-format DataFrame.
-        """
-        # Identify non-predictor columns to keep as index
-        meta_columns = [col for col in df.columns if col not in ['predictor', 'allele', 'BA', 'rank', 'binder']]
-
-        # Pivot to wide format
-        df_pivot = df.pivot_table(
-            index=meta_columns,
-            columns=['predictor', 'allele'],
-            values=['BA', 'rank', 'binder'],
-            aggfunc='first'  # Assuming first occurrence is enough if duplicates exist
-        )
-
-        # Flatten the MultiIndex columns
-        df_pivot.columns = [f"{pred}_{allele}_{val}" for val, pred, allele in df_pivot.columns]
-        df_pivot.reset_index(inplace=True)
-        # Merge with original metadata to ensure peptides are being kept that could not be predicted
-        df_wide = df[meta_columns].drop_duplicates().merge(df_pivot, on=meta_columns, how="left")
-
-        return df_wide
-
-
+# -------------------------------------------
+#           Parse Predictions
+# -------------------------------------------
 class PredictionResult:
     def __init__(self, file_path, alleles, peptide_col_name):
         self.file_path = file_path
@@ -196,6 +172,8 @@ class PredictionResult:
         # Harmonize df to desired output structure
         df.rename(columns={'peptide': self.peptide_col_name, 'human_proteome_rank': 'rank'}, inplace=True)
         df = df[[self.peptide_col_name, 'allele', 'rank', 'BA']]
+        # In rare cases mhcnuggets puts NaN in the rank column, eventhough binding affinity is available
+        df['rank'] = df['rank'].replace({np.nan: np.inf})
         # Use IC50 < 500 as threshold since mhcnuggets provides a different ranking compared to other predictors
         df['binder'] = df['BA'] >= PredictorBindingThreshold.MHCNUGGETS.value
         df['predictor'] = self.predictor
@@ -287,14 +265,8 @@ def main():
     # Merge the prediction results with the source file
     output_df = pd.merge(source_df, output_df, on=args.peptide_col_name, how='left')
 
-    # Transform output to wide format if specified
-    if args.wide_format_output:
-        output_df = Utils.longTowide(output_df)
-        # Add consensus binder column
-        output_df['binder'] = output_df[[col for col in output_df.columns if 'binder' in col]].any(axis=1)
-
     # Write output file
-    output_df.to_csv(f'{args.prefix}_predictions.tsv', sep='\t', index=False)
+    output_df.to_csv(f'{args.prefix}_predictions.csv', index=False)
 
     # Parse versions
     versions_this_module = {}
