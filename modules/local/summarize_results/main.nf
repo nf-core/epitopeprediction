@@ -19,15 +19,15 @@ process SUMMARIZE_RESULTS {
     task.ext.when == null || task.ext.when
 
     script:
+    def args    = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def wide_format_output = params.wide_format_output ? "--wide_format_output" : ""
 
     """
     summarize_results.py \\
         --input . \\
         --prefix ${prefix} \\
         --peptide_col_name ${params.peptide_col_name} \\
-        $wide_format_output
+        $args
 
 
     cat <<-END_VERSIONS > versions.yml
