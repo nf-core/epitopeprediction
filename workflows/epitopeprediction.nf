@@ -26,10 +26,11 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { MULTIQC                     } from '../modules/nf-core/multiqc'
 include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
+include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats'
 include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
 include { CAT_CAT as CAT_FASTA        } from '../modules/nf-core/cat/cat/main'
+include { MULTIQC                     } from '../modules/nf-core/multiqc'
 include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -58,16 +59,17 @@ workflow EPITOPEPREDICTION {
 
     // Load samplesheet and branch channels based on input type
     samplesheet
-        .branch { meta, filename ->
+        .branch { meta, file ->
+            def filename = file.name
             // TODO: Replace sample with id
             variant_compressed : filename.endsWith('.vcf.gz')
-                return [meta + [input_type:'variant_compressed'], filename ]
+                return [meta + [input_type:'variant_compressed'], file ]
             variant_uncompressed : filename.endsWith('.vcf')
-                return [meta + [input_type:'variant'], filename ]
+                return [meta + [input_type:'variant'], file ]
             peptide : filename.endsWith('.tsv')
-                return [meta + [input_type:'peptide'], filename ]
+                return [meta + [input_type:'peptide'], file ]
             protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
-                return [meta + [input_type:'protein'], filename ]
+                return [meta + [input_type:'protein'], file ]
         }
         .set { ch_samplesheet }
 
@@ -76,6 +78,13 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
 
     ch_variants_uncompressed = GUNZIP_VCF.out.gunzip.mix( ch_samplesheet.variant_uncompressed )
+
+    // Generate Variant Stats for QC report
+    BCFTOOLS_STATS(
+        ch_variants_uncompressed
+                .map{ meta, vcf -> [ meta, vcf, [] ] }, [[:],[]], [[:],[]], [[:],[]], [[:],[]], [[:],[]])
+    ch_versions = ch_versions.mix(BCFTOOLS_STATS.out.versions)
+    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ meta, stats -> stats })
 
     // (re)combine different input file types
     ch_samples_uncompressed = ch_samplesheet.protein

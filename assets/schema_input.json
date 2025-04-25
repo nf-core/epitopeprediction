@@ -26,6 +26,7 @@
             },
             "filename": {
                 "type": "string",
+                "format": "file-path",
                 "pattern": "^\\S+\\.(vcf|vcf.gz|tsv|fasta|fa)$",
                 "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'",
                 "exists": true
