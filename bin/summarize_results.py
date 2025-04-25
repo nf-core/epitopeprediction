@@ -67,8 +67,10 @@ class MultiQC:
     def write_mqc_rank_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
-        best_rank = df_valid[df_valid['predictor'] == best_predictor].groupby([peptide_col_name, 'allele']).apply(
-            lambda x: x.loc[x['rank'].idxmin(skipna=True)]
+        best_rank = (
+            df_valid[df_valid['predictor'] == best_predictor]
+                .groupby([peptide_col_name, 'allele'], group_keys=False)
+                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)])
         )
         bins = np.linspace(0, 10, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -95,8 +97,10 @@ class MultiQC:
     def write_mqc_ba_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
-        best_ba = df_valid[df_valid['predictor'] == best_predictor].groupby([peptide_col_name, 'allele']).apply(
-            lambda x: x.loc[x['BA'].idxmax(skipna=True)]
+        best_ba = (
+            df_valid[df_valid['predictor'] == best_predictor]
+                .groupby([peptide_col_name, 'allele'], group_keys=False)
+                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)])
         )
         bins = np.linspace(0, 1, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -120,8 +124,79 @@ class MultiQC:
         with open(f'{input_basename}_ba_dist_mqc.json', 'w') as f:
             json.dump(mqc_ba_distribution_dict, f, indent=2)
 
+# -------------------------------------------
+#           Utility Functions
+# -------------------------------------------
 class Utils:
-    def long2wide(df: pd.DataFrame) -> pd.DataFrame:
+    def summarize_best_per_predictor(df: pd.DataFrame, peptide_col: str) -> pd.DataFrame:
+        """
+        Summarize per-peptide best binding predictions from multiple predictors.
+
+        For each predictor present in `df['predictor']`:
+          - If predictor ∈ {'mhcflurry', 'netmhcpan', 'netmhciipan'}, select the allele with the lowest 'rank'.
+          - If predictor ∈ {'mhcnuggets', 'mhcnuggetsii'}, select the allele with the highest 'BA'.
+
+        The returned DataFrame is indexed by peptide (column `peptide_col`) and contains:
+            best_value_<predictor> : float
+            best_allele_<predictor> : str
+            best_allele            : str  # comma‑joined unique alleles across predictors
+            binder                 : bool # True if any predictor flags as binder
+
+        Parameters
+        ----------
+        df : pd.DataFrame
+            Input DataFrame in long format. Must contain columns:
+            [peptide_col, 'predictor', 'allele', 'rank', 'BA', 'binder'].
+        peptide_col : str
+            Name of the peptide column in `df`.
+
+        Returns
+        -------
+        pd.DataFrame
+            Wide-format summary indexed by peptide with best_value_*, best_allele_*,
+            aggregated 'best_allele' and global 'binder' columns.
+        """
+        rank_metric_best = {'mhcflurry', 'netmhcpan', 'netmhciipan'}
+        ba_metric_best   = {'mhcnuggets', 'mhcnuggetsii'}
+
+        # pick the single best row per (predictor, peptide)
+        def _pick_best(group):
+            pred = group.name[0]
+            if pred in rank_metric_best:
+                return group.loc[group['rank'].idxmin()]
+            else:
+                return group.loc[group['BA'].idxmax()]
+
+        best = (
+            df
+            .dropna(subset=['predictor'])
+            .groupby(['predictor', peptide_col], group_keys=False)
+            .apply(_pick_best)
+        )
+
+        # now build summary
+        summary_df = pd.DataFrame(index=best[peptide_col].unique())
+        summary_df.index.name = peptide_col
+
+        for pred in best['predictor'].unique():
+            sel = best[best['predictor'] == pred].set_index(peptide_col)
+            val_col = 'rank' if pred in rank_metric_best else 'BA'
+            summary_df[f'best_value_{pred}'] = sel[val_col]
+            summary_df[f'best_allele_{pred}'] = sel['allele']
+
+        # aggregate all per‑predictor alleles into one column
+        allele_cols = [c for c in summary_df.columns if c.startswith('best_allele_')]
+        summary_df['best_allele'] = (
+            summary_df[allele_cols]
+                .apply(lambda row: ','.join(sorted({a for a in row if pd.notna(a)})), axis=1)
+        )
+        # Add global binder column if any of the predictors report a binder
+        summary_df['binder'] = summary_df[[col for col in summary_df if 'binder' in col]].any(axis=1, skipna=False)
+
+        return summary_df.reset_index()
+
+
+    def long2wide(df: pd.DataFrame, peptide_col: str) -> pd.DataFrame:
         """
         Transforms a long-format DataFrame into a wide-format DataFrame,
         where 'predictor-allele-BA', 'predictor-allele-rank', and 'predictor-allele-binder'
@@ -150,8 +225,15 @@ class Utils:
         # Merge with original metadata to ensure peptides are being kept that could not be predicted
         df_wide = df[meta_columns].drop_duplicates().merge(df_pivot, on=meta_columns, how="left")
 
+        # Merge summary columns for best values and best alleles into the wide DataFrame
+        summary_df = Utils.summarize_best_per_predictor(df, peptide_col)
+        df_wide = df_wide.merge(summary_df, on=peptide_col, how='left')
+
         return df_wide
 
+# -------------------------------------------
+#           Main Function
+# -------------------------------------------
 def main():
     parser = argparse.ArgumentParser(description='Process peptide binding prediction TSV and generate MultiQC input.')
     parser.add_argument('--input', required=True, help='Path to directory containing the TSV files to be concatenated')
