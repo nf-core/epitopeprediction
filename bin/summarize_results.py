@@ -252,7 +252,7 @@ def main():
     MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)
 
     if args.wide_format_output:
-        df = Utils.long2wide(df)
+        df = Utils.long2wide(df, args.peptide_col_name)
 
     # Write output file
     df.to_csv(f'{args.prefix}.tsv', sep='\t', index=False)
