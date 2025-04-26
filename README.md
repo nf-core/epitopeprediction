@@ -20,7 +20,7 @@
 ## Introduction
 
 **nf-core/epitopeprediction** is a bioinformatics best-practice analysis pipeline for epitope prediction and annotation.
-The pipeline performs epitope predictions for a given set of variants or peptides directly using state of the art prediction tools. Additionally, resulting prediction results can be annotated with metadata.
+The pipeline performs epitope predictions for a given set of variants, proteins, or peptides directly using state of the art prediction tools. The pipeline can be used to generate putative neo-epitopes with variant input, scan one or more proteins for binding hotspots or darkspots analysis, and perform binding predictions on immunopeptidomics data with peptide input.
 
 Supported prediction tools:
 
@@ -50,10 +50,11 @@ First, prepare a samplesheet with your input data that looks as follows:
 ```csv
 sample,alleles,mhc_class,filename
 GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
-GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.vcf
+GBM_2,A*01:01;A*24:02;B*07:02;B*68:01;C*07:02;C*15:01,I,gbm_1_proteins.fasta
+GBM_3,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_3_peptides.tsv
 ```
 
-Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins).
+Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins). Alleles do not necessarily need to be in this format. We rely on [MHCgnomes](https://github.com/pirl-unc/mhcgnomes) to parse variations of nomenclatures into a uniform format.
 
 Now, you can run the pipeline using:
 
