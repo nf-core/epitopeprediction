@@ -12,20 +12,20 @@ The directories listed below will be created in the results directory after the 
 
 ## Variant prediction
 
-[Epytope](https://github.com/KohlbacherLab/epytope) is used to parse *annotated* variants (by [SnpEff](http://pcingola.> github.io/SnpEff/) or [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)). Based on this information, epytope generates all possible mutated peptides within the length boundary set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Essentially the same peptide generation from proteins is applied when specifying `.fasta` files in the samplesheet.
+[Epytope](https://github.com/KohlbacherLab/epytope) is used to parse _annotated_ variants (by [SnpEff](http://pcingola.> github.io/SnpEff/) or [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)). Based on this information, epytope generates all possible mutated peptides within the length boundary set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Essentially the same peptide generation from proteins is applied when specifying `.fasta` files in the samplesheet.
 
 **Example**: Suppose you have the missense mutation `p.Cys138Tyr` in `ENSP00000235347` and you set `min_peptide_length_class[I|II] = max_peptide_length_class[I|II] = 9`. A subset of the table epytope generates looks like this:
-| Mutated       | Wildtype      | Metadata
+| Mutated | Wildtype | Metadata
 | ------------- | ------------- | ------------- |
-| SKRQTVED**Y**     | SKRQTVEDC     | ...
-| KRQTVED**Y**P     | KRQTVEDCP     | ...
-| RQTVED**Y**PR     | RQTVEDCPR     | ...
-| QTVED**Y**PRM     | QTVEDCPRM     | ...
-| TVED**Y**PRMG     | TVEDCPRMG     | ...
-| VED**Y**PRMGE     | VEDCPRMGE     | ...
-| ED**Y**PRMGEH     | EDCPRMGEH     | ...
-| D**Y**PRMGEHQ     | DCPRMGEHQ     | ...
-| **Y**PRMGEHQP     | CPRMGEHQP     | ...
+| SKRQTVED**Y** | SKRQTVEDC | ...
+| KRQTVED**Y**P | KRQTVEDCP | ...
+| RQTVED**Y**PR | RQTVEDCPR | ...
+| QTVED**Y**PRM | QTVEDCPRM | ...
+| TVED**Y**PRMG | TVEDCPRMG | ...
+| VED**Y**PRMGE | VEDCPRMGE | ...
+| ED**Y**PRMGEH | EDCPRMGEH | ...
+| D**Y**PRMGEHQ | DCPRMGEHQ | ...
+| **Y**PRMGEHQP | CPRMGEHQP | ...
 
 Tables are written per chromosome in a `tsv`.
 
@@ -42,7 +42,7 @@ These generated mutated peptides are then passed to the MHC binding prediction s
 Depending on the specified predictor(s) in `--tools`, the tools individual binding prediction files are written in the respective directories. The number of input peptides for the MHC binding subworkflow is splitted into **chunks** to enable scalability.
 The chunksize is controlled by `--peptides_split_minchunksize` and `--peptides_split_maxchunks`.
 
-**Tools output directory:** 
+**Tools output directory:**
 
 - `mhcflurry/[sample]_chunk_[0-9]_predicted_mhcflurry.csv`
 - `mhcnuggets/[sample]_chunk_[0-9]_predicted_mhcnuggets.csv`
@@ -54,20 +54,19 @@ These predictor-specific output files are harmonized and chunks are merged on th
 
 **Output directory:** `predictions/[sample].tsv`.
 
- Output files *always* contain the columns `--peptide_col_name` (default:'sequence'), `allele`, `BA`, `rank`, `binder`, `predictor`. All further metadata columns are parsed into the output files.
- 
- An example prediction result looks like this in TSV format:
+Output files _always_ contain the columns `--peptide_col_name` (default:'sequence'), `allele`, `BA`, `rank`, `binder`, `predictor`. All further metadata columns are parsed into the output files.
 
-| metadata  | sequence      | allele       | BA         | rank        | binder | predictor  |
-| --------- | ------------- | ------------ | ---------- | ----------- | ------ | ---------- |
-| peptide1  | RLDSHLHTHVY   | HLA-A*01:01  | 0.416      | 0.1215      | True   | netmhcpan  |
-| peptide1  | RLDSHLHTHVY   | HLA-A*01:01  | 0.3873     | 0.0007      | False  | mhcnuggets |
-| peptide1  | RLDSHLHTHVY   | HLA-A*01:01  | 0.6072     | 0.0465      | True   | mhcflurry  |
-| peptide1  | RLDSHLHTHVY   | HLA-A*01:01  | 0.6072     | 0.0465      | True   | mhcflurry  |
-| peptide2  | VTAVIRSRRY    | HLA-A*68:01  | 0.3189     | 0.7457      | True   | netmhcpan  |
-| peptide2  | VTAVIRSRRY    |              |            |             |        |            |
-| peptide2  | VTAVIRSRRY    | HLA-A*68:01  | 0.3455     | 2.5875      | False  | mhcflurry  |
+An example prediction result looks like this in TSV format:
 
+| metadata | sequence    | allele       | BA     | rank   | binder | predictor  |
+| -------- | ----------- | ------------ | ------ | ------ | ------ | ---------- |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.416  | 0.1215 | True   | netmhcpan  |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.3873 | 0.0007 | False  | mhcnuggets |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.6072 | 0.0465 | True   | mhcflurry  |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.6072 | 0.0465 | True   | mhcflurry  |
+| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3189 | 0.7457 | True   | netmhcpan  |
+| peptide2 | VTAVIRSRRY  |              |        |        |        |            |
+| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3455 | 2.5875 | False  | mhcflurry  |
 
 The prediction results are given as allele-specific **Binding Affinity (BA)** and **percentile ranks (rank)** per peptide. The computation of these values depends on the applied prediction method.
 Binding Affinity represents the predicted strength of the interaction between a peptide and an MHC molecule. It is derived from the predicted IC50 value (in nanomolar, nM) and normalized to a scale between 0 and 1 using the formula:
@@ -85,16 +84,17 @@ Percentile rank (rank) indicates the relative binding strength of a peptide comp
 
 An example of the wide format looks like this:
 
-| metadata | sequence    | allele     | netmhcpan_BA | netmhcpan_rank | netmhcpan_binder | mhcnuggets_BA | mhcnuggets_rank | mhcnuggets_binder | mhcflurry_BA | mhcflurry_rank | mhcflurry_binder |
-|----------|-------------|------------|--------------|----------------|------------------|---------------|-----------------|-------------------|--------------|----------------|------------------|
-| peptide1 | RLDSHLHTHVY | HLA-A*01:01 | 0.416        | 0.1215         | True             | 0.3873        | 0.0007          | False             | 0.6072       | 0.0465         | True             |
-| peptide2 | VTAVIRSRRY  | HLA-A*68:01 | 0.3189       | 0.7457         | True             |               |                 |                   | 0.3455       | 2.5875         | False            |
+| metadata | sequence    | allele       | netmhcpan_BA | netmhcpan_rank | netmhcpan_binder | mhcnuggets_BA | mhcnuggets_rank | mhcnuggets_binder | mhcflurry_BA | mhcflurry_rank | mhcflurry_binder |
+| -------- | ----------- | ------------ | ------------ | -------------- | ---------------- | ------------- | --------------- | ----------------- | ------------ | -------------- | ---------------- |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.416        | 0.1215         | True             | 0.3873        | 0.0007          | False             | 0.6072       | 0.0465         | True             |
+| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3189       | 0.7457         | True             |               |                 |                   | 0.3455       | 2.5875         | False            |
 
 ## MultiQC
 
 Binding prediction results are summarized into tables, such as the number of binders/non-binders. Binding prediction score distributions are also highlighted to give the user an appropriate overview of the binding prediction results.
 
 **Output directory:** `multiqc/`
+
 - `multiqc_data/`
   - Underlying data to generate MultiQC plots
 - `multiqc_plots/`
@@ -103,7 +103,6 @@ Binding prediction results are summarized into tables, such as the number of bin
   - The main multiQC report comprising statistics and distributions of hte binding prediction results.
 
 For more information about how to use MultiQC reports, see <http://multiqc.info>.
-
 
 ### Pipeline information
 
