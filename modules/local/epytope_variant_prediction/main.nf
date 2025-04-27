@@ -18,8 +18,6 @@ process EPYTOPE_VARIANT_PREDICTION {
     task.ext.when == null || task.ext.when
 
     script:
-    // Additions to the argument command need to go to the beginning.
-    // Argument list needs to end with --peptides or --somatic_mutation
     def args = task.ext.args
     def prefix = task.ext.prefix ?: "${meta.id}"
     def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_classI : params.min_peptide_length_classII
@@ -43,10 +41,10 @@ process EPYTOPE_VARIANT_PREDICTION {
     """
 
     stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${splitted.baseName}.json
-    touch ${splitted.baseName}.tsv
-    touch ${splitted.baseName}.fasta
+    touch ${prefix}.tsv
+    touch ${prefix}.fasta
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -54,8 +52,6 @@ process EPYTOPE_VARIANT_PREDICTION {
         epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
         pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
         pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
-        mhcflurry: \$(mhcflurry-predict --version 2>&1 | sed 's/^mhcflurry //; s/ .*\$//')
-        mhcnuggets: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)")
     END_VERSIONS
     """
 }
