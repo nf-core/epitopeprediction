@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v3.0.0dev [date]
+## 3.0.0 - Wanne - 2025-05-02
 
 ### `Added`
 
@@ -13,6 +13,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#247](https://github.com/nf-core/epitopeprediction/pull/247) - Update to nf-core template `3.0.2`
 - [#255](https://github.com/nf-core/epitopeprediction/pull/256) - Update to nf-core template `3.1.2`
+- [#250](https://github.com/nf-core/epitopeprediction/pull/250) - Implement `netmhcpan` module
+- [#252](https://github.com/nf-core/epitopeprediction/pull/252) - Implement `netmhciipan` module
+- [#253](https://github.com/nf-core/epitopeprediction/pull/253) - Implement `mhcflurry` module
+- [#259](https://github.com/nf-core/epitopeprediction/pull/259) - Implement `mhcnuggets` and `mhcnuggetsii` module
+- [#260](https://github.com/nf-core/epitopeprediction/pull/260), [#270](https://github.com/nf-core/epitopeprediction/pull/270) - Major refactoring to new, modular MHC binding subworkflow (see Meta-Issue [#205](https://github.com/nf-core/epitopeprediction/issues/205))
+- [#263](https://github.com/nf-core/epitopeprediction/pull/263) - Rearrange supported alleles per predictor
+- [#266](https://github.com/nf-core/epitopeprediction/pull/266), [#268](https://github.com/nf-core/epitopeprediction/pull/268) - Refactor variant prediction with `epytope`
 
 ### `Fixed`
 
