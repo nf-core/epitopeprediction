@@ -15,11 +15,6 @@
                         "git_sha": "08108058ea36a63f141c25c4e75f9f872a5b2296",
                         "installed_by": ["modules"]
                     },
-                    "csvtk/concat": {
-                        "branch": "master",
-                        "git_sha": "aa5c23023134cf2d8b75a95d53557890e40261b9",
-                        "installed_by": ["modules"]
-                    },
                     "gunzip": {
                         "branch": "master",
                         "git_sha": "ce35ce92566b3328b405253543b9b2b4d4e5f4f7",

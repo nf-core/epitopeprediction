@@ -13,3 +13,9 @@ report_section_order:
 export_plots: true
 
 disable_version_detection: true
+
+module_order:
+  - peptide_binding_prediction_stats
+  - binder_length_distribution
+  - percentile_rank_distribution
+  - binding_affinity_distribution

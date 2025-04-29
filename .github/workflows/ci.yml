@@ -94,7 +94,15 @@ jobs:
         NXF_VER:
           - "24.04.2"
           - "latest-everything"
-        tests: ["test_grch38", "test_peptides", "test_proteins", "test_mhcnuggets", "test_mhcflurry"]
+        tests:
+          [
+            "test_grch38",
+            "test_peptides",
+            "test_proteins",
+            "test_mhcnuggets",
+            "test_mhcflurry",
+            "test_wide_format_output",
+          ]
     steps:
       - name: Check out pipeline code
         uses: actions/checkout@v3

@@ -10,6 +10,7 @@ include { VARIANT_SPLIT               } from '../modules/local/variant_split'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
+include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -29,7 +30,6 @@ include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
 include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats'
 include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
 include { CAT_CAT as CAT_FASTA        } from '../modules/nf-core/cat/cat/main'
-include { CSVTK_CONCAT                } from '../modules/nf-core/csvtk/concat'
 include { MULTIQC                     } from '../modules/nf-core/multiqc'
 include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -160,11 +160,17 @@ workflow EPITOPEPREDICTION {
                             netmhc_software_meta)
     ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
-    // TODO: Fix meta.id / meta.id
-    // Concatenate splitted predictions on sample
+/*     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
-                    .groupTuple(), "tsv", "tsv")
+                    .groupTuple(), "tsv", "tsv") */
+
+    // Summarize prediction statistics for MultiQC report
+    SUMMARIZE_RESULTS(MHC_BINDING_PREDICTION.out.predicted
+                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
+                    .groupTuple())
+    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ it[1] })
+    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
     //
     // Collate and save software versions

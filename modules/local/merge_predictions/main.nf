@@ -11,8 +11,8 @@ process MERGE_PREDICTIONS {
     tuple val(meta), path(prediction_files), path(source_file)
 
     output:
-    tuple val(meta), path("*.tsv"), emit: merged
-    path "versions.yml"           , emit: versions
+    tuple val(meta), path("*.csv") , emit: merged
+    path "versions.yml"            , emit: versions
 
     script:
     template "merge_predictions.py"
@@ -21,7 +21,7 @@ process MERGE_PREDICTIONS {
     def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
-    touch merged_prediction.tsv
+    touch merged_prediction.csv
     touch versions.yml
     """
 }

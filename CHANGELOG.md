@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#275](https://github.com/nf-core/epitopeprediction/pull/275) - Added bcftools/stats to add MultiQC plots for variant input
 
+### `Added`
+
+- [#279](https://github.com/nf-core/epitopeprediction/pull/279) - Add `SUMMARIZE_RESULTS` module and MultiQC plots. BREAKING output structure change from`<outdir>/predictions/<meta.id>/<meta.id>.tsv` to `<outdir>/predictions/<meta.id>.tsv`
+
 ### `Changed`
 
 - [#247](https://github.com/nf-core/epitopeprediction/pull/247) - Update to nf-core template `3.0.2`
