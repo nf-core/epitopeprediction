@@ -96,7 +96,7 @@
                 },
                 "tools": {
                     "type": "string",
-                    "default": "mhcflurry",
+                    "default": "mhcnuggets",
                     "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`,`netmhcpan`,`netmhciipan`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
