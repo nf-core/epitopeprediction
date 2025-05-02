@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#260](https://github.com/nf-core/epitopeprediction/pull/260), [#270](https://github.com/nf-core/epitopeprediction/pull/270) - Major refactoring to new, modular MHC binding subworkflow (see Meta-Issue [#205](https://github.com/nf-core/epitopeprediction/issues/205))
 - [#263](https://github.com/nf-core/epitopeprediction/pull/263) - Rearrange supported alleles per predictor
 - [#266](https://github.com/nf-core/epitopeprediction/pull/266), [#268](https://github.com/nf-core/epitopeprediction/pull/268) - Refactor variant prediction with `epytope`
+- [#282](https://github.com/nf-core/epitopeprediction/pull/282) - Update to nf-core template `3.2.1`
 
 ### `Fixed`
 
