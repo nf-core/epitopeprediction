@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-# Written by Jonas Scheid under the MIT license
+"""
+Processes peptide binding prediction TSV files, computes binding statistics for MultiQC,
+and optionally transforms data into wide format with summarized predictor results.
+
+Author: Jonas Scheid
+License: MIT
+"""
 
 import argparse
 import glob

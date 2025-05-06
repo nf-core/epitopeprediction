@@ -27,6 +27,12 @@ process PREPARE_PREDICTION_INPUT {
     touch ${prefix}_mhcnuggetsii_input.tsv
     touch ${prefix}_netmhcpan_input.tsv
     touch ${prefix}_netmhciipan_input.tsv
-    touch versions.yml
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
+        mhcgnomes: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcgnomes').version)")
+    END_VERSIONS
     """
 }

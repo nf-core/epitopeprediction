@@ -11,24 +11,28 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "Sample name must be provided and cannot contain spaces",
+                "description": "Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.",
                 "meta": ["id"]
             },
             "alleles": {
                 "type": "string",
                 "errorMessage": "Alleles must be provided as string or file with extension '.txt'. Please check the documentation for more information.",
+                "description": "A string that consists of the patient's alleles (separated by ';'), or a full path to a allele '.txt' file where each allele is saved on a row.",
                 "meta": ["alleles"]
             },
             "mhc_class": {
                 "type": "string",
-                "pattern": "^(I|II|H-2)$",
-                "errorMessage": "The MHC class must be provided. Valid values: 'I', 'II' or 'H-2'",
+                "pattern": "^(I|II)$",
+                "errorMessage": "The MHC class must be provided. Valid values: 'I' or 'II'",
+                "description": "Specifies the MHC class for which the prediction should be performed. Valid values are: `I` or `II`.",
                 "meta": ["mhc_class"]
             },
             "filename": {
                 "type": "string",
                 "format": "file-path",
                 "pattern": "^\\S+\\.(vcf|vcf.gz|tsv|fasta|fa)$",
-                "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta', '.fa'",
+                "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta'",
+                "description": "Path to a variant, protein or peptide file ('.vcf', '.vcf.gz','.fasta', 'tsv')",
                 "exists": true
             }
         },

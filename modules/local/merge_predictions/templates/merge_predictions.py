@@ -1,6 +1,11 @@
 #!/usr/bin/env python
-# Written by Jonas Scheid under the MIT license
+"""
+Parses and harmonizes MHC prediction outputs from multiple binding predictors,
+merges with source metadata, and writes unified results to CSV.
 
+Author: Jonas Scheid
+License: MIT
+"""
 import argparse
 import math
 import shlex

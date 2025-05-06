@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-# Written by Christopher Mohr and released under the MIT license (2022).
+"""
+Splits a VCF file into multiple smaller VCFs based on variant count and genomic distance,
+ensuring variants within proximity remain in the same chunk. Metadata headers are preserved.
+
+Author: Christopher Mohr
+License: MIT
+"""
 
 import argparse
 import csv

@@ -40,6 +40,7 @@ process SUMMARIZE_RESULTS {
     def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
+    touch ${prefix}.tsv
     touch ${prefix}_mqc.json
 
     cat <<-END_VERSIONS > versions.yml
