@@ -18,10 +18,15 @@ process MERGE_PREDICTIONS {
     template "merge_predictions.py"
 
     stub:
-    def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
-    touch merged_prediction.csv
-    touch versions.yml
+    touch ${prefix}_predictions.csv
+
+    cat <<-END_VERSIONS > versions.yml
+    "${task.process}":
+        python: \$(python --version 2>&1 | sed 's/Python //g')
+        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
+        mhcgnomes: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcgnomes').version)")
+    END_VERSIONS
     """
 }
