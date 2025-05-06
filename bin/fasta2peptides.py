@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+"""
+Generates k-mer peptides from a protein FASTA file, groups identical peptides
+by sequence across proteins, and outputs them in TSV format per peptide length k.
+
+Author: Jonas Scheid
+License: MIT
+"""
 
 import argparse
 import logging

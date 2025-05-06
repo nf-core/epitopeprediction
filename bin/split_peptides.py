@@ -1,5 +1,11 @@
 #!/usr/bin/env python3
-# Written by Jonas Scheid the MIT license (2025).
+"""
+Splits a peptide TSV file into smaller chunks based on a minimum number of peptides
+and a maximum number of output files, preserving the header in each chunk.
+
+Author: Jonas Scheid
+License: MIT
+"""
 
 import argparse
 import math

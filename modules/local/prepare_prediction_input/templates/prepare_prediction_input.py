@@ -1,5 +1,11 @@
 #!/usr/bin/env python
+"""
+Prepares input files for MHC binding prediction tools by filtering peptides and alleles,
+validating sequences, and formatting inputs per tool requirements.
 
+Author: Jonas Scheid
+License: MIT
+"""
 import argparse
 import shlex
 import json

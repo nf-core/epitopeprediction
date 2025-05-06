@@ -1,5 +1,10 @@
 #!/usr/bin/env python
+"""
+Runs MHCnuggets predictions for specified alleles and merges results.
 
+Author: Jonas Scheid
+License: MIT
+"""
 import argparse
 import shlex
 import logging
