@@ -9,7 +9,7 @@
 [![GitHub Actions Linting Status](https://github.com/nf-core/epitopeprediction/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/epitopeprediction/actions/workflows/linting.yml)[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/epitopeprediction/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.3564666-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.3564666)
 [![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
-[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A523.04.0-23aa62.svg)](https://www.nextflow.io/)
+[![Nextflow](https://img.shields.io/badge/nextflow%20DSL2-%E2%89%A524.04.2-23aa62.svg)](https://www.nextflow.io/)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
@@ -20,18 +20,15 @@
 ## Introduction
 
 **nf-core/epitopeprediction** is a bioinformatics best-practice analysis pipeline for epitope prediction and annotation.
-The pipeline performs epitope predictions for a given set of variants or peptides directly using state of the art prediction tools. Additionally, resulting prediction results can be annotated with metadata.
+The pipeline performs epitope predictions for a given set of variants, proteins, or peptides directly using state of the art prediction tools. The pipeline can be used to generate putative neo-epitopes with variant input, scan one or more proteins for binding hotspots or darkspots analysis, and perform binding predictions on immunopeptidomics data with peptide input.
 
 Supported prediction tools:
 
-- `syfpeithi`
 - `mhcflurry`
-- `mhcnuggets-class-1`
-- `mhcnuggets-class-2`
-- `netmhcpan-4.0`
-- `netmhcpan-4.1`
-- `netmhc-4.0`
-- `netmhciipan-4.1`
+- `mhcnuggets`
+- `mhcnuggetsii`
+- `netmhcpan`
+- `netmhciipan`
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
@@ -53,10 +50,11 @@ First, prepare a samplesheet with your input data that looks as follows:
 ```csv
 sample,alleles,mhc_class,filename
 GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
-GBM_1,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_1_peptides.vcf
+GBM_2,A*01:01;A*24:02;B*07:02;B*68:01;C*07:02;C*15:01,I,gbm_1_proteins.fasta
+GBM_3,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_3_peptides.tsv
 ```
 
-Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins).
+Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins). Alleles do not necessarily need to be in this format. We rely on [MHCgnomes](https://github.com/pirl-unc/mhcgnomes) to parse variations of nomenclatures into a uniform format.
 
 Now, you can run the pipeline using:
 
@@ -68,8 +66,7 @@ nextflow run nf-core/epitopeprediction \
 ```
 
 > [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_;
-> see [docs](https://nf-co.re/usage/configuration#custom-configuration-files).
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
 
 For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/epitopeprediction/usage) and the [parameter documentation](https://nf-co.re/epitopeprediction/parameters).
 
@@ -81,9 +78,9 @@ For more details about the output files and reports, please refer to the
 
 ## Credits
 
-nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) from [Boehringer Ingelheim](https://www.boehringer-ingelheim.de) and [Alexander Peltzer](https://github.com/apeltzer) from [Boehringer Ingelheim](https://www.boehringer-ingelheim.de). Further contributions were made by [Sabrina Krakau](https://github.com/skrakau) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/) and [Leon Kuchenbecker](https://github.com/lkuchenb) from the [Kohlbacher Lab](https://kohlbacherlab.org/).
+nf-core/epitopeprediction was originally written by [Christopher Mohr](https://github.com/christopher-mohr) and [Alexander Peltzer](https://github.com/apeltzer). Further contributions were made by [Sabrina Krakau](https://github.com/skrakau) and [Leon Kuchenbecker](https://github.com/lkuchenb).
 
-The pipeline was converted to Nextflow DSL2 by [Christopher Mohr](https://github.com/christopher-mohr), [Marissa Dubbelaar](https://github.com/marissaDubbelaar) from [Clinical Collaboration Unit Translational Immunology](https://www.medizin.uni-tuebingen.de/en-de/das-klinikum/einrichtungen/kliniken/medizinische-klinik/kke-translationale-immunologie) and [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/), [Gisela Gabernet](https://github.com/ggabernet) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/), and [Jonas Scheid](https://github.com/jonasscheid) from [Quantitative Biology Center](https://uni-tuebingen.de/forschung/forschungsinfrastruktur/zentrum-fuer-quantitative-biologie-qbic/)
+The pipeline was converted to Nextflow DSL2 by [Christopher Mohr](https://github.com/christopher-mohr), [Marissa Dubbelaar](https://github.com/marissaDubbelaar), [Gisela Gabernet](https://github.com/ggabernet), and [Jonas Scheid](https://github.com/jonasscheid) and further modularized by [Jonas Scheid](https://github.com/jonasscheid) and [Alina Bauer](https://github.com/alina-bauer).
 
 ## Contributions and Support
 

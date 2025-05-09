@@ -3,6 +3,34 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.0.0 - Wanne - 2025-05-09
+
+### `Added`
+
+- [#275](https://github.com/nf-core/epitopeprediction/pull/275) - Added bcftools/stats to add MultiQC plots for variant input
+
+### `Added`
+
+- [#279](https://github.com/nf-core/epitopeprediction/pull/279) - Add `SUMMARIZE_RESULTS` module and MultiQC plots. BREAKING output structure change from`<outdir>/predictions/<meta.id>/<meta.id>.tsv` to `<outdir>/predictions/<meta.id>.tsv`
+- [#270](https://github.com/nf-core/epitopeprediction/pull/270) Added option `--wide_format_output` to provide wide format output with additional information instead of long format (default)
+
+### `Changed`
+
+- [#247](https://github.com/nf-core/epitopeprediction/pull/247) - Update to nf-core template `3.0.2`
+- [#255](https://github.com/nf-core/epitopeprediction/pull/256) - Update to nf-core template `3.1.2`
+- [#250](https://github.com/nf-core/epitopeprediction/pull/250) - Implemented `netmhcpan` module. Removed legacy netmhc tools. Only the latest netmhcpan and netmhciipan versions will be supported (netmhcpan-4.1b, netmhciipan-4.3e)
+- [#252](https://github.com/nf-core/epitopeprediction/pull/252) - Implemented `netmhciipan` module
+- [#253](https://github.com/nf-core/epitopeprediction/pull/253) - Implemented `mhcflurry` module
+- [#259](https://github.com/nf-core/epitopeprediction/pull/259) - Implemented `mhcnuggets` and `mhcnuggetsii` module
+- [#260](https://github.com/nf-core/epitopeprediction/pull/260), [#270](https://github.com/nf-core/epitopeprediction/pull/270) - Major refactoring to new, modular MHC binding subworkflow (see Meta-Issue [#205](https://github.com/nf-core/epitopeprediction/issues/205)). Removed legacy predictor `syfpeithi`. Predictors that can be specified via `--tools` are: `mhcflurry,mhcnuggets(default),mhcnuggetsii,netmhcpan,netmhciipan`. Changed `--min_peptide_length` and `max_peptide_length` to `min_peptide_length_classI` and `--max_peptide_length_classI`.
+- [#263](https://github.com/nf-core/epitopeprediction/pull/263) - Rearrange supported alleles per predictor
+- [#266](https://github.com/nf-core/epitopeprediction/pull/266), [#268](https://github.com/nf-core/epitopeprediction/pull/268) - Refactor variant prediction with `epytope`
+- [#282](https://github.com/nf-core/epitopeprediction/pull/282) - Update to nf-core template `3.2.1`
+
+### `Fixed`
+
+- [#278](https://github.com/nf-core/epitopeprediction/pull/278) - Fixed an issue where relative paths were not properly staged
+
 ## v2.3.1 - Oesterberg - 2024-05-17
 
 ### `Changed`

@@ -1,10 +1,10 @@
 {
-    "$schema": "http://json-schema.org/draft-07/schema",
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
     "$id": "https://raw.githubusercontent.com/nf-core/epitopeprediction/master/nextflow_schema.json",
     "title": "nf-core/epitopeprediction pipeline parameters",
     "description": "A fully reproducible and state of the art epitope prediction pipeline.",
     "type": "object",
-    "definitions": {
+    "$defs": {
         "input_output_options": {
             "title": "Input/output options",
             "type": "object",
@@ -53,25 +53,11 @@
                     "help_text": "This defines against which human Ensembl genome reference the pipeline performs the analysis including the incorporation of genetic variants. If `grch37` or `grch38` are specified, the most recent Ensembl Biomart version for genome versions will be used. Alternatively, an Ensembl Biomart (archive) version can be specified, e.g. http://jan2020.archive.ensembl.org/.",
                     "description": "Specifies the Ensembl genome reference version that will be used."
                 },
-                "proteome": {
+                "proteome_reference": {
                     "type": "string",
-                    "help_text": "Specifies the reference proteome files that are used for self-filtering. Should be either a folder of FASTA files or a single FASTA file containing the reference proteome(s).",
-                    "description": "Specifies the reference proteome."
-                }
-            }
-        },
-        "reference_genome_options": {
-            "title": "Reference genome options",
-            "type": "object",
-            "fa_icon": "fas fa-dna",
-            "description": "Reference genome related files and options required for the workflow.",
-            "properties": {
-                "igenomes_ignore": {
-                    "type": "boolean",
-                    "description": "Do not load the iGenomes reference config.",
-                    "fa_icon": "fas fa-ban",
-                    "hidden": true,
-                    "help_text": "Do not load `igenomes.config` when running the pipeline. You may choose this option if you observe clashes between custom parameters and those supplied in `igenomes.config`."
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides derived from provided genomic variants."
                 }
             }
         },
@@ -81,49 +67,38 @@
             "description": "Options for the peptide prediction step.",
             "fa_icon": "far fa-chart-bar",
             "properties": {
-                "filter_self": {
-                    "type": "boolean",
-                    "description": "Filter against human proteome.",
-                    "help_text": "Specifies that peptides should be filtered against the specified human proteome references."
+                "peptide_col_name": {
+                    "type": "string",
+                    "default": "sequence",
+                    "description": "Specifies the column name in the input file that contains the peptide sequences."
                 },
-                "max_peptide_length": {
-                    "type": "integer",
-                    "default": 11,
-                    "description": "Specifies the maximum peptide length.",
-                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
-                },
-                "min_peptide_length": {
+                "min_peptide_length_classI": {
                     "type": "integer",
                     "default": 8,
                     "description": "Specifies the minimum peptide length.",
                     "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
                 },
-                "max_peptide_length_class2": {
+                "max_peptide_length_classI": {
                     "type": "integer",
-                    "default": 16,
-                    "description": "Specifies the maximum peptide length for MHC class II peptides."
+                    "default": 12,
+                    "description": "Specifies the maximum peptide length.",
+                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
                 },
-                "min_peptide_length_class2": {
+                "min_peptide_length_classII": {
                     "type": "integer",
-                    "default": 15,
+                    "default": 8,
                     "description": "Specifies the minimum peptide length for MHC class II peptides."
+                },
+                "max_peptide_length_classII": {
+                    "type": "integer",
+                    "default": 25,
+                    "description": "Specifies the maximum peptide length for MHC class II peptides."
                 },
                 "tools": {
                     "type": "string",
-                    "default": "syfpeithi",
-                    "pattern": "^(syfpeithi|mhcnuggets-class-1|mhcnuggets-class-2|mhcflurry|netmhc-4.0|netmhcpan-4.0|netmhcpan-4.1|netmhciipan-4.1|netmhc_darwin-4.0|netmhcpan_darwin-4.0|netmhcpan_darwin-4.1|netmhciipan_darwin-4.1)(,(syfpeithi|mhcnuggets-class-1|mhcnuggets-class-2|mhcflurry|netmhc-4.0|netmhcpan-4.0|netmhcpan-4.1|netmhciipan-4.1|netmhc_darwin-4.0|netmhcpan_darwin-4.0|netmhcpan_darwin-4.1|netmhciipan_darwin-4.1))*$",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `syfpeithi`, `mhcflurry`, `mhcnuggets-class-1`, `mhcnuggets-class-2`,`netmhcpan-4.0`,`netmhcpan-4.1`,`netmhc-4.0`,`netmhciipan-4.1`.",
+                    "default": "mhcnuggets",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`,`netmhcpan`,`netmhciipan`.",
                     "description": "Specifies the prediction tool(s) to use."
-                },
-                "tool_thresholds": {
-                    "type": "string",
-                    "description": "Specifies tool-specific binder thresholds in a JSON file. This can be used to override the given default binder threshold values.",
-                    "help_text": "Default thresholds to determine whether a peptide is considered as a binder are the following: `syfpeithi` > 50, `mhcflurry` <=500, `mhcnuggets-class-1` <= 500, `mhcnuggets-class-2` <= 500, `netmhc` <= 2, `netmhcpan` <= 2, `netmhcii` <= 5, `netmhciipan` <= 5. Note that the default threshold for NetMHC tools is based on the rank metric. The remaining predictors thresholds are based on affinities. Thresholds can be customized in a JSON file: `tool-name:value`"
-                },
-                "use_affinity_thresholds": {
-                    "type": "boolean",
-                    "description": "Specifies the affinity metric instead of the rank metric used for determining whether a peptide is considered as a binder.",
-                    "help_text": "Switches the prediction metric of netMHC tools from rank to affinity. Default: `netmhc` <= 500, `netmhcpan` <= 500, `netmhcii` <= 500, `netmhciipan` <= 500."
                 },
                 "wild_type": {
                     "type": "boolean",
@@ -132,13 +107,15 @@
                 },
                 "fasta_output": {
                     "type": "boolean",
+                    "default": false,
                     "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
                     "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences."
                 },
-                "show_supported_models": {
+                "wide_format_output": {
                     "type": "boolean",
-                    "description": "Writes out supported prediction models.",
-                    "help_text": "Writes out supported models. Does not run any predictions."
+                    "default": false,
+                    "description": "Specifies that the output file will be in wide format.",
+                    "help_text": "Transforms output file such that for each predictor and allele a column `predictor_allele_predictionMetric` is created."
                 }
             }
         },
@@ -155,13 +132,15 @@
                 "split_by_variants_size": {
                     "type": "integer",
                     "default": 0,
-                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten"
+                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten",
+                    "hidden": true
                 },
                 "split_by_variants_distance": {
                     "type": "integer",
                     "default": 110000,
                     "description": "Number of nucleotides between previous and current variant across split.",
-                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. "
+                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. ",
+                    "hidden": true
                 },
                 "peptides_split_maxchunks": {
                     "type": "integer",
@@ -185,7 +164,8 @@
             "properties": {
                 "external_tools_meta": {
                     "type": "string",
-                    "description": "Specifies the path to the JSON file with meta information on external prediction tools."
+                    "description": "Specifies the path to the JSON file with meta information on external prediction tools.",
+                    "hidden": true
                 },
                 "netmhc_system": {
                     "type": "string",
@@ -200,26 +180,12 @@
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
                 },
-                "netmhc_path": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhc' tool, specify the path to the original software tarball for NetMHC 4.0 here."
-                },
                 "netmhciipan_path": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
-                },
-                "netmhcii_path": {
-                    "type": "string",
-                    "format": "file-path",
-                    "exists": true,
-                    "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhcii' tool, specify the path to the original software tarball for NetMHCII 2.2 here."
                 }
             }
         },
@@ -272,41 +238,6 @@
                 }
             }
         },
-        "max_job_request_options": {
-            "title": "Max job request options",
-            "type": "object",
-            "fa_icon": "fab fa-acquisitions-incorporated",
-            "description": "Set the top limit for requested resources for any single job.",
-            "help_text": "If you are running on a smaller system, a pipeline step requesting more resources than are available may cause the Nextflow to stop the run with an error. These options allow you to cap the maximum resources requested by any single job so that the pipeline will run on your system.\n\nNote that you can not _increase_ the resources requested by any job using these options. For that you will need your own configuration file. See [the nf-core website](https://nf-co.re/usage/configuration) for details.",
-            "properties": {
-                "max_cpus": {
-                    "type": "integer",
-                    "description": "Maximum number of CPUs that can be requested for any single job.",
-                    "default": 16,
-                    "fa_icon": "fas fa-microchip",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the CPU requirement for each process. Should be an integer e.g. `--max_cpus 1`"
-                },
-                "max_memory": {
-                    "type": "string",
-                    "description": "Maximum amount of memory that can be requested for any single job.",
-                    "default": "128.GB",
-                    "fa_icon": "fas fa-memory",
-                    "pattern": "^\\d+(\\.\\d+)?\\.?\\s*(K|M|G|T)?B$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the memory requirement for each process. Should be a string in the format integer-unit e.g. `--max_memory '8.GB'`"
-                },
-                "max_time": {
-                    "type": "string",
-                    "description": "Maximum amount of time that can be requested for any single job.",
-                    "default": "240.h",
-                    "fa_icon": "far fa-clock",
-                    "pattern": "^(\\d+\\.?\\s*(s|m|h|d|day)\\s*)+$",
-                    "hidden": true,
-                    "help_text": "Use to set an upper-limit for the time requirement for each process. Should be a string in the format integer-unit e.g. `--max_time '2.h'`"
-                }
-            }
-        },
         "generic_options": {
             "title": "Generic options",
             "type": "object",
@@ -314,12 +245,6 @@
             "description": "Less common options for the pipeline, typically set in a config file.",
             "help_text": "These options are common to all nf-core pipelines and allow you to customise some of the core preferences for how the pipeline runs.\n\nTypically these options would be set in a Nextflow config file loaded for all pipeline runs, such as `~/.nextflow/config`.",
             "properties": {
-                "help": {
-                    "type": "boolean",
-                    "description": "Display help text.",
-                    "fa_icon": "fas fa-question-circle",
-                    "hidden": true
-                },
                 "version": {
                     "type": "boolean",
                     "description": "Display version and exit.",
@@ -395,32 +320,17 @@
                     "fa_icon": "fas fa-check-square",
                     "hidden": true
                 },
-                "validationShowHiddenParams": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-eye-slash",
-                    "description": "Show all params when using `--help`",
-                    "hidden": true,
-                    "help_text": "By default, parameters set as _hidden_ in the schema are not shown on the command line when a user runs with `--help`. Specifying this option will tell the pipeline to show all parameters."
-                },
-                "validationFailUnrecognisedParams": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters fails when an unrecognised parameter is found.",
-                    "hidden": true,
-                    "help_text": "By default, when an unrecognised parameter is found, it returns a warinig."
-                },
-                "validationLenientMode": {
-                    "type": "boolean",
-                    "fa_icon": "far fa-check-circle",
-                    "description": "Validation of parameters in lenient more.",
-                    "hidden": true,
-                    "help_text": "Allows string values that are parseable as numbers or booleans. For further information see [JSONSchema docs](https://github.com/everit-org/json-schema#lenient-mode)."
-                },
                 "pipelines_testdata_base_path": {
                     "type": "string",
                     "fa_icon": "far fa-check-circle",
                     "description": "Base URL or local path to location of pipeline test dataset files",
                     "default": "https://raw.githubusercontent.com/nf-core/test-datasets/",
+                    "hidden": true
+                },
+                "trace_report_suffix": {
+                    "type": "string",
+                    "fa_icon": "far calendar",
+                    "description": "Suffix to add to the trace report filename. Default is the date and time in the format yyyy-MM-dd_HH-mm-ss.",
                     "hidden": true
                 }
             }
@@ -428,31 +338,25 @@
     },
     "allOf": [
         {
-            "$ref": "#/definitions/input_output_options"
+            "$ref": "#/$defs/input_output_options"
         },
         {
-            "$ref": "#/definitions/reference_options"
+            "$ref": "#/$defs/reference_options"
         },
         {
-            "$ref": "#/definitions/reference_genome_options"
+            "$ref": "#/$defs/peptide_prediction_options"
         },
         {
-            "$ref": "#/definitions/peptide_prediction_options"
+            "$ref": "#/$defs/run_optimisation"
         },
         {
-            "$ref": "#/definitions/run_optimisation"
+            "$ref": "#/$defs/external_software"
         },
         {
-            "$ref": "#/definitions/external_software"
+            "$ref": "#/$defs/institutional_config_options"
         },
         {
-            "$ref": "#/definitions/institutional_config_options"
-        },
-        {
-            "$ref": "#/definitions/max_job_request_options"
-        },
-        {
-            "$ref": "#/definitions/generic_options"
+            "$ref": "#/$defs/generic_options"
         }
     ]
 }
