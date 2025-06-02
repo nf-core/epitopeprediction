@@ -108,7 +108,6 @@ workflow EPITOPEPREDICTION {
         VARIANT_SPLIT( ch_samples_uncompressed.variant )
             .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
-
     }
     else {
         SNPSIFT_SPLIT( ch_samples_uncompressed.variant
@@ -132,98 +131,103 @@ workflow EPITOPEPREDICTION {
                                     .groupTuple()
         CAT_FASTA( ch_fasta_from_variants )
         ch_versions = ch_versions.mix(CAT_FASTA.out.versions)
+        multiqc_report = ch_multiqc_files
     }
-    /*
-    ========================================================================================
-        GENERATE PEPTIDES FROM PROTEIN SEQUENCES
-    ========================================================================================
-    */
-    FASTA2PEPTIDES( ch_samples_uncompressed.protein )
-    ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
+    else {
+        /*
+        ========================================================================================
+            GENERATE PEPTIDES FROM PROTEIN SEQUENCES
+        ========================================================================================
+        */
+        FASTA2PEPTIDES( ch_samples_uncompressed.protein )
+        ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
-    ch_to_predict = ch_samples_uncompressed.peptide
-                        .mix(FASTA2PEPTIDES.out.tsv.transpose())
-                        .mix(ch_peptides_from_variants)
+        ch_to_predict = ch_samples_uncompressed.peptide
+                            .mix(FASTA2PEPTIDES.out.tsv.transpose())
+                            .mix(ch_peptides_from_variants)
 
-    // Split tsv if size exceeds params.peptides_split_minchunksize
-    SPLIT_PEPTIDES(ch_to_predict)
-    ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
+        // Split tsv if size exceeds params.peptides_split_minchunksize
+        SPLIT_PEPTIDES(ch_to_predict)
+        ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
 
-    /*
-    ========================================================================================
-        PREDICT MHC BINDING OF PEPTIDES
-    ========================================================================================
-    */
-    MHC_BINDING_PREDICTION( SPLIT_PEPTIDES.out.splitted.transpose(),
-                            params.tools,
-                            supported_alleles_json,
-                            netmhc_software_meta)
-    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
+        /*
+        ========================================================================================
+            PREDICT MHC BINDING OF PEPTIDES
+        ========================================================================================
+        */
+        MHC_BINDING_PREDICTION( SPLIT_PEPTIDES.out.splitted.transpose(),
+                                params.tools,
+                                supported_alleles_json,
+                                netmhc_software_meta)
+        ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
-/*     // Concatenate splitted predictions on sample
-    CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
-                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
-                    .groupTuple(), "tsv", "tsv") */
+    /*     // Concatenate splitted predictions on sample
+        CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
+                        .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
+                        .groupTuple(), "tsv", "tsv") */
 
-    // Summarize prediction statistics for MultiQC report
-    SUMMARIZE_RESULTS(MHC_BINDING_PREDICTION.out.predicted
-                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
-                    .groupTuple())
-    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ it[1] })
-    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
+        // Summarize prediction statistics for MultiQC report
+        SUMMARIZE_RESULTS(MHC_BINDING_PREDICTION.out.predicted
+                        .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
+                        .groupTuple())
+        ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ it[1] })
+        ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
-    //
-    // Collate and save software versions
-    //
-    softwareVersionsToYAML(ch_versions)
-        .collectFile(
-            storeDir: "${params.outdir}/pipeline_info",
-            name: 'nf_core_'  +  'epitopeprediction_software_'  + 'mqc_'  + 'versions.yml',
-            sort: true,
-            newLine: true
-        ).set { ch_collated_versions }
+        //
+        // Collate and save software versions
+        //
+        softwareVersionsToYAML(ch_versions)
+            .collectFile(
+                storeDir: "${params.outdir}/pipeline_info",
+                name: 'nf_core_'  +  'epitopeprediction_software_'  + 'mqc_'  + 'versions.yml',
+                sort: true,
+                newLine: true
+            ).set { ch_collated_versions }
 
-    //
-    // MODULE: MultiQC
-    //
-    ch_multiqc_config        = Channel.fromPath(
-        "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
-    ch_multiqc_custom_config = params.multiqc_config ?
-        Channel.fromPath(params.multiqc_config, checkIfExists: true) :
-        Channel.empty()
-    ch_multiqc_logo          = params.multiqc_logo ?
-        Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
-        Channel.empty()
+        //
+        // MODULE: MultiQC
+        //
+        ch_multiqc_config        = Channel.fromPath(
+            "$projectDir/assets/multiqc_config.yml", checkIfExists: true)
+        ch_multiqc_custom_config = params.multiqc_config ?
+            Channel.fromPath(params.multiqc_config, checkIfExists: true) :
+            Channel.empty()
+        ch_multiqc_logo          = params.multiqc_logo ?
+            Channel.fromPath(params.multiqc_logo, checkIfExists: true) :
+            Channel.empty()
 
-    summary_params      = paramsSummaryMap(
-        workflow, parameters_schema: "nextflow_schema.json")
-    ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
-    ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
-        file(params.multiqc_methods_description, checkIfExists: true) :
-        file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
-    ch_methods_description                = Channel.value(
-        methodsDescriptionText(ch_multiqc_custom_methods_description))
+        summary_params      = paramsSummaryMap(
+            workflow, parameters_schema: "nextflow_schema.json")
+        ch_workflow_summary = Channel.value(paramsSummaryMultiqc(summary_params))
+        ch_multiqc_files = ch_multiqc_files.mix(
+            ch_workflow_summary.collectFile(name: 'workflow_summary_mqc.yaml'))
+        ch_multiqc_custom_methods_description = params.multiqc_methods_description ?
+            file(params.multiqc_methods_description, checkIfExists: true) :
+            file("$projectDir/assets/methods_description_template.yml", checkIfExists: true)
+        ch_methods_description                = Channel.value(
+            methodsDescriptionText(ch_multiqc_custom_methods_description))
 
-    ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
-    ch_multiqc_files = ch_multiqc_files.mix(
-        ch_methods_description.collectFile(
-            name: 'methods_description_mqc.yaml',
-            sort: true
+        ch_multiqc_files = ch_multiqc_files.mix(ch_collated_versions)
+        ch_multiqc_files = ch_multiqc_files.mix(
+            ch_methods_description.collectFile(
+                name: 'methods_description_mqc.yaml',
+                sort: true
+            )
         )
-    )
 
-    MULTIQC (
-        ch_multiqc_files.collect(),
-        ch_multiqc_config.toList(),
-        ch_multiqc_custom_config.toList(),
-        ch_multiqc_logo.toList(),
-        [],
-        []
-    )
+        MULTIQC (
+            ch_multiqc_files.collect(),
+            ch_multiqc_config.toList(),
+            ch_multiqc_custom_config.toList(),
+            ch_multiqc_logo.toList(),
+            [],
+            []
+        )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+        multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+    }
+
+    emit: multiqc_report
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }
