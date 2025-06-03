@@ -109,7 +109,7 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
-                    "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences. Setting this flag will skip the MHC binding prediction entirely."
+                    "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences. Setting this flag will skip the MHC binding prediction entirely. One can provide arbitrary values for `alleles` and `mhc_class` in the samplesheet."
                 },
                 "wide_format_output": {
                     "type": "boolean",
