@@ -149,7 +149,6 @@ workflow EPITOPEPREDICTION {
     SPLIT_PEPTIDES(ch_to_predict)
     ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
 
-    ch_to_predict.view()
 
     /*
     ========================================================================================
