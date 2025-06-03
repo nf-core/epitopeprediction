@@ -100,7 +100,7 @@ Binding prediction results are summarized into tables, such as the number of bin
 - `multiqc_plots/`
   - Plots in `pdf`, `png`, and `svg` format that are part of the MultiQC report
 - `multiqc_report.html`
-  - The main multiQC report comprising statistics and distributions of hte binding prediction results.
+  - The main multiQC report comprising statistics and distributions of the binding prediction results.
 
 For more information about how to use MultiQC reports, see <http://multiqc.info>.
 

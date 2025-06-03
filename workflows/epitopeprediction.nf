@@ -108,7 +108,6 @@ workflow EPITOPEPREDICTION {
         VARIANT_SPLIT( ch_samples_uncompressed.variant )
             .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
-
     }
     else {
         SNPSIFT_SPLIT( ch_samples_uncompressed.variant
@@ -132,6 +131,7 @@ workflow EPITOPEPREDICTION {
                                     .groupTuple()
         CAT_FASTA( ch_fasta_from_variants )
         ch_versions = ch_versions.mix(CAT_FASTA.out.versions)
+        ch_peptides_from_variants = Channel.empty()
     }
     /*
     ========================================================================================
@@ -148,6 +148,7 @@ workflow EPITOPEPREDICTION {
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
     ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
+
 
     /*
     ========================================================================================
@@ -223,7 +224,9 @@ workflow EPITOPEPREDICTION {
         []
     )
 
-    emit:multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+    multiqc_report = MULTIQC.out.report.toList() // channel: /path/to/multiqc_report.html
+
+    emit: multiqc_report
     versions       = ch_versions                 // channel: [ path(versions.yml) ]
 
 }
