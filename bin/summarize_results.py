@@ -198,9 +198,9 @@ class Utils:
             summary_df[allele_cols]
                 .apply(lambda row: ','.join(sorted({a for a in row if pd.notna(a)})), axis=1)
         )
-
-        # determine if there is at least one binder
-        summary_df['binder'] = best.filter(regex='_binder$').any(axis=1).values
+        
+        # Add a binder column to the summary (True if best predictor is a binder)
+        summary_df['binder'] = best['binder'].values
         
         return summary_df.reset_index()
 
