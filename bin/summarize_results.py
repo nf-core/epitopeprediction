@@ -199,7 +199,7 @@ class Utils:
                 .apply(lambda row: ','.join(sorted({a for a in row if pd.notna(a)})), axis=1)
         )
 
-        # Add a binder column to the summary (True if best predictor is a binder)
+        # Add a binder column to the summary (True if best predicted allele is a binder)
         summary_df['binder'] = best['binder'].values
 
         return summary_df.reset_index()
