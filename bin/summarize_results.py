@@ -178,8 +178,8 @@ class Utils:
             .dropna(subset=['predictor'])
             .groupby(['predictor', peptide_col], group_keys=False)
             .apply(_pick_best)
+            .drop_duplicates(subset=[peptide_col, 'predictor'])
         )
-
 
         # now build summary
         summary_df = pd.DataFrame(index=best[peptide_col].unique())
@@ -191,18 +191,17 @@ class Utils:
             summary_df[f'best_value_{pred}'] = sel[val_col]
             summary_df[f'best_allele_{pred}'] = sel['allele']
 
-
         # aggregate all per‑predictor alleles into one column
         allele_cols = [c for c in summary_df.columns if c.startswith('best_allele_')]
         summary_df['best_allele'] = (
             summary_df[allele_cols]
                 .apply(lambda row: ','.join(sorted({a for a in row if pd.notna(a)})), axis=1)
         )
-
-        # Add a binder column to the summary (True if best predicted allele is a binder)
-        summary_df['binder'] = best['binder'].values
+        # Add global binder column if any of the predictors report a binder
+        summary_df['binder'] = summary_df[[col for col in summary_df if 'binder' in col]].any(axis=1, skipna=False)
 
         return summary_df.reset_index()
+
 
     def long2wide(df: pd.DataFrame, peptide_col: str) -> pd.DataFrame:
         """
@@ -217,7 +216,7 @@ class Utils:
             pd.DataFrame: Transformed wide-format DataFrame.
         """
         # Identify non-predictor columns to keep as index
-        meta_columns = [col for col in df.columns if not any([x in col for x in ['predictor', 'allele', 'BA', 'rank', 'binder']])]
+        meta_columns = [col for col in df.columns if col not in ['predictor', 'allele', 'BA', 'rank', 'binder']]
 
         # Pivot to wide format
         df_pivot = df.pivot_table(
