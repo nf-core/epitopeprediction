@@ -15,6 +15,7 @@ inputs:
   paths:
     description: "Test paths"
     required: false
+    default: ""
   tags:
     description: "Tags to pass as argument for nf-test --tag parameter"
     required: false
