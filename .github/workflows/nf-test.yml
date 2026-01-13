@@ -19,7 +19,7 @@ concurrency:
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   NFT_VER: "0.9.3"
-  NFT_WORKDIR: "/tmp"
+  NFT_WORKDIR: "$TMPDIR"
   NXF_ANSI_LOG: false
   NXF_SINGULARITY_CACHEDIR: ${{ github.workspace }}/.singularity
   NXF_SINGULARITY_LIBRARYDIR: ${{ github.workspace }}/.singularity
@@ -142,33 +142,18 @@ jobs:
           aws s3 cp --no-sign-request s3://nf-core-awsmegatests/epitopeprediction/netMHCpan/netMHCpan-4.2bstatic.Linux.tar.gz.gpg netMHCpan-4.2bstatic.Linux.tar.gz.gpg
           gpg --batch --yes --pinentry-mode=loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${{ github.workspace }}/netMHCpan-4.2bstatic.Linux.tar.gz --decrypt netMHCpan-4.2bstatic.Linux.tar.gz.gpg
 
-      - name: Setup Nextflow
-        uses: nf-core/setup-nextflow@v2
-        with:
-          version: "${{ matrix.NXF_VER }}"
-
-      - name: Set up Python
-        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6
-        with:
-          python-version: "3.14"
-
-      - name: Install nf-test
-        uses: nf-core/setup-nf-test@v1
-        with:
-          version: "${{ env.NFT_VER }}"
-          install-pdiff: true
-
       - name: Run nf-test with NetMHCpan
+        uses: ./.github/actions/nf-test
         continue-on-error: ${{ matrix.NXF_VER == 'latest-everything' }}
         env:
           NFT_WORKDIR: ${{ env.NFT_WORKDIR }}
-        run: |
-          nf-test test \
-            --profile=+docker \
-            --tag netmhcpan \
-            --ci \
-            --verbose \
-            --tap=test.tap
+          NXF_VERSION: ${{ matrix.NXF_VER }}
+        with:
+          profile: docker
+          tags: netmhcpan
+          exclude_tags: ""
+          use_sharding: "false"
+          changed_since: ""
 
       - name: Generate test summary
         if: always()

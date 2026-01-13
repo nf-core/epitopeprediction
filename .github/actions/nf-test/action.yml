@@ -6,16 +6,30 @@ inputs:
     required: true
   shard:
     description: "Shard number for this CI job"
-    required: true
+    required: false
+    default: "1"
   total_shards:
     description: "Total number of test shards(NOT the total number of matrix jobs)"
-    required: true
+    required: false
+    default: "1"
   paths:
     description: "Test paths"
-    required: true
+    required: false
   tags:
     description: "Tags to pass as argument for nf-test --tag parameter"
     required: false
+  exclude_tags:
+    description: "Tags to exclude from nf-test (e.g., 'netmhcpan'). Defaults to 'netmhcpan' if not specified."
+    required: false
+    default: "netmhcpan"
+  use_sharding:
+    description: "Whether to use sharding for tests (default: true)"
+    required: false
+    default: "true"
+  changed_since:
+    description: "Git reference to check for changes (default: HEAD^). Set to empty string to disable."
+    required: false
+    default: "HEAD^"
 runs:
   using: "composite"
   steps:
@@ -64,12 +78,12 @@ runs:
         nf-test test \
           --profile=+${{ inputs.profile }} \
           $(if [ -n "${{ inputs.tags }}" ]; then echo "--tag ${{ inputs.tags }}"; fi) \
-          --tag !netmhcpan \
+          $(if [ -n "${{ inputs.exclude_tags }}" ]; then echo "--tag !${{ inputs.exclude_tags }}"; fi) \
           --ci \
-          --changed-since HEAD^ \
+          $(if [ -n "${{ inputs.changed_since }}" ]; then echo "--changed-since ${{ inputs.changed_since }}"; fi) \
           --verbose \
           --tap=test.tap \
-          --shard ${{ inputs.shard }}/${{ inputs.total_shards }}
+          $(if [ "${{ inputs.use_sharding }}" == "true" ]; then echo "--shard ${{ inputs.shard }}/${{ inputs.total_shards }}"; fi)
 
           # Save the absolute path of the test.tap file to the output
           echo "tap_file_path=$(realpath test.tap)" >> $GITHUB_OUTPUT
