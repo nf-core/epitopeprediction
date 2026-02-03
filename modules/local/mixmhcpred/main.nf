@@ -35,7 +35,7 @@ process MIXMHCPRED {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        mixmhcpred: "3.0.0")
+        mixmhcpred: "3.0.0"
     END_VERSIONS
     """
 

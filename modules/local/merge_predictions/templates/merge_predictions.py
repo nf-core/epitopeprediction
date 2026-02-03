@@ -281,25 +281,23 @@ class PredictionResult:
         df = pd.read_csv(self.file_path, sep='\t', comment='#')
 
         # Get score and rank columns for each allele
-        score_cols = [col for col in df.columns if col.startswith('Score_') and col != 'Score_bestAllele']
         rank_cols = [col for col in df.columns if col.startswith('%Rank_') and col != '%Rank_bestAllele']
 
         # Extract allele names from column names (e.g., Score_A0101 -> A0101)
-        allele_names = [col.replace('Score_', '') for col in score_cols]
+        allele_names = [col.replace('%Rank_', '') for col in rank_cols]
 
         # Reshape to long format
         rows = []
         for _, row in df.iterrows():
             peptide = row['Peptide']
             for allele in allele_names:
-                score = row.get(f'Score_{allele}', np.nan)
                 rank = row.get(f'%Rank_{allele}', np.nan)
                 # Convert MixMHCpred allele format (A0101) to mhcgnomes format (HLA-A*01:01)
                 # This will be normalized later by mhcgnomes in the main function
                 rows.append({
                     self.peptide_col_name: peptide,
                     'allele': allele,
-                    'BA': score,  # MixMHCpred score (not IC50-based, but log-likelihood based)
+                    'BA': np.nan, # MixMHCpred does not provide binding affinity
                     'rank': rank,
                     'binder': rank <= PredictorBindingThreshold.MIXMHCPRED.value,
                     'predictor': self.predictor
