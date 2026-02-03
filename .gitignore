@@ -8,3 +8,5 @@ testing*
 *.pyc
 null/
 .nf-test*
+CLAUDE.md
+.claude/

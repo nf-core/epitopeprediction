@@ -32,6 +32,7 @@ class PredictorBindingThreshold(Enum):
     MHCNUGGETS  = 0.425
     NETMHCPAN   = 2
     NETMHCIIPAN = 5
+    MIXMHCPRED  = 2
 
 class Arguments:
     """
@@ -155,6 +156,9 @@ class PredictionResult:
         elif 'netmhciipan' in self.file_path:
             self.predictor = 'netmhciipan'
             return self._format_netmhciipan_prediction()
+        elif 'mixmhcpred' in self.file_path:
+            self.predictor = 'mixmhcpred'
+            return self._format_mixmhcpred_prediction()
         else:
             logging.error(f'Unsupported predictor type in file: {self.file_path}.')
             sys.exit(1)
@@ -267,6 +271,41 @@ class PredictionResult:
         df_pivot.index.name = ''
 
         return df_pivot
+
+    def _format_mixmhcpred_prediction(self) -> pd.DataFrame:
+        """
+        Read in MixMHCpred prediction output.
+        Output format: Peptide, Score_bestAllele, BestAllele, %Rank_bestAllele, Score_<allele>, %Rank_<allele>, ...
+        MixMHCpred uses allele format like A0101, B0801, etc.
+        """
+        df = pd.read_csv(self.file_path, sep='\t', comment='#')
+
+        # Get score and rank columns for each allele
+        score_cols = [col for col in df.columns if col.startswith('Score_') and col != 'Score_bestAllele']
+        rank_cols = [col for col in df.columns if col.startswith('%Rank_') and col != '%Rank_bestAllele']
+
+        # Extract allele names from column names (e.g., Score_A0101 -> A0101)
+        allele_names = [col.replace('Score_', '') for col in score_cols]
+
+        # Reshape to long format
+        rows = []
+        for _, row in df.iterrows():
+            peptide = row['Peptide']
+            for allele in allele_names:
+                score = row.get(f'Score_{allele}', np.nan)
+                rank = row.get(f'%Rank_{allele}', np.nan)
+                # Convert MixMHCpred allele format (A0101) to mhcgnomes format (HLA-A*01:01)
+                # This will be normalized later by mhcgnomes in the main function
+                rows.append({
+                    self.peptide_col_name: peptide,
+                    'allele': allele,
+                    'BA': score,  # MixMHCpred score (not IC50-based, but log-likelihood based)
+                    'rank': rank,
+                    'binder': rank <= PredictorBindingThreshold.MIXMHCPRED.value,
+                    'predictor': self.predictor
+                })
+
+        return pd.DataFrame(rows)
 
 def main():
     args = Arguments()

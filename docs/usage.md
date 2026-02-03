@@ -145,6 +145,25 @@ nextflow run nf-core/epitopeprediction \
   --netmhciipan_path /path/to/netMHCIIpan-4.3e.Linux.tar.gz \
 ```
 
+### Running the pipeline with MixMHCpred
+
+The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction. MixMHCpred is free for academic/non-profit use; commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+
+MixMHCpred requires the Wave profile because the container is built on-the-fly via Nextflow Wave (not distributed due to license restrictions). A typical command is as follows:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker,wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhcpred' \
+  --min_peptide_length_classI 8 \
+  --max_peptide_length_classI 12
+```
+
+> [!WARNING]
+> By using MixMHCpred, you accept the [MixMHCpred license terms](https://github.com/GfellerLab/MixMHCpred). The tool is free for academic use only. Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+
 ### Updating the pipeline
 
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. After this, it will use the cached version if available - even if the pipeline has been updated since. To ensure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:
