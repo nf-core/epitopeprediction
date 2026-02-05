@@ -27,6 +27,7 @@ class MinLength(Enum):
     NETMHCPAN = 8
     NETMHCIIPAN = 9
     MIXMHCPRED = 8
+    MIXMHCIIPRED = 12
 
 class MaxLength(Enum):
     MHCFLURRY = 15
@@ -35,6 +36,7 @@ class MaxLength(Enum):
     NETMHCPAN = 14
     NETMHCIIPAN = 50
     MIXMHCPRED = 14
+    MIXMHCIIPRED = 21
 
 # TODO: Implement
 class MaxNumberOfAlleles(Enum):
@@ -209,6 +211,7 @@ def main():
         "netmhcpan":    {"min": MinLength.NETMHCPAN.value,   "max": MaxLength.NETMHCPAN.value,          "suffix": "netmhcpan_input.tsv",    "mhc_class": "I"},
         "netmhciipan":  {"min": MinLength.NETMHCIIPAN.value, "max": MaxLength.NETMHCIIPAN.value,        "suffix": "netmhciipan_input.tsv",  "mhc_class": "II"},
         "mixmhcpred":   {"min": MinLength.MIXMHCPRED.value,  "max": MaxLength.MIXMHCPRED.value,         "suffix": "mixmhcpred_input.tsv",   "mhc_class": "I"},
+        "mixmhciipred": {"min": MinLength.MIXMHCIIPRED.value, "max": MaxLength.MIXMHCIIPRED.value,      "suffix": "mixmhciipred_input.tsv", "mhc_class": "II"},
     }
 
     # Step 2: Apply tool-specific length filtering** on top of MHC class filtering

@@ -145,11 +145,11 @@ nextflow run nf-core/epitopeprediction \
   --netmhciipan_path /path/to/netMHCIIpan-4.3e.Linux.tar.gz \
 ```
 
-### Running the pipeline with MixMHCpred
+### Running the pipeline with MixMHCpred / MixMHCIIpred
 
-The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction. MixMHCpred is free for academic/non-profit use; commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred) for MHC class II binding prediction. Both tools are free for academic/non-profit use; commercial use requires a separate license from the Ludwig Institute for Cancer Research.
 
-MixMHCpred requires the Wave profile because the container is built on-the-fly via Nextflow Wave (not distributed due to license restrictions). A typical command is as follows:
+These tools require the Wave profile because the containers are built on-the-fly via Nextflow Wave (not distributed due to license restrictions). A typical command for MHC class I is:
 
 ```bash
 nextflow run nf-core/epitopeprediction \
@@ -161,8 +161,20 @@ nextflow run nf-core/epitopeprediction \
   --max_peptide_length_classI 12
 ```
 
+For MHC class II:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker,wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhciipred' \
+  --min_peptide_length_classII 12 \
+  --max_peptide_length_classII 21
+```
+
 > [!WARNING]
-> By using MixMHCpred, you accept the [MixMHCpred license terms](https://github.com/GfellerLab/MixMHCpred). The tool is free for academic use only. Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+> By using MixMHCpred or MixMHCIIpred, you accept the license terms at [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred). These tools are free for academic use only. Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
 
 ### Updating the pipeline
 

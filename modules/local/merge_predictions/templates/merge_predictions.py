@@ -28,11 +28,12 @@ logging.basicConfig(
 )
 
 class PredictorBindingThreshold(Enum):
-    MHCFLURRY   = 2
-    MHCNUGGETS  = 0.425
-    NETMHCPAN   = 2
-    NETMHCIIPAN = 5
-    MIXMHCPRED  = 2
+    MHCFLURRY    = 2
+    MHCNUGGETS   = 0.425
+    NETMHCPAN    = 2
+    NETMHCIIPAN  = 5
+    MIXMHCPRED   = 2
+    MIXMHCIIPRED = 2
 
 class Arguments:
     """
@@ -156,6 +157,9 @@ class PredictionResult:
         elif 'netmhciipan' in self.file_path:
             self.predictor = 'netmhciipan'
             return self._format_netmhciipan_prediction()
+        elif 'mixmhciipred' in self.file_path:
+            self.predictor = 'mixmhciipred'
+            return self._format_mixmhciipred_prediction()
         elif 'mixmhcpred' in self.file_path:
             self.predictor = 'mixmhcpred'
             return self._format_mixmhcpred_prediction()
@@ -305,6 +309,38 @@ class PredictionResult:
 
         return pd.DataFrame(rows)
 
+    def _format_mixmhciipred_prediction(self) -> pd.DataFrame:
+        """
+        Read in MixMHCIIpred prediction output (Class II).
+        Output format: Peptide, Context, BestAllele, %Rank_best, Core_best, CoreP1_best, SubSpec_best,
+                      %Rank_<allele>, CoreP1_<allele>, SubSpec_<allele>, ...
+        MixMHCIIpred uses allele format like DRB1_15_01, DPA1_02_01__DPB1_01_01, etc.
+        """
+        df = pd.read_csv(self.file_path, sep='\t', comment='#')
+
+        # Get rank columns for each allele (excluding %Rank_best)
+        rank_cols = [col for col in df.columns if col.startswith('%Rank_') and col != '%Rank_best']
+
+        # Extract allele names from column names (e.g., %Rank_DRB1_15_01 -> DRB1_15_01)
+        allele_names = [col.replace('%Rank_', '') for col in rank_cols]
+
+        # Reshape to long format
+        rows = []
+        for _, row in df.iterrows():
+            peptide = row['Peptide']
+            for allele in allele_names:
+                rank = row.get(f'%Rank_{allele}', np.nan)
+                rows.append({
+                    self.peptide_col_name: peptide,
+                    'allele': allele,
+                    'BA': np.nan,
+                    'rank': rank,
+                    'binder': rank <= PredictorBindingThreshold.MIXMHCIIPRED.value,
+                    'predictor': self.predictor
+                })
+
+        return pd.DataFrame(rows)
+
 def main():
     args = Arguments()
 
@@ -317,8 +353,8 @@ def main():
         output_df.append(result.prediction_df)
 
     output_df = pd.concat(output_df)
-    # Normalize allele names
-    output_df['allele'] = output_df['allele'].apply(lambda x : mhcgnomes.parse(x).to_string())
+    # Normalize allele names (MixMHCIIpred uses underscores: DRB1_01_01 -> DRB10101, __ -> - for alpha-beta chains)
+    output_df['allele'] = output_df['allele'].apply(lambda x : mhcgnomes.parse(x.replace('__', '-').replace('_', '')).to_string())
 
     # Read in source file to annotate source metadata
     source_df = pd.read_csv(args.source_file, sep='\t')

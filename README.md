@@ -32,13 +32,15 @@ Supported prediction tools:
 - `netmhcpan`
 - `netmhciipan`
 - `mixmhcpred`
+- `mixmhciipred`
 
 > [!WARNING]
-> **MixMHCpred License**: MixMHCpred is free for academic/non-profit use only.
+> **MixMHCpred / MixMHCIIpred License**: These tools are free for academic/non-profit use only.
 > Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
-> To use MixMHCpred, add `-profile wave` and `--tools mixmhcpred`. The container with
-> MixMHCpred will be built on-the-fly via Nextflow Wave (not distributed due to license).
-> By using this tool, you accept the [MixMHCpred license terms](https://github.com/GfellerLab/MixMHCpred).
+> To use these tools, add `-profile wave` and `--tools mixmhcpred` or `--tools mixmhciipred`.
+> The containers will be built on-the-fly via Nextflow Wave (not distributed due to license).
+> By using these tools, you accept the license terms at [MixMHCpred](https://github.com/GfellerLab/MixMHCpred)
+> and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred).
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 

@@ -111,7 +111,7 @@
                 "tools": {
                     "type": "string",
                     "default": "mhcnuggets",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`.\n\nNote: MixMHCpred is free for academic use only; commercial use requires a separate license from the Ludwig Institute for Cancer Research. MixMHCpred requires the Wave profile (`-profile wave`) as the container is built on-the-fly.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`, `mixmhciipred`.\n\nNote: MixMHCpred and MixMHCIIpred are free for academic use only; commercial use requires a separate license from the Ludwig Institute for Cancer Research. These tools require the Wave profile (`-profile wave`) as the containers are built on-the-fly.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "wild_type": {

@@ -9,6 +9,7 @@ include { MHCNUGGETS;
 include { NETMHCPAN                                  } from '../../../modules/local/netmhcpan'
 include { NETMHCIIPAN                                } from '../../../modules/local/netmhciipan'
 include { MIXMHCPRED                                 } from '../../../modules/local/mixmhcpred'
+include { MIXMHCIIPRED                               } from '../../../modules/local/mixmhciipred'
 include { UNPACK_NETMHC_SOFTWARE as NETMHCPAN_IMPORT;
         UNPACK_NETMHC_SOFTWARE as NETMHCIIPAN_IMPORT } from '../../../modules/local/unpack_netmhc_software'
 include { MERGE_PREDICTIONS                          } from '../../../modules/local/merge_predictions'
@@ -59,6 +60,8 @@ workflow MHC_BINDING_PREDICTION {
                         return [meta + [alleles_supported: allele_input_dict['netmhciipan']], file]
                     mixmhcpred: (file.name.contains('mixmhcpred_input') && allele_input_dict['mixmhcpred'])
                         return [meta + [alleles_supported: allele_input_dict['mixmhcpred']], file]
+                    mixmhciipred: (file.name.contains('mixmhciipred_input') && allele_input_dict['mixmhciipred'])
+                        return [meta + [alleles_supported: allele_input_dict['mixmhciipred']], file]
                     }
             .set{ ch_prediction_input }
 
@@ -97,6 +100,13 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(MIXMHCPRED.out.predicted)
         }
 
+        if ( "mixmhciipred" in tools.tokenize(",") )
+        {
+            MIXMHCIIPRED ( ch_prediction_input.mixmhciipred )
+            ch_versions = ch_versions.mix(MIXMHCIIPRED.out.versions)
+            ch_binding_predictors_out = ch_binding_predictors_out.mix(MIXMHCIIPRED.out.predicted)
+        }
+
     // Join predicted file and subworkflow input file to add inputfile metadata
     ch_binding_predictors_out
         .map { meta, file -> [meta.findAll { k, v -> k != 'alleles_supported' }, file] } // drop alleles_supported from meta
@@ -119,7 +129,7 @@ workflow MHC_BINDING_PREDICTION {
 
 // Check if supported tools are specified
 def validate_tools_param(tools) {
-    valid_tools = [ 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred' ]
+    valid_tools = [ 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred' ]
     tool_list = tools.tokenize(',')
     // Validate each tool in tools if it's in valid_tools
     def invalid_tools = tool_list.findAll { it.trim() !in valid_tools }
