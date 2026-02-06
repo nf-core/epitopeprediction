@@ -31,7 +31,7 @@ RUN pip install --no-cache-dir \
 # Clone MixMHCpred (dependencies already installed above, skip install_packages)
 # NOTE: This container must NOT be distributed (license restriction)
 # It is built on-the-fly via Nextflow Wave for each user
-RUN git clone --depth 1 https://github.com/GfellerLab/MixMHCpred.git /opt/MixMHCpred \
+RUN git clone --depth 1 --branch v3.0 https://github.com/GfellerLab/MixMHCpred.git /opt/MixMHCpred \
     && chmod +x /opt/MixMHCpred/MixMHCpred
 
 ENV PATH="/opt/MixMHCpred:$PATH"

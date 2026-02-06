@@ -9,7 +9,7 @@
                     "mhcgnomes": "1.8.6"
                 },
                 "MIXMHCPRED": {
-                    "mixmhcpred": "3.0.0"
+                    "mixmhcpred": 3.0
                 },
                 "SPLIT_PEPTIDES": {
                     "python": "3.11.10"
@@ -72,6 +72,6 @@
             "nf-test": "0.9.3",
             "nextflow": "25.04.8"
         },
-        "timestamp": "2026-02-05T17:04:58.68110859"
+        "timestamp": "2026-02-06T06:06:01.225917212"
     }
 }

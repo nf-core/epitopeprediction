@@ -35,7 +35,7 @@ process MIXMHCPRED {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        mixmhcpred: "3.0.0"
+        mixmhcpred: \$(/opt/MixMHCpred/MixMHCpred -h 2>&1 | head -1 | grep -oE '[0-9]+\\.[0-9.]+')
     END_VERSIONS
     """
 
@@ -46,7 +46,7 @@ process MIXMHCPRED {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        mixmhcpred: "3.0.0"
+        mixmhcpred: "3.0"
     END_VERSIONS
     """
 }
