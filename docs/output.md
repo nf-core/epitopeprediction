@@ -91,6 +91,14 @@ An example of the wide format looks like this:
 | peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.416        | 0.1215         | True             | 0.3873        | 0.0007          | False             | 0.6072       | 0.0465         | True             |
 | peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3189       | 0.7457         | True             |               |                 |                   | 0.3455       | 2.5875         | False            |
 
+## Spectral library prediction
+
+When `--speclib_output` is enabled, [AlphaPeptDeep](https://github.com/MannLabs/alphapeptdeep) predicts MS2 spectra, retention times, and optionally ion mobility for all peptides in the prediction output.
+
+**Output directory:** `speclib/[sample].speclib.tsv`
+
+The output is a DIA-NN-compatible TSV (usable with `diann --lib`) containing predicted fragment spectra per precursor. Key columns include `ModifiedPeptide`, `PrecursorCharge`, `PrecursorMz`, `RT`, `FragmentMz`, `RelativeIntensity`, and optionally `IonMobility`/`CCS` when mobility prediction is enabled. Default instrument parameters can be customized via `ext.args` (see [Custom Tool Arguments](https://nf-co.re/docs/usage/configuration#customising-tool-arguments)).
+
 ## MultiQC
 
 Binding prediction results are summarized into tables, such as the number of binders/non-binders. Binding prediction score distributions are also highlighted to give the user an appropriate overview of the binding prediction results.

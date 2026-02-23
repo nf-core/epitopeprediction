@@ -1,0 +1,9 @@
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - conda-forge::python=3.10
+  - conda-forge::pip
+  - pip:
+      - peptdeep==1.4.1
