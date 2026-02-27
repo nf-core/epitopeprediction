@@ -49,6 +49,8 @@ The chunksize is controlled by `--peptides_split_minchunksize` and `--peptides_s
 - `mhcnuggetsii/[sample]_chunk_[0-9]_predicted_mhcnuggetsii.csv`
 - `netmhcpan/[sample]_chunk_[0-9]_predicted_netmhcpan.xls`
 - `netmhciipan/[sample]_chunk_[0-9]_predicted_netmhciipan.xls`
+- `mixmhcpred/[sample]_chunk_[0-9]_mixmhcpred.txt`
+- `mixmhciipred/[sample]_chunk_[0-9]_mixmhciipred.txt`
 
 These predictor-specific output files are harmonized and chunks are merged on the `sample` information of your samplesheet.
 
@@ -78,6 +80,8 @@ where aff is the predicted IC50 binding affinity. Lower IC50 values indicate str
 Percentile rank (rank) indicates the relative binding strength of a peptide compared to a large set of random natural peptides. This measure is not affected by inherent biases of certain MHC molecules towards higher or lower mean predicted affinities. Strong binders are defined as having rank < 0.5, and weak binders with rank < 2. For example, a peptide with a rank of 0.1 is among the top 0.1% of best binders. This approach ensures a more consistent selection across different MHC alleles, as it accounts for variability in binding thresholds. **It is advised to select candidate binders based on rank rather than binding affinities**. Consequently, the `binder` column is defined based on the rank. An exception to this is the percentile rank computation of MHCnuggets, which is considered experimental and therefore it is implemented and advised to use the `BA` column for the binder definition.
 
 For **netMHCpan** and **netMHCIIpan** predictions specifically, the pipeline uses **EL_Rank (Eluted Ligand Rank)** by default, which is the rank metric recommended by the developers. EL_Rank is computed against a reference set of eluted ligands rather than binding affinity measurements. If you prefer to use BA_Rank (Binding Affinity Rank) instead, which correlates more directly with the BA column, you can enable the `--use_ba_rank` parameter. Note that EL_Rank and BA_Rank can differ significantly.
+
+For **MixMHCpred** (Class I) and **MixMHCIIpred** (Class II), the `BA` column is set to `na` since these tools output likelihood-based scores rather than IC50 binding affinities. The `rank` column contains the `%Rank` percentile rank, with binders defined as `%Rank <= 2`. These tools require the `-profile wave` as their containers are built on-the-fly via Nextflow Wave due to license restrictions.
 
 > [!NOTE]
 > Output files can contain empty spaces, which indicate that one of the provided predictors does not support the provided allele and/or peptide length. A curated list of supported alleles can be found under `assets/supported_alleles.json`. The number of peptides that could not be predicted due to unsupported alleles or peptide lengths is documented in the MultiQC report. See [Usage](./usage.md) for predictor boundaries.
