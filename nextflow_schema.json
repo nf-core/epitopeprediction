@@ -153,8 +153,9 @@
                 "speclib_output": {
                     "type": "boolean",
                     "default": false,
+                    "fa_icon": "fas fa-chart-area",
                     "description": "Generate a predicted spectral library (DIA-NN TSV) from predicted peptides using AlphaPeptDeep.",
-                    "help_text": "When enabled, all predicted peptides are passed to AlphaPeptDeep to predict MS2 spectra, retention times, and optionally ion mobility. Output is a .speclib.tsv directly usable with DIA-NN --lib. Instrument parameters (NCE, instrument, charges) are set via ext.args in modules.config."
+                    "help_text": "When enabled, all predicted peptides are passed to AlphaPeptDeep to predict MS2 spectra, retention times, and optionally ion mobility. The output .speclib.tsv file is directly usable with DIA-NN (--lib)."
                 }
             }
         },

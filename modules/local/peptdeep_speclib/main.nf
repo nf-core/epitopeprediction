@@ -1,11 +1,11 @@
-process ALPHAPEPTDEEP_SPECLIB {
+process PEPTDEEP_SPECLIB {
     tag "$meta.id"
-    label 'process_medium'
+    label 'process_low'
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'oras://community.wave.seqera.io/library/pip_peptdeep:1.4.1--e7b1a24eed0dbe66' :
-        'community.wave.seqera.io/library/pip_peptdeep:1.4.1--4f3d825268498c74' }"
+        'https://depot.galaxyproject.org/singularity/peptdeep:1.4.1--pyhdfd78af_0' :
+        'quay.io/biocontainers/peptdeep:1.4.1--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(peptide_tsv)
@@ -21,10 +21,15 @@ process ALPHAPEPTDEEP_SPECLIB {
     def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
+    mkdir -p nxf_home
+    export HOME=\$PWD/nxf_home
+    export OMP_NUM_THREADS=${task.cpus}
+    export OPENBLAS_NUM_THREADS=${task.cpus}
+    export MKL_NUM_THREADS=${task.cpus}
+
     generate_speclib.py \\
         --input ${peptide_tsv} \\
         --output ${prefix}.speclib.tsv \\
-        --peptide_col_name ${params.peptide_col_name} \\
         ${args}
 
     cat <<-END_VERSIONS > versions.yml

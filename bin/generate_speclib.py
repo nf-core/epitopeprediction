@@ -5,11 +5,61 @@ nf-core/epitopeprediction peptide TSV using AlphaPeptDeep.
 """
 
 import argparse
+import torch
+
+torch.set_num_threads(1)
+
+import numpy as np
 import pandas as pd
 from peptdeep.pretrained_models import ModelManager
 from peptdeep.protein.fasta import PredictSpecLibFasta
 from peptdeep.spec_lib.translate import translate_to_tsv
+from peptdeep.model.model_interface import ModelInterface
+from peptdeep.model.ms2 import pDeepModel
 from alphabase.peptide.fragment import get_charged_frag_types
+
+
+# Monkey-patches for pandas>=3.0 CoW compatibility where .values returns
+# read-only arrays. These can be removed once peptdeep fixes this upstream.
+def _patched_set_batch_predict_data(self, batch_df, predict_values, **kwargs):
+    predict_values[predict_values < self._min_pred_value] = self._min_pred_value
+    col = self.target_column_to_predict
+    if self._predict_in_order:
+        start = batch_df.index.values[0]
+        end = batch_df.index.values[-1] + 1
+        col_idx = self.predict_df.columns.get_loc(col)
+        self.predict_df.iloc[start:end, col_idx] = predict_values
+    else:
+        self.predict_df.loc[batch_df.index, col] = predict_values
+
+
+def _patched_ms2_set_batch_predict_data(self, batch_df, predicts, **kwargs):
+    apex_intens = predicts.reshape((len(batch_df), -1)).max(axis=1)
+    apex_intens[apex_intens <= 0] = 1
+    predicts /= apex_intens.reshape((-1, 1, 1))
+    predicts[predicts < self.min_inten] = 0.0
+    columns_mask = np.isin(
+        self.model.supported_charged_frag_types, self.charged_frag_types
+    )
+    predicts = predicts[:, :, columns_mask]
+    if self._predict_in_order:
+        start = batch_df.frag_start_idx.values[0]
+        end = batch_df.frag_stop_idx.values[-1]
+        arr = self.predict_df.to_numpy(copy=True)
+        arr[start:end, :] = predicts.reshape((-1, len(self.charged_frag_types)))
+        self.predict_df.iloc[:, :] = arr
+    else:
+        from alphabase.peptide.fragment import update_sliced_fragment_dataframe
+        update_sliced_fragment_dataframe(
+            self.predict_df,
+            self.predict_df.to_numpy(copy=True),
+            predicts.reshape((-1, len(self.charged_frag_types))),
+            batch_df[["frag_start_idx", "frag_stop_idx"]].values,
+        )
+
+
+ModelInterface._set_batch_predict_data = _patched_set_batch_predict_data
+pDeepModel._set_batch_predict_data = _patched_ms2_set_batch_predict_data
 
 
 def parse_args():
@@ -82,6 +132,9 @@ def main():
     model_mgr.load_installed_models()
     model_mgr.nce = args.nce
     model_mgr.instrument = args.instrument
+    # Disable ML-based charge prediction to avoid multiprocessing overhead;
+    # for immunopeptides all charges in [charge_min, charge_max] are generated instead
+    model_mgr.charge_model = None
 
     frag_types = get_charged_frag_types(
         args.frag_types.split(","), args.max_frag_charge
