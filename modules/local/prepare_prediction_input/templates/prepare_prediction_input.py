@@ -226,7 +226,7 @@ def main():
 
             # If NetMHC is specified, check if number of alleles doesnt exceed tool boundary
             if tool in ['netmhcpan','netmhciipan'] and len(args.alleles.split(";")) > MaxNumberOfAlleles.NETMHCPAN.value:
-                raise ValueError(f"Number of alleles {len(args.alleles)} exceeds NetMHCpan limit of 50. Aborting..")
+                raise ValueError(f"Number of alleles {len(args.alleles.split(';'))} exceeds NetMHCpan limit of 50. Aborting..")
             # Special case for MHCflurry, which requires long format as input
             elif tool == "mhcflurry":
                 df_tool['allele'] = [tools_allele_input[tool].split(';')] * len(df_tool)

@@ -19,7 +19,6 @@ process PREPARE_PREDICTION_INPUT {
     template "prepare_prediction_input.py"
 
     stub:
-    def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_mhcflurry_input.csv

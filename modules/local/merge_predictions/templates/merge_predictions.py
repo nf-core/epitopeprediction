@@ -65,8 +65,10 @@ class Arguments:
         while i < len(args_list):
             if args_list[i].startswith('--'):
                 has_value = i + 1 < len(args_list) and not args_list[i + 1].startswith('--')
-                parser.add_argument(args_list[i], type=str if has_value else None,
-                                   action='store' if has_value else 'store_true')
+                if has_value:
+                    parser.add_argument(args_list[i], type=str)
+                else:
+                    parser.add_argument(args_list[i], action='store_true')
                 i += 2 if has_value else 1
             else:
                 i += 1
@@ -206,10 +208,9 @@ class PredictionResult:
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
-        # Select either Rank_BA (BA_Rank) or Rank (EL_Rank) based on use_ba_rank flag
-        rank_metric = '_BA' if self.use_ba_rank else ''
-        rank_column = f'Rank{rank_metric}'
-        df = df[df.columns[df.columns.str.contains(f'Peptide|{rank_column}|BA_score')]]
+        # Select either BA_Rank or Rank (EL_Rank) based on use_ba_rank flag
+        rank_column = 'BA_Rank' if self.use_ba_rank else 'Rank'
+        df = df[df.columns[df.columns.str.fullmatch(f'Peptide|{rank_column}|BA_score')]]
 
         df = df.rename(columns={'Peptide': self.peptide_col_name, rank_column: f'{rank_column}.0', 'BA_score': 'BA_score.0'})
         # to longformat based on .0|1|2..

@@ -126,6 +126,18 @@ The pipeline supports NetMHCpan 4.2bstatic and NetMHCIIpan 4.3e. If one of the e
 
 When using `conda`, the parameter `--netmhc_system` must also be specified if the default value `linux` is not applicable.
 
+NetMHCpan 4.2 supports different prediction modes. We strongly recommend using the default mode, but if necessary, the other modes can be selected with a custom config file.
+
+The antigen presentation mode is selected with `-mode 0`, the pathogen mode with `-mode 1` and the neoepitope mode with `-mode 2` in the module arguments. The config file can look like this:
+
+```
+process {
+    withName: NETMHCPAN {
+        ext.args = '-mode <1|2>'
+    }
+}
+```
+
 > [!IMPORTANT]
 > Only the specific versions `netMHCpan-4.2bstatic.Linux.tar.gz` and `netMHCIIpan-4.3e.Linux.tar.gz` are supported, as the pipeline validates these tarballs via checksum to ensure integrity.
 

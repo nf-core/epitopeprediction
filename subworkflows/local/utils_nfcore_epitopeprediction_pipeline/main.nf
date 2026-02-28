@@ -27,15 +27,15 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 workflow PIPELINE_INITIALISATION {
 
     take:
-    version           // boolean: Display version and exit
-    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
-    nextflow_cli_args //   array: List of positional nextflow CLI args
-    outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
-    help              // boolean: Display help message and exit
-    help_full         // boolean: Show the full help message
-    show_hidden       // boolean: Show hidden parameters in the help message
+    version            // boolean: Display version and exit
+    validate_params    // boolean: Boolean whether to validate parameters against the schema at runtime
+    _monochrome_logs   // boolean: Do not use coloured log outputs
+    nextflow_cli_args  //   array: List of positional nextflow CLI args
+    outdir             //  string: The output directory where the results will be saved
+    _input             //  string: Path to input samplesheet
+    help               // boolean: Display help message and exit
+    help_full          // boolean: Show the full help message
+    show_hidden        // boolean: Show hidden parameters in the help message
 
     main:
 
@@ -97,23 +97,12 @@ workflow PIPELINE_INITIALISATION {
     //
     //validateInputParameters()
 
-    // Function to read the alleles from a file or use given string
-    def readAlleles = { allele_input ->
-        if (allele_input.endsWith(".txt")) {
-            def file = file(allele_input)
-            // Read all lines, strip whitespace, and join them with semicolons
-            return file.readLines()*.trim().join(";")
-        } else {
-            // Not a file path, return the original string
-            return allele_input
-        }
-}
     //
     // Create channel from input file provided through params.input
     //
-    Channel
+    channel
         .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map { meta, file -> [meta + [alleles: readAlleles(meta.alleles)], file]} // Parse alleles from file
+        .map { meta, f -> [meta + [alleles: readAlleles(meta.alleles)], f]} // Parse alleles from file
         .set { ch_samplesheet }
 
     emit:
@@ -177,9 +166,17 @@ workflow PIPELINE_COMPLETION {
 //
 // Check and validate pipeline parameters
 //
-//def validateInputParameters() {
-//    pass
-//}
+// Function to read the alleles from a file or use given string
+def readAlleles(allele_input) {
+    if (allele_input.endsWith(".txt")) {
+        def f = file(allele_input)
+        // Read all lines, strip whitespace, and join them with semicolons
+        return f.readLines()*.trim().join(";")
+    } else {
+        // Not a file path, return the original string
+        return allele_input
+    }
+}
 
 //
 // Validate channels from input samplesheet

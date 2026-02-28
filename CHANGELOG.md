@@ -10,21 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#315](https://github.com/nf-core/epitopeprediction/pull/315) Added module bcftools/norm and parameter `--genome` for reference.fasta input ([@SusiJo](https://github.com/SusiJo/))
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
+- [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
 - [#338](https://github.com/nf-core/epitopeprediction/pull/338) Added MixMHCpred (Class I) and MixMHCIIpred (Class II) binding predictors with on-the-fly Wave container builds ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
+
+- [#331](https://github.com/nf-core/epitopeprediction/pull/331) Fixed Nextflow strict syntax lint errors ([@jonasscheid](https://github.com/jonasscheid/))
+- [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mappings [@axelwalter](https://github.com/axelwalter)
 
 ### `Dependencies`
 
 | Dependency | Old version | New version |
 | ---------- | ----------- | ----------- |
 | `bcftools` | 1.21        | 1.22        |
-| `nf-core`  | 3.4.1       | 3.5.1       |
+| `nf-core`  | 3.4.1       | 3.5.2       |
 
 ### `Changed`
 
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump` in `epaa.py` ([@SusiJo](https://github.com/SusiJo/)).
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
+- Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
+- [#336](https://github.com/nf-core/epitopeprediction/pull/336) Added NetMHCpan 4.2 mode config file instructions to the nf-core usage documentation. ([@Kabooni](https://github.com/Kabooni)).
 
 ## 3.1.0 - Lustnau - 2025-10-22
 

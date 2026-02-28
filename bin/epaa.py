@@ -29,6 +29,33 @@ VERSION = "2.0"
 # Define global variables
 ID_SYSTEM_USED = EIdentifierTypes.ENSEMBL
 transcriptProteinTable = {}
+vcfProteinIds = {}  # Store protein IDs extracted directly from VCF annotations
+vcfConsequences = {}  # Store consequences by (chrom, pos, ref, obs) for lookup in FASTA generation
+
+# Mapping from genome reference names to Ensembl URLs and datasets
+GENOME_REFERENCE_MAP = {
+    # Human genomes
+    "grch38": {"url": "https://www.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
+    "grch37": {"url": "https://grch37.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
+    "hg38": {"url": "https://www.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
+    "hg19": {"url": "https://grch37.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
+    # Mouse genomes (GRCm39 is current; GRCm38 uses Ensembl 102 archive - last release with GRCm38)
+    "grcm39": {"url": "https://www.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
+    "grcm38": {"url": "https://nov2020.archive.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
+    "mm39": {"url": "https://www.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
+    "mm10": {"url": "https://nov2020.archive.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
+}
+
+def unwrap_to_string(value, default="unknown"):
+    """Unwrap nested lists to get a string value.
+
+    get_metadata() returns values wrapped in lists, and if metadata was
+    copied incorrectly, values can become double-wrapped. This function
+    safely extracts the string regardless of nesting level.
+    """
+    while isinstance(value, list) and len(value) > 0:
+        value = value[0]
+    return value if isinstance(value, str) else default
 
 # Set up logging (epytope uses logging as well, so we have to adapt the existing logger)
 logger = logging.getLogger()
@@ -55,7 +82,7 @@ def parse_args():
     parser.add_argument("--flanking_region_size", help="Size of flanking region around mutated peptides in FASTA output", type=int, default=25)
     parser.add_argument("--min_length", help="Minimum peptide length of mutated peptides", type=int, default=8)
     parser.add_argument("--max_length", help="Maximum peptide length of mutated peptides", type=int, default=14)
-    parser.add_argument("--genome_reference", help="Reference, retrieved information will be based on this ensembl version", default="https://grch37.ensembl.org/")
+    parser.add_argument("--genome_reference", help="Genome reference (grch38, grch37, hg38, hg19 for human; grcm39, grcm38, mm39, mm10 for mouse) or Ensembl URL (defaults to human)", default="grch38")
     parser.add_argument("--proteome_reference", help="Specify reference proteome fasta for self-filtering peptides from variants")
     parser.add_argument("--peptide_col_name", help="Name of the column containing the peptide sequences", type=str, default="sequence")
     parser.add_argument("--version", help="Script version", action="version", version=VERSION)
@@ -135,6 +162,8 @@ def read_vcf(filename, pass_only=True):
     :return: list of epytope variants
     """
     global ID_SYSTEM_USED
+    global vcfProteinIds
+    global vcfConsequences
 
     vep_header_available = False
     # default VEP fields
@@ -309,6 +338,37 @@ def read_vcf(filename, pass_only=True):
                                 transcript_id, tpos, ppos, split_coding_c[-1], split_coding_p[-1]
                             )
                             transcript_ids.append(transcript_id)
+
+                            # Extract protein IDs from VEP annotation fields
+                            if transcript_id not in vcfProteinIds:
+                                vcfProteinIds[transcript_id] = {"ensembl_id": "", "uniprot_id": "", "refseq_id": ""}
+
+                            # Extract Ensembl protein ID from 'ensp' field or HGVSp
+                            ensembl_protein = ""
+                            if "ensp" in vep_fields and len(split_annotation) > vep_fields["ensp"]:
+                                ensembl_protein = split_annotation[vep_fields["ensp"]].split(".")[0]
+                            # Fallback: extract from HGVSp (e.g., ENSMUSP00000150262.2:p.Val3239Arg)
+                            if not ensembl_protein and split_coding_p and len(split_coding_p) > 0:
+                                protein_prefix = split_coding_p[0].split(".")[0]
+                                if protein_prefix.startswith("ENSP") or protein_prefix.startswith("ENSMUSP"):
+                                    ensembl_protein = protein_prefix
+                            if ensembl_protein and not vcfProteinIds[transcript_id]["ensembl_id"]:
+                                vcfProteinIds[transcript_id]["ensembl_id"] = ensembl_protein
+
+                            # Extract UniProt ID from 'swissprot' or 'trembl' fields
+                            uniprot_id = ""
+                            if "swissprot" in vep_fields and len(split_annotation) > vep_fields["swissprot"]:
+                                uniprot_id = split_annotation[vep_fields["swissprot"]].split(".")[0]
+                            if not uniprot_id and "trembl" in vep_fields and len(split_annotation) > vep_fields["trembl"]:
+                                uniprot_id = split_annotation[vep_fields["trembl"]].split(".")[0]
+                            if uniprot_id and not vcfProteinIds[transcript_id]["uniprot_id"]:
+                                vcfProteinIds[transcript_id]["uniprot_id"] = uniprot_id
+
+                            # Extract RefSeq protein ID from 'refseq_match' field if available
+                            if "refseq_match" in vep_fields and len(split_annotation) > vep_fields["refseq_match"]:
+                                refseq_id = split_annotation[vep_fields["refseq_match"]].split(".")[0]
+                                if refseq_id and not vcfProteinIds[transcript_id]["refseq_id"]:
+                                    vcfProteinIds[transcript_id]["refseq_id"] = refseq_id
                 if coding:
                     pos, reference, alternative = get_epytope_annotation(vt, genomic_position, reference, str(alt))
                     var = Variant(
@@ -325,6 +385,9 @@ def read_vcf(filename, pass_only=True):
                     )
                     var.gene = gene
                     var.log_metadata("vardbid", variation_dbid)
+                    # Store consequence by variant coordinates for lookup in FASTA generation
+                    # This is needed because epytope may not preserve metadata through protein generation
+                    vcfConsequences[(chromosome, pos, reference, alternative)] = consequence
                     final_metadata_list.append("vardbid")
                     for metadata_name in metadata_list:
                         if metadata_name in record.INFO:
@@ -361,8 +424,17 @@ def read_vcf(filename, pass_only=True):
             for v in vs:
                 vs_new = Variant(v.id, v.type, v.chrom, v.genomePos, v.ref, v.obs, v.coding, True, v.isSynonymous)
                 vs_new.gene = v.gene
-                for m in metadata_name:
-                    vs_new.log_metadata(m, v.get_metadata(m))
+                # Copy all metadata including 'consequence'
+                for m in final_metadata_list:
+                    meta_value = v.get_metadata(m)
+                    if meta_value:
+                        # Use unwrap_to_string to handle potentially nested lists
+                        vs_new.log_metadata(m, unwrap_to_string(meta_value, default=""))
+                # Ensure 'consequence' metadata is preserved
+                consequence_meta = v.get_metadata("consequence")
+                if consequence_meta:
+                    # Use unwrap_to_string to handle potentially nested lists
+                    vs_new.log_metadata("consequence", unwrap_to_string(consequence_meta))
                 dict_vars[v] = vs_new
 
     return dict_vars.values(), transcript_ids, final_metadata_list
@@ -515,7 +587,7 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
-def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapter, metadata: list, minlength: int, maxlength: int ) -> Tuple[pd.DataFrame, list]:
+def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapter, metadata: list, minlength: int, maxlength: int, ensembl_dataset: str = "hsapiens_gene_ensembl" ) -> Tuple[pd.DataFrame, list]:
     """
     Generate mutated peptides ranging between min and max length from a list of epytore.Core.Variants.
     Args:
@@ -524,6 +596,7 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
         metadata: List of metadata columns to include in the output.
         minlength: Minimum length of peptides to generate.
         maxlength: Maximum length of peptides to generate.
+        ensembl_dataset: Ensembl BioMart dataset (e.g., hsapiens_gene_ensembl, mmusculus_gene_ensembl).
     Returns:
         mutated_peptides_df: DataFrame containing mutated peptides and metadata.
         prots: List of mutated proteins.
@@ -533,7 +606,7 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
     transcripts = []
     for v in variants:
         try:
-            transcripts.extend(generator.generate_transcripts_from_variants([v], martsadapter, ID_SYSTEM_USED))
+            transcripts.extend(generator.generate_transcripts_from_variants([v], martsadapter, ID_SYSTEM_USED, db=ensembl_dataset))
         except Exception:
             logger.warning(f"Could not generate transcripts for variant {v}. Skipping.")
     # Try/except for generate_proteins_from_transcripts
@@ -750,6 +823,7 @@ def generate_fasta_output(output_filename: str, mutated_proteins: list, mutated_
         mutated_peptides_df (pd.DataFrame): A DataFrame containing peptide-related information such as accessions.
         flanking_region_size (int): The size of the flanking region added on each side of a mutation within a peptide.
     """
+    global vcfConsequences
 
     # Build FASTA dict: wildtypes and mutations per transcript
     fasta_dict = {}
@@ -775,7 +849,14 @@ def generate_fasta_output(output_filename: str, mutated_proteins: list, mutated_
             for var_details in p.vars.values():
                 for variant_detail in var_details:
                     consequence = variant_detail.get_metadata("consequence")
-                    variant_consequences.append(consequence[0] if consequence else "unknown")
+                    if consequence:
+                        # Use unwrap_to_string to handle potentially nested lists
+                        variant_consequences.append(unwrap_to_string(consequence))
+                    else:
+                        # Fallback: look up consequence from VCF by variant coordinates
+                        var_key = (variant_detail.chrom, variant_detail.genomePos, variant_detail.ref, variant_detail.obs)
+                        vcf_consequence = vcfConsequences.get(var_key, "unknown")
+                        variant_consequences.append(vcf_consequence)
                     for coding_variant in variant_detail.coding.values():
                         variant_details_gene.append(coding_variant.cdsMutationSyntax)
                         variant_details_protein.append(coding_variant.aaMutationSyntax)
@@ -940,11 +1021,86 @@ def get_protein_ids_from_transcripts_offline(transcripts, data_path):
     return result
 
 
+def merge_vcf_protein_ids_with_biomart(biomart_table, vcf_protein_ids, transcripts):
+    """
+    Merge protein IDs extracted from VCF annotations with BioMart lookup results.
+    VCF-derived protein IDs are used as fallback when BioMart doesn't have the mapping.
+
+    Args:
+        biomart_table: DataFrame with protein IDs from BioMart lookup.
+        vcf_protein_ids: Dictionary mapping transcript IDs to protein IDs from VCF.
+        transcripts: List of transcript IDs to process.
+
+    Returns:
+        DataFrame with merged protein IDs.
+    """
+    if biomart_table is None or biomart_table.empty:
+        # Create a new DataFrame from VCF protein IDs
+        rows = []
+        for transcript_id in transcripts:
+            transcript_base = transcript_id.split(".")[0]
+            if transcript_base in vcf_protein_ids:
+                rows.append({
+                    "ensembl_id": vcf_protein_ids[transcript_base].get("ensembl_id", ""),
+                    "refseq_id": vcf_protein_ids[transcript_base].get("refseq_id", ""),
+                    "uniprot_id": vcf_protein_ids[transcript_base].get("uniprot_id", ""),
+                    "transcript_id": transcript_base
+                })
+            else:
+                rows.append({
+                    "ensembl_id": "",
+                    "refseq_id": "",
+                    "uniprot_id": "",
+                    "transcript_id": transcript_base
+                })
+        if rows:
+            logger.info(f"Using {len([r for r in rows if r['ensembl_id'] or r['uniprot_id']])} protein IDs from VCF annotations.")
+            return pd.DataFrame(rows)
+        return pd.DataFrame(columns=["ensembl_id", "refseq_id", "uniprot_id", "transcript_id"])
+
+    # Merge VCF protein IDs into BioMart results
+    merged_count = 0
+    for transcript_id in transcripts:
+        transcript_base = transcript_id.split(".")[0]
+        if transcript_base not in vcf_protein_ids:
+            continue
+
+        vcf_ids = vcf_protein_ids[transcript_base]
+
+        # Check if this transcript exists in BioMart table
+        mask = biomart_table["transcript_id"] == transcript_base
+        if mask.any():
+            # Update empty values with VCF-derived IDs
+            for col, vcf_key in [("ensembl_id", "ensembl_id"), ("uniprot_id", "uniprot_id"), ("refseq_id", "refseq_id")]:
+                if vcf_ids.get(vcf_key):
+                    # Only update if BioMart value is empty/NaN
+                    current_val = biomart_table.loc[mask, col].iloc[0]
+                    if pd.isna(current_val) or current_val == "":
+                        biomart_table.loc[mask, col] = vcf_ids[vcf_key]
+                        merged_count += 1
+        else:
+            # Add new row for transcript not in BioMart
+            new_row = pd.DataFrame([{
+                "ensembl_id": vcf_ids.get("ensembl_id", ""),
+                "refseq_id": vcf_ids.get("refseq_id", ""),
+                "uniprot_id": vcf_ids.get("uniprot_id", ""),
+                "transcript_id": transcript_base
+            }])
+            biomart_table = pd.concat([biomart_table, new_row], ignore_index=True)
+            merged_count += 1
+
+    if merged_count > 0:
+        logger.info(f"Merged {merged_count} protein ID(s) from VCF annotations into BioMart results.")
+
+    return biomart_table
+
+
 def __main__():
     args = parse_args()
     logger.info("Running variant prediction version: " + str(VERSION))
 
     global transcriptProteinTable
+    global vcfProteinIds
 
     # Read VCF file
     variant_list, transcripts, variants_metadata = read_vcf(args.input)
@@ -957,20 +1113,43 @@ def __main__():
         write_empty_files(args)
         return  # Exit early
 
+    # Look up genome reference in the mapping or use URL directly
+    genome_ref_lower = args.genome_reference.lower()
+    if genome_ref_lower in GENOME_REFERENCE_MAP:
+        genome_info = GENOME_REFERENCE_MAP[genome_ref_lower]
+        ensembl_url = genome_info["url"]
+        ensembl_dataset = genome_info["dataset"]
+        logger.info(f"Using genome reference '{args.genome_reference}' -> Ensembl URL: {ensembl_url}, dataset: {ensembl_dataset}")
+    elif genome_ref_lower.startswith("http"):
+        # URL provided directly, default to human dataset
+        ensembl_url = args.genome_reference
+        ensembl_dataset = "hsapiens_gene_ensembl"
+        logger.info(f"Using Ensembl URL directly: {ensembl_url}, defaulting to human dataset: {ensembl_dataset}")
+    else:
+        logger.error(f"Unknown genome reference: {args.genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())} or an Ensembl URL")
+        sys.exit(1)
+
     # initialize MartsAdapter
-    # in previous version, these were the defaults "GRCh37": "http://feb2014.archive.ensembl.org" (broken)
-    # "GRCh38": "http://apr2018.archive.ensembl.org" (different dataset table scheme, could potentially be fixed on BiomartAdapter level if needed )
-    martsadapter = MartsAdapter(biomart=args.genome_reference)
+    martsadapter = MartsAdapter(biomart=ensembl_url)
 
     if args.biomart_dump:
         logger.info(f"Using offline biomart dump. Loading transcript to protein mapping from {args.biomart_dump}")
         transcriptProteinTable = get_protein_ids_from_transcripts_offline(transcripts, args.biomart_dump)
     else:
         # Create a mapping of transcript IDs to ensembl, refseq, and uniprot IDs
-        transcriptProteinTable = martsadapter.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
+        try:
+            transcriptProteinTable = martsadapter.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
+        except Exception as e:
+            logger.warning(f"BioMart lookup failed: {e}. Will use protein IDs from VCF annotations if available.")
+            transcriptProteinTable = None
+
+    # Merge protein IDs from VCF annotations with BioMart results
+    # This ensures that protein IDs present in VCF (e.g., ENSP, UniProt) are used when BioMart lookup fails
+    # Always call merge function to ensure transcriptProteinTable is initialized even if BioMart failed
+    transcriptProteinTable = merge_vcf_protein_ids_with_biomart(transcriptProteinTable, vcfProteinIds, transcripts)
 
     # Generate mutated peptides from variants
-    mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, martsadapter, variants_metadata, args.min_length, args.max_length + 1)
+    mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, martsadapter, variants_metadata, args.min_length, args.max_length + 1, ensembl_dataset)
 
     # Check if mutated_peptides_df is empty after filtering and write empty files
     if mutated_peptides_df.empty:

@@ -116,14 +116,14 @@ workflow EPITOPEPREDICTION {
          )
 
     ch_versions = ch_versions.mix(BCFTOOLS_STATS.out.versions)
-    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ meta, stats -> stats })
+    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ _meta, stats -> stats })
 
     // (re)combine different input file types
     ch_samples_uncompressed = ch_samplesheet.protein
         .mix(ch_samplesheet.peptide)
         .mix(ch_variants_uncompressed)
         .branch {
-            meta_data, input_file ->
+            meta_data, _input_file ->
             variant :  meta_data.input_type == 'variant' | meta_data.input_type == 'variant_compressed'
             peptide :  meta_data.input_type == 'peptide'
             protein :  meta_data.input_type == 'protein'
@@ -152,7 +152,7 @@ workflow EPITOPEPREDICTION {
     // Generate mutated peptides from VCF and filter out empty files
     EPYTOPE_VARIANT_PREDICTION( ch_split_variants.transpose(), ch_biomart_dump )
         .tsv
-        .filter { meta, file -> file.size() > 0 }
+        .filter { _meta, file -> file.size() > 0 }
         .set { ch_peptides_from_variants }
     ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
 
@@ -202,7 +202,7 @@ workflow EPITOPEPREDICTION {
     SUMMARIZE_RESULTS(MHC_BINDING_PREDICTION.out.predicted
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple())
-    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ it[1] })
+    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ _meta, json -> json })
     ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
     //

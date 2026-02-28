@@ -4,7 +4,7 @@ lint:
     - docs/images/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_dark.png
     - .vscode/settings.json
-nf_core_version: 3.5.1
+nf_core_version: 3.5.2
 repository_type: pipeline
 template:
   author: Christopher Mohr, Jonas Scheid

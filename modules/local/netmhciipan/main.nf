@@ -22,10 +22,10 @@ process NETMHCIIPAN {
     def prefix  = task.ext.prefix ?: "${meta.id}"
     // Adjust for netMHCIIpan allele format (e.g. DRB1_0101, HLA-DPA10103-DPB10101)
     def alleles = meta.alleles_supported.tokenize(';')
-                    .collect {
-                        it.contains('DRB') ?
-                            it.replace('*', '_').replace(':', '').replace('HLA-', '') :
-                            it.replace('*', '').replace(':', '').replace('/','-').replace('H2','H-2')
+                    .collect { allele ->
+                        allele.contains('DRB') ?
+                            allele.replace('*', '_').replace(':', '').replace('HLA-', '') :
+                            allele.replace('*', '').replace(':', '').replace('/','-').replace('H2','H-2')
                     }.join(',')
 
     """
@@ -44,7 +44,6 @@ process NETMHCIIPAN {
     """
 
     stub:
-    def args       = task.ext.args ?: ''
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predicted_netmhciipan.xls
