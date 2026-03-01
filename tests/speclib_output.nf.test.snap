@@ -76,14 +76,14 @@
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,42808c04f5fba461be38c84cc6427b2a",
-                "sample1.speclib.tsv:md5,1fe580913f7e265188ea1a72888367d4",
-                "sample2.speclib.tsv:md5,1fe580913f7e265188ea1a72888367d4"
+                "sample1.speclib.tsv:md5,dd6e236c385c5a1368c425d3b357d85a",
+                "sample2.speclib.tsv:md5,dd6e236c385c5a1368c425d3b357d85a"
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.3"
         },
-        "timestamp": "2026-02-28T17:41:33.193322514"
+        "timestamp": "2026-03-01T07:49:31.19310411"
     }
 }
