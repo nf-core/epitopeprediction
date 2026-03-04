@@ -11,7 +11,7 @@ process PEPTDEEP_LIBRARY {
     tuple val(meta), path(peptide_tsv)
 
     output:
-    tuple val(meta), path("*.speclib.parquet"), emit: speclib
+    tuple val(meta), path("*.parquet"), emit: speclib
     path "versions.yml"                   , emit: versions
 
     when:
@@ -31,7 +31,7 @@ process PEPTDEEP_LIBRARY {
 
     generate_speclib.py \\
         --input ${peptide_tsv} \\
-        --output ${prefix}.speclib.parquet \\
+        --output ${prefix}.parquet \\
         ${args}
 
     cat <<-END_VERSIONS > versions.yml
@@ -44,7 +44,7 @@ process PEPTDEEP_LIBRARY {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.speclib.parquet
+    touch ${prefix}.parquet
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

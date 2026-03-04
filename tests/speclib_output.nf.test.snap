@@ -67,8 +67,8 @@
                 "predictions/sample1.tsv",
                 "predictions/sample2.tsv",
                 "library",
-                "library/sample1.speclib.parquet",
-                "library/sample2.speclib.parquet"
+                "library/sample1.parquet",
+                "library/sample2.parquet"
             ],
             [
                 "multiqc_binder_length_distribution.txt:md5,de696e8183c37f510c25d5a339844d7d",
@@ -76,8 +76,8 @@
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,42808c04f5fba461be38c84cc6427b2a",
-                "sample1.speclib.parquet:md5,e82d1c1e24feb4678020df12bb223320",
-                "sample2.speclib.parquet:md5,e82d1c1e24feb4678020df12bb223320"
+                "sample1.parquet:md5,e82d1c1e24feb4678020df12bb223320",
+                "sample2.parquet:md5,e82d1c1e24feb4678020df12bb223320"
             ]
         ],
         "meta": {
