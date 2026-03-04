@@ -94,7 +94,7 @@ Default instrument parameters (NCE=25, timsTOF, charges 1-3, Oxidation@M, ion mo
 
 ```groovy
 process {
-    withName: 'PEPTDEEP_SPECLIB' {
+    withName: 'PEPTDEEP_LIBRARY' {
         ext.args = '--nce 27 --instrument QE --charge_min 2 --charge_max 4 --var_mods Oxidation@M'
     }
 }

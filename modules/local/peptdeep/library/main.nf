@@ -1,4 +1,4 @@
-process PEPTDEEP_SPECLIB {
+process PEPTDEEP_LIBRARY {
     tag "$meta.id"
     label 'process_low'
 
