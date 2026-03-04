@@ -13,7 +13,7 @@ def parse_args():
         description="Generate predicted spectral library from epitopeprediction output."
     )
     p.add_argument("--input", required=True, help="Peptide TSV from epitopeprediction")
-    p.add_argument("--output", required=True, help="Output .speclib.tsv path")
+    p.add_argument("--output", required=True, help="Output .speclib.parquet path")
     p.add_argument("--nce", type=float, default=25.0, help="Normalized collision energy")
     p.add_argument(
         "--instrument", default="timsTOF",
@@ -100,7 +100,13 @@ def main():
         lib_settings["infile_type"], model_manager=model_mgr
     )
     lib_maker.make_library(lib_settings["infiles"])
-    lib_maker.translate_to_tsv(args.output, translate_mod_dict=mod_to_unimod_dict)
+
+    import tempfile
+    import pandas as pd
+    with tempfile.NamedTemporaryFile(suffix=".tsv", dir=output_dir, delete=True) as tmp:
+        lib_maker.translate_to_tsv(tmp.name, translate_mod_dict=mod_to_unimod_dict)
+        df = pd.read_csv(tmp.name, sep="\t")
+    df.to_parquet(args.output, index=False)
 
 
 if __name__ == "__main__":

@@ -11,7 +11,7 @@ process PEPTDEEP_LIBRARY {
     tuple val(meta), path(peptide_tsv)
 
     output:
-    tuple val(meta), path("*.speclib.tsv"), emit: speclib
+    tuple val(meta), path("*.speclib.parquet"), emit: speclib
     path "versions.yml"                   , emit: versions
 
     when:
@@ -21,15 +21,17 @@ process PEPTDEEP_LIBRARY {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
     """
+    # Writable HOME for peptdeep model downloads (container HOME=/ is read-only)
     mkdir -p nxf_home
     export HOME=\$PWD/nxf_home
+    # Limit numpy/pytorch thread backends to allocated CPUs
     export OMP_NUM_THREADS=${task.cpus}
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export MKL_NUM_THREADS=${task.cpus}
 
     generate_speclib.py \\
         --input ${peptide_tsv} \\
-        --output ${prefix}.speclib.tsv \\
+        --output ${prefix}.speclib.parquet \\
         ${args}
 
     cat <<-END_VERSIONS > versions.yml
@@ -42,7 +44,7 @@ process PEPTDEEP_LIBRARY {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.speclib.tsv
+    touch ${prefix}.speclib.parquet
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
