@@ -66,9 +66,9 @@
                 "predictions",
                 "predictions/sample1.tsv",
                 "predictions/sample2.tsv",
-                "speclib",
-                "speclib/sample1.speclib.parquet",
-                "speclib/sample2.speclib.parquet"
+                "library",
+                "library/sample1.speclib.parquet",
+                "library/sample2.speclib.parquet"
             ],
             [
                 "multiqc_binder_length_distribution.txt:md5,de696e8183c37f510c25d5a339844d7d",
