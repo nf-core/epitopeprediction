@@ -78,6 +78,28 @@ GBM_1,DRB1*01:01,II,gbm_1_peptides.tsv
 
 You can also perform predictions for MHC class `I` and `II` in the same run by specifying the value in the corresponding column (one value per row). Please make sure to select the alleles accordingly. You can also provide your alleles in a `.txt` file containing one allele per row.
 
+### Spectral library output
+
+Provide `--speclib_output` to generate a predicted spectral library using [AlphaPeptDeep](https://github.com/MannLabs/alphapeptdeep). The output `.speclib.tsv` is directly usable with [DIA-NN](https://github.com/vdemichev/DiaNN) (`diann --lib`). Combine with `--binder_only` to restrict the library to predicted binders.
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --speclib_output \
+  -profile docker
+```
+
+Default instrument parameters (NCE=25, timsTOF, charges 1-3, Oxidation@M, ion mobility enabled) can be customized via `ext.args`:
+
+```groovy
+process {
+    withName: 'PEPTDEEP_LIBRARY' {
+        ext.args = '--nce 27 --instrument QE --charge_min 2 --charge_max 4 --var_mods Oxidation@M'
+    }
+}
+```
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:

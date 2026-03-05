@@ -149,6 +149,13 @@
                     "hidden": true,
                     "description": "Use BA_Rank instead of EL_Rank for netMHCpan and netMHCIIpan predictions.",
                     "help_text": "By default, netMHCpan and netMHCIIpan predictions use EL_Rank (Eluted Ligand Rank) as the rank metric, which is the recommended metric by the developers. When this flag is enabled, BA_Rank (Binding Affinity Rank) will be used instead. Note that EL_Rank and BA_Rank can differ significantly as they are computed against different reference sets."
+                },
+                "speclib_output": {
+                    "type": "boolean",
+                    "default": false,
+                    "fa_icon": "fas fa-chart-area",
+                    "description": "Generate a predicted spectral library (DIA-NN TSV) from predicted peptides using AlphaPeptDeep.",
+                    "help_text": "When enabled, all predicted peptides are passed to AlphaPeptDeep to predict MS2 spectra, retention times, and optionally ion mobility. The output .speclib.tsv file is directly usable with DIA-NN (--lib)."
                 }
             }
         },

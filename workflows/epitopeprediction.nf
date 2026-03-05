@@ -11,6 +11,7 @@ include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
 include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results'
+include { PEPTDEEP_LIBRARY           } from '../modules/local/peptdeep/library'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
@@ -204,6 +205,14 @@ workflow EPITOPEPREDICTION {
                     .groupTuple())
     ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ _meta, json -> json })
     ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
+
+    //
+    // MODULE: Generate predicted spectral library using AlphaPeptDeep
+    //
+    if (params.speclib_output) {
+        PEPTDEEP_LIBRARY( SUMMARIZE_RESULTS.out.tsv )
+        ch_versions = ch_versions.mix(PEPTDEEP_LIBRARY.out.versions)
+    }
 
     //
     // Collate and save software versions

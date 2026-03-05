@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::peptdeep=1.4.1
+  - conda-forge::pandas<3.0

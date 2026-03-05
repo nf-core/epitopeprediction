@@ -279,7 +279,7 @@ def main():
 
     # Filter out non-binders if requested
     if args.binder_only:
-        df = df[df['binder']]
+        df = df[df['binder'].fillna(False).astype(bool)]
 
     # Write output file
     df.to_csv(f'{args.prefix}.tsv', sep='\t', index=False)
