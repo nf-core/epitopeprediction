@@ -40,22 +40,33 @@ workflow MHC_BINDING_PREDICTION {
             .set { ch_peptides_to_predict }
 
         // Prepare predictor-tailored input file and alleles supported by the predictor
+        // Supports allele chunking: JSON keys may be "tool" or "tool_chunkN"
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
             .transpose()
             .branch {
                 meta, json, file ->
                     def allele_input_dict = json2map(json)
-                    mhcflurry : (file.name.contains('mhcflurry_input') && allele_input_dict['mhcflurry'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcflurry']], file]
-                    mhcnuggets : (file.name.contains('mhcnuggets_input') && allele_input_dict['mhcnuggets'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcnuggets']], file]
-                    mhcnuggetsii : (file.name.contains('mhcnuggetsii_input') && allele_input_dict['mhcnuggetsii'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcnuggetsii']], file]
-                    netmhcpan: (file.name.contains('netmhcpan_input') && allele_input_dict['netmhcpan'])
-                        return [meta + [alleles_supported: allele_input_dict['netmhcpan']], file]
-                    netmhciipan: (file.name.contains('netmhciipan_input') && allele_input_dict['netmhciipan'])
-                        return [meta + [alleles_supported: allele_input_dict['netmhciipan']], file]
+                    // Find the JSON key matching this file (supports both "tool" and "tool_chunkN" keys)
+                    def key = allele_input_dict.keySet().find { k -> file.name.contains("${k}_input") }
+                    def alleles = key ? allele_input_dict[key] : null
+                    def tool = key?.replaceAll(/_chunk\d+$/, '')
+                    // Append chunk suffix to file_id for unique predictor output filenames
+                    def chunk_id = (key && key != tool) ? key.replace("${tool}_", '') : ''
+                    def updated_meta = meta + [
+                        alleles_supported: alleles,
+                        file_id: chunk_id ? meta.file_id + '_' + chunk_id : meta.file_id
+                    ]
+                    mhcflurry    : tool == 'mhcflurry' && alleles
+                        return [updated_meta, file]
+                    mhcnuggets   : tool == 'mhcnuggets' && alleles
+                        return [updated_meta, file]
+                    mhcnuggetsii : tool == 'mhcnuggetsii' && alleles
+                        return [updated_meta, file]
+                    netmhcpan    : tool == 'netmhcpan' && alleles
+                        return [updated_meta, file]
+                    netmhciipan  : tool == 'netmhciipan' && alleles
+                        return [updated_meta, file]
                     }
             .set{ ch_prediction_input }
 
@@ -88,10 +99,17 @@ workflow MHC_BINDING_PREDICTION {
         }
 
     // Join predicted file and subworkflow input file to add inputfile metadata
+    // Carry per-file alleles_supported through groupTuple for correct allele-index mapping in merge
     ch_binding_predictors_out
-        .map { meta, file -> [meta.findAll { k, _v -> k != 'alleles_supported' }, file] } // drop alleles_supported from meta
-        .groupTuple()
-        .join( ch_peptides_to_predict )
+        .map { meta, file ->
+            def alleles = meta.alleles_supported ?: meta.alleles
+            def clean_meta = meta.findAll { k, _v -> k != 'alleles_supported' }
+            // Restore original file_id by stripping chunk suffix for correct grouping
+            clean_meta.file_id = clean_meta.file_id.replaceAll(/_chunk\d+$/, '')
+            [clean_meta, file, alleles]
+        }
+        .groupTuple()  // → [meta, [files], [alleles_per_file]]
+        .join( ch_peptides_to_predict )  // → [meta, [files], [alleles_per_file], source_file]
         .set { ch_binding_predictors_out_meta}
 
     // Merge predictions from different predictors

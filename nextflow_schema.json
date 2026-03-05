@@ -114,6 +114,12 @@
                     "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`,`netmhcpan`,`netmhciipan`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
+                "max_alleles_per_chunk": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Maximum number of alleles per prediction chunk.",
+                    "help_text": "When set to 0 (default), per-tool defaults are used (e.g. 50 for NetMHCpan/NetMHCIIpan, unlimited for others). Set to a positive value to override all tools. Allele chunking is required when using 'all' in the samplesheet alleles column for pan-HLA prediction."
+                },
                 "wild_type": {
                     "type": "boolean",
                     "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",

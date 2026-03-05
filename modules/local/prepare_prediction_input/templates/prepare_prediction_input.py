@@ -34,9 +34,12 @@ class MaxLength(Enum):
     NETMHCPAN = 14
     NETMHCIIPAN = 50
 
-# TODO: Implement
 class MaxNumberOfAlleles(Enum):
+    MHCFLURRY = 0
+    MHCNUGGETS = 0
+    MHCNUGGETSII = 0
     NETMHCPAN = 50
+    NETMHCIIPAN = 50
 
 class Arguments:
     """
@@ -170,19 +173,54 @@ class Utils:
         """Filter dataframe based on length constraints."""
         return df[df[peptide_col].str.len().between(min_length, max_length)]
 
+    def chunk_alleles(alleles_str: str, max_per_chunk: int) -> list:
+        """Split a semicolon-separated allele string into chunks of at most max_per_chunk alleles.
+        Returns a list of semicolon-separated allele strings. If max_per_chunk <= 0, returns the original as a single-element list."""
+        alleles = alleles_str.split(';')
+        if max_per_chunk <= 0 or len(alleles) <= max_per_chunk:
+            return [alleles_str]
+        return [';'.join(alleles[i:i+max_per_chunk]) for i in range(0, len(alleles), max_per_chunk)]
+
 
 def main():
     args = Arguments()
 
     # Parse alleles and save supported alleles per tool
-    alleles_normalized = Utils.parse_alleles(args.alleles)
     supported_alleles_dict = json.load(open(args.supported_alleles_json))
-    tools_allele_input = {
-        tool: ';'.join(Utils.keep_supported_alleles(alleles_normalized, tool, supported_alleles_dict[tool]))
-        for tool in args.tools
-    }
+
+    if args.alleles.strip().lower() == 'all':
+        # Pan-HLA mode: use all supported alleles per tool
+        logging.info("Pan-HLA mode: using all supported alleles per tool")
+        tools_allele_input = {
+            tool: ';'.join(supported_alleles_dict[tool])
+            for tool in args.tools
+        }
+    else:
+        alleles_normalized = Utils.parse_alleles(args.alleles)
+        tools_allele_input = {
+            tool: ';'.join(Utils.keep_supported_alleles(alleles_normalized, tool, supported_alleles_dict[tool]))
+            for tool in args.tools
+        }
+
+    # Split alleles into chunks per tool based on MaxNumberOfAlleles limits
+    # --max_alleles_per_chunk > 0 overrides per-tool defaults
+    global_max = int(args.max_alleles_per_chunk)
+    tools_allele_chunks = {}
+    for tool, alleles_str in tools_allele_input.items():
+        if not alleles_str:
+            continue
+        tool_default = MaxNumberOfAlleles[tool.upper()].value
+        max_alleles = global_max if global_max > 0 else tool_default
+        chunks = Utils.chunk_alleles(alleles_str, max_alleles)
+        if len(chunks) == 1:
+            tools_allele_chunks[tool] = chunks[0]
+        else:
+            for ci, chunk in enumerate(chunks):
+                tools_allele_chunks[f"{tool}_chunk{ci}"] = chunk
+            logging.info(f"Split {tool} alleles into {len(chunks)} chunks of max {max_alleles}")
+
     with open(f"{args.prefix}_allele_input.json", "w") as f:
-        json.dump(tools_allele_input, f)
+        json.dump(tools_allele_chunks, f)
 
     # Read input peptides and filter invalid amino acids
     df_input = pd.read_csv(args.input, sep="\t")
@@ -208,7 +246,7 @@ def main():
         "netmhciipan":  {"min": MinLength.NETMHCIIPAN.value, "max": MaxLength.NETMHCIIPAN.value,        "suffix": "netmhciipan_input.tsv",  "mhc_class": "II"},
     }
 
-    # Step 2: Apply tool-specific length filtering** on top of MHC class filtering
+    # Step 2: Apply tool-specific length filtering on top of MHC class filtering
     for tool, config in tool_configs.items():
         if tool in args.tools and config["mhc_class"] == args.mhc_class:
             df_tool = Utils.filter_by_length(df_filtered, config["min"], config["max"], args.peptide_col_name)
@@ -218,17 +256,23 @@ def main():
 
             logging.info(f"Input for {tool} detected. Preparing {len(df_tool)} peptides for prediction..")
 
-            # If NetMHC is specified, check if number of alleles doesnt exceed tool boundary
-            if tool in ['netmhcpan','netmhciipan'] and len(args.alleles.split(";")) > MaxNumberOfAlleles.NETMHCPAN.value:
-                raise ValueError(f"Number of alleles {len(args.alleles.split(';'))} exceeds NetMHCpan limit of 50. Aborting..")
-            # Special case for MHCflurry, which requires long format as input
-            elif tool == "mhcflurry":
-                df_tool['allele'] = [tools_allele_input[tool].split(';')] * len(df_tool)
-                df_tool = df_tool.explode('allele').reset_index(drop=True)
-                df_tool.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
-                df_tool[['peptide', 'allele']].to_csv(f'{args.prefix}_{config["suffix"]}', index=False)
-            else:
-                df_tool[[args.peptide_col_name]].to_csv(f'{args.prefix}_{config["suffix"]}', sep="\t", header=False, index=False)
+            # Collect all chunk keys for this tool (e.g. "netmhcpan" or "netmhcpan_chunk0", "netmhcpan_chunk1")
+            chunk_keys = [k for k in tools_allele_chunks if k == tool or k.startswith(f"{tool}_chunk")]
+
+            for chunk_key in chunk_keys:
+                chunk_alleles = tools_allele_chunks[chunk_key]
+                # Filename mirrors JSON key: e.g. prefix_netmhcpan_chunk0_input.tsv or prefix_netmhcpan_input.tsv
+                suffix = config["suffix"]  # e.g. "netmhcpan_input.tsv"
+                filename = f'{args.prefix}_{chunk_key}_input.{suffix.rsplit(".", 1)[1]}'
+
+                if tool == "mhcflurry":
+                    df_chunk = df_tool.copy()
+                    df_chunk['allele'] = [chunk_alleles.split(';')] * len(df_chunk)
+                    df_chunk = df_chunk.explode('allele').reset_index(drop=True)
+                    df_chunk.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
+                    df_chunk[['peptide', 'allele']].to_csv(filename, index=False)
+                else:
+                    df_tool[[args.peptide_col_name]].to_csv(filename, sep="\t", header=False, index=False)
 
     # Parse versions
     versions_this_module = {}
