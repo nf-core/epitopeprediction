@@ -28,6 +28,9 @@
                 }
             },
             [
+                "library",
+                "library/sample1.parquet",
+                "library/sample2.parquet",
                 "mhcnuggets",
                 "mhcnuggets/sample1_peptides_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_peptides_chunk_0_predicted_mhcnuggets.csv",
@@ -65,25 +68,22 @@
                 "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
                 "predictions",
                 "predictions/sample1.tsv",
-                "predictions/sample2.tsv",
-                "library",
-                "library/sample1.parquet",
-                "library/sample2.parquet"
+                "predictions/sample2.tsv"
             ],
             [
+                "sample1.parquet:md5,4a6ac9b0e1c715cf737652f59b47faba",
+                "sample2.parquet:md5,4a6ac9b0e1c715cf737652f59b47faba",
                 "multiqc_binder_length_distribution.txt:md5,de696e8183c37f510c25d5a339844d7d",
                 "multiqc_binder_rank_distribution.txt:md5,666bbe007b239667ee5bff300b3419d2",
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,42808c04f5fba461be38c84cc6427b2a",
-                "sample1.parquet:md5,e82d1c1e24feb4678020df12bb223320",
-                "sample2.parquet:md5,e82d1c1e24feb4678020df12bb223320"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,42808c04f5fba461be38c84cc6427b2a"
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
             "nextflow": "25.10.3"
         },
-        "timestamp": "2026-03-04T15:51:15.55605922"
+        "timestamp": "2026-03-05T09:11:19.80754347"
     }
 }

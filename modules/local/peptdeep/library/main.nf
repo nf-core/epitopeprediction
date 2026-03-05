@@ -29,7 +29,7 @@ process PEPTDEEP_LIBRARY {
     export OPENBLAS_NUM_THREADS=${task.cpus}
     export MKL_NUM_THREADS=${task.cpus}
 
-    generate_speclib.py \\
+    peptdeep_library.py \\
         --input ${peptide_tsv} \\
         --output ${prefix}.parquet \\
         ${args}
