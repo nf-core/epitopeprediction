@@ -21,7 +21,7 @@ process PREPARE_PREDICTION_INPUT {
     stub:
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
-    echo '{"mhcflurry":"","mhcnuggets":"","mhcnuggetsii":"","netmhcpan":"","netmhciipan":""}' > ${prefix}_allele_input.json
+    echo '[{"tool":"mhcflurry","alleles":"","chunk_id":"","filename":"${prefix}_mhcflurry_input.csv"},{"tool":"mhcnuggets","alleles":"","chunk_id":"","filename":"${prefix}_mhcnuggets_input.tsv"},{"tool":"mhcnuggetsii","alleles":"","chunk_id":"","filename":"${prefix}_mhcnuggetsii_input.tsv"},{"tool":"netmhcpan","alleles":"","chunk_id":"","filename":"${prefix}_netmhcpan_input.tsv"},{"tool":"netmhciipan","alleles":"","chunk_id":"","filename":"${prefix}_netmhciipan_input.tsv"}]' > ${prefix}_allele_input.json
     touch ${prefix}_mhcflurry_input.csv
     touch ${prefix}_mhcnuggets_input.tsv
     touch ${prefix}_mhcnuggetsii_input.tsv

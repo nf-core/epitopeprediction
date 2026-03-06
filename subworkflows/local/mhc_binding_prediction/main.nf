@@ -40,21 +40,19 @@ workflow MHC_BINDING_PREDICTION {
             .set { ch_peptides_to_predict }
 
         // Prepare predictor-tailored input file and alleles supported by the predictor
-        // Supports allele chunking: JSON keys may be "tool" or "tool_chunkN"
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
             .transpose()
             .branch {
                 meta, json, file ->
-                    def allele_input_dict = json2map(json)
-                    // Find the JSON key matching this file (supports both "tool" and "tool_chunkN" keys)
-                    def key = allele_input_dict.keySet().find { k -> file.name.contains("${k}_input") }
-                    def alleles = key ? allele_input_dict[key] : null
-                    def tool = key?.replaceAll(/_chunk\d+$/, '')
-                    // Append chunk suffix to file_id for unique predictor output filenames
-                    def chunk_id = (key && key != tool) ? key.replace("${tool}_", '') : ''
+                    def entries = parseJson(json)
+                    def entry = entries.find { it.filename == file.name }
+                    def tool = entry?.tool
+                    def alleles = entry?.alleles
+                    def chunk_id = entry?.chunk_id ?: ''
                     def updated_meta = meta + [
                         alleles_supported: alleles,
+                        original_file_id: meta.file_id,
                         file_id: chunk_id ? meta.file_id + '_' + chunk_id : meta.file_id
                     ]
                     mhcflurry    : tool == 'mhcflurry' && alleles
@@ -103,9 +101,8 @@ workflow MHC_BINDING_PREDICTION {
     ch_binding_predictors_out
         .map { meta, file ->
             def alleles = meta.alleles_supported ?: meta.alleles
-            def clean_meta = meta.findAll { k, _v -> k != 'alleles_supported' }
-            // Restore original file_id by stripping chunk suffix for correct grouping
-            clean_meta.file_id = clean_meta.file_id.replaceAll(/_chunk\d+$/, '')
+            def clean_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'original_file_id']) }
+            clean_meta.file_id = meta.original_file_id ?: meta.file_id
             [clean_meta, file, alleles]
         }
         .groupTuple()  // → [meta, [files], [alleles_per_file]]
@@ -165,9 +162,7 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
     return ch_netmhc_exe
 }
 
-// Groovy function to parse JSON and return a map
-def json2map(jsonString) {
-    def jsonSlurper = new groovy.json.JsonSlurper()
-    def parsedJson = jsonSlurper.parse(file(jsonString, checkIfExists: true))
-    return parsedJson
+// Groovy function to parse JSON and return a list/map
+def parseJson(jsonPath) {
+    new groovy.json.JsonSlurper().parse(file(jsonPath, checkIfExists: true))
 }

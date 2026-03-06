@@ -205,22 +205,18 @@ def main():
     # Split alleles into chunks per tool based on MaxNumberOfAlleles limits
     # --max_alleles_per_chunk > 0 overrides per-tool defaults
     global_max = int(args.max_alleles_per_chunk)
-    tools_allele_chunks = {}
+    allele_entries = []
     for tool, alleles_str in tools_allele_input.items():
         if not alleles_str:
             continue
-        tool_default = MaxNumberOfAlleles[tool.upper()].value
-        max_alleles = global_max if global_max > 0 else tool_default
+        max_alleles = global_max if global_max > 0 else MaxNumberOfAlleles[tool.upper()].value
         chunks = Utils.chunk_alleles(alleles_str, max_alleles)
         if len(chunks) == 1:
-            tools_allele_chunks[tool] = chunks[0]
+            allele_entries.append({"tool": tool, "alleles": chunks[0], "chunk_id": ""})
         else:
             for ci, chunk in enumerate(chunks):
-                tools_allele_chunks[f"{tool}_chunk{ci}"] = chunk
+                allele_entries.append({"tool": tool, "alleles": chunk, "chunk_id": f"chunk{ci}"})
             logging.info(f"Split {tool} alleles into {len(chunks)} chunks of max {max_alleles}")
-
-    with open(f"{args.prefix}_allele_input.json", "w") as f:
-        json.dump(tools_allele_chunks, f)
 
     # Read input peptides and filter invalid amino acids
     df_input = pd.read_csv(args.input, sep="\t")
@@ -256,23 +252,26 @@ def main():
 
             logging.info(f"Input for {tool} detected. Preparing {len(df_tool)} peptides for prediction..")
 
-            # Collect all chunk keys for this tool (e.g. "netmhcpan" or "netmhcpan_chunk0", "netmhcpan_chunk1")
-            chunk_keys = [k for k in tools_allele_chunks if k == tool or k.startswith(f"{tool}_chunk")]
+            tool_entries = [e for e in allele_entries if e['tool'] == tool]
 
-            for chunk_key in chunk_keys:
-                chunk_alleles = tools_allele_chunks[chunk_key]
-                # Filename mirrors JSON key: e.g. prefix_netmhcpan_chunk0_input.tsv or prefix_netmhcpan_input.tsv
-                suffix = config["suffix"]  # e.g. "netmhcpan_input.tsv"
-                filename = f'{args.prefix}_{chunk_key}_input.{suffix.rsplit(".", 1)[1]}'
+            for entry in tool_entries:
+                chunk_id = entry['chunk_id']
+                key = f"{tool}_{chunk_id}" if chunk_id else tool
+                suffix = config["suffix"]
+                filename = f'{args.prefix}_{key}_input.{suffix.rsplit(".", 1)[1]}'
+                entry['filename'] = filename
 
                 if tool == "mhcflurry":
                     df_chunk = df_tool.copy()
-                    df_chunk['allele'] = [chunk_alleles.split(';')] * len(df_chunk)
+                    df_chunk['allele'] = [entry['alleles'].split(';')] * len(df_chunk)
                     df_chunk = df_chunk.explode('allele').reset_index(drop=True)
                     df_chunk.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
                     df_chunk[['peptide', 'allele']].to_csv(filename, index=False)
                 else:
                     df_tool[[args.peptide_col_name]].to_csv(filename, sep="\t", header=False, index=False)
+
+    with open(f"{args.prefix}_allele_input.json", "w") as f:
+        json.dump([e for e in allele_entries if 'filename' in e], f)
 
     # Parse versions
     versions_this_module = {}
