@@ -39,33 +39,30 @@ workflow MHC_BINDING_PREDICTION {
             .map { meta, file -> [meta + [file_id: meta.id + '_' + file.baseName], file] }
             .set { ch_peptides_to_predict }
 
-        // Prepare predictor-tailored input file and alleles supported by the predictor
+        // Prepare predictor-tailored input file and alleles supported by the predictor.
+        // The process emits a JSON listing one entry per (tool, chunk) with its peptide file
+        // name and supported allele set. We fan out one tuple per entry here so routing/merge
+        // keys live in meta rather than filenames.
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
-            .transpose()
-            .branch {
-                meta, json, file ->
-                    def entries = parseJson(json)
-                    def entry = entries.find { it.filename == file.name }
-                    def tool = entry?.tool
-                    def alleles = entry?.alleles
-                    def chunk_id = entry?.chunk_id ?: ''
-                    def updated_meta = meta + [
-                        alleles_supported: alleles,
-                        original_file_id: meta.file_id,
-                        file_id: chunk_id ? meta.file_id + '_' + chunk_id : meta.file_id
-                    ]
-                    mhcflurry    : tool == 'mhcflurry' && alleles
-                        return [updated_meta, file]
-                    mhcnuggets   : tool == 'mhcnuggets' && alleles
-                        return [updated_meta, file]
-                    mhcnuggetsii : tool == 'mhcnuggetsii' && alleles
-                        return [updated_meta, file]
-                    netmhcpan    : tool == 'netmhcpan' && alleles
-                        return [updated_meta, file]
-                    netmhciipan  : tool == 'netmhciipan' && alleles
-                        return [updated_meta, file]
-                    }
+            .flatMap { meta, tool_chunks, files ->
+                def files_by_name = files.collectEntries { f -> [(f.name): f] }
+                parseJson(tool_chunks).collect { entry ->
+                    [meta + [tool: entry.tool,
+                             alleles_supported: entry.alleles,
+                             alleles_input: entry.alleles_input, // Alleles parsed in predictor input nomenclature
+                             source_file_id: meta.file_id,
+                             file_id: entry.chunk_id ? "${meta.file_id}_${entry.chunk_id}" : meta.file_id],
+                     files_by_name[entry.filename]]
+                }
+            }
+            .branch { meta, _file ->
+                mhcflurry    : meta.tool == 'mhcflurry'
+                mhcnuggets   : meta.tool == 'mhcnuggets'
+                mhcnuggetsii : meta.tool == 'mhcnuggetsii'
+                netmhcpan    : meta.tool == 'netmhcpan'
+                netmhciipan  : meta.tool == 'netmhciipan'
+            }
             .set{ ch_prediction_input }
 
         MHCFLURRY ( ch_prediction_input.mhcflurry )
@@ -96,17 +93,18 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
-    // Join predicted file and subworkflow input file to add inputfile metadata
-    // Carry per-file alleles_supported through groupTuple for correct allele-index mapping in merge
+    // Regroup predictor outputs by the original (pre-chunk) peptide file so MERGE_PREDICTIONS
+    // sees one task per source file. Per-chunk alleles ride alongside their prediction file
+    // through groupTuple so merge_predictions.py can map allele indices correctly per chunk.
     ch_binding_predictors_out
         .map { meta, file ->
-            def alleles = meta.alleles_supported ?: meta.alleles
-            def clean_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'original_file_id']) }
-            clean_meta.file_id = meta.original_file_id ?: meta.file_id
-            [clean_meta, file, alleles]
+            def regroup_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'alleles_input', 'tool', 'source_file_id']) } + [
+                file_id: meta.source_file_id ?: meta.file_id,
+            ]
+            [regroup_meta, file, meta.alleles_supported]
         }
-        .groupTuple()  // → [meta, [files], [alleles_per_file]]
-        .join( ch_peptides_to_predict )  // → [meta, [files], [alleles_per_file], source_file]
+        .groupTuple()                   // → [meta, [files], [alleles_per_file]]
+        .join( ch_peptides_to_predict ) // → [meta, [files], [alleles_per_file], source_file]
         .set { ch_binding_predictors_out_meta}
 
     // Merge predictions from different predictors
