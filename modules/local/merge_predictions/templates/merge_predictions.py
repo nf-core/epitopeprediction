@@ -245,6 +245,10 @@ class PredictionResult:
         # Select either Rank_BA (BA_Rank) or Rank_EL (EL_Rank) based on use_ba_rank flag
         rank_metric = 'BA' if self.use_ba_rank else 'EL'
         rank_column = f'Rank_{rank_metric}'
+        # Single-allele chunks: NetMHCIIpan emits 'Rank' for EL rank instead of 'Rank_EL'.
+        # Normalize to the multi-allele schema so the rest of the melt/pivot path works unchanged.
+        if rank_column == 'Rank_EL' and 'Rank_EL' not in df.columns and 'Rank' in df.columns:
+            df = df.rename(columns={'Rank': 'Rank_EL'})
         df = df[df.columns[df.columns.str.contains(f'Peptide|{rank_column}|Score_BA')]]
 
         df = df.rename(columns={'Peptide': self.peptide_col_name, rank_column: f'{rank_column}.0', 'Score_BA': 'Score_BA.0'})
