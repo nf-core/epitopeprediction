@@ -35,6 +35,7 @@ class MaxLength(Enum):
     NETMHCIIPAN = 50
 
 class MaxNumberOfAlleles(Enum):
+    # 0 means "no per-tool limit" (tools without a hard allele cap run in a single chunk).
     MHCFLURRY = 0
     MHCNUGGETS = 0
     MHCNUGGETSII = 0
@@ -181,6 +182,27 @@ class Utils:
             return [alleles_str]
         return [';'.join(alleles[i:i+max_per_chunk]) for i in range(0, len(alleles), max_per_chunk)]
 
+    def format_alleles_for_tool(allele_str: str, tool: str) -> str:
+        """Convert canonical ';'-separated alleles to a tool-native, CLI-ready string.
+        Centralized here so downstream predictor modules — two of which (netmhcpan, netmhciipan)
+        run in Python-free bash containers — don't carry ad-hoc conversion logic.
+        Separator matches how each module consumes the value: ';' for Python loops, ',' for CLI."""
+        alleles = allele_str.split(';')
+        def conv_ii(a):
+            # DRB: drop 'HLA-' prefix, use '_' separator (e.g. DRB1_0101).
+            # Everything else (DPA/DPB pairs, DQA/DQB, non-HLA): strip '*' and ':', join heterodimers with '-', H2→H-2.
+            return (a.replace('*', '_').replace(':', '').replace('HLA-', '') if 'DRB' in a
+                    else a.replace('*', '').replace(':', '').replace('/', '-').replace('H2', 'H-2'))
+        if tool == 'mhcflurry':
+            return ';'.join(alleles)
+        if tool in ('mhcnuggets', 'mhcnuggetsii'):
+            return ';'.join(a.replace('*', '').replace('H2', 'H-2') for a in alleles)
+        if tool == 'netmhcpan':
+            return ','.join(a.replace('*', '').replace('H2', 'H-2') for a in alleles)
+        if tool == 'netmhciipan':
+            return ','.join(conv_ii(a) for a in alleles)
+        raise ValueError(f"Unknown tool for allele formatting: {tool}")
+
 
 def main():
     args = Arguments()
@@ -188,13 +210,25 @@ def main():
     # Parse alleles and save supported alleles per tool
     supported_alleles_dict = json.load(open(args.supported_alleles_json))
 
-    if args.alleles.strip().lower() == 'all':
-        # Pan-HLA mode: use all supported alleles per tool
-        logging.info("Pan-HLA mode: using all supported alleles per tool")
+    alleles_in = args.alleles.strip()
+    if alleles_in.lower() == 'all' or alleles_in.lower().endswith('-all'):
+        # Pan-species sentinel '<species>-all' — mhcgnomes resolves species name variants
+        # (HLA/human, BoLA/cattle, H-2/H2/mouse, ...) to the canonical prefix stored in
+        # supported_alleles.json, so we can match by string prefix without re-parsing every allele.
+        species = mhcgnomes.Species.get(alleles_in[:-3].rstrip('-'))
+        if species is None:
+            raise ValueError(
+                f"Unrecognized species in alleles={alleles_in!r}. Use '<species>-all' with an "
+                f"mhcgnomes-known species (e.g. 'HLA-all', 'BoLA-all', 'H-2-all', 'mouse-all')."
+            )
+        needle = species.prefix.lower() + '-'
+        logging.info(f"Pan-{species.prefix} mode: selecting all supported '{species.prefix}-' alleles per tool")
         tools_allele_input = {
-            tool: ';'.join(supported_alleles_dict[tool])
+            tool: ';'.join(a for a in supported_alleles_dict[tool] if a.lower().startswith(needle))
             for tool in args.tools
         }
+        if not any(tools_allele_input.values()):
+            raise ValueError(f"No supported '{species.prefix}-' alleles for any tool in {args.tools}.")
     else:
         alleles_normalized = Utils.parse_alleles(args.alleles)
         tools_allele_input = {
@@ -211,11 +245,14 @@ def main():
             continue
         max_alleles = global_max if global_max > 0 else MaxNumberOfAlleles[tool.upper()].value
         chunks = Utils.chunk_alleles(alleles_str, max_alleles)
-        if len(chunks) == 1:
-            allele_entries.append({"tool": tool, "alleles": chunks[0], "chunk_id": ""})
-        else:
-            for ci, chunk in enumerate(chunks):
-                allele_entries.append({"tool": tool, "alleles": chunk, "chunk_id": f"chunk{ci}"})
+        for ci, chunk in enumerate(chunks):
+            allele_entries.append({
+                "tool": tool,
+                "alleles": chunk,
+                "alleles_input": Utils.format_alleles_for_tool(chunk, tool),
+                "chunk_id": f"chunk{ci}" if len(chunks) > 1 else "",
+            })
+        if len(chunks) > 1:
             logging.info(f"Split {tool} alleles into {len(chunks)} chunks of max {max_alleles}")
 
     # Read input peptides and filter invalid amino acids
@@ -263,7 +300,7 @@ def main():
 
                 if tool == "mhcflurry":
                     df_chunk = df_tool.copy()
-                    df_chunk['allele'] = [entry['alleles'].split(';')] * len(df_chunk)
+                    df_chunk['allele'] = [entry['alleles_input'].split(';')] * len(df_chunk)
                     df_chunk = df_chunk.explode('allele').reset_index(drop=True)
                     df_chunk.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
                     df_chunk[['peptide', 'allele']].to_csv(filename, index=False)

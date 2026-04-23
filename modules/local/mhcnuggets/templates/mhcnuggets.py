@@ -29,7 +29,9 @@ class Arguments:
         self.input = "$tsv"
         self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
         self.mhc_class = "$meta.mhc_class"
+        # Canonical for output column + CLI-ready form (e.g. HLA-A01:01) from prepare_prediction_input.
         self.alleles = "$meta.alleles_supported".split(";")
+        self.alleles_input = "$meta.alleles_input".split(";")
         self.parse_ext_args("$task.ext.args")
 
     def parse_ext_args(self, args_string: str) -> None:
@@ -90,16 +92,17 @@ def main():
 
     # Predict and load written tsv file
     predicted_df = []
-    for allele in args.alleles:
-        mhcnuggets_allele = allele.replace('*','').replace('H2','H-2')
+    for allele, mhcnuggets_allele in zip(args.alleles, args.alleles_input):
+        # Sanitize filename — class II heterodimer alleles contain '/' and '*' which break paths.
+        safe_allele = allele.replace('/', '_').replace('*', '')
         # MHCnuggets cannot compute ranks for mouse alleles
         compute_rank = 'H-2' not in mhcnuggets_allele
         predict(class_=args.mhc_class, peptides_path = args.input, mhc=mhcnuggets_allele,
-                output=f'{args.prefix}_{allele}.csv', rank_output=compute_rank)
+                output=f'{args.prefix}_{safe_allele}.csv', rank_output=compute_rank)
         if compute_rank:
-            tmp_df = pd.read_csv(f'{args.prefix}_{allele}_ranks.csv')
+            tmp_df = pd.read_csv(f'{args.prefix}_{safe_allele}_ranks.csv')
         else:
-            tmp_df = pd.read_csv(f'{args.prefix}_{allele}.csv')
+            tmp_df = pd.read_csv(f'{args.prefix}_{safe_allele}.csv')
             # Mock rank column
             tmp_df['rank'] = np.nan
         tmp_df['allele'] = allele

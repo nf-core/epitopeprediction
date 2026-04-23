@@ -18,7 +18,7 @@ An [example samplesheet](../assets/samplesheet.tsv) has been provided with the p
 | Column | Description |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
 | `sample` | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. |
-| `alleles` | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row. |
+| `alleles` | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row. A species-prefixed sentinel `<prefix>-all` (e.g. `HLA-all`, `BoLA-all`, `H-2-all`) expands to every supported allele of that species per tool — see [Pan-species prediction](#pan-species-prediction). |
 | `mhc_class` | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`. |
 | `filename` | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv"). |
 
@@ -77,6 +77,24 @@ GBM_1,DRB1*01:01,II,gbm_1_peptides.tsv
 ```
 
 You can also perform predictions for MHC class `I` and `II` in the same run by specifying the value in the corresponding column (one value per row). Please make sure to select the alleles accordingly. You can also provide your alleles in a `.txt` file containing one allele per row.
+
+### Pan-species prediction
+
+To predict against every supported allele of a given species, use the sentinel `<species>-all` in the `alleles` column. Species names are resolved via `mhcgnomes`, so prefix tags and common names both work:
+
+- `HLA-all` or `human-all` — all supported human HLA alleles (class depends on `mhc_class` and tool)
+- `BoLA-all` or `cattle-all` — all supported bovine alleles
+- `H-2-all`, `H2-all`, or `mouse-all` — all supported mouse alleles
+- `Mamu-all`, `Patr-all`, `SLA-all`, `DLA-all`, ... — other species supported by mhcgnomes
+
+The bare keyword `all` is **not** supported because `supported_alleles.json` mixes species; using it would mean predicting e.g. cattle and mouse alleles in the same run.
+
+For tools with a hard allele-per-invocation cap (NetMHCpan and NetMHCIIpan: 50), allele chunking splits the selection into parallel tasks automatically. You can tune this with `--max_alleles_per_chunk` (0 = per-tool defaults).
+
+```console
+sample,alleles,mhc_class,filename
+sample1,HLA-all,I,peptides.tsv
+```
 
 ## Running the pipeline
 
