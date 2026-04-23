@@ -11,11 +11,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added allele chunking with `--max_alleles_per_chunk`, species-prefixed pan-MHC mode (`<species>-all` sentinel, e.g. `HLA-all`, `BoLA-all`, `mouse-all`) via mhcgnomes, and centralized per-tool allele format conversion in `prepare_prediction_input`. Closes [#340](https://github.com/nf-core/epitopeprediction/issues/340). ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
 - [#331](https://github.com/nf-core/epitopeprediction/pull/331) Fixed Nextflow strict syntax lint errors ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mappings [@axelwalter](https://github.com/axelwalter)
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Fixed a merge regression for NetMHCIIpan single-allele chunks where the `Rank` column wasn't normalized to `Rank_EL`, and sanitized mhcnuggets output filenames for class II heterodimer alleles containing `/`. ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Dependencies`
 
