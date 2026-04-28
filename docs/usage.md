@@ -157,6 +157,37 @@ nextflow run nf-core/epitopeprediction \
   --netmhciipan_path /path/to/netMHCIIpan-4.3e.Linux.tar.gz \
 ```
 
+### Running the pipeline with MixMHCpred / MixMHCIIpred
+
+The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred) for MHC class II binding prediction. Both tools are free for academic/non-profit use; commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+
+These tools require the Wave profile because the containers are built on-the-fly via Nextflow Wave (not distributed due to license restrictions). A typical command for MHC class I is:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker,wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhcpred' \
+  --min_peptide_length_classI 8 \
+  --max_peptide_length_classI 12
+```
+
+For MHC class II:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker,wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhciipred' \
+  --min_peptide_length_classII 12 \
+  --max_peptide_length_classII 21
+```
+
+> [!WARNING]
+> By using MixMHCpred or MixMHCIIpred, you accept the license terms at [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred). These tools are free for academic use only. Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+
 ### Updating the pipeline
 
 When you run the above command, Nextflow automatically pulls the pipeline code from GitHub and stores it as a cached version. After this, it will use the cached version if available - even if the pipeline has been updated since. To ensure that you're running the latest version of the pipeline, make sure that you regularly update the cached version of the pipeline:

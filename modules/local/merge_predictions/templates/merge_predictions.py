@@ -28,10 +28,12 @@ logging.basicConfig(
 )
 
 class PredictorBindingThreshold(Enum):
-    MHCFLURRY   = 2
-    MHCNUGGETS  = 0.425
-    NETMHCPAN   = 2
-    NETMHCIIPAN = 5
+    MHCFLURRY    = 2
+    MHCNUGGETS   = 0.425
+    NETMHCPAN    = 2
+    NETMHCIIPAN  = 5
+    MIXMHCPRED   = 2
+    MIXMHCIIPRED = 2
 
 class Arguments:
     """
@@ -157,6 +159,12 @@ class PredictionResult:
         elif 'netmhciipan' in self.file_path:
             self.predictor = 'netmhciipan'
             return self._format_netmhciipan_prediction()
+        elif 'mixmhciipred' in self.file_path:
+            self.predictor = 'mixmhciipred'
+            return self._format_mixmhciipred_prediction()
+        elif 'mixmhcpred' in self.file_path:
+            self.predictor = 'mixmhcpred'
+            return self._format_mixmhcpred_prediction()
         else:
             logging.error(f'Unsupported predictor type in file: {self.file_path}.')
             sys.exit(1)
@@ -273,6 +281,74 @@ class PredictionResult:
 
         return df_pivot
 
+    def _format_mixmhcpred_prediction(self) -> pd.DataFrame:
+        """
+        Read in MixMHCpred prediction output.
+        Output format: Peptide, Score_bestAllele, BestAllele, %Rank_bestAllele, Score_<allele>, %Rank_<allele>, ...
+        MixMHCpred uses allele format like A0101, B0801, etc.
+        """
+        df = pd.read_csv(self.file_path, sep='\t', comment='#')
+
+        # Get score and rank columns for each allele
+        rank_cols = [col for col in df.columns if col.startswith('%Rank_') and col != '%Rank_bestAllele']
+
+        # Extract allele names from column names (e.g., Score_A0101 -> A0101)
+        allele_names = [col.replace('%Rank_', '') for col in rank_cols]
+
+        # Reshape to long format
+        rows = []
+        for _, row in df.iterrows():
+            peptide = row['Peptide']
+            for allele in allele_names:
+                rank = row.get(f'%Rank_{allele}', np.nan)
+                # Convert MixMHCpred allele format (A0101) to mhcgnomes format (HLA-A*01:01)
+                # This will be normalized later by mhcgnomes in the main function
+                rows.append({
+                    self.peptide_col_name: peptide,
+                    'allele': allele,
+                    'BA': np.nan, # MixMHCpred does not provide binding affinity
+                    'rank': rank,
+                    'binder': rank <= PredictorBindingThreshold.MIXMHCPRED.value,
+                    'predictor': self.predictor
+                })
+
+        return pd.DataFrame(rows)
+
+    def _format_mixmhciipred_prediction(self) -> pd.DataFrame:
+        """
+        Read in MixMHCIIpred prediction output (Class II).
+        Output format: Peptide, Context, BestAllele, %Rank_best, Core_best, CoreP1_best, SubSpec_best,
+                      %Rank_<allele>, CoreP1_<allele>, SubSpec_<allele>, ...
+        MixMHCIIpred uses allele format like DRB1_15_01, DPA1_02_01__DPB1_01_01, etc.
+        """
+        df = pd.read_csv(self.file_path, sep='\t', comment='#')
+
+        # Get rank columns for each allele (excluding %Rank_best)
+        rank_cols = [col for col in df.columns if col.startswith('%Rank_') and col != '%Rank_best']
+
+        # Extract allele names from column names (e.g., %Rank_DRB1_15_01 -> DRB1_15_01)
+        allele_names = [col.replace('%Rank_', '') for col in rank_cols]
+
+        # Reshape to long format
+        rows = []
+        for _, row in df.iterrows():
+            peptide = row['Peptide']
+            for allele in allele_names:
+                rank = row.get(f'%Rank_{allele}', np.nan)
+                # Convert MixMHCIIpred allele format to mhcgnomes-parseable format
+                # e.g. DRB1_15_01 -> DRB11501, DPA1_02_01__DPB1_01_01 -> DPA10201-DPB10401
+                allele_converted = allele.replace('__', '-').replace('_', '')
+                rows.append({
+                    self.peptide_col_name: peptide,
+                    'allele': allele_converted,
+                    'BA': np.nan,
+                    'rank': rank,
+                    'binder': rank <= PredictorBindingThreshold.MIXMHCIIPRED.value,
+                    'predictor': self.predictor
+                })
+
+        return pd.DataFrame(rows)
+
 def main():
     args = Arguments()
 
@@ -285,7 +361,7 @@ def main():
         output_df.append(result.prediction_df)
 
     output_df = pd.concat(output_df)
-    # Normalize allele names
+    # Normalize allele names to mhcgnomes format
     output_df['allele'] = output_df['allele'].apply(lambda x : mhcgnomes.parse(x).to_string())
 
     # Read in source file to annotate source metadata

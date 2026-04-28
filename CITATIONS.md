@@ -53,6 +53,16 @@
 - [NetMHCIIpan-4.0](https://pubmed.ncbi.nlm.nih.gov/32406916/)
   > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
 
+- [MixMHCpred](https://pubmed.ncbi.nlm.nih.gov/39870084/)
+
+  > Tadros DM, Eggenschwiler S, Alvarez-Ponce D, Gfeller D. MixMHCpred3.0: enhanced MHC-I ligand predictions from improved binding mode predictions and allele-specific data. Genome Med. 2025 Jan 27;17(1):6. doi: 10.1186/s13073-025-01429-x. PMID: 39870084; PMCID: PMC11773818.
+
+- [MixMHCIIpred](https://pubmed.ncbi.nlm.nih.gov/31611695/)
+
+  > Racle J, Michaux J, Rockinger GA, Jeeger M, Michaux M, Stevanovicp S, Coukos G, Harari A, Gfeller D. Robust prediction of HLA class II epitopes by deep motif deconvolution of immunopeptidomes. Nat Biotechnol. 2019 Nov;37(11):1283-1286. doi: 10.1038/s41587-019-0289-6. Epub 2019 Oct 14. PMID: 31611695.
+
+  > Racle J, Guillaume P, Gfeller D. Improved predictions of MHC-peptide binding and T cell neo-epitopes with allele-specific motifs. Immunity. 2023 Feb 14;56(2):345-358.e6. doi: 10.1016/j.immuni.2023.01.011. PMID: 36792573.
+
 ## Software packaging/containerisation tools
 
 - [Anaconda](https://anaconda.com)

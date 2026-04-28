@@ -1,0 +1,2 @@
+sample,alleles,mhc_class,filename
+sample1,A*01:01;A*02:01,I,https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/peptides/peptides.tsv
