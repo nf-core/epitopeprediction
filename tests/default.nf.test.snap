@@ -28,7 +28,7 @@
                     "snpsift": 4.3
                 },
                 "SPLIT_PEPTIDES": {
-                    "python": "3.11.10"
+                    "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"

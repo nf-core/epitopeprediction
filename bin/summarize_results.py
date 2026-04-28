@@ -20,14 +20,16 @@ import numpy as np
 #           MultiQC Statistics
 # -------------------------------------------
 class MultiQC:
-    def write_mqc_stats_json(df, input_basename):
+    def write_mqc_stats_json(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
+        # Per-peptide stats: a peptide is a binder if ANY allele reports binder=True
+        df_valid = df_valid.groupby(['predictor', peptide_col_name])['binder'].any().reset_index()
         result = df_valid.groupby('predictor').agg(
             binder=('binder', lambda x: x.sum()),
             total=('binder', 'count')
         )
         result['non_binder'] = result['total'] - result['binder']
-        result['unsupported'] = df['predictor'].isna().sum() + df['predictor'].value_counts().max() - df['predictor'].value_counts()
+        result['unsupported'] = df['predictor'].isna().sum()
         for col in ['binder', 'non_binder']:
             result[f'{col}_percent'] = (result[col] / result['total']) * 100
         summary_counts_dict = result.to_dict('index')
@@ -43,8 +45,8 @@ class MultiQC:
                     'Binders': int(counts['binder']),
                     'Non-binders': int(counts['non_binder']),
                     'Unsupported': int(counts['unsupported']),
-                    'Binders (%)': f"{counts['binder_percent']:.2f}",
-                    'Non-binders (%)': f"{counts['non_binder_percent']:.2f}",
+                    'Binders (%)': round(counts['binder_percent'], 2),
+                    'Non-binders (%)': round(counts['non_binder_percent'], 2),
                 } for predictor, counts in summary_counts_dict.items()
             }
         }
@@ -267,7 +269,7 @@ def main():
     df = pd.concat([pd.read_csv(csv) for csv in glob.glob(f'{args.input}/*.csv')])
 
     # MultiQC statistics
-    MultiQC.write_mqc_stats_json(df, args.prefix)
+    MultiQC.write_mqc_stats_json(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_length_distribution(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_rank_distribution(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)

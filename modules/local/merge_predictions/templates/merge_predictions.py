@@ -202,7 +202,7 @@ class PredictionResult:
         # Extract Peptide, percentile rank, binding affinity
         # Select either BA_Rank or Rank (EL_Rank) based on use_ba_rank flag
         rank_column = 'BA_Rank' if self.use_ba_rank else 'Rank'
-        df = df[df.columns[df.columns.str.fullmatch(f'Peptide|{rank_column}|BA_score')]]
+        df = df[df.columns[df.columns.str.fullmatch(rf'Peptide|(?:{rank_column}|BA_score)(?:[.][0-9]+)?')]]
 
         df = df.rename(columns={'Peptide': self.peptide_col_name, rank_column: f'{rank_column}.0', 'BA_score': 'BA_score.0'})
         # to longformat based on .0|1|2..
@@ -235,7 +235,9 @@ class PredictionResult:
     def _format_netmhciipan_prediction(self) -> pd.DataFrame:
         """
         Read in netmhciipan prediction output and extract the columns
-        `Peptide,Rank_EL,Score_BA` for multiple alleles (or Rank_BA when use_ba_rank is True).
+        `Peptide,Rank,Score_BA` for multiple alleles (or Rank_BA when use_ba_rank is True).
+        NetMHCIIpan 4.3 xls uses `Rank` for the EL percentile and `Rank_BA` for BA percentile;
+        multi-allele files are handled by pandas auto-suffixing duplicate columns as `.1`, `.2` …
         """
         # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
         alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}

@@ -21,7 +21,7 @@ process EPYTOPE_VARIANT_PREDICTION {
     script:
     def args = task.ext.args
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def biomart = biomart_dump ? "--biomart_dump ${biomart_dump}" : ""
+    def biomart = params.biomart_dump_path ? "--biomart_dump ${biomart_dump}" : ""
     def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = (meta.mhc_class == "I") ? params.max_peptide_length_classI : params.max_peptide_length_classII
     def flanking_region_size = params.fasta_peptide_flanking_region_size

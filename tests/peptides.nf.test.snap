@@ -14,7 +14,7 @@
                 },
                 "mhcnuggets": "2.4.0",
                 "SPLIT_PEPTIDES": {
-                    "python": "3.11.10"
+                    "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"
@@ -68,13 +68,13 @@
                 "multiqc_binder_rank_distribution.txt:md5,666bbe007b239667ee5bff300b3419d2",
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,42808c04f5fba461be38c84cc6427b2a"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
             ]
         ],
         "meta": {
             "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
+            "nextflow": "25.10.3"
         },
-        "timestamp": "2025-10-17T12:43:32.360096979"
+        "timestamp": "2026-03-26T14:50:00.629350772"
     }
 }

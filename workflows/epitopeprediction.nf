@@ -138,6 +138,7 @@ workflow EPITOPEPREDICTION {
     // decide between the split_by_variants and snpsift_split (by chromosome)
     if (params.split_by_variants) {
         VARIANT_SPLIT( ch_samples_uncompressed.variant )
+            .splitted
             .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
     }
