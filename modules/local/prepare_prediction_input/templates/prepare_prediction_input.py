@@ -36,11 +36,14 @@ class MaxLength(Enum):
 
 class MaxNumberOfAlleles(Enum):
     # 0 means "no per-tool limit" (tools without a hard allele cap run in a single chunk).
+    # NetMHC*pan reject -a arg lists longer than 1024 chars; 40 alleles × 22-char heterodimer
+    # names + commas ≈ 919 chars, leaving headroom under the limit. NetMHCpan single-locus
+    # names are shorter, so 50 fits comfortably there.
     MHCFLURRY = 0
     MHCNUGGETS = 0
     MHCNUGGETSII = 0
     NETMHCPAN = 50
-    NETMHCIIPAN = 50
+    NETMHCIIPAN = 40
 
 class Arguments:
     """
@@ -237,14 +240,21 @@ def main():
             for tool in args.tools
         }
 
-    # Split alleles into chunks per tool based on MaxNumberOfAlleles limits
-    # --max_alleles_per_chunk > 0 overrides per-tool defaults
+    # Split alleles into chunks per tool based on MaxNumberOfAlleles limits.
+    # Per-tool hard caps (NetMHC*pan = 50) cannot be exceeded — the binaries reject longer -a lists.
+    # --max_alleles_per_chunk only lowers the chunk size further, never raises it past the hard cap.
     global_max = int(args.max_alleles_per_chunk)
     allele_entries = []
     for tool, alleles_str in tools_allele_input.items():
         if not alleles_str:
             continue
-        max_alleles = global_max if global_max > 0 else MaxNumberOfAlleles[tool.upper()].value
+        hard_cap = MaxNumberOfAlleles[tool.upper()].value
+        if global_max <= 0:
+            max_alleles = hard_cap
+        elif hard_cap <= 0:
+            max_alleles = global_max
+        else:
+            max_alleles = min(global_max, hard_cap)
         chunks = Utils.chunk_alleles(alleles_str, max_alleles)
         for ci, chunk in enumerate(chunks):
             allele_entries.append({
