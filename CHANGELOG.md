@@ -13,6 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
 - [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added allele chunking with `--max_alleles_per_chunk`, species-prefixed pan-MHC mode (`<species>-all` sentinel, e.g. `HLA-all`, `BoLA-all`, `mouse-all`) via mhcgnomes, and centralized per-tool allele format conversion in `prepare_prediction_input`. Closes [#340](https://github.com/nf-core/epitopeprediction/issues/340). ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Pass tool-specific allele input as an explicit `val(alleles_input)` to predictor modules instead of plumbing it through the meta map ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 

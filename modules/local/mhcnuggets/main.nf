@@ -8,7 +8,7 @@ process MHCNUGGETS {
         'quay.io/biocontainers/mhcnuggets:2.4.0--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), val(alleles_input), path(tsv)
 
     output:
     tuple val(meta), path("*{_predicted_mhcnuggets.csv,_predicted_mhcnuggetsii.csv}"), emit: predicted

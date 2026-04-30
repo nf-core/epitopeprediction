@@ -31,7 +31,7 @@ class Arguments:
         self.mhc_class = "$meta.mhc_class"
         # Canonical for output column + CLI-ready form (e.g. HLA-A01:01) from prepare_prediction_input.
         self.alleles = "$meta.alleles_supported".split(";")
-        self.alleles_input = "$meta.alleles_input".split(";")
+        self.alleles_input = "$alleles_input".split(";")
         self.parse_ext_args("$task.ext.args")
 
     def parse_ext_args(self, args_string: str) -> None:

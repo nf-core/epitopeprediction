@@ -8,7 +8,7 @@ process NETMHCIIPAN {
         'community.wave.seqera.io/library/bash_gawk_perl_tcsh:a941b4e9bd4b8805' }"
 
     input:
-    tuple val(meta), path(tsv), path(software)
+    tuple val(meta), val(alleles_input), path(tsv), path(software)
 
     output:
     tuple val(meta), path("*.xls"), emit: predicted
@@ -20,7 +20,7 @@ process NETMHCIIPAN {
     }
     def args    = task.ext.args ?: ''
     def prefix  = task.ext.prefix ?: "${meta.id}"
-    def alleles = meta.alleles_input
+    def alleles = alleles_input
 
     """
     netmhciipan/netMHCIIpan \

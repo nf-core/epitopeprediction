@@ -42,7 +42,9 @@ workflow MHC_BINDING_PREDICTION {
         // Prepare predictor-tailored input file and alleles supported by the predictor.
         // The process emits a JSON listing one entry per (tool, chunk) with its peptide file
         // name and supported allele set. We fan out one tuple per entry here so routing/merge
-        // keys live in meta rather than filenames.
+        // keys live in meta rather than filenames. alleles_input (predictor-specific allele
+        // nomenclature) rides as a separate channel value so each predictor module declares it
+        // as an explicit `val` input.
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
             .flatMap { meta, tool_chunks, files ->
@@ -50,13 +52,13 @@ workflow MHC_BINDING_PREDICTION {
                 parseJson(tool_chunks).collect { entry ->
                     [meta + [tool: entry.tool,
                              alleles_supported: entry.alleles,
-                             alleles_input: entry.alleles_input, // Alleles parsed in predictor input nomenclature
                              source_file_id: meta.file_id,
                              file_id: entry.chunk_id ? "${meta.file_id}_${entry.chunk_id}" : meta.file_id],
+                     entry.alleles_input,
                      files_by_name[entry.filename]]
                 }
             }
-            .branch { meta, _file ->
+            .branch { meta, _alleles_input, _file ->
                 mhcflurry    : meta.tool == 'mhcflurry'
                 mhcnuggets   : meta.tool == 'mhcnuggets'
                 mhcnuggetsii : meta.tool == 'mhcnuggetsii'
@@ -65,7 +67,8 @@ workflow MHC_BINDING_PREDICTION {
             }
             .set{ ch_prediction_input }
 
-        MHCFLURRY ( ch_prediction_input.mhcflurry )
+        // MHCflurry encodes alleles inline in its CSV input, so it doesn't need alleles_input.
+        MHCFLURRY ( ch_prediction_input.mhcflurry.map { meta, _alleles_input, file -> [meta, file] } )
         ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
 
@@ -98,7 +101,7 @@ workflow MHC_BINDING_PREDICTION {
     // through groupTuple so merge_predictions.py can map allele indices correctly per chunk.
     ch_binding_predictors_out
         .map { meta, file ->
-            def regroup_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'alleles_input', 'tool', 'source_file_id']) } + [
+            def regroup_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'tool', 'source_file_id']) } + [
                 file_id: meta.source_file_id ?: meta.file_id,
             ]
             [regroup_meta, file, meta.alleles_supported]
