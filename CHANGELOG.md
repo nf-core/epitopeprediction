@@ -30,10 +30,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Dependencies`
 
-| Dependency | Old version | New version |
-| ---------- | ----------- | ----------- |
-| `bcftools` | 1.21        | 1.22        |
-| `nf-core`  | 3.4.1       | 3.5.2       |
+| Dependency    | Old version | New version |
+| ------------- | ----------- | ----------- |
+| `bcftools`    | 1.21        | 1.22        |
+| `nf-core`     | 3.4.1       | 3.5.2       |
+| `NetMHCIIpan` | 4.3e        | 4.3i        |
 
 ### `Changed`
 
