@@ -8,6 +8,7 @@ License: MIT
 """
 import argparse
 import math
+import re
 import shlex
 import sys
 import typing
@@ -194,86 +195,50 @@ class PredictionResult:
 
         return df
 
-    def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        # Map with allele index to allele name
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
-        # Read the file into a DataFrame with no headers initially
+    def _parse_netmhc_xls(self, rank_column: str, ba_score_column: str, threshold: float) -> pd.DataFrame:
+        """
+        Parse a NetMHCpan / NetMHCIIpan multi-allele XLS into harmonized long format.
+        Row 1 lists allele names (sparse, one per per-allele block); row 2 holds the
+        per-allele subheaders. pandas reads with skiprows=1 and disambiguates duplicate
+        column names by appending `.1`, `.2`, … We match both rank and BA-score columns
+        with an optional `.N` suffix so every allele in the chunk survives.
+
+        Allele names are taken from row 1 — NetMHCIIpan re-sorts the alleles internally
+        (e.g. `DRB1_*` lex-sorts before `HLA-*`), so the `-a` argument order is NOT a
+        reliable column→allele mapping. The XLS row 1 is the source of truth.
+        """
+        with open(self.file_path) as fh:
+            header_alleles = [a.strip() for a in next(fh).split('\t') if a.strip()]
+        alleles_dict = {i: allele for i, allele in enumerate(header_alleles)}
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
-        # Extract Peptide, percentile rank, binding affinity
-        # Select either BA_Rank or Rank (EL_Rank) based on use_ba_rank flag
-        rank_column = 'BA_Rank' if self.use_ba_rank else 'Rank'
-        df = df[df.columns[df.columns.str.fullmatch(rf'Peptide|(?:{rank_column}|BA_score)(?:[.][0-9]+)?')]]
-
-        df = df.rename(columns={'Peptide': self.peptide_col_name, rank_column: f'{rank_column}.0', 'BA_score': 'BA_score.0'})
-        # to longformat based on .0|1|2..
-        df_long = pd.melt(
-            df,
-            id_vars=[self.peptide_col_name],
-            value_vars=[col for col in df.columns if col != self.peptide_col_name],
-            var_name='metric',
-            value_name='value',
-        )
-
-        # Extract the allele information (e.g., .0, .1, etc.)
+        keep = re.compile(rf'Peptide|(?:{re.escape(rank_column)}|{re.escape(ba_score_column)})(?:[.][0-9]+)?')
+        df = df[[c for c in df.columns if keep.fullmatch(c)]]
+        df = df.rename(columns={'Peptide': self.peptide_col_name,
+                                rank_column: f'{rank_column}.0',
+                                ba_score_column: f'{ba_score_column}.0'})
+        df_long = pd.melt(df, id_vars=[self.peptide_col_name],
+                          value_vars=[c for c in df.columns if c != self.peptide_col_name],
+                          var_name='metric', value_name='value')
         df_long['allele'] = df_long['metric'].str.split('.').str[1]
-        df_long['metric'] = df_long['metric'].apply(lambda x: x.split('.')[0].replace(rank_column, 'rank').replace('BA_score', 'BA'))
-
-        # Pivot table to organize columns properly
+        df_long['metric'] = df_long['metric'].apply(lambda x: x.split('.')[0].replace(rank_column, 'rank').replace(ba_score_column, 'BA'))
         df_pivot = df_long.pivot_table(index=[self.peptide_col_name, 'allele'], columns='metric', values='value').reset_index()
-
-        # If -mode 1 or 2 is specified, BA_score is absent -> create an empty column for BA containing na's for downstream compatibility
+        # NetMHCpan -mode 1 / 2 omits BA score; keep downstream schema stable.
         if 'BA' not in df_pivot.columns:
             df_pivot['BA'] = np.nan
-
-        df_pivot['allele'] = [alleles_dict[int(index.strip('.'))] for index in df_pivot['allele']]
-        df_pivot['binder'] = df_pivot['rank'] <= PredictorBindingThreshold.NETMHCPAN.value
+        df_pivot['allele'] = [alleles_dict[int(idx.strip('.'))] for idx in df_pivot['allele']]
+        df_pivot['binder'] = df_pivot['rank'] <= threshold
         df_pivot['predictor'] = self.predictor
         df_pivot.index.name = ''
-
         return df_pivot
+
+    def _format_netmhcpan_prediction(self) -> pd.DataFrame:
+        rank_column = 'BA_Rank' if self.use_ba_rank else 'Rank'
+        return self._parse_netmhc_xls(rank_column, 'BA_score', PredictorBindingThreshold.NETMHCPAN.value)
 
     def _format_netmhciipan_prediction(self) -> pd.DataFrame:
-        """
-        Read in netmhciipan prediction output and extract the columns
-        `Peptide,Rank,Score_BA` for multiple alleles (or Rank_BA when use_ba_rank is True).
-        NetMHCIIpan 4.3 xls uses `Rank` for the EL percentile and `Rank_BA` for BA percentile;
-        multi-allele files are handled by pandas auto-suffixing duplicate columns as `.1`, `.2` …
-        """
-        # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
-        # Read the file into a DataFrame with no headers initially
-        df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
-        # Extract Peptide, percentile rank, binding affinity
-        # Select either Rank_BA (BA_Rank) or Rank_EL (EL_Rank) based on use_ba_rank flag
-        rank_metric = 'BA' if self.use_ba_rank else 'EL'
-        rank_column = f'Rank_{rank_metric}'
-        # Single-allele chunks: NetMHCIIpan emits 'Rank' for EL rank instead of 'Rank_EL'.
-        # Normalize to the multi-allele schema so the rest of the melt/pivot path works unchanged.
-        if rank_column == 'Rank_EL' and 'Rank_EL' not in df.columns and 'Rank' in df.columns:
-            df = df.rename(columns={'Rank': 'Rank_EL'})
-        df = df[df.columns[df.columns.str.contains(f'Peptide|{rank_column}|Score_BA')]]
-
-        df = df.rename(columns={'Peptide': self.peptide_col_name, rank_column: f'{rank_column}.0', 'Score_BA': 'Score_BA.0'})
-        # to longformat based on .0|1|2..
-        df_long = pd.melt(
-            df,
-            id_vars=[self.peptide_col_name],
-            value_vars=[col for col in df.columns if col != self.peptide_col_name],
-            var_name='metric',
-            value_name='value',
-        )
-        # Extract the allele information (e.g., .0, .1, etc.)
-        df_long['allele'] = df_long['metric'].str.split('.').str[1]
-        df_long['metric'] = df_long['metric'].apply(lambda x: x.split('.')[0].replace(rank_column, 'rank').replace('Score_BA', 'BA'))
-
-        # Pivot table to organize columns properly
-        df_pivot = df_long.pivot_table(index=[self.peptide_col_name, 'allele'], columns='metric', values='value').reset_index()
-        df_pivot['allele'] = [alleles_dict[int(index.strip('.'))] for index in df_pivot['allele']]
-        df_pivot['binder'] = df_pivot['rank'] <= PredictorBindingThreshold.NETMHCIIPAN.value
-        df_pivot['predictor'] = self.predictor
-        df_pivot.index.name = ''
-
-        return df_pivot
+        # NetMHCIIpan 4.3 XLS: EL percentile is `Rank` (not `Rank_EL`); BA percentile is `Rank_BA`; BA score is `Score_BA`.
+        rank_column = 'Rank_BA' if self.use_ba_rank else 'Rank'
+        return self._parse_netmhc_xls(rank_column, 'Score_BA', PredictorBindingThreshold.NETMHCIIPAN.value)
 
 def main():
     args = Arguments()
@@ -281,7 +246,7 @@ def main():
     # Iterate over each file predicted by multiple predictors, harmonize and merge output
     output_df = []
     for file, file_alleles_str in zip(args.input, args.alleles_per_file):
-        alleles = sorted(file_alleles_str.split(';'))
+        alleles = file_alleles_str.split(';')
         result = PredictionResult(file, alleles, args.peptide_col_name, args.use_ba_rank)
 
         logging.info(f"Writing {len(result.prediction_df)} {result.predictor} predictions to file..")
