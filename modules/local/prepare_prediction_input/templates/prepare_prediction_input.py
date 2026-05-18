@@ -186,26 +186,16 @@ class Utils:
             return [alleles_str]
         return [';'.join(alleles[i:i+max_per_chunk]) for i in range(0, len(alleles), max_per_chunk)]
 
-    def format_alleles_for_tool(allele_str: str, tool: str) -> str:
-        """Convert canonical ';'-separated alleles to a tool-native, CLI-ready string.
-        Centralized here so downstream predictor modules — two of which (netmhcpan, netmhciipan)
-        run in Python-free bash containers — don't carry ad-hoc conversion logic.
-        Separator matches how each module consumes the value: ';' for Python loops, ',' for CLI."""
-        alleles = allele_str.split(';')
-        def conv_ii(a):
-            # DRB: drop 'HLA-' prefix, use '_' separator (e.g. DRB1_0101).
-            # Everything else (DPA/DPB pairs, DQA/DQB, non-HLA): strip '*' and ':', join heterodimers with '-', H2→H-2.
-            return (a.replace('*', '_').replace(':', '').replace('HLA-', '') if 'DRB' in a
-                    else a.replace('*', '').replace(':', '').replace('/', '-').replace('H2', 'H-2'))
-        if tool == 'mhcflurry':
-            return ';'.join(alleles)
-        if tool in ('mhcnuggets', 'mhcnuggetsii'):
-            return ';'.join(a.replace('*', '').replace('H2', 'H-2') for a in alleles)
-        if tool == 'netmhcpan':
-            return ','.join(a.replace('*', '').replace('H2', 'H-2') for a in alleles)
-        if tool == 'netmhciipan':
-            return ','.join(conv_ii(a) for a in alleles)
-        raise ValueError(f"Unknown tool for allele formatting: {tool}")
+    TOOL_JOIN_SEP = {
+        'mhcflurry': ';', 'mhcnuggets': ';', 'mhcnuggetsii': ';',
+        'netmhcpan': ',', 'netmhciipan': ',',
+    }
+
+    @staticmethod
+    def format_alleles_for_tool(allele_str: str, tool: str, sa_dict: dict) -> str:
+        """Look up tool-native spelling per allele in supported_alleles.json and join with the tool's CLI separator.
+        Per-tool format quirks live entirely in the json; runtime is a pure dict lookup — no regex, no per-species cases."""
+        return Utils.TOOL_JOIN_SEP[tool].join(sa_dict[tool][a] for a in allele_str.split(';'))
 
 
 def main():
@@ -260,7 +250,7 @@ def main():
             allele_entries.append({
                 "tool": tool,
                 "alleles": chunk,
-                "alleles_input": Utils.format_alleles_for_tool(chunk, tool),
+                "alleles_input": Utils.format_alleles_for_tool(chunk, tool, supported_alleles_dict),
                 "chunk_id": f"chunk{ci}" if len(chunks) > 1 else "",
             })
         if len(chunks) > 1:
