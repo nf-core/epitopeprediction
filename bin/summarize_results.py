@@ -266,7 +266,21 @@ def main():
     args = parser.parse_args()
 
     # Concat chunked TSV files
-    df = pd.concat([pd.read_csv(csv) for csv in glob.glob(f'{args.input}/*.csv')])
+    df = pd.concat([pd.read_parquet(p) for p in glob.glob(f'{args.input}/*.parquet')])
+
+    # Match prior CSV-round-trip dtypes so the user-facing TSV remains
+    # byte-identical. Parquet preserves dtypes exactly; CSV did not — pandas
+    # would re-infer nullable extension dtypes as wider plain numpy types
+    # on read. Replicate that here:
+    #   nullable Int* / UInt* → float64 (if any NaN) else int64
+    #   nullable boolean      → bool (so TSV writes "True"/"False", not "1"/"0")
+    for col, dt in list(df.dtypes.items()):
+        if not pd.api.types.is_extension_array_dtype(dt):
+            continue
+        if pd.api.types.is_bool_dtype(dt):
+            df[col] = df[col].astype('bool')
+        elif pd.api.types.is_integer_dtype(dt):
+            df[col] = df[col].astype('float64' if df[col].isna().any() else 'int64')
 
     # MultiQC statistics
     MultiQC.write_mqc_stats_json(df, args.prefix, args.peptide_col_name)
