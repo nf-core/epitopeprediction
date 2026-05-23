@@ -78,7 +78,7 @@ class MultiQC:
         best_rank = (
             df_valid[df_valid['predictor'] == best_predictor]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)])
+                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)], include_groups=False)
         )
         bins = np.linspace(0, 10, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -108,7 +108,7 @@ class MultiQC:
         best_ba = (
             df_valid[df_valid['predictor'] == best_predictor]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)] if x['BA'].notna().any() else x.iloc[0])
+                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)] if x['BA'].notna().any() else x.iloc[0], include_groups=False)
         )
         bins = np.linspace(0, 1, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -176,11 +176,16 @@ class Utils:
             else:
                 raise ValueError(f"Unknown predictor '{pred}'. Expected one of: {rank_metric_best | ba_metric_best}")
 
+        # `include_groups=False` makes pandas 3.x behavior explicit (group keys
+        # excluded from the group passed to the apply func). They reappear as
+        # the result's outer MultiIndex levels, which we promote back to columns
+        # for the downstream drop_duplicates/select operations.
         best = (
             df
             .dropna(subset=['predictor'])
             .groupby(['predictor', peptide_col])
-            .apply(_pick_best)
+            .apply(_pick_best, include_groups=False)
+            .reset_index(level=['predictor', peptide_col])
             .drop_duplicates(subset=[peptide_col, 'predictor'])
             .reset_index(drop=True)
         )
