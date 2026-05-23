@@ -16,8 +16,11 @@ process MERGE_PREDICTIONS {
     tuple val(meta), path(prediction_files), path(source_file)
 
     output:
-    tuple val(meta), path("*.parquet") , emit: merged
-    path "versions.yml"            , emit: versions
+    tuple val(meta), path("*_predictions.parquet") , emit: merged
+    path "versions.yml"                            , emit: versions
+
+    when:
+    task.ext.when == null || task.ext.when
 
     script:
     template "merge_predictions.py"
@@ -30,9 +33,9 @@ process MERGE_PREDICTIONS {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        mhcgnomes: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcgnomes').version)")
-        pyarrow: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pyarrow').version)")
+        pandas: \$(python -c "import pandas; print(pandas.__version__)")
+        mhcgnomes: \$(python -c "import mhcgnomes; print(mhcgnomes.__version__)")
+        pyarrow: \$(python -c "import pyarrow; print(pyarrow.__version__)")
     END_VERSIONS
     """
 }

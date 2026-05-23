@@ -16,9 +16,9 @@ process SUMMARIZE_RESULTS {
     tuple val(meta), path(parquet)
 
     output:
-    tuple val(meta), path("*.tsv") , emit: tsv
-    tuple val(meta), path("*.json"), emit: json
-    path "versions.yml"            , emit: versions
+    tuple val(meta), path("*.tsv")      , emit: tsv
+    tuple val(meta), path("*_mqc.json") , emit: json
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when

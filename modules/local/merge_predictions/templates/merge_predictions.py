@@ -16,7 +16,7 @@ from enum import Enum
 
 import numpy as np
 import pandas as pd
-import pyarrow  # noqa: F401  — needed by pandas.to_parquet/read_parquet, also listed in versions
+import pyarrow  # noqa: F401  — not used directly; imported to expose __version__ for versions.yml
 import mhcgnomes
 
 # Create logger object with date and time

@@ -288,8 +288,6 @@ def main():
     MultiQC.write_mqc_rank_distribution(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)
 
-    df.to_pickle(f'{args.prefix}_raw.pkl')
-
     if args.wide_format_output:
         df = Utils.long2wide(df, args.peptide_col_name)
 
