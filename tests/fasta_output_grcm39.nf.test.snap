@@ -4,10 +4,12 @@
             25,
             {
                 "BCFTOOLS_STATS": {
-                    "bcftools": 1.22
+                    "bcftools": "1.23.1"
                 },
                 "CAT_FASTA": {
-                    "pigz": "2.3.4"
+                    "coreutils": 9.4,
+                    "find": "4.6.0",
+                    "pigz": 2.8
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
                     "python": "3.7.12",
@@ -16,7 +18,7 @@
                     "pyvcf": "1.0.3"
                 },
                 "SNPSIFT_SPLIT": {
-                    "snpsift": 4.3
+                    "snpsift": "5.4c"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0dev"
@@ -112,10 +114,10 @@
                 "multiqc_general_stats.txt:md5,ddd914edcabcf1eec70d03dc47c812a4"
             ]
         ],
+        "timestamp": "2026-05-22T17:18:15.689614225",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.3"
-        },
-        "timestamp": "2026-02-05T15:14:58.292105289"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

@@ -26,8 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 | Dependency | Old version | New version |
 | ---------- | ----------- | ----------- |
-| `bcftools` | 1.21        | 1.22        |
-| `multiqc`  | 1.32        | 1.34        |
+| `bcftools` | 1.21        | 1.23.1      |
+| `multiqc`  | 1.32        | 1.35        |
+| `snpsift`  | 4.3         | 5.4c        |
 | `nf-core`  | 3.4.1       | 4.0.2       |
 
 ### `Changed`
@@ -36,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
 - [#336](https://github.com/nf-core/epitopeprediction/pull/336) Added NetMHCpan 4.2 mode config file instructions to the nf-core usage documentation. ([@Kabooni](https://github.com/Kabooni)).
+- [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replaced `cat/cat` (`CAT_CAT`) module with `find/concatenate` (`FIND_CONCATENATE`) to avoid output filename collision errors ([@jonasscheid](https://github.com/jonasscheid/)).
+- Updated nf-core modules (`bcftools/norm`, `bcftools/stats`, `gunzip`, `multiqc`, `snpsift/split`) and subworkflows (`utils_nextflow_pipeline`, `utils_nfschema_plugin`) to latest. Updated modules emit versions via the `versions` topic; obsolete `ch_versions.mix(<MODULE>.out.versions)` lines removed ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.0 - Lustnau - 2025-10-22
 
