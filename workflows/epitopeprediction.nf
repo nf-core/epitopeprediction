@@ -31,7 +31,7 @@ include { GUNZIP as GUNZIP_FASTA      } from '../modules/nf-core/gunzip'
 include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats'
 include { BCFTOOLS_NORM               } from '../modules/nf-core/bcftools/norm'
 include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
-include { CAT_CAT as CAT_FASTA        } from '../modules/nf-core/cat/cat/main'
+include { FIND_CONCATENATE as CAT_FASTA } from '../modules/nf-core/find/concatenate/main'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -84,7 +84,6 @@ workflow EPITOPEPREDICTION {
 
     // gunzip VCF files
     GUNZIP_VCF ( ch_samplesheet.variant_compressed )
-    ch_versions = ch_versions.mix(GUNZIP_VCF.out.versions)
 
     ch_variants_uncompressed = GUNZIP_VCF.out.gunzip.mix( ch_samplesheet.variant_uncompressed )
 
@@ -95,7 +94,6 @@ workflow EPITOPEPREDICTION {
         if (params.genome.endsWith('.gz')) {
             GUNZIP_FASTA ([ [:], file(params.genome, checkIfExists: true) ])
             ch_fasta    =  GUNZIP_FASTA.out.gunzip
-            ch_versions = ch_versions.mix(GUNZIP_FASTA.out.versions)
         } else {
             ch_fasta = channel.value(file(params.genome, checkIfExists: true))
             ch_fasta = ch_fasta.map{fasta -> [[:], fasta]}
@@ -104,7 +102,6 @@ workflow EPITOPEPREDICTION {
             ch_variants_uncompressed.map{ meta, vcf -> [ meta, vcf, [] ] },
             ch_fasta
         )
-        ch_versions = ch_versions.mix(BCFTOOLS_NORM.out.versions)
         ch_variants_uncompressed = BCFTOOLS_NORM.out.vcf
 
     }
@@ -119,7 +116,6 @@ workflow EPITOPEPREDICTION {
          [[:],[]],
          )
 
-    ch_versions = ch_versions.mix(BCFTOOLS_STATS.out.versions)
     ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ _meta, stats -> stats })
 
     // (re)combine different input file types
@@ -151,7 +147,6 @@ workflow EPITOPEPREDICTION {
             .map {meta, vcf -> [meta + [split: true], vcf]} ) // need to add split: true to meta to trigger splitting (nf-core module)
             .out_vcfs
             .set { ch_split_variants }
-        ch_versions = ch_versions.mix( SNPSIFT_SPLIT.out.versions )
     }
 
     // Generate mutated peptides from VCF and filter out empty files
@@ -167,7 +162,6 @@ workflow EPITOPEPREDICTION {
                                     .map { meta, fasta -> [meta.subMap('id'), fasta] }
                                     .groupTuple()
         CAT_FASTA( ch_fasta_from_variants )
-        ch_versions = ch_versions.mix(CAT_FASTA.out.versions)
         ch_peptides_from_variants = channel.empty()
     }
     /*
