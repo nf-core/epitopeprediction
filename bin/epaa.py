@@ -21,7 +21,7 @@ from epytope.Core.Peptide import Peptide
 from epytope.Core.Variant import MutationSyntax, Variant, VariationType
 from epytope.EpitopePrediction import EpitopePredictorFactory
 from epytope.IO.ADBAdapter import EIdentifierTypes
-from epytope.IO.MartsAdapter import MartsAdapter
+from epytope.IO.EnsemblRESTAdapter import EnsemblRESTAdapter
 
 __author__ = "Christopher Mohr, Jonas Scheid, Axel Walter"
 VERSION = "2.0"
@@ -35,15 +35,15 @@ vcfConsequences = {}  # Store consequences by (chrom, pos, ref, obs) for lookup 
 # Mapping from genome reference names to Ensembl URLs and datasets
 GENOME_REFERENCE_MAP = {
     # Human genomes
-    "grch38": {"url": "https://www.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
-    "grch37": {"url": "https://grch37.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
-    "hg38": {"url": "https://www.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
-    "hg19": {"url": "https://grch37.ensembl.org", "dataset": "hsapiens_gene_ensembl"},
-    # Mouse genomes (GRCm39 is current; GRCm38 uses Ensembl 102 archive - last release with GRCm38)
-    "grcm39": {"url": "https://www.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
-    "grcm38": {"url": "https://nov2020.archive.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
-    "mm39": {"url": "https://www.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
-    "mm10": {"url": "https://nov2020.archive.ensembl.org", "dataset": "mmusculus_gene_ensembl"},
+    "grch38": {"server": "https://rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
+    "grch37": {"server": "https://grch37.rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
+    "hg38": {"server": "https://rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
+    "hg19": {"server": "https://grch37.rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
+    # Mouse genomes (the Ensembl REST API only serves the current assembly, GRCm39, for mouse)
+    "grcm39": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
+    "grcm38": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
+    "mm39": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
+    "mm10": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
 }
 
 def unwrap_to_string(value, default="unknown"):
@@ -510,7 +510,7 @@ def create_metadata_column_value(pep, c, pep_dictionary):
     meta = set(
         [
             str(variant.get_metadata(c)[0])
-            for variant in set(pep_dictionary[pep[0]])
+            for variant in set(pep_dictionary[pep.iloc[0]])
             if len(variant.get_metadata(c)) != 0
         ]
     )
@@ -587,12 +587,12 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
-def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapter, metadata: list, minlength: int, maxlength: int, ensembl_dataset: str = "hsapiens_gene_ensembl" ) -> Tuple[pd.DataFrame, list]:
+def generate_peptides_from_variants( variants: Variant, adapter: EnsemblRESTAdapter, metadata: list, minlength: int, maxlength: int, ensembl_dataset: str = "hsapiens_gene_ensembl" ) -> Tuple[pd.DataFrame, list]:
     """
     Generate mutated peptides ranging between min and max length from a list of epytore.Core.Variants.
     Args:
         variants: List of epytope.Core.Variant objects.
-        martsadapter: epytope.IO.MartsAdapter object for quering biomart.
+        adapter: epytope.IO.EnsemblRESTAdapter object for querying Ensembl.
         metadata: List of metadata columns to include in the output.
         minlength: Minimum length of peptides to generate.
         maxlength: Maximum length of peptides to generate.
@@ -606,7 +606,7 @@ def generate_peptides_from_variants( variants: Variant, martsadapter: MartsAdapt
     transcripts = []
     for v in variants:
         try:
-            transcripts.extend(generator.generate_transcripts_from_variants([v], martsadapter, ID_SYSTEM_USED, db=ensembl_dataset))
+            transcripts.extend(generator.generate_transcripts_from_variants([v], adapter, ID_SYSTEM_USED, db=ensembl_dataset))
         except Exception:
             logger.warning(f"Could not generate transcripts for variant {v}. Skipping.")
     # Try/except for generate_proteins_from_transcripts
@@ -1113,24 +1113,26 @@ def __main__():
         write_empty_files(args)
         return  # Exit early
 
-    # Look up genome reference in the mapping or use URL directly
+    # Look up genome reference in the mapping or use REST server URL directly
     genome_ref_lower = args.genome_reference.lower()
     if genome_ref_lower in GENOME_REFERENCE_MAP:
         genome_info = GENOME_REFERENCE_MAP[genome_ref_lower]
-        ensembl_url = genome_info["url"]
+        ensembl_server = genome_info["server"]
         ensembl_dataset = genome_info["dataset"]
-        logger.info(f"Using genome reference '{args.genome_reference}' -> Ensembl URL: {ensembl_url}, dataset: {ensembl_dataset}")
+        ensembl_species = genome_info["species"]
+        logger.info(f"Using genome reference '{args.genome_reference}' -> Ensembl REST server: {ensembl_server}, dataset: {ensembl_dataset}")
     elif genome_ref_lower.startswith("http"):
-        # URL provided directly, default to human dataset
-        ensembl_url = args.genome_reference
+        # REST server URL provided directly, default to human
+        ensembl_server = args.genome_reference
         ensembl_dataset = "hsapiens_gene_ensembl"
-        logger.info(f"Using Ensembl URL directly: {ensembl_url}, defaulting to human dataset: {ensembl_dataset}")
+        ensembl_species = "homo_sapiens"
+        logger.info(f"Using Ensembl REST server directly: {ensembl_server}, defaulting to human")
     else:
-        logger.error(f"Unknown genome reference: {args.genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())} or an Ensembl URL")
+        logger.error(f"Unknown genome reference: {args.genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())} or an Ensembl REST server URL")
         sys.exit(1)
 
-    # initialize MartsAdapter
-    martsadapter = MartsAdapter(biomart=ensembl_url)
+    # initialize Ensembl REST adapter (drop-in replacement for MartsAdapter)
+    adapter = EnsemblRESTAdapter(server=ensembl_server, species=ensembl_species)
 
     if args.biomart_dump:
         logger.info(f"Using offline biomart dump. Loading transcript to protein mapping from {args.biomart_dump}")
@@ -1138,9 +1140,9 @@ def __main__():
     else:
         # Create a mapping of transcript IDs to ensembl, refseq, and uniprot IDs
         try:
-            transcriptProteinTable = martsadapter.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
+            transcriptProteinTable = adapter.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
         except Exception as e:
-            logger.warning(f"BioMart lookup failed: {e}. Will use protein IDs from VCF annotations if available.")
+            logger.warning(f"Ensembl REST lookup failed: {e}. Will use protein IDs from VCF annotations if available.")
             transcriptProteinTable = None
 
     # Merge protein IDs from VCF annotations with BioMart results
@@ -1149,7 +1151,7 @@ def __main__():
     transcriptProteinTable = merge_vcf_protein_ids_with_biomart(transcriptProteinTable, vcfProteinIds, transcripts)
 
     # Generate mutated peptides from variants
-    mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, martsadapter, variants_metadata, args.min_length, args.max_length + 1, ensembl_dataset)
+    mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, adapter, variants_metadata, args.min_length, args.max_length + 1, ensembl_dataset)
 
     # Check if mutated_peptides_df is empty after filtering and write empty files
     if mutated_peptides_df.empty:
