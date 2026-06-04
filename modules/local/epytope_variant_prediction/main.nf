@@ -39,9 +39,9 @@ process EPYTOPE_VARIANT_PREDICTION {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
+        epytope: \$(python -c "from importlib.metadata import version; print(version('epytope'))")
+        pandas: \$(python -c "from importlib.metadata import version; print(version('pandas'))")
+        pyvcf: \$(python -c "from importlib.metadata import version; print(version('PyVCF3'))")
     END_VERSIONS
     """
 
@@ -54,9 +54,9 @@ process EPYTOPE_VARIANT_PREDICTION {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
-        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
+        epytope: \$(python -c "from importlib.metadata import version; print(version('epytope'))")
+        pandas: \$(python -c "from importlib.metadata import version; print(version('pandas'))")
+        pyvcf: \$(python -c "from importlib.metadata import version; print(version('PyVCF3'))")
     END_VERSIONS
     """
 }

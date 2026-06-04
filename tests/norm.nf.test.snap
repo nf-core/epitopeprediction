@@ -10,9 +10,9 @@
                     "bcftools": "1.23.1"
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
-                    "python": "3.7.12",
-                    "epytope": "3.3.1",
-                    "pandas": "1.3.5",
+                    "python": "3.14.5",
+                    "epytope": "4.0.0",
+                    "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
                 "GUNZIP_VCF": {
@@ -217,13 +217,13 @@
                 "multiqc_binding_affinity_distribution.txt:md5,1b26ad357f4f1406e12edfb7aa5b9bd7",
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,307deaa66b32521738bfc4c79a3a2cde",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,d9bc31d9ce6f03e2bc21c508dae2c269"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,8cfc4641c7673147aa8ad5fc28c31b7e"
             ]
         ],
+        "timestamp": "2026-06-04T20:11:42.098976313",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.2"
-        },
-        "timestamp": "2025-12-16T13:25:42.822581657"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

@@ -7,9 +7,9 @@
                     "bcftools": "1.23.1"
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
-                    "python": "3.7.12",
-                    "epytope": "3.3.1",
-                    "pandas": "1.3.5",
+                    "python": "3.14.5",
+                    "epytope": "4.0.0",
+                    "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
                 "GUNZIP_VCF": {
@@ -209,10 +209,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0cf793e022bbbf14ba53f2338aae1450"
             ]
         ],
+        "timestamp": "2026-06-04T19:39:11.020986341",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2026-01-08T16:41:58.000435528"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }
