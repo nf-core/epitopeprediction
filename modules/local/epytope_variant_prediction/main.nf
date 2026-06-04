@@ -1,11 +1,10 @@
 process EPYTOPE_VARIANT_PREDICTION {
     label 'process_low'
 
-    // conda "${moduleDir}/environment.yml"
-    // NOTE: epytope 4.0.0 is not yet on bioconda; container tag/build hash is a placeholder pending the bioconda release.
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/epytope:4.0.0--pyh7cba7a3_0' :
-        'biocontainers/epytope:4.0.0--pyh7cba7a3_0' }"
+        'https://depot.galaxyproject.org/singularity/epytope:4.0.0--pyhdfd78af_0' :
+        'biocontainers/epytope:4.0.0--pyhdfd78af_0' }"
 
     input:
     tuple val(meta), path(vcf)
