@@ -70,6 +70,32 @@ if not logger.hasHandlers():
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+
+class EnsemblRESTFailureCounter(logging.Filter):
+    # EnsemblRESTAdapter swallows definitive request failures (rate-limit exhaustion,
+    # connection/timeout) by logging a warning and returning None, which silently
+    # truncates the peptide set. Count those so __main__ can abort instead of emitting
+    # incomplete results. Matches the adapter's unformatted log templates; HTTP 400
+    # ("Bad request") is a legitimate "ID not found" and is deliberately not counted.
+    _FAILURE_TEMPLATES = frozenset({
+        "Ensembl REST API rate limit retries exhausted for %s",
+        "Ensembl REST API request failed: %s",
+    })
+
+    def __init__(self):
+        super().__init__()
+        self.count = 0
+
+    def filter(self, record):
+        if record.msg in self._FAILURE_TEMPLATES:
+            self.count += 1
+        return True
+
+
+rest_failure_counter = EnsemblRESTFailureCounter()
+logger.addFilter(rest_failure_counter)
+
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles.
@@ -1152,6 +1178,14 @@ def __main__():
 
     # Generate mutated peptides from variants
     mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, adapter, variants_metadata, args.min_length, args.max_length + 1, ensembl_dataset)
+
+    # Abort on definitive Ensembl REST failures rather than emitting a truncated peptide set
+    if rest_failure_counter.count > 0:
+        logger.error(
+            f"{rest_failure_counter.count} Ensembl REST request(s) failed (rate-limit exhaustion or connection errors). "
+            "The peptide set would be incomplete, so aborting instead of writing truncated results. Please retry."
+        )
+        sys.exit(1)
 
     # Check if mutated_peptides_df is empty after filtering and write empty files
     if mutated_peptides_df.empty:
