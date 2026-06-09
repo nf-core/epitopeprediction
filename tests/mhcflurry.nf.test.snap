@@ -9,6 +9,7 @@
                 "EPYTOPE_VARIANT_PREDICTION": {
                     "python": "3.14.5",
                     "epytope": "4.0.0",
+                    "pyensembl": "2.6.7",
                     "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
@@ -209,7 +210,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0cf793e022bbbf14ba53f2338aae1450"
             ]
         ],
-        "timestamp": "2026-06-04T19:39:11.020986341",
+        "timestamp": "2026-06-09T08:16:35.821824086",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

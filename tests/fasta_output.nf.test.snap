@@ -14,6 +14,7 @@
                 "EPYTOPE_VARIANT_PREDICTION": {
                     "python": "3.14.5",
                     "epytope": "4.0.0",
+                    "pyensembl": "2.6.7",
                     "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
@@ -111,7 +112,7 @@
                 "multiqc_general_stats.txt:md5,a2861dfd886f449d522e37c92889a474"
             ]
         ],
-        "timestamp": "2026-06-04T19:02:47.33525948",
+        "timestamp": "2026-06-09T07:43:23.530399356",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

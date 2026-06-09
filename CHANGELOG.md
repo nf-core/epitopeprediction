@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
+- [#357](https://github.com/nf-core/epitopeprediction/pull/357) Added parameter `--pyensembl_cache_dir` to point variant prediction at a persistent pyensembl cache ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
@@ -32,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `snpsift`  | 4.3         | 5.4c        |
 | `nf-core`  | 3.4.1       | 4.0.2       |
 | `epytope`  | 3.3.1       | 4.0.0       |
+| `pyensembl` |            | 2.6.7       |
 
 ### `Changed`
 
@@ -42,6 +44,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#357](https://github.com/nf-core/epitopeprediction/pull/357) Replace BioMart `MartsAdapter` with epytope 4.0.0 `EnsemblRESTAdapter` in `epaa.py` to avoid flaky BioMart lookups ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#357](https://github.com/nf-core/epitopeprediction/pull/357) Derive peptides and Ensembl protein IDs in `epaa.py` from the offline `PyEnsemblAdapter` (deterministic, no live Ensembl requests); refseq/uniprot remain best-effort via REST ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.0 - Lustnau - 2025-10-22
 

@@ -3,6 +3,7 @@
 
 import argparse
 import logging
+import os
 import re
 import sys
 from datetime import datetime
@@ -22,6 +23,8 @@ from epytope.Core.Variant import MutationSyntax, Variant, VariationType
 from epytope.EpitopePrediction import EpitopePredictorFactory
 from epytope.IO.ADBAdapter import EIdentifierTypes
 from epytope.IO.EnsemblRESTAdapter import EnsemblRESTAdapter
+from epytope.IO.PyEnsemblAdapter import PyEnsemblAdapter
+from pyensembl import EnsemblRelease
 
 __author__ = "Christopher Mohr, Jonas Scheid, Axel Walter"
 VERSION = "2.0"
@@ -32,18 +35,21 @@ transcriptProteinTable = {}
 vcfProteinIds = {}  # Store protein IDs extracted directly from VCF annotations
 vcfConsequences = {}  # Store consequences by (chrom, pos, ref, obs) for lookup in FASTA generation
 
-# Mapping from genome reference names to Ensembl URLs and datasets
+# Mapping from genome reference names to backend coordinates.
+# Peptides + ENSP come from the local pyensembl cache (release/species). refseq/uniprot are
+# best-effort annotation from the Ensembl REST API (server/rest_species/dataset); release
+# pins: 75=GRCh37, 112=GRCh38/GRCm39, 102=GRCm38.
 GENOME_REFERENCE_MAP = {
     # Human genomes
-    "grch38": {"server": "https://rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
-    "grch37": {"server": "https://grch37.rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
-    "hg38": {"server": "https://rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
-    "hg19": {"server": "https://grch37.rest.ensembl.org", "dataset": "hsapiens_gene_ensembl", "species": "homo_sapiens"},
+    "grch38": {"release": 112, "species": "human", "server": "https://rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
+    "grch37": {"release": 75, "species": "human", "server": "https://grch37.rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
+    "hg38": {"release": 112, "species": "human", "server": "https://rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
+    "hg19": {"release": 75, "species": "human", "server": "https://grch37.rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
     # Mouse genomes (the Ensembl REST API only serves the current assembly, GRCm39, for mouse)
-    "grcm39": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
-    "grcm38": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
-    "mm39": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
-    "mm10": {"server": "https://rest.ensembl.org", "dataset": "mmusculus_gene_ensembl", "species": "mus_musculus"},
+    "grcm39": {"release": 112, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
+    "grcm38": {"release": 102, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
+    "mm39": {"release": 112, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
+    "mm10": {"release": 102, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
 }
 
 def unwrap_to_string(value, default="unknown"):
@@ -71,31 +77,6 @@ if not logger.hasHandlers():
     logger.addHandler(handler)
 
 
-class EnsemblRESTFailureCounter(logging.Filter):
-    # EnsemblRESTAdapter swallows definitive request failures (rate-limit exhaustion,
-    # connection/timeout) by logging a warning and returning None, which silently
-    # truncates the peptide set. Count those so __main__ can abort instead of emitting
-    # incomplete results. Matches the adapter's unformatted log templates; HTTP 400
-    # ("Bad request") is a legitimate "ID not found" and is deliberately not counted.
-    _FAILURE_TEMPLATES = frozenset({
-        "Ensembl REST API rate limit retries exhausted for %s",
-        "Ensembl REST API request failed: %s",
-    })
-
-    def __init__(self):
-        super().__init__()
-        self.count = 0
-
-    def filter(self, record):
-        if record.msg in self._FAILURE_TEMPLATES:
-            self.count += 1
-        return True
-
-
-rest_failure_counter = EnsemblRESTFailureCounter()
-logger.addFilter(rest_failure_counter)
-
-
 def parse_args():
     parser = argparse.ArgumentParser(
         description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles.
@@ -108,7 +89,8 @@ def parse_args():
     parser.add_argument("--flanking_region_size", help="Size of flanking region around mutated peptides in FASTA output", type=int, default=25)
     parser.add_argument("--min_length", help="Minimum peptide length of mutated peptides", type=int, default=8)
     parser.add_argument("--max_length", help="Maximum peptide length of mutated peptides", type=int, default=14)
-    parser.add_argument("--genome_reference", help="Genome reference (grch38, grch37, hg38, hg19 for human; grcm39, grcm38, mm39, mm10 for mouse) or Ensembl URL (defaults to human)", default="grch38")
+    parser.add_argument("--genome_reference", help="Genome reference (grch38, grch37, hg38, hg19 for human; grcm39, grcm38, mm39, mm10 for mouse)", default="grch38")
+    parser.add_argument("--pyensembl_cache_dir", help="Directory for the pyensembl cache; missing releases are downloaded into it on first use", type=str, default="~/.cache/pyensembl")
     parser.add_argument("--proteome_reference", help="Specify reference proteome fasta for self-filtering peptides from variants")
     parser.add_argument("--peptide_col_name", help="Name of the column containing the peptide sequences", type=str, default="sequence")
     parser.add_argument("--version", help="Script version", action="version", version=VERSION)
@@ -467,8 +449,8 @@ def read_vcf(filename, pass_only=True):
 
 def create_protein_column_value(pep, database_id):
     # retrieve Ensembl protein ID for given transcript IDs, if we want to provide additional protein ID types, adapt here
-    # we have to catch cases where no protein information is available, e.g. if there are issues on BioMart side
-    if transcriptProteinTable is None:
+    # we have to catch cases where no protein information is available, e.g. if the transcript was not found in pyensembl
+    if transcriptProteinTable is None or len(transcriptProteinTable) == 0:
         logger.warning(f"Protein mapping not available for peptide {str(pep)}")
         return ""
 
@@ -613,12 +595,12 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
-def generate_peptides_from_variants( variants: Variant, adapter: EnsemblRESTAdapter, metadata: list, minlength: int, maxlength: int, ensembl_dataset: str = "hsapiens_gene_ensembl" ) -> Tuple[pd.DataFrame, list]:
+def generate_peptides_from_variants( variants: Variant, adapter: PyEnsemblAdapter, metadata: list, minlength: int, maxlength: int, ensembl_dataset: str = "hsapiens_gene_ensembl" ) -> Tuple[pd.DataFrame, list]:
     """
     Generate mutated peptides ranging between min and max length from a list of epytore.Core.Variants.
     Args:
         variants: List of epytope.Core.Variant objects.
-        adapter: epytope.IO.EnsemblRESTAdapter object for querying Ensembl.
+        adapter: epytope.IO.PyEnsemblAdapter object for querying the local Ensembl cache.
         metadata: List of metadata columns to include in the output.
         minlength: Minimum length of peptides to generate.
         maxlength: Maximum length of peptides to generate.
@@ -1047,6 +1029,62 @@ def get_protein_ids_from_transcripts_offline(transcripts, data_path):
     return result
 
 
+def get_protein_ids_from_transcripts_pyensembl(transcripts, release, species):
+    """
+    Build the transcript->protein-ID table from the local pyensembl cache.
+
+    pyensembl knows the Ensembl protein ID (ENSP) for each transcript but holds no
+    RefSeq/UniProt cross-references, so only ensembl_id is filled here; refseq_id and
+    uniprot_id are left blank for an optional downstream overlay.
+
+    Args:
+        transcripts: List of transcript IDs (versioned or not).
+        release: Ensembl release pinning the local assembly (e.g. 75 for GRCh37).
+        species: pyensembl species name ("human"/"mouse").
+    Returns:
+        DataFrame with columns [ensembl_id, refseq_id, uniprot_id, transcript_id].
+    """
+    genome = EnsemblRelease(release=release, species=species)
+    rows = []
+    for transcript_id in transcripts:
+        transcript_base = transcript_id.split(".")[0]
+        try:
+            ensembl_protein_id = genome.transcript_by_id(transcript_base).protein_id or ""
+        except Exception as e:
+            logger.warning(f"pyensembl protein-ID lookup failed for {transcript_base}: {e}")
+            ensembl_protein_id = ""
+        rows.append({"ensembl_id": ensembl_protein_id, "refseq_id": "", "uniprot_id": "", "transcript_id": transcript_base})
+    return pd.DataFrame(rows, columns=["ensembl_id", "refseq_id", "uniprot_id", "transcript_id"])
+
+
+def update_refseq_uniprot(base_table, overlay_table):
+    """
+    Fill empty refseq_id/uniprot_id in base_table from overlay_table, matched on
+    transcript_id. ensembl_id (ENSP) is authoritative from pyensembl and never overwritten.
+
+    Args:
+        base_table: DataFrame with the pyensembl-derived protein IDs.
+        overlay_table: DataFrame (REST or offline dump) carrying refseq_id/uniprot_id.
+    Returns:
+        base_table with refseq_id/uniprot_id filled where they were empty.
+    """
+    if overlay_table is None or overlay_table.empty:
+        return base_table
+
+    base_table = base_table.copy()
+    overlay_by_transcript = {
+        str(row["transcript_id"]).split(".")[0]: row
+        for _, row in overlay_table.iterrows()
+    }
+    for col in ["refseq_id", "uniprot_id"]:
+        base_table[col] = [
+            overlay_by_transcript.get(str(tid).split(".")[0], {}).get(col, "")
+            if (pd.isna(current) or current == "") else current
+            for tid, current in zip(base_table["transcript_id"], base_table[col])
+        ]
+    return base_table
+
+
 def merge_vcf_protein_ids_with_biomart(biomart_table, vcf_protein_ids, transcripts):
     """
     Merge protein IDs extracted from VCF annotations with BioMart lookup results.
@@ -1125,6 +1163,9 @@ def __main__():
     args = parse_args()
     logger.info("Running variant prediction version: " + str(VERSION))
 
+    # pyensembl reads its cache location from this env var; make it absolute so a Nextflow-staged symlink resolves regardless of cwd
+    os.environ["PYENSEMBL_CACHE_DIR"] = os.path.abspath(os.path.expanduser(args.pyensembl_cache_dir))
+
     global transcriptProteinTable
     global vcfProteinIds
 
@@ -1139,53 +1180,43 @@ def __main__():
         write_empty_files(args)
         return  # Exit early
 
-    # Look up genome reference in the mapping or use REST server URL directly
+    # Look up genome reference in the mapping
     genome_ref_lower = args.genome_reference.lower()
-    if genome_ref_lower in GENOME_REFERENCE_MAP:
-        genome_info = GENOME_REFERENCE_MAP[genome_ref_lower]
-        ensembl_server = genome_info["server"]
-        ensembl_dataset = genome_info["dataset"]
-        ensembl_species = genome_info["species"]
-        logger.info(f"Using genome reference '{args.genome_reference}' -> Ensembl REST server: {ensembl_server}, dataset: {ensembl_dataset}")
-    elif genome_ref_lower.startswith("http"):
-        # REST server URL provided directly, default to human
-        ensembl_server = args.genome_reference
-        ensembl_dataset = "hsapiens_gene_ensembl"
-        ensembl_species = "homo_sapiens"
-        logger.info(f"Using Ensembl REST server directly: {ensembl_server}, defaulting to human")
-    else:
-        logger.error(f"Unknown genome reference: {args.genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())} or an Ensembl REST server URL")
+    if genome_ref_lower not in GENOME_REFERENCE_MAP:
+        logger.error(f"Unknown genome reference: {args.genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())}")
         sys.exit(1)
+    genome_info = GENOME_REFERENCE_MAP[genome_ref_lower]
+    ensembl_release = genome_info["release"]
+    ensembl_species = genome_info["species"]
+    ensembl_dataset = genome_info["dataset"]
+    logger.info(f"Using genome reference '{args.genome_reference}' -> local pyensembl release {ensembl_release} ({ensembl_species})")
 
-    # initialize Ensembl REST adapter (drop-in replacement for MartsAdapter)
-    adapter = EnsemblRESTAdapter(server=ensembl_server, species=ensembl_species)
+    # peptides + ENSP come from the pyensembl cache; auto_download fetches the release on first use,
+    # then reuses the cache (a cached release is read offline, no re-download)
+    adapter = PyEnsemblAdapter(release=ensembl_release, species=ensembl_species, auto_download=True)
+    transcriptProteinTable = get_protein_ids_from_transcripts_pyensembl(transcripts, ensembl_release, ensembl_species)
 
+    # refseq/uniprot are best-effort annotation only: from a static dump if provided,
+    # otherwise a live REST xref lookup. Failures here leave those two columns blank and
+    # never affect the (pyensembl-derived) peptides or ENSP.
     if args.biomart_dump:
-        logger.info(f"Using offline biomart dump. Loading transcript to protein mapping from {args.biomart_dump}")
-        transcriptProteinTable = get_protein_ids_from_transcripts_offline(transcripts, args.biomart_dump)
+        logger.info(f"Loading refseq/uniprot annotation from offline biomart dump {args.biomart_dump}")
+        transcriptProteinTable = update_refseq_uniprot(transcriptProteinTable, get_protein_ids_from_transcripts_offline(transcripts, args.biomart_dump))
     else:
-        # Create a mapping of transcript IDs to ensembl, refseq, and uniprot IDs
+        if genome_ref_lower in ("grcm38", "mm10"):
+            logger.warning(f"Genome reference '{args.genome_reference}' is GRCm38, but the Ensembl REST API only serves GRCm39 for mouse; refseq/uniprot cross-references may be incomplete or mismatched. Provide --biomart_dump for GRCm38 annotation.")
         try:
-            transcriptProteinTable = adapter.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
+            rest_adapter = EnsemblRESTAdapter(server=genome_info["server"], species=genome_info["rest_species"])
+            rest_table = rest_adapter.get_protein_ids_from_transcripts(transcripts, type=EIdentifierTypes.ENSEMBL)
+            transcriptProteinTable = update_refseq_uniprot(transcriptProteinTable, rest_table)
         except Exception as e:
-            logger.warning(f"Ensembl REST lookup failed: {e}. Will use protein IDs from VCF annotations if available.")
-            transcriptProteinTable = None
+            logger.warning(f"refseq/uniprot annotation unavailable ({e}); leaving those columns blank.")
 
-    # Merge protein IDs from VCF annotations with BioMart results
-    # This ensures that protein IDs present in VCF (e.g., ENSP, UniProt) are used when BioMart lookup fails
-    # Always call merge function to ensure transcriptProteinTable is initialized even if BioMart failed
+    # Backfill any protein IDs present in the VCF annotations (e.g. ENSP, UniProt)
     transcriptProteinTable = merge_vcf_protein_ids_with_biomart(transcriptProteinTable, vcfProteinIds, transcripts)
 
     # Generate mutated peptides from variants
     mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, adapter, variants_metadata, args.min_length, args.max_length + 1, ensembl_dataset)
-
-    # Abort on definitive Ensembl REST failures rather than emitting a truncated peptide set
-    if rest_failure_counter.count > 0:
-        logger.error(
-            f"{rest_failure_counter.count} Ensembl REST request(s) failed (rate-limit exhaustion or connection errors). "
-            "The peptide set would be incomplete, so aborting instead of writing truncated results. Please retry."
-        )
-        sys.exit(1)
 
     # Check if mutated_peptides_df is empty after filtering and write empty files
     if mutated_peptides_df.empty:

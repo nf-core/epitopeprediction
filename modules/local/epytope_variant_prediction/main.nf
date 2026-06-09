@@ -3,12 +3,13 @@ process EPYTOPE_VARIANT_PREDICTION {
 
     conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/epytope:4.0.0--pyhdfd78af_0' :
-        'biocontainers/epytope:4.0.0--pyhdfd78af_0' }"
+        'https://depot.galaxyproject.org/singularity/epytope:4.0.0--pyhdfd78af_1' :
+        'biocontainers/epytope:4.0.0--pyhdfd78af_1' }"
 
     input:
     tuple val(meta), path(vcf)
     path(biomart_dump)
+    path(pyensembl_cache)
 
     output:
     tuple val(meta), path("*.tsv")  , emit: tsv
@@ -19,9 +20,10 @@ process EPYTOPE_VARIANT_PREDICTION {
     task.ext.when == null || task.ext.when
 
     script:
-    def args = task.ext.args
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def biomart = params.biomart_dump_path ? "--biomart_dump ${biomart_dump}" : ""
+    def pyensembl_cache_arg = params.pyensembl_cache_dir ? "--pyensembl_cache_dir ${pyensembl_cache}" : ""
     def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = (meta.mhc_class == "I") ? params.max_peptide_length_classI : params.max_peptide_length_classII
     def flanking_region_size = params.fasta_peptide_flanking_region_size
@@ -31,6 +33,7 @@ process EPYTOPE_VARIANT_PREDICTION {
         -i ${vcf} \
         -p ${prefix} \
         ${biomart} \
+        ${pyensembl_cache_arg} \
         --max_length ${max_length} \
         --min_length ${min_length} \
         --flanking_region_size ${flanking_region_size} \
@@ -40,6 +43,7 @@ process EPYTOPE_VARIANT_PREDICTION {
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
         epytope: \$(python -c "from importlib.metadata import version; print(version('epytope'))")
+        pyensembl: \$(python -c "from importlib.metadata import version; print(version('pyensembl'))")
         pandas: \$(python -c "from importlib.metadata import version; print(version('pandas'))")
         pyvcf: \$(python -c "from importlib.metadata import version; print(version('PyVCF3'))")
     END_VERSIONS
@@ -55,6 +59,7 @@ process EPYTOPE_VARIANT_PREDICTION {
     "${task.process}":
         python: \$(python --version 2>&1 | sed 's/Python //g')
         epytope: \$(python -c "from importlib.metadata import version; print(version('epytope'))")
+        pyensembl: \$(python -c "from importlib.metadata import version; print(version('pyensembl'))")
         pandas: \$(python -c "from importlib.metadata import version; print(version('pandas'))")
         pyvcf: \$(python -c "from importlib.metadata import version; print(version('PyVCF3'))")
     END_VERSIONS

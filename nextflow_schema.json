@@ -65,6 +65,12 @@
                     "format": "file-path",
                     "exists": true,
                     "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides derived from provided genomic variants."
+                },
+                "pyensembl_cache_dir": {
+                    "type": "string",
+                    "format": "directory-path",
+                    "description": "Directory for the pyensembl cache used by variant prediction.",
+                    "help_text": "Variant prediction queries a local pyensembl cache for the selected genome reference. Point this at a persistent directory to reuse a pre-built cache and avoid each parallel task downloading the Ensembl release on first use. If the release is missing it is downloaded into this directory. Defaults to the container's `~/.cache/pyensembl`."
                 }
             }
         },
