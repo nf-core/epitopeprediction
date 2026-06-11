@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
-- [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCIIpan allele labels in the merged/`best_allele` output by reading allele names from the xls header instead of assuming `sorted(meta.alleles)` order (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))
+- [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCpan/NetMHCIIpan allele labels in the merged/`best_allele` output by reading allele names from the xls header instead of assuming `sorted(meta.alleles)` order (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#352](https://github.com/nf-core/epitopeprediction/pull/352) Accept 3- and 4-field HLA typings by truncating to 2 fields via mhcgnomes (fixes [#350](https://github.com/nf-core/epitopeprediction/issues/350)) ([@jonasscheid](https://github.com/jonasscheid/))
 - Fixed NetMHCIIpan mouse class II allele conversion: `H2-AA*b/AB*b` now maps to `H-2-IAb` (and `H2-EA*d/EB*d` to `H-2-IEd`) instead of the invalid `H-2-AAb-ABb` ([@jonasscheid](https://github.com/jonasscheid/))
 - [#349](https://github.com/nf-core/epitopeprediction/pull/349) Fixed MultiQC stats mismatch: use per-peptide binder counts, fix unsupported count formula, fix netmhcpan multi-allele column parsing ([@jonasscheid](https://github.com/jonasscheid/))

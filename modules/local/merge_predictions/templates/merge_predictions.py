@@ -195,8 +195,14 @@ class PredictionResult:
         return df
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        # Map with allele index to allele name
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Map output-column index to allele from the xls header row (one name per allele block), in
+        # NetMHCpan's output order. Reconstructing the order from sorted(meta.alleles) mislabels
+        # alleles whenever that sort diverges from NetMHCpan's — e.g. a stray space in a samplesheet
+        # allele ("; C*07:04") makes it sort first — leaving ranks correct but labels shuffled (#358).
+        # These names are normalized by mhcgnomes for all predictors in main().
+        with open(self.file_path) as f:
+            header_alleles = [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
+        alleles_dict = dict(enumerate(header_alleles))
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
