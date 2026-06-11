@@ -195,11 +195,7 @@ class PredictionResult:
         return df
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        # Map output-column index to allele from the xls header row (one name per allele block), in
-        # NetMHCpan's output order. Reconstructing the order from sorted(meta.alleles) mislabels
-        # alleles whenever that sort diverges from NetMHCpan's — e.g. a stray space in a samplesheet
-        # allele ("; C*07:04") makes it sort first — leaving ranks correct but labels shuffled (#358).
-        # These names are normalized by mhcgnomes for all predictors in main().
+        # Map column index to allele from the xls header (output order), not sorted(meta.alleles) (#358)
         with open(self.file_path) as f:
             header_alleles = [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
         alleles_dict = dict(enumerate(header_alleles))
@@ -245,11 +241,7 @@ class PredictionResult:
         NetMHCIIpan 4.3 xls uses `Rank` for the EL percentile and `Rank_BA` for BA percentile;
         multi-allele files are handled by pandas auto-suffixing duplicate columns as `.1`, `.2` …
         """
-        # Map output-column index to allele from the xls header row (one name per allele block).
-        # NetMHCIIpan re-sorts alleles in its own name format, which diverges from the pipeline's
-        # mhcgnomes sort (e.g. DPB1*10:01 vs DPB1*107:01), so reconstructing the order from
-        # sorted(meta.alleles) mislabels alleles while leaving ranks correct (#358). These names are
-        # normalized by mhcgnomes for all predictors in main().
+        # Map column index to allele from the xls header (output order), not sorted(meta.alleles) (#358)
         with open(self.file_path) as f:
             header_alleles = [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
         alleles_dict = dict(enumerate(header_alleles))
