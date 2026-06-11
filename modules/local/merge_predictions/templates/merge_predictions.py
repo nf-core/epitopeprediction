@@ -239,8 +239,14 @@ class PredictionResult:
         NetMHCIIpan 4.3 xls uses `Rank` for the EL percentile and `Rank_BA` for BA percentile;
         multi-allele files are handled by pandas auto-suffixing duplicate columns as `.1`, `.2` …
         """
-        # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Map output-column index to allele from the xls header row (one name per allele block).
+        # NetMHCIIpan re-sorts alleles in its own name format, which diverges from the pipeline's
+        # mhcgnomes sort (e.g. DPB1*10:01 vs DPB1*107:01), so reconstructing the order from
+        # sorted(meta.alleles) mislabels alleles while leaving ranks correct (#358). These names are
+        # normalized by mhcgnomes for all predictors in main().
+        with open(self.file_path) as f:
+            header_alleles = [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
+        alleles_dict = dict(enumerate(header_alleles))
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
