@@ -195,8 +195,10 @@ class PredictionResult:
         return df
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        # Map with allele index to allele name
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Map column index to allele from the xls header (output order), not sorted(meta.alleles) (#358)
+        with open(self.file_path) as f:
+            header_alleles = [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
+        alleles_dict = dict(enumerate(header_alleles))
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
@@ -239,8 +241,10 @@ class PredictionResult:
         NetMHCIIpan 4.3 xls uses `Rank` for the EL percentile and `Rank_BA` for BA percentile;
         multi-allele files are handled by pandas auto-suffixing duplicate columns as `.1`, `.2` …
         """
-        # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Map column index to allele from the xls header (output order), not sorted(meta.alleles) (#358)
+        with open(self.file_path) as f:
+            header_alleles = [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
+        alleles_dict = dict(enumerate(header_alleles))
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
