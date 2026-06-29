@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::epytope=4.0.1
+  - bioconda::pyensembl=2.6.7
