@@ -1,15 +1,15 @@
 {
     "-profile test_grch37": {
         "content": [
-            238,
+            239,
             {
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
-                    "python": "3.14.5",
-                    "epytope": "4.0.0",
-                    "pyensembl": "2.6.7",
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1",
                     "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
@@ -26,6 +26,11 @@
                     "pandas": "1.1.5"
                 },
                 "mhcnuggets": "2.4.0",
+                "PYENSEMBL_DOWNLOAD": {
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1"
+                },
                 "SNPSIFT_SPLIT": {
                     "snpsift": "5.4c"
                 },
@@ -218,7 +223,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,6aa770104ca0e67c04657c9a68e217ff"
             ]
         ],
-        "timestamp": "2026-06-09T08:00:43.159586451",
+        "timestamp": "2026-06-29T11:53:05.490110008",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

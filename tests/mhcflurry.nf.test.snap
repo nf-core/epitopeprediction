@@ -1,15 +1,15 @@
 {
     "-profile test_mhcflurry": {
         "content": [
-            222,
+            223,
             {
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
-                    "python": "3.14.5",
-                    "epytope": "4.0.0",
-                    "pyensembl": "2.6.7",
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1",
                     "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
@@ -22,6 +22,11 @@
                     "mhcgnomes": "1.8.6"
                 },
                 "MHCFLURRY": "2.1.4",
+                "PYENSEMBL_DOWNLOAD": {
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1"
+                },
                 "SNPSIFT_SPLIT": {
                     "snpsift": "5.4c"
                 },
@@ -210,7 +215,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0cf793e022bbbf14ba53f2338aae1450"
             ]
         ],
-        "timestamp": "2026-06-09T08:16:35.821824086",
+        "timestamp": "2026-06-29T12:10:06.20422534",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

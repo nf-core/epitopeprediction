@@ -1,7 +1,7 @@
 {
     "-profile test_norm": {
         "content": [
-            240,
+            241,
             {
                 "BCFTOOLS_NORM": {
                     "bcftools": "1.23.1"
@@ -10,9 +10,9 @@
                     "bcftools": "1.23.1"
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
-                    "python": "3.14.5",
-                    "epytope": "4.0.0",
-                    "pyensembl": "2.6.7",
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1",
                     "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
                 },
@@ -29,6 +29,11 @@
                     "pandas": "1.1.5"
                 },
                 "mhcnuggets": "2.4.0",
+                "PYENSEMBL_DOWNLOAD": {
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1"
+                },
                 "SNPSIFT_SPLIT": {
                     "snpsift": "5.4c"
                 },
@@ -221,7 +226,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,8cfc4641c7673147aa8ad5fc28c31b7e"
             ]
         ],
-        "timestamp": "2026-06-09T08:54:43.126086061",
+        "timestamp": "2026-06-29T12:41:57.02314393",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

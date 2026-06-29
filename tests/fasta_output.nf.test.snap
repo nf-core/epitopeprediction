@@ -1,7 +1,7 @@
 {
     "-profile test_fasta_output": {
         "content": [
-            27,
+            28,
             {
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
@@ -12,11 +12,16 @@
                     "pigz": 2.8
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
-                    "python": "3.14.5",
-                    "epytope": "4.0.0",
-                    "pyensembl": "2.6.7",
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1",
                     "pandas": "3.0.3",
                     "pyvcf": "1.0.3"
+                },
+                "PYENSEMBL_DOWNLOAD": {
+                    "python": "3.14.6",
+                    "epytope": "4.0.1",
+                    "pyensembl": "2.10.1"
                 },
                 "SNPSIFT_SPLIT": {
                     "snpsift": "5.4c"
@@ -112,7 +117,7 @@
                 "multiqc_general_stats.txt:md5,a2861dfd886f449d522e37c92889a474"
             ]
         ],
-        "timestamp": "2026-06-09T07:43:23.530399356",
+        "timestamp": "2026-06-29T11:35:52.25066753",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
