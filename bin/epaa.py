@@ -1222,7 +1222,7 @@ def __main__():
         logger.info(f"Loading refseq/uniprot annotation from offline biomart dump {args.biomart_dump}")
         transcriptProteinTable = update_refseq_uniprot(transcriptProteinTable, get_protein_ids_from_transcripts_offline(transcripts, args.biomart_dump))
     else:
-        if genome_ref_lower in ("grcm38", "mm10"):
+        if args.genome_reference.lower() in ("grcm38", "mm10"):
             logger.warning(f"Genome reference '{args.genome_reference}' is GRCm38, but the Ensembl REST API only serves GRCm39 for mouse; refseq/uniprot cross-references may be incomplete or mismatched. Provide --biomart_dump for GRCm38 annotation.")
         try:
             rest_adapter = EnsemblRESTAdapter(server=genome_info["server"], species=genome_info["rest_species"])
