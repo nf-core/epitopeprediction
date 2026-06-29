@@ -57,8 +57,9 @@
                 "genome_reference": {
                     "type": "string",
                     "default": "grch38",
-                    "help_text": "This defines the genome reference for the analysis. Human genomes (grch38, grch37, hg38, hg19) use the hsapiens_gene_ensembl dataset. Mouse genomes (grcm39, grcm38, mm39, mm10) use the mmusculus_gene_ensembl dataset. Alternatively, an Ensembl URL can be provided directly (e.g., https://www.ensembl.org), which defaults to the human dataset.",
-                    "description": "Specifies the genome reference (human: grch38, grch37, hg38, hg19; mouse: grcm39, grcm38, mm39, mm10) or an Ensembl URL."
+                    "enum": ["grch38", "grch37", "hg38", "hg19", "grcm39", "grcm38", "mm39", "mm10"],
+                    "help_text": "This defines the genome reference for the analysis. Human genomes (grch38, grch37, hg38, hg19) use the hsapiens_gene_ensembl dataset. Mouse genomes (grcm39, grcm38, mm39, mm10) use the mmusculus_gene_ensembl dataset.",
+                    "description": "Specifies the genome reference (human: grch38, grch37, hg38, hg19; mouse: grcm39, grcm38, mm39, mm10)."
                 },
                 "proteome_reference": {
                     "type": "string",
