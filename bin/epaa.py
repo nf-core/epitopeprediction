@@ -82,8 +82,8 @@ def parse_args():
         description="""EPAA - Epitope Prediction And Annotation \n Pipeline for prediction of MHC class I and II epitopes from variants or peptides for a list of specified alleles.
         Additionally predicted epitopes can be annotated with protein quantification values for the corresponding proteins, identified ligands, or differential expression values for the corresponding transcripts."""
     )
-    parser.add_argument("-i", "--input", help="SnpEff or VEP annotated variants in VCF format", type=str, required=True)
-    parser.add_argument("-p", "--prefix", help="Prefix of output files", type=str, required=True)
+    parser.add_argument("-i", "--input", help="SnpEff or VEP annotated variants in VCF format", type=str, required=False, default=None)
+    parser.add_argument("-p", "--prefix", help="Prefix of output files", type=str, required=False, default=None)
     parser.add_argument("-b", "--biomart_dump", help="Path to local Biomart dump for offline usage", type=str, default=None)
     parser.add_argument("--fasta_output", help="Create FASTA file with protein sequences", default=False, action="store_true")
     parser.add_argument("--flanking_region_size", help="Size of flanking region around mutated peptides in FASTA output", type=int, default=25)
@@ -91,6 +91,7 @@ def parse_args():
     parser.add_argument("--max_length", help="Maximum peptide length of mutated peptides", type=int, default=14)
     parser.add_argument("--genome_reference", help="Genome reference (grch38, grch37, hg38, hg19 for human; grcm39, grcm38, mm39, mm10 for mouse)", default="grch38")
     parser.add_argument("--pyensembl_cache_dir", help="Directory for the pyensembl cache; missing releases are downloaded into it on first use", type=str, default="~/.cache/pyensembl")
+    parser.add_argument("--download_cache", help="Only download+index the pyensembl cache for --genome_reference into --pyensembl_cache_dir, then exit (no prediction)", default=False, action="store_true")
     parser.add_argument("--proteome_reference", help="Specify reference proteome fasta for self-filtering peptides from variants")
     parser.add_argument("--peptide_col_name", help="Name of the column containing the peptide sequences", type=str, default="sequence")
     parser.add_argument("--version", help="Script version", action="version", version=VERSION)
@@ -1159,12 +1160,34 @@ def merge_vcf_protein_ids_with_biomart(biomart_table, vcf_protein_ids, transcrip
     return biomart_table
 
 
+def resolve_genome_reference(genome_reference):
+    """Map a genome_reference name to its Ensembl info dict, or exit(1) if unsupported."""
+    key = genome_reference.lower()
+    if key not in GENOME_REFERENCE_MAP:
+        logger.error(f"Unknown genome reference: {genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())}")
+        sys.exit(1)
+    return GENOME_REFERENCE_MAP[key]
+
+
 def __main__():
     args = parse_args()
     logger.info("Running variant prediction version: " + str(VERSION))
 
     # pyensembl reads its cache location from this env var; make it absolute so a Nextflow-staged symlink resolves regardless of cwd
     os.environ["PYENSEMBL_CACHE_DIR"] = os.path.abspath(os.path.expanduser(args.pyensembl_cache_dir))
+
+    # --download_cache: build the genome DB once (serial), then exit. Used by PYENSEMBL_DOWNLOAD so
+    # parallel prediction tasks never build/lock the shared SQLite DB concurrently.
+    if args.download_cache:
+        info = resolve_genome_reference(args.genome_reference)
+        logger.info(f"Downloading pyensembl cache for '{args.genome_reference}' -> release {info['release']} ({info['species']}) into {os.environ['PYENSEMBL_CACHE_DIR']}")
+        PyEnsemblAdapter(release=info["release"], species=info["species"], auto_download=True)
+        logger.info("pyensembl cache ready")
+        return
+
+    if args.input is None or args.prefix is None:
+        logger.error("--input/-i and --prefix/-p are required unless --download_cache is set")
+        sys.exit(1)
 
     global transcriptProteinTable
     global vcfProteinIds
@@ -1181,19 +1204,15 @@ def __main__():
         return  # Exit early
 
     # Look up genome reference in the mapping
-    genome_ref_lower = args.genome_reference.lower()
-    if genome_ref_lower not in GENOME_REFERENCE_MAP:
-        logger.error(f"Unknown genome reference: {args.genome_reference}. Supported values: {', '.join(GENOME_REFERENCE_MAP.keys())}")
-        sys.exit(1)
-    genome_info = GENOME_REFERENCE_MAP[genome_ref_lower]
+    genome_info = resolve_genome_reference(args.genome_reference)
     ensembl_release = genome_info["release"]
     ensembl_species = genome_info["species"]
     ensembl_dataset = genome_info["dataset"]
     logger.info(f"Using genome reference '{args.genome_reference}' -> local pyensembl release {ensembl_release} ({ensembl_species})")
 
-    # peptides + ENSP come from the pyensembl cache; auto_download fetches the release on first use,
-    # then reuses the cache (a cached release is read offline, no re-download)
-    adapter = PyEnsemblAdapter(release=ensembl_release, species=ensembl_species, auto_download=True)
+    # Cache is pre-built by PYENSEMBL_DOWNLOAD (or user-supplied); read it offline. Do NOT re-index:
+    # concurrent index() across parallel tasks races on the shared SQLite DB ("database is locked").
+    adapter = PyEnsemblAdapter(release=ensembl_release, species=ensembl_species, auto_download=False)
     transcriptProteinTable = get_protein_ids_from_transcripts_pyensembl(transcripts, ensembl_release, ensembl_species)
 
     # refseq/uniprot are best-effort annotation only: from a static dump if provided,
