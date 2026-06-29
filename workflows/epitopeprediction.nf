@@ -10,6 +10,7 @@ include { VARIANT_SPLIT               } from '../modules/local/variant_split'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
+include { PYENSEMBL_DOWNLOAD          } from '../modules/local/pyensembl_download'
 include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results'
 
 //
@@ -61,10 +62,6 @@ workflow EPITOPEPREDICTION {
     ch_biomart_dump  = params.biomart_dump_path ?
                             channel.value(file(params.biomart_dump_path, checkIfExists: true)) :
                             channel.value([])
-    ch_pyensembl_cache = params.pyensembl_cache_dir ?
-                            channel.value(file(params.pyensembl_cache_dir, checkIfExists: true)) :
-                            channel.value([])
-
     // Load supported alleles file
     supported_alleles_json = file("$projectDir/assets/supported_alleles.json", checkIfExists: true)
     netmhc_software_meta   = file("$projectDir/assets/netmhc_software_meta.json", checkIfExists: true)
@@ -131,6 +128,17 @@ workflow EPITOPEPREDICTION {
             peptide :  meta_data.input_type == 'peptide'
             protein :  meta_data.input_type == 'protein'
         }
+
+    // pyensembl genome cache: user-supplied, else build it ONCE here and feed read-only to every
+    // EPYTOPE_VARIANT_PREDICTION task (avoids the concurrent SQLite-build race). Only built when
+    // variants are present (.first() gates empty -> process skipped).
+    if (params.pyensembl_cache_dir) {
+        ch_pyensembl_cache = channel.value(file(params.pyensembl_cache_dir, checkIfExists: true))
+    } else {
+        PYENSEMBL_DOWNLOAD( ch_samples_uncompressed.variant.map { params.genome_reference }.first() )
+        ch_pyensembl_cache = PYENSEMBL_DOWNLOAD.out.cache.first()
+        ch_versions = ch_versions.mix( PYENSEMBL_DOWNLOAD.out.versions )
+    }
 
     /*
     ========================================================================================
