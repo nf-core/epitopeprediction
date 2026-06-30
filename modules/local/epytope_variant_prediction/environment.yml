@@ -3,4 +3,4 @@ channels:
   - bioconda
 dependencies:
   - bioconda::epytope=4.0.1
-  - bioconda::pyensembl=2.6.7
+  - bioconda::pyensembl=2.10.1

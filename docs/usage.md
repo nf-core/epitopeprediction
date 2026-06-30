@@ -37,19 +37,22 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 > [!IMPORTANT]
 > Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/) and [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html).
 
-For genomic variants, reference information from `Ensembl BioMart` is used. The default database version is the most recent `GRCh38` version. If you want to do the predictions based on `GRCh37` as the reference genome, please specify `--genome_reference grch37` in your pipeline call. You can also specify valid `Ensembl BioMart` archive version urls as `--genome_reference` value, e.g. [the archive version of December 2021](http://dec2021.archive.ensembl.org/).
+For genomic variants, peptides and Ensembl protein IDs (ENSP) are derived offline from a local [pyensembl](https://github.com/openvax/pyensembl) cache. The default reference is `GRCh38`; specify another supported assembly with e.g. `--genome_reference grch37` (human: `grch38`, `grch37`, `hg38`, `hg19`; mouse: `grcm39`, `grcm38`, `mm39`, `mm10`).
 
-> [!IMPORTANT]
-> Please note that old archive versions are regularly retired, therefore it might be possible that a used version is not available anymore at a later point.
+On the first run the pipeline downloads and indexes the Ensembl release for the selected reference into the cache, which requires internet access. To run fully offline (or to reuse the cache across runs), point `--pyensembl_cache_dir` at a persistent directory that already contains the required release.
+
+The Ensembl release is pinned per assembly by default (e.g. `GRCh38` → 112, `GRCh37` → 75). To use a different release, pass `--ensembl_release <N>`. This changes the release used for peptides and Ensembl protein IDs only; the supplementary `refseq`/`uniprot` annotation stays pinned to the assembly, so an off-assembly release may leave those columns incomplete.
+
+The supplementary `refseq`/`uniprot` cross-reference columns are best-effort only: they are filled from the Ensembl REST API when online, or from a local Biomart dump via `--biomart_dump_path` (see below). If neither is available these two columns are left blank; peptides and ENSP are unaffected.
 
 > [!IMPORTANT]
 > Please note that it is possible to input non-normalized variant files that can contain multiallelic sites. To ensure that the variant files are normalized reliably with `bcftools norm` please input a reference.fasta(.gz) file (via `--genome`) with chromosome names matching with your variant files.
 
-#### Biomart offline usage
+#### Offline refseq/uniprot annotation
 
-If you are running the pipeline in an environment without internet access, you can provide a local dump (CSV/TSV) of the Ensembl Biomart via the parameter `--biomart_dump_path`. The dump file can be created by querying the [Ensembl Biomart](https://www.ensembl.org/biomart/martview/) for the relevant database and dataset (e.g. `grch37` or `grch38`) and selecting the attributes Protein stable ID (`ensembl_peptide_id`), RefSeq peptide ID (`refseq_peptide`), UniProtKB/Swiss-Prot ID (`uniprotswissprot`), Transcript stable ID (`ensembl_transcript_id`). You can select other genome versions as described above. A list of currently available archives can be found [here](https://www.ensembl.org/info/website/archives/index.html?redirect=no).
+To annotate the supplementary `refseq`/`uniprot` columns without a live Ensembl REST lookup, provide a local dump (CSV/TSV) of the Ensembl Biomart via `--biomart_dump_path`. The dump file can be created by querying the [Ensembl Biomart](https://www.ensembl.org/biomart/martview/) for the relevant genome version (e.g. `grch37` or `grch38`) and selecting the attributes Protein stable ID (`ensembl_peptide_id`), RefSeq peptide ID (`refseq_peptide`), UniProtKB/Swiss-Prot ID (`uniprotswissprot`), Transcript stable ID (`ensembl_transcript_id`).
 
-The block below shows an example for a query of `GRCh38` that saves the results to a TSV file. To use another version please adapt the prefix of the URL below, i.e. (`http://grch37.ensembl.org/biomart/martservice?`). The resulting TSV file can be used as input to `--biomart_dump_path`.
+The block below shows an example query for `GRCh38` that saves the results to a TSV file; adapt the URL prefix for other versions (e.g. `http://grch37.ensembl.org/biomart/martservice?`). The resulting TSV file can be passed to `--biomart_dump_path`.
 
 ```bash
 wget -O biomart_dump_transcript_protein_table.tsv 'http://www.ensembl.org/biomart/martservice?query=<?xml version="1.0" encoding="UTF-8"?>

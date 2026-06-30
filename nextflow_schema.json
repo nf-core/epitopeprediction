@@ -71,7 +71,12 @@
                     "type": "string",
                     "format": "directory-path",
                     "description": "Directory for the pyensembl cache used by variant prediction.",
-                    "help_text": "Variant prediction queries a local pyensembl cache for the selected genome reference. Point this at a persistent directory to reuse a pre-built cache and avoid each parallel task downloading the Ensembl release on first use. If the release is missing it is downloaded into this directory. Defaults to the container's `~/.cache/pyensembl`."
+                    "help_text": "Variant prediction reads a local pyensembl cache for the selected genome reference. If unset, the pipeline builds the cache once per run (PYENSEMBL_DOWNLOAD) in the container's `~/.cache/pyensembl`. Point this at a persistent directory to reuse a pre-built cache; a user-supplied directory must already contain the configured `genome_reference` release, since the parallel prediction tasks read it read-only and do not download."
+                },
+                "ensembl_release": {
+                    "type": "integer",
+                    "description": "Override the Ensembl release pinned for `genome_reference`.",
+                    "help_text": "By default the Ensembl release is pinned per assembly (GRCh38/GRCm39 -> 112, GRCh37 -> 75, GRCm38 -> 102). Set this to build and read the local pyensembl cache for a different release. This affects peptides and Ensembl protein IDs only; the refseq/uniprot REST overlay stays pinned to the assembly server, so an off-assembly release may desync those supplementary columns."
                 }
             }
         },
@@ -85,8 +90,8 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "description": "Specifies the path to a local Biomart dump (CSV/TSV) for offline usage of the pipeline.",
-                    "help_text": "If you are running the pipeline in an environment without internet access, you can provide a local dump of the Ensembl Biomart here. The dump file can be created by querying the Ensembl Biomart for the relevant genome version (e.g. `grch37` or `grch38`) and selecting the attributes Protein stable ID (`ensembl_peptide_id`), RefSeq peptide ID (`refseq_peptide`), UniProtKB/Swiss-Prot ID (`uniprotswissprot`), Transcript stable ID (`ensembl_transcript_id`)."
+                    "description": "Specifies the path to a local Biomart dump (CSV/TSV) used to annotate the supplementary refseq/uniprot columns offline.",
+                    "help_text": "Peptides and Ensembl protein IDs are derived offline from the local pyensembl cache; this dump only fills the best-effort refseq/uniprot cross-reference columns in place of a live Ensembl REST lookup. The dump file can be created by querying the Ensembl Biomart for the relevant genome version (e.g. `grch37` or `grch38`) and selecting the attributes Protein stable ID (`ensembl_peptide_id`), RefSeq peptide ID (`refseq_peptide`), UniProtKB/Swiss-Prot ID (`uniprotswissprot`), Transcript stable ID (`ensembl_transcript_id`)."
                 },
                 "peptide_col_name": {
                     "type": "string",

@@ -32,19 +32,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `multiqc`   | 1.32        | 1.35        |
 | `snpsift`   | 4.3         | 5.4c        |
 | `nf-core`   | 3.4.1       | 4.0.2       |
-| `epytope`   | 3.3.1       | 4.0.0       |
-| `pyensembl` |             | 2.6.7       |
+| `epytope`   | 3.3.1       | 4.0.1       |
+| `pyensembl` |             | 2.10.1      |
 
 ### `Changed`
 
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump` in `epaa.py` ([@SusiJo](https://github.com/SusiJo/)).
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
-- Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
+- Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes).
 - [#336](https://github.com/nf-core/epitopeprediction/pull/336) Added NetMHCpan 4.2 mode config file instructions to the nf-core usage documentation. ([@Kabooni](https://github.com/Kabooni)).
 - [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
-- [#357](https://github.com/nf-core/epitopeprediction/pull/357) Replace BioMart `MartsAdapter` with epytope 4.0.0 `EnsemblRESTAdapter` in `epaa.py` to avoid flaky BioMart lookups ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#357](https://github.com/nf-core/epitopeprediction/pull/357) Replace BioMart `MartsAdapter` with the offline pyensembl cache (epytope 4.0.1) in `epaa.py` to avoid flaky BioMart lookups ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#357](https://github.com/nf-core/epitopeprediction/pull/357) Derive peptides and Ensembl protein IDs in `epaa.py` from the offline `PyEnsemblAdapter` (deterministic, no live Ensembl requests); refseq/uniprot remain best-effort via REST ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#357](https://github.com/nf-core/epitopeprediction/pull/357) Add optional `--ensembl_release` parameter to override the Ensembl release pinned for `--genome_reference` ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.0 - Lustnau - 2025-10-22
 

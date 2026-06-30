@@ -37,19 +37,19 @@ vcfConsequences = {}  # Store consequences by (chrom, pos, ref, obs) for lookup 
 
 # Mapping from genome reference names to backend coordinates.
 # Peptides + ENSP come from the local pyensembl cache (release/species). refseq/uniprot are
-# best-effort annotation from the Ensembl REST API (server/rest_species/dataset); release
+# best-effort annotation from the Ensembl REST API (server/rest_species); release
 # pins: 75=GRCh37, 112=GRCh38/GRCm39, 102=GRCm38.
 GENOME_REFERENCE_MAP = {
     # Human genomes
-    "grch38": {"release": 112, "species": "human", "server": "https://rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
-    "grch37": {"release": 75, "species": "human", "server": "https://grch37.rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
-    "hg38": {"release": 112, "species": "human", "server": "https://rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
-    "hg19": {"release": 75, "species": "human", "server": "https://grch37.rest.ensembl.org", "rest_species": "homo_sapiens", "dataset": "hsapiens_gene_ensembl"},
+    "grch38": {"release": 112, "species": "human", "server": "https://rest.ensembl.org", "rest_species": "homo_sapiens"},
+    "grch37": {"release": 75, "species": "human", "server": "https://grch37.rest.ensembl.org", "rest_species": "homo_sapiens"},
+    "hg38": {"release": 112, "species": "human", "server": "https://rest.ensembl.org", "rest_species": "homo_sapiens"},
+    "hg19": {"release": 75, "species": "human", "server": "https://grch37.rest.ensembl.org", "rest_species": "homo_sapiens"},
     # Mouse genomes (the Ensembl REST API only serves the current assembly, GRCm39, for mouse)
-    "grcm39": {"release": 112, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
-    "grcm38": {"release": 102, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
-    "mm39": {"release": 112, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
-    "mm10": {"release": 102, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus", "dataset": "mmusculus_gene_ensembl"},
+    "grcm39": {"release": 112, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus"},
+    "grcm38": {"release": 102, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus"},
+    "mm39": {"release": 112, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus"},
+    "mm10": {"release": 102, "species": "mouse", "server": "https://rest.ensembl.org", "rest_species": "mus_musculus"},
 }
 
 def unwrap_to_string(value, default="unknown"):
@@ -92,6 +92,7 @@ def parse_args():
     parser.add_argument("--genome_reference", help="Genome reference (grch38, grch37, hg38, hg19 for human; grcm39, grcm38, mm39, mm10 for mouse)", default="grch38")
     parser.add_argument("--pyensembl_cache_dir", help="Directory for the pyensembl cache; missing releases are downloaded into it on first use", type=str, default="~/.cache/pyensembl")
     parser.add_argument("--download_cache", help="Only download+index the pyensembl cache for --genome_reference into --pyensembl_cache_dir, then exit (no prediction)", default=False, action="store_true")
+    parser.add_argument("--ensembl_release", help="Override the Ensembl release used for the local pyensembl cache (default: the release pinned for --genome_reference). Affects peptides/ENSP only; the refseq/uniprot REST overlay stays pinned to the assembly.", type=int, default=None)
     parser.add_argument("--proteome_reference", help="Specify reference proteome fasta for self-filtering peptides from variants")
     parser.add_argument("--peptide_col_name", help="Name of the column containing the peptide sequences", type=str, default="sequence")
     parser.add_argument("--version", help="Script version", action="version", version=VERSION)
@@ -596,7 +597,7 @@ def create_peptide_variant_dictionary(peptides):
     return pep_to_variants
 
 
-def generate_peptides_from_variants( variants: Variant, adapter: PyEnsemblAdapter, metadata: list, minlength: int, maxlength: int, ensembl_dataset: str = "hsapiens_gene_ensembl" ) -> Tuple[pd.DataFrame, list]:
+def generate_peptides_from_variants( variants: Variant, adapter: PyEnsemblAdapter, metadata: list, minlength: int, maxlength: int ) -> Tuple[pd.DataFrame, list]:
     """
     Generate mutated peptides ranging between min and max length from a list of epytore.Core.Variants.
     Args:
@@ -605,17 +606,16 @@ def generate_peptides_from_variants( variants: Variant, adapter: PyEnsemblAdapte
         metadata: List of metadata columns to include in the output.
         minlength: Minimum length of peptides to generate.
         maxlength: Maximum length of peptides to generate.
-        ensembl_dataset: Ensembl BioMart dataset (e.g., hsapiens_gene_ensembl, mmusculus_gene_ensembl).
     Returns:
         mutated_peptides_df: DataFrame containing mutated peptides and metadata.
         prots: List of mutated proteins.
     """
-    # Query biomart to generate mutated proteins affected by variants
+    # Generate mutated transcripts affected by variants from the local pyensembl cache
     # Try/except for generate_transcripts_from_variants for each variant
     transcripts = []
     for v in variants:
         try:
-            transcripts.extend(generator.generate_transcripts_from_variants([v], adapter, ID_SYSTEM_USED, db=ensembl_dataset))
+            transcripts.extend(generator.generate_transcripts_from_variants([v], adapter, ID_SYSTEM_USED))
         except Exception:
             logger.warning(f"Could not generate transcripts for variant {v}. Skipping.")
     # Try/except for generate_proteins_from_transcripts
@@ -1086,44 +1086,19 @@ def update_refseq_uniprot(base_table, overlay_table):
     return base_table
 
 
-def merge_vcf_protein_ids_with_biomart(biomart_table, vcf_protein_ids, transcripts):
+def backfill_protein_ids_from_vcf(protein_table, vcf_protein_ids, transcripts):
     """
-    Merge protein IDs extracted from VCF annotations with BioMart lookup results.
-    VCF-derived protein IDs are used as fallback when BioMart doesn't have the mapping.
+    Backfill protein IDs from VCF (VEP) annotations into the pyensembl-derived table.
+    VCF-derived IDs only fill entries the table left empty; existing IDs are kept.
 
     Args:
-        biomart_table: DataFrame with protein IDs from BioMart lookup.
+        protein_table: DataFrame with protein IDs (ensembl_id/refseq_id/uniprot_id/transcript_id).
         vcf_protein_ids: Dictionary mapping transcript IDs to protein IDs from VCF.
         transcripts: List of transcript IDs to process.
 
     Returns:
-        DataFrame with merged protein IDs.
+        DataFrame with VCF-derived protein IDs backfilled.
     """
-    if biomart_table is None or biomart_table.empty:
-        # Create a new DataFrame from VCF protein IDs
-        rows = []
-        for transcript_id in transcripts:
-            transcript_base = transcript_id.split(".")[0]
-            if transcript_base in vcf_protein_ids:
-                rows.append({
-                    "ensembl_id": vcf_protein_ids[transcript_base].get("ensembl_id", ""),
-                    "refseq_id": vcf_protein_ids[transcript_base].get("refseq_id", ""),
-                    "uniprot_id": vcf_protein_ids[transcript_base].get("uniprot_id", ""),
-                    "transcript_id": transcript_base
-                })
-            else:
-                rows.append({
-                    "ensembl_id": "",
-                    "refseq_id": "",
-                    "uniprot_id": "",
-                    "transcript_id": transcript_base
-                })
-        if rows:
-            logger.info(f"Using {len([r for r in rows if r['ensembl_id'] or r['uniprot_id']])} protein IDs from VCF annotations.")
-            return pd.DataFrame(rows)
-        return pd.DataFrame(columns=["ensembl_id", "refseq_id", "uniprot_id", "transcript_id"])
-
-    # Merge VCF protein IDs into BioMart results
     merged_count = 0
     for transcript_id in transcripts:
         transcript_base = transcript_id.split(".")[0]
@@ -1132,32 +1107,31 @@ def merge_vcf_protein_ids_with_biomart(biomart_table, vcf_protein_ids, transcrip
 
         vcf_ids = vcf_protein_ids[transcript_base]
 
-        # Check if this transcript exists in BioMart table
-        mask = biomart_table["transcript_id"] == transcript_base
+        # Check if this transcript exists in the protein table
+        mask = protein_table["transcript_id"] == transcript_base
         if mask.any():
-            # Update empty values with VCF-derived IDs
+            # Only fill empty/NaN values with VCF-derived IDs
             for col, vcf_key in [("ensembl_id", "ensembl_id"), ("uniprot_id", "uniprot_id"), ("refseq_id", "refseq_id")]:
                 if vcf_ids.get(vcf_key):
-                    # Only update if BioMart value is empty/NaN
-                    current_val = biomart_table.loc[mask, col].iloc[0]
+                    current_val = protein_table.loc[mask, col].iloc[0]
                     if pd.isna(current_val) or current_val == "":
-                        biomart_table.loc[mask, col] = vcf_ids[vcf_key]
+                        protein_table.loc[mask, col] = vcf_ids[vcf_key]
                         merged_count += 1
         else:
-            # Add new row for transcript not in BioMart
+            # Add new row for transcript not in the table
             new_row = pd.DataFrame([{
                 "ensembl_id": vcf_ids.get("ensembl_id", ""),
                 "refseq_id": vcf_ids.get("refseq_id", ""),
                 "uniprot_id": vcf_ids.get("uniprot_id", ""),
                 "transcript_id": transcript_base
             }])
-            biomart_table = pd.concat([biomart_table, new_row], ignore_index=True)
+            protein_table = pd.concat([protein_table, new_row], ignore_index=True)
             merged_count += 1
 
     if merged_count > 0:
-        logger.info(f"Merged {merged_count} protein ID(s) from VCF annotations into BioMart results.")
+        logger.info(f"Backfilled {merged_count} protein ID(s) from VCF annotations.")
 
-    return biomart_table
+    return protein_table
 
 
 def resolve_genome_reference(genome_reference):
@@ -1180,8 +1154,9 @@ def __main__():
     # parallel prediction tasks never build/lock the shared SQLite DB concurrently.
     if args.download_cache:
         info = resolve_genome_reference(args.genome_reference)
-        logger.info(f"Downloading pyensembl cache for '{args.genome_reference}' -> release {info['release']} ({info['species']}) into {os.environ['PYENSEMBL_CACHE_DIR']}")
-        PyEnsemblAdapter(release=info["release"], species=info["species"], auto_download=True)
+        release = args.ensembl_release or info["release"]
+        logger.info(f"Downloading pyensembl cache for '{args.genome_reference}' -> release {release} ({info['species']}) into {os.environ['PYENSEMBL_CACHE_DIR']}")
+        PyEnsemblAdapter(release=release, species=info["species"], auto_download=True)
         logger.info("pyensembl cache ready")
         return
 
@@ -1205,9 +1180,10 @@ def __main__():
 
     # Look up genome reference in the mapping
     genome_info = resolve_genome_reference(args.genome_reference)
-    ensembl_release = genome_info["release"]
+    ensembl_release = args.ensembl_release or genome_info["release"]
     ensembl_species = genome_info["species"]
-    ensembl_dataset = genome_info["dataset"]
+    if args.ensembl_release:
+        logger.info(f"Overriding pinned release for '{args.genome_reference}' with --ensembl_release {ensembl_release}")
     logger.info(f"Using genome reference '{args.genome_reference}' -> local pyensembl release {ensembl_release} ({ensembl_species})")
 
     # Cache is pre-built by PYENSEMBL_DOWNLOAD (or user-supplied); read it offline. Do NOT re-index:
@@ -1220,7 +1196,10 @@ def __main__():
     # never affect the (pyensembl-derived) peptides or ENSP.
     if args.biomart_dump:
         logger.info(f"Loading refseq/uniprot annotation from offline biomart dump {args.biomart_dump}")
-        transcriptProteinTable = update_refseq_uniprot(transcriptProteinTable, get_protein_ids_from_transcripts_offline(transcripts, args.biomart_dump))
+        try:
+            transcriptProteinTable = update_refseq_uniprot(transcriptProteinTable, get_protein_ids_from_transcripts_offline(transcripts, args.biomart_dump))
+        except Exception as e:
+            logger.warning(f"refseq/uniprot annotation from biomart dump unavailable ({e}); leaving those columns blank.")
     else:
         if args.genome_reference.lower() in ("grcm38", "mm10"):
             logger.warning(f"Genome reference '{args.genome_reference}' is GRCm38, but the Ensembl REST API only serves GRCm39 for mouse; refseq/uniprot cross-references may be incomplete or mismatched. Provide --biomart_dump for GRCm38 annotation.")
@@ -1232,10 +1211,10 @@ def __main__():
             logger.warning(f"refseq/uniprot annotation unavailable ({e}); leaving those columns blank.")
 
     # Backfill any protein IDs present in the VCF annotations (e.g. ENSP, UniProt)
-    transcriptProteinTable = merge_vcf_protein_ids_with_biomart(transcriptProteinTable, vcfProteinIds, transcripts)
+    transcriptProteinTable = backfill_protein_ids_from_vcf(transcriptProteinTable, vcfProteinIds, transcripts)
 
     # Generate mutated peptides from variants
-    mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, adapter, variants_metadata, args.min_length, args.max_length + 1, ensembl_dataset)
+    mutated_peptides_df, mutated_proteins = generate_peptides_from_variants( variant_list, adapter, variants_metadata, args.min_length, args.max_length + 1)
 
     # Check if mutated_peptides_df is empty after filtering and write empty files
     if mutated_peptides_df.empty:

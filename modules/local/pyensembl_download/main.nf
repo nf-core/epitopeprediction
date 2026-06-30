@@ -18,11 +18,13 @@ process PYENSEMBL_DOWNLOAD {
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
     """
     epaa.py \\
         --download_cache \\
         --genome_reference ${genome_reference} \\
-        --pyensembl_cache_dir pyensembl_cache
+        --pyensembl_cache_dir pyensembl_cache \\
+        ${args}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
