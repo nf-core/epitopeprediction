@@ -1,7 +1,7 @@
 {
     "-profile test_proteins": {
         "content": [
-            11,
+            13,
             {
                 "FASTA2PEPTIDES": {
                     "python": "3.13.1",
@@ -12,6 +12,7 @@
                     "pandas": "2.1.0",
                     "mhcgnomes": "1.8.6"
                 },
+                "MHCFLURRY": "2.1.4",
                 "MHCNUGGETS": {
                     "argparse": 1.1,
                     "pandas": "1.1.5"
@@ -28,6 +29,9 @@
                 }
             },
             [
+                "mhcflurry",
+                "mhcflurry/sample1_sample1_length_10_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_length_9_chunk_0_predicted_mhcflurry.csv",
                 "mhcnuggets",
                 "mhcnuggets/sample1_sample1_length_10_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_length_9_chunk_0_predicted_mhcnuggets.csv",
@@ -71,13 +75,13 @@
                 "multiqc_binder_rank_distribution.txt:md5,b83321396e06a4038a8cbdde2601b300",
                 "multiqc_binding_affinity_distribution.txt:md5,19e286b3b0dbd8829198e808a20b57f3",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,c99df1402adbfa839e68e5e0df3decd9"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,0ab211b36c5820eb9ebab6309d14034e"
             ]
         ],
+        "timestamp": "2026-06-30T11:08:05.757640437",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.3"
-        },
-        "timestamp": "2026-03-26T21:30:47.299019086"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

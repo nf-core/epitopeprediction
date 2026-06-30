@@ -1,13 +1,14 @@
 {
     "-profile test_peptides": {
         "content": [
-            11,
+            13,
             {
                 "MERGE_PREDICTIONS": {
                     "argparse": 1.1,
                     "pandas": "2.1.0",
                     "mhcgnomes": "1.8.6"
                 },
+                "MHCFLURRY": "2.1.4",
                 "MHCNUGGETS": {
                     "argparse": 1.1,
                     "pandas": "1.1.5"
@@ -24,6 +25,9 @@
                 }
             },
             [
+                "mhcflurry",
+                "mhcflurry/sample1_peptides_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample2_peptides_chunk_0_predicted_mhcflurry.csv",
                 "mhcnuggets",
                 "mhcnuggets/sample1_peptides_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_peptides_chunk_0_predicted_mhcnuggets.csv",
@@ -68,13 +72,13 @@
                 "multiqc_binder_rank_distribution.txt:md5,666bbe007b239667ee5bff300b3419d2",
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,6dc085f98c7c36e7f474573e18fcbd0f"
             ]
         ],
+        "timestamp": "2026-06-30T11:05:25.976240744",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.3"
-        },
-        "timestamp": "2026-03-26T14:50:00.629350772"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }
