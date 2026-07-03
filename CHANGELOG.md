@@ -40,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#336](https://github.com/nf-core/epitopeprediction/pull/336) Added NetMHCpan 4.2 mode config file instructions to the nf-core usage documentation. ([@Kabooni](https://github.com/Kabooni)).
 - [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.0 - Lustnau - 2025-10-22
 
