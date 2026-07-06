@@ -41,6 +41,13 @@
                 "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta'",
                 "description": "Path to a variant, protein or peptide file ('.vcf', '.vcf.gz','.fasta', 'tsv')",
                 "exists": true
+            },
+            "tumor_sample": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "The tumor_sample (if provided) must be a sample name without spaces.",
+                "description": "Optional. For multi-sample (matched tumor/normal) somatic VCFs, the name of the tumor sample column, passed to pvacseq as -s. Leave empty for single-sample (tumor-only) VCFs.",
+                "meta": ["tumor_sample"]
             }
         },
         "required": ["sample", "alleles", "mhc_class", "filename"]

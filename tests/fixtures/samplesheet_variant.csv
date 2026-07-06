@@ -1,0 +1,2 @@
+sample,alleles,mhc_class,filename,tumor_sample
+STUB,A*01:01,I,tests/fixtures/variant.vcf,TUMOR

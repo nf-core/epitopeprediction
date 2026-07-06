@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+- Replaced the epytope/BioMart variant path with an offline `bcftools` → Ensembl VEP (Ensembl cache + bundled Wildtype/Frameshift plugins) → pVACtools `generate_protein_fasta` → mutation-overlapping peptides chain. New params `--ref_fasta`, `--vep_cache`, `--vep_species`, `--vep_genome`, `--vep_cache_version`, `--flank`, `--downstream`, and opt-in `--download_cache` (fetch the VEP cache + reference FASTA in-pipeline); optional `tumor_sample` samplesheet column; `download_vep_references.sh` helper ([@axelwalter](https://github.com/axelwalter/))
 - [#333](https://github.com/nf-core/epitopeprediction/pull/333) Added metro map to README
 - [#315](https://github.com/nf-core/epitopeprediction/pull/315) Added module bcftools/norm and parameter `--genome` for reference.fasta input ([@SusiJo](https://github.com/SusiJo/))
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
@@ -41,6 +42,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
+
+### `Removed`
+
+- Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--biomart_dump_path`, `--genome`, `--proteome_reference`, `--fasta_output`, `--fasta_peptide_flanking_region_size`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
 
 ## 3.1.0 - Lustnau - 2025-10-22
 
