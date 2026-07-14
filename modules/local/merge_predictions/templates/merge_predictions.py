@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 """
 Parses and harmonizes MHC prediction outputs from multiple binding predictors,
-merges with source metadata, and writes unified results to CSV.
+merges with source metadata, and writes unified results to Parquet.
 
 Author: Jonas Scheid
 License: MIT
@@ -16,6 +16,7 @@ from enum import Enum
 
 import numpy as np
 import pandas as pd
+import pyarrow  # noqa: F401  — not used directly; imported to expose __version__ for versions.yml
 import mhcgnomes
 
 # Create logger object with date and time
@@ -300,11 +301,11 @@ def main():
     output_df = pd.merge(source_df, output_df, on=args.peptide_col_name, how='left')
 
     # Write output file
-    output_df.to_csv(f'{args.prefix}_predictions.csv', index=False)
+    output_df.to_parquet(f'{args.prefix}_predictions.parquet', compression='zstd', index=False)
 
     # Parse versions
     versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd, mhcgnomes])
+    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd, mhcgnomes, pyarrow])
     with open("versions.yml", "w") as f:
         f.write(Version.format_yaml_like(versions_this_module))
 

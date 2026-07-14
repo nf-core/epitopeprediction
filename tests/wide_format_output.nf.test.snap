@@ -5,8 +5,9 @@
             {
                 "MERGE_PREDICTIONS": {
                     "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "pandas": "3.0.3",
+                    "mhcgnomes": "3.32.0",
+                    "pyarrow": "24.0.0"
                 },
                 "MHCNUGGETS": {
                     "argparse": 1.1,
@@ -17,7 +18,9 @@
                     "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
-                    "python": "3.11.5"
+                    "python": "3.14.5",
+                    "pandas": "3.0.3",
+                    "pyarrow": "24.0.0"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0dev"
@@ -71,10 +74,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
             ]
         ],
+        "timestamp": "2026-05-23T20:58:59.940132403",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.3"
-        },
-        "timestamp": "2026-03-26T14:55:15.47893862"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

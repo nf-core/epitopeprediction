@@ -134,8 +134,12 @@ class Utils:
                 alleles = [line.strip() for line in f.readlines()]
         else:
             alleles = allele_str.split(";")
-        # Truncate 3- and 4-field typings down to 2 fields so higher-resolution HLA inputs match the 2-field entries in assets/supported_alleles.json
-        alleles_normalized = [mhcgnomes.parse(allele).restrict_allele_fields(2).to_string() for allele in alleles]
+        # Truncate 3- and 4-field typings down to 2 fields so higher-resolution HLA inputs match the 2-field entries in assets/supported_alleles.json.
+        # Guard restrict_allele_fields() — mhcgnomes 3.x BoLA serotype alleles (JSP.1, T5, ...) parse to AlleleWithoutGene which lacks the method.
+        alleles_normalized = [
+            (p.restrict_allele_fields(2) if hasattr(p, 'restrict_allele_fields') else p).to_string()
+            for p in (mhcgnomes.parse(a) for a in alleles)
+        ]
 
         return alleles_normalized
 

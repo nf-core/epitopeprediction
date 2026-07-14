@@ -25,12 +25,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Dependencies`
 
-| Dependency | Old version | New version |
-| ---------- | ----------- | ----------- |
-| `bcftools` | 1.21        | 1.23.1      |
-| `multiqc`  | 1.32        | 1.35        |
-| `snpsift`  | 4.3         | 5.4c        |
-| `nf-core`  | 3.4.1       | 4.0.2       |
+| Dependency  | Old version | New version |
+| ----------- | ----------- | ----------- |
+| `bcftools`  | 1.21        | 1.22        |
+| `mhcgnomes` | 1.8.6       | 3.32.0      |
+| `multiqc`   | 1.32        | 1.34        |
+| `nf-core`   | 3.4.1       | 4.0.2       |
+| `pyarrow`   | -           | 24.0.0      |
+| `snpsift`   | 4.3         | 5.4c        |
+
 
 ### `Changed`
 
@@ -38,7 +41,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
 - [#336](https://github.com/nf-core/epitopeprediction/pull/336) Added NetMHCpan 4.2 mode config file instructions to the nf-core usage documentation. ([@Kabooni](https://github.com/Kabooni)).
-- [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#356](https://github.com/nf-core/epitopeprediction/pull/356) Switch `MERGE_PREDICTIONS` → `SUMMARIZE_RESULTS` intermediate from CSV to Parquet and migrate `PREPARE_PREDICTION_INPUT`, `MERGE_PREDICTIONS`, and `SUMMARIZE_RESULTS` to a shared multi-arch Seqera Container ([@jonasscheid](https://github.com/jonasscheid/))
+- [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE`([@jonasscheid](https://github.com/jonasscheid/)).
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 

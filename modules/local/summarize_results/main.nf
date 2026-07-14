@@ -3,17 +3,22 @@ process SUMMARIZE_RESULTS {
     tag "${meta.id}"
 
     // conda "${moduleDir}/environment.yml"
+    // Multi-arch Seqera Containers (mhcgnomes 3.32.0 + pyarrow 24.0.0):
+    //   docker linux/amd64:        community.wave.seqera.io/library/mhcgnomes_pyarrow:6607e69dcab832f1
+    //   docker linux/arm64:        community.wave.seqera.io/library/mhcgnomes_pyarrow:c31e3c4fb8f3dd4c
+    //   singularity linux/amd64:   https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/e7/e7df37ea371a12296bc6064ad80c0bd27152061b8ca3f0a6ad3dd924deb813f0/data
+    //   singularity linux/arm64:   https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/2d/2d0f348e08592099a98cd5d85ae7a2024e023dd4a95b593b356781ab4d7df6f5/data
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
-        'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
+        'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/e7/e7df37ea371a12296bc6064ad80c0bd27152061b8ca3f0a6ad3dd924deb813f0/data' :
+        'community.wave.seqera.io/library/mhcgnomes_pyarrow:6607e69dcab832f1' }"
 
     input:
-    tuple val(meta), path(csv)
+    tuple val(meta), path(parquet)
 
     output:
-    tuple val(meta), path("*.tsv") , emit: tsv
-    tuple val(meta), path("*.json"), emit: json
-    path "versions.yml"            , emit: versions
+    tuple val(meta), path("*.tsv")      , emit: tsv
+    tuple val(meta), path("*_mqc.json") , emit: json
+    path "versions.yml"                 , emit: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,6 +38,8 @@ process SUMMARIZE_RESULTS {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
+        pandas: \$(python -c "import pandas; print(pandas.__version__)")
+        pyarrow: \$(python -c "import pyarrow; print(pyarrow.__version__)")
     END_VERSIONS
     """
 
@@ -46,6 +53,8 @@ process SUMMARIZE_RESULTS {
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
         python: \$(python --version | sed 's/Python //g')
+        pandas: \$(python -c "import pandas; print(pandas.__version__)")
+        pyarrow: \$(python -c "import pyarrow; print(pyarrow.__version__)")
     END_VERSIONS
     """
 }

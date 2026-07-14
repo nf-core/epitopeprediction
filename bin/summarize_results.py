@@ -78,7 +78,7 @@ class MultiQC:
         best_rank = (
             df_valid[df_valid['predictor'] == best_predictor]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)])
+                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)], include_groups=False)
         )
         bins = np.linspace(0, 10, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -108,7 +108,7 @@ class MultiQC:
         best_ba = (
             df_valid[df_valid['predictor'] == best_predictor]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)] if x['BA'].notna().any() else x.iloc[0])
+                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)] if x['BA'].notna().any() else x.iloc[0], include_groups=False)
         )
         bins = np.linspace(0, 1, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -176,11 +176,13 @@ class Utils:
             else:
                 raise ValueError(f"Unknown predictor '{pred}'. Expected one of: {rank_metric_best | ba_metric_best}")
 
+        # pandas 3.x: include_groups=False keeps group keys out of .apply()'s input; reset_index brings them back as columns.
         best = (
             df
             .dropna(subset=['predictor'])
             .groupby(['predictor', peptide_col])
-            .apply(_pick_best)
+            .apply(_pick_best, include_groups=False)
+            .reset_index(level=['predictor', peptide_col])
             .drop_duplicates(subset=[peptide_col, 'predictor'])
             .reset_index(drop=True)
         )
@@ -266,15 +268,22 @@ def main():
     args = parser.parse_args()
 
     # Concat chunked TSV files
-    df = pd.concat([pd.read_csv(csv) for csv in glob.glob(f'{args.input}/*.csv')])
+    df = pd.concat([pd.read_parquet(p) for p in glob.glob(f'{args.input}/*.parquet')])
+
+    # Mimic prior CSV-roundtrip dtype widening so the downstream TSV stays stable: nullable Int*/UInt* → float64 (or int64 if no NaN); nullable boolean → bool.
+    for col, dt in list(df.dtypes.items()):
+        if not pd.api.types.is_extension_array_dtype(dt):
+            continue
+        if pd.api.types.is_bool_dtype(dt):
+            df[col] = df[col].astype('bool')
+        elif pd.api.types.is_integer_dtype(dt):
+            df[col] = df[col].astype('float64' if df[col].isna().any() else 'int64')
 
     # MultiQC statistics
     MultiQC.write_mqc_stats_json(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_length_distribution(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_rank_distribution(df, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)
-
-    df.to_pickle(f'{args.prefix}_raw.pkl')
 
     if args.wide_format_output:
         df = Utils.long2wide(df, args.peptide_col_name)
