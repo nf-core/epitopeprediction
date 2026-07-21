@@ -1,219 +1,90 @@
 #!/usr/bin/env python3
-"""Generate mutation-overlapping peptides from a pvacseq generate_protein_fasta output.
+"""Generate mutation-overlapping peptides from an annotated pvacseq FASTA.
 
 This is the epytope-free replacement for the variant peptide step. It takes the
-WT/MT protein windows written by `pvacseq generate_protein_fasta` plus the
-VEP-annotated VCF, and emits one TSV per peptide length (like fasta2peptides.py)
-containing only the k-mers that actually overlap the mutation, each annotated with
-provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
+WT/MT protein windows written by `pvacseq generate_protein_fasta` *after* they have
+been provenance-annotated by annotate_fasta_headers.py, and emits one TSV per
+peptide length (like fasta2peptides.py) containing only the k-mers that actually
+overlap the mutation, each carrying its provenance (gene, transcript, consequence,
+HGVSp, genomic anchor, UniProt).
+
+All provenance is read straight from the pipe-delimited FASTA headers, so this step
+never touches the VCF — annotate_fasta_headers.py is the single VCF-join site.
+Header schema (see annotate_fasta_headers.py):
+
+  >{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}
 
 How it decides which k-mers are "neo":
-  pvacseq emits paired records `WT.{n}.{tail}` and `MT.{n}.{tail}` (the mutant
-  protein windowed with `--flank` residues of wild-type context on each side).
+  pvacseq emits paired records with kind WT and MT sharing the same numbering (the
+  mutant protein windowed with `--flank` residues of wild-type context on each side).
   We diff each MT window against its WT partner (longest common prefix/suffix) to
   locate the changed region, then keep only the k-mers overlapping it — reproducing
   epytope's `is_created_by_variant()` filter without epytope. Frameshifts keep the
   whole novel tail; clean deletions keep k-mers spanning the junction.
 
-Provenance is rebuilt from the VEP VCF exactly as pVACtools indexes it
-(resolve_consequence + construct_index), so the join to each MT record is lossless.
 Stdlib only — no pysam/BioPython.
 """
 import argparse
-import gzip
-import re
 import sys
 from collections import defaultdict
 
-HEX_RE = re.compile(r'%[0-9A-Fa-f][0-9A-Fa-f]')
 AA_SET = set("ACDEFGHIKLMNPQRSTVWY")
-# consequence tokens as they appear in the pvacseq FASTA header tail
-CONSEQUENCE_TOKENS = ('missense', 'inframe_ins', 'inframe_del', 'FS')
+N_HEADER_FIELDS = 9  # kind|numbering|anchor|gene|transcript|uniprot|consequence|aa_change|hgvs
 
 
-def _open(path):
-    return gzip.open(path, 'rt') if path.endswith('.gz') else open(path)
+def parse_annotated_fasta(fasta_path):
+    """Parse the annotated pipe-delimited FASTA into paired WT/MT windows.
 
-
-def decode_hex(s):
-    """Undo VEP's URL-encoding in HGVS strings (e.g. %3D -> '='), like pVACtools."""
-    return HEX_RE.sub(lambda m: bytes.fromhex(m.group(0)[1:]).decode('latin-1'), s)
-
-
-def resolve_consequence(consequence_string, ref, alt):
-    """Verbatim port of pVACtools input_file_converter.resolve_consequence."""
-    if '&' in consequence_string:
-        consequences = {c.lower() for c in consequence_string.split('&')}
-    elif '.' in consequence_string:
-        consequences = {c.lower() for c in consequence_string.split('.')}
-    else:
-        consequences = {consequence_string.lower()}
-
-    if 'start_lost' in consequences:
-        return None
-    if 'stop_retained_variant' in consequences:
-        return None
-    if 'frameshift_variant' in consequences:
-        return 'FS'
-    if 'missense_variant' in consequences:
-        return 'missense'
-    if 'inframe_insertion' in consequences:
-        return 'inframe_ins'
-    if 'inframe_deletion' in consequences:
-        return 'inframe_del'
-    if 'protein_altering_variant' in consequences:
-        if len(ref) > len(alt) and (len(ref) - len(alt)) % 3 == 0:
-            return 'inframe_del'
-        if len(alt) > len(ref) and (len(alt) - len(ref)) % 3 == 0:
-            return 'inframe_ins'
-        return None
-    return None
-
-
-def parse_csq_format(vcf_path):
-    """Read the CSQ field order from the ##INFO=<ID=CSQ ...Format: A|B|C"> header."""
-    with _open(vcf_path) as fh:
-        for line in fh:
-            if line.startswith('#CHROM'):
-                break
-            if line.startswith('##INFO=<ID=CSQ'):
-                m = re.search(r'Format:\s*([^"]+)', line)
-                if m:
-                    return m.group(1).strip().split('|')
-    raise SystemExit("ERROR: no CSQ INFO definition found in VEP VCF header.")
-
-
-def first(value):
-    """First sub-value of a possibly '&'-joined CSQ field, version stripped."""
-    return value.split('&')[0].split('.')[0] if value else ''
-
-
-def build_key_map(vcf_path):
-    """Map pVACtools index tail ({gene}.{transcript}.{consequence}.{aacp}) -> annotation.
-
-    Mirrors annotate_fasta_headers.build_key_map, with gene/transcript/consequence
-    added to the value so downstream code needn't re-parse the tail.
-    """
-    fmt = parse_csq_format(vcf_path)
-    idx = {name: i for i, name in enumerate(fmt)}
-    required = ['Consequence', 'Feature', 'Protein_position', 'Amino_acids', 'SYMBOL', 'Gene']
-    for r in required:
-        if r not in idx:
-            raise SystemExit(f"ERROR: CSQ is missing required field '{r}'. "
-                             f"Re-run VEP with --symbol --hgvs (and plugins).")
-
-    keymap = {}
-    n_multi = 0
-    with _open(vcf_path) as fh:
-        for line in fh:
-            if line.startswith('#'):
-                continue
-            col = line.rstrip('\n').split('\t')
-            chrom, pos, ref, alt, info = col[0], col[1], col[3], col[4], col[7]
-            if ',' in alt:
-                n_multi += 1  # expected 0 after `bcftools norm -m-`
-            m = re.search(r'(?:^|;)CSQ=([^;]+)', info)
-            if not m:
-                continue
-            for entry in m.group(1).split(','):
-                f = entry.split('|')
-                if len(f) < len(fmt):
-                    f += [''] * (len(fmt) - len(f))
-
-                def g(name):
-                    return f[idx[name]] if name in idx else ''
-
-                consequence = resolve_consequence(g('Consequence'), ref, alt)
-                if consequence is None:
-                    continue
-
-                pp = g('Protein_position')
-                if '/' in pp:
-                    pp = pp.split('/')[0]
-                    if pp == '-':
-                        pp = g('Protein_position').split('/')[1]
-                if pp in ('-', ''):
-                    continue
-
-                if consequence == 'FS':
-                    if 'FrameshiftSequence' in idx and g('FrameshiftSequence') == '':
-                        continue
-                    aacp = f"{pp}{ref}/{alt}"
-                else:
-                    aa = g('Amino_acids')
-                    if aa == '':
-                        continue
-                    aacp = f"{pp}{aa}"
-
-                gene = g('SYMBOL') or g('Gene')
-                transcript = g('Feature')
-                key = f"{gene}.{transcript}.{consequence}.{aacp}"
-
-                hgvsp = decode_hex(g('HGVSp'))
-                if ':' in hgvsp:
-                    hgvsp = hgvsp.split(':', 1)[1]  # keep p.XxxNNNYyy, drop ENSP prefix
-                uniprot = first(g('SWISSPROT')) or first(g('TREMBL'))
-                keymap[key] = {
-                    'gene': gene or 'NA',
-                    'transcript': transcript or 'NA',
-                    'consequence': consequence,
-                    'hgvsp': hgvsp or 'NA',
-                    'anchor': f"{chrom}:{pos}:{ref}:{alt}",
-                    'uniprot': uniprot or 'NA',
-                }
-    if n_multi:
-        print(f"WARNING: {n_multi} multiallelic record(s) in VCF; run `bcftools norm -m-` "
-              f"upstream for exact frameshift matching.", file=sys.stderr)
-    return keymap
-
-
-def parse_pvacseq_fasta(fasta_path):
-    """Parse the pvacseq FASTA into paired WT/MT windows.
-
-    Returns (mt_records, wt_by_remainder) where:
-      mt_records       = list of (remainder, tail, sequence) for MT.* records
-      wt_by_remainder  = {remainder: sequence} for WT.* records
-    `remainder` = header id with the leading 'WT.'/'MT.' stripped ('{count}.{tail}'),
-    which is identical for a variant's WT and MT records, so it pairs them.
-    `tail` = '{gene}.{transcript}.{consequence}.{aacp}' (the build_key_map key).
+    Returns (mt_records, wt_by_key) where:
+      mt_records = list of (pair_key, ann, sequence) for MT records
+      wt_by_key  = {pair_key: sequence} for WT records
+    `pair_key` = '{numbering}.{gene}.{transcript}.{consequence}.{aa_change}' — identical
+    for a variant's WT and MT record, so it pairs them; it also reconstructs the original
+    pvacseq id, which feeds the protein_ids column as 'MT.{pair_key}'.
+    `ann` = provenance dict {gene, transcript, consequence, hgvsp, anchor, uniprot}.
     """
     mt_records = []
-    wt_by_remainder = {}
+    wt_by_key = {}
     header = None
     seq_chunks = []
+    n_bad = 0
 
     def flush():
+        nonlocal n_bad
         if header is None:
             return
         seq = ''.join(seq_chunks)
-        kind, _, remainder = header.partition('.')  # 'MT' / 'WT', '.', '{count}.{tail}'
-        if not remainder:
+        f = header.split('|')
+        if len(f) < N_HEADER_FIELDS:
+            n_bad += 1
             return
+        kind, numbering, anchor, gene, transcript, uniprot, consequence, aachange, hgvsp = \
+            f[:N_HEADER_FIELDS]
+        pair_key = f"{numbering}.{gene}.{transcript}.{consequence}.{aachange}"
         if kind == 'WT':
-            wt_by_remainder[remainder] = seq
+            wt_by_key[pair_key] = seq
         elif kind == 'MT':
-            tail = remainder.split('.', 1)[1] if '.' in remainder else ''
-            mt_records.append((remainder, tail, seq))
+            ann = {
+                'gene': gene, 'transcript': transcript, 'consequence': consequence,
+                'hgvsp': hgvsp, 'anchor': anchor, 'uniprot': uniprot,
+            }
+            mt_records.append((pair_key, ann, seq))
 
     with open(fasta_path) as fh:
         for line in fh:
             line = line.rstrip('\n')
             if line.startswith('>'):
                 flush()
-                header = line[1:].split()[0]
+                header = line[1:]
                 seq_chunks = []
             else:
                 seq_chunks.append(line.strip())
         flush()
-    return mt_records, wt_by_remainder
-
-
-def consequence_from_tail(tail):
-    """Detect the consequence token embedded in a pvacseq header tail."""
-    for tok in CONSEQUENCE_TOKENS:
-        if f'.{tok}.' in tail:
-            return tok
-    return None
+    if n_bad:
+        print(f"WARNING: {n_bad} FASTA header(s) had fewer than {N_HEADER_FIELDS} fields "
+              f"and were skipped; is the FASTA annotated by annotate_fasta_headers.py?",
+              file=sys.stderr)
+    return mt_records, wt_by_key
 
 
 def changed_interval(wt, mt, is_fs):
@@ -252,8 +123,7 @@ def valid_peptide(pep):
     return all(c in AA_SET for c in pep)
 
 
-def generate_variant_peptides(mt_records, wt_by_remainder, keymap, min_len, max_len,
-                              want_wildtype):
+def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len, want_wildtype):
     """Yield per-length dicts of deduplicated mutation-overlapping peptides.
 
     Returns {k: {peptide: {provenance sets ...}}}.
@@ -265,17 +135,14 @@ def generate_variant_peptides(mt_records, wt_by_remainder, keymap, min_len, max_
     }) for k in range(min_len, max_len + 1)}
 
     n_no_wt = 0
-    for remainder, tail, mt in mt_records:
-        wt = wt_by_remainder.get(remainder)
+    for pair_key, ann, mt in mt_records:
+        wt = wt_by_key.get(pair_key)
         if wt is None:
             n_no_wt += 1
             continue
-        cons = (keymap.get(tail, {}).get('consequence')
-                or consequence_from_tail(tail))
-        is_fs = cons == 'FS'
+        is_fs = ann['consequence'] == 'FS'
         a, b, junction = changed_interval(wt, mt, is_fs)
         same_len = len(wt) == len(mt)
-        ann = keymap.get(tail)
         for k in range(min_len, max_len + 1):
             if len(mt) < k:
                 continue
@@ -287,16 +154,13 @@ def generate_variant_peptides(mt_records, wt_by_remainder, keymap, min_len, max_
                     continue
                 rec = by_length[k][pep]
                 rec['counts'] += 1
-                rec['protein_ids'].add(f"MT.{remainder}")
-                if ann:
-                    rec['gene'].add(ann['gene'])
-                    rec['transcript'].add(ann['transcript'])
-                    rec['consequence'].add(ann['consequence'])
-                    rec['hgvsp'].add(ann['hgvsp'])
-                    rec['anchor'].add(ann['anchor'])
-                    rec['uniprot'].add(ann['uniprot'])
-                elif cons:
-                    rec['consequence'].add(cons)
+                rec['protein_ids'].add(f"MT.{pair_key}")
+                rec['gene'].add(ann['gene'])
+                rec['transcript'].add(ann['transcript'])
+                rec['consequence'].add(ann['consequence'])
+                rec['hgvsp'].add(ann['hgvsp'])
+                rec['anchor'].add(ann['anchor'])
+                rec['uniprot'].add(ann['uniprot'])
                 if want_wildtype:
                     # WT counterpart only cleanly defined when coordinates align (substitutions)
                     rec['wildtype'].add(wt[start:start + k] if same_len else 'NA')
@@ -331,9 +195,8 @@ def write_length_tsv(path, peptides, peptide_col, want_wildtype):
 def parse_args():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--vep-vcf', required=True, help='VEP-annotated VCF (.vcf or .vcf.gz)')
     ap.add_argument('--in-fasta', required=True,
-                    help='FASTA from pvacseq generate_protein_fasta (WT/MT windows)')
+                    help='Annotated FASTA from annotate_fasta_headers.py (pipe-delimited headers)')
     ap.add_argument('--output-prefix', required=True,
                     help='Output prefix; one file per length is written ({prefix}_length_{k}.tsv)')
     ap.add_argument('--min-length', type=int, required=True)
@@ -349,16 +212,12 @@ def main():
     if args.min_length > args.max_length:
         raise SystemExit("ERROR: --min-length must be <= --max-length.")
 
-    keymap = build_key_map(args.vep_vcf)
-    print(f"Built {len(keymap)} index keys from {args.vep_vcf}.", file=sys.stderr)
-
-    mt_records, wt_by_remainder = parse_pvacseq_fasta(args.in_fasta)
-    print(f"Parsed {len(mt_records)} MT and {len(wt_by_remainder)} WT records from "
+    mt_records, wt_by_key = parse_annotated_fasta(args.in_fasta)
+    print(f"Parsed {len(mt_records)} MT and {len(wt_by_key)} WT records from "
           f"{args.in_fasta}.", file=sys.stderr)
 
     by_length = generate_variant_peptides(
-        mt_records, wt_by_remainder, keymap,
-        args.min_length, args.max_length, args.wild_type)
+        mt_records, wt_by_key, args.min_length, args.max_length, args.wild_type)
 
     total = 0
     for k in range(args.min_length, args.max_length + 1):

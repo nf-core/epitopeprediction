@@ -8,7 +8,7 @@ process VARIANT_FASTA2PEPTIDES {
         'community.wave.seqera.io/library/biopython:1.85--6f761292fa9881b4' }"
 
     input:
-    tuple val(meta), path(raw_fasta), path(vep_vcf)
+    tuple val(meta), path(annotated_fasta)
 
     output:
     tuple val(meta), path("*.tsv"), emit: tsv
@@ -24,8 +24,7 @@ process VARIANT_FASTA2PEPTIDES {
     def wild_type  = params.wild_type ? '--wild-type' : ''
     """
     variant_fasta2peptides.py \\
-        --vep-vcf ${vep_vcf} \\
-        --in-fasta ${raw_fasta} \\
+        --in-fasta ${annotated_fasta} \\
         --output-prefix ${prefix} \\
         --min-length ${min_length} \\
         --max-length ${max_length} \\

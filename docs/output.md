@@ -30,7 +30,28 @@ Tables are written per peptide length as a `tsv`, then passed to the MHC binding
 - `prep_vcf/[sample].prep.vcf.gz` — PASS-filtered, Ensembl-named, normalized VCF
 - `vep/[sample].vcf.gz` — VEP annotation (with the Wildtype/Frameshift plugin sequences)
 - `variant_fasta/[sample].variant_peptides.raw.fasta` — pvacseq WT/MT protein windows
+- `variant_fasta/[sample].variant_peptides.annotated.fasta` — the same WT/MT windows with provenance-annotated headers (schema below)
 - `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance
+
+The annotated FASTA rewrites each pvacseq defline into a fixed, pipe-delimited schema (`NA` for any missing value):
+
+`>{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`
+
+| field | meaning |
+| -------------- | -------------------------------------------------------------------- |
+| kind | `WT` or `MT` (wild-type / mutant window) |
+| numbering | pvacseq per-entry index; identical for a variant's paired WT and MT record |
+| genomic_anchor | `chr:pos:ref:alt` |
+| gene | HGNC symbol |
+| transcript | Ensembl transcript (versioned) |
+| uniprot | SWISSPROT else TREMBL accession |
+| consequence | `missense` / `inframe_ins` / `inframe_del` / `FS` |
+| aa_change | pvacseq shorthand (e.g. `78Q/H`) |
+| hgvs | HGVSp, ENSP prefix stripped (e.g. `p.Gln78His`) |
+
+Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
+
+One record is written per variant × transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
 
 ## Epitopeprediction
 

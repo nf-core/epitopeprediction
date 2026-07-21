@@ -9,6 +9,7 @@
 include { PREP_VCF                    } from '../modules/local/prep_vcf'
 include { DOWNLOAD_REF_FASTA          } from '../modules/local/download_ref_fasta'
 include { PVACSEQ_GENERATE_FASTA      } from '../modules/local/pvacseq_generate_fasta'
+include { ANNOTATE_FASTA_HEADERS      } from '../modules/local/annotate_fasta_headers'
 include { VARIANT_FASTA2PEPTIDES      } from '../modules/local/variant_fasta2peptides'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
@@ -182,8 +183,12 @@ workflow EPITOPEPREDICTION {
     PVACSEQ_GENERATE_FASTA( ENSEMBLVEP_VEP.out.vcf.join( ENSEMBLVEP_VEP.out.tbi ) )
     ch_versions = ch_versions.mix( PVACSEQ_GENERATE_FASTA.out.versions )
 
-    // 4) mutation-overlapping k-mers + provenance -> peptide TSV per length
-    VARIANT_FASTA2PEPTIDES( PVACSEQ_GENERATE_FASTA.out.fasta )
+    // 4) annotate the WT/MT deflines with VEP provenance (single VCF-join site)
+    ANNOTATE_FASTA_HEADERS( PVACSEQ_GENERATE_FASTA.out.fasta )
+    ch_versions = ch_versions.mix( ANNOTATE_FASTA_HEADERS.out.versions )
+
+    // 5) mutation-overlapping k-mers + provenance -> peptide TSV per length (reads annotated headers, no VCF)
+    VARIANT_FASTA2PEPTIDES( ANNOTATE_FASTA_HEADERS.out.fasta )
     ch_versions = ch_versions.mix( VARIANT_FASTA2PEPTIDES.out.versions )
     ch_peptides_from_variants = VARIANT_FASTA2PEPTIDES.out.tsv
         .transpose()
