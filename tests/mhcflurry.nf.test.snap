@@ -1,7 +1,7 @@
 {
     "-profile test_mhcflurry": {
         "content": [
-            166,
+            222,
             {
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
@@ -84,23 +84,37 @@
                 "epytope/sample2_variants.chrX.tsv",
                 "mhcflurry",
                 "mhcflurry/sample1_sample1_variants_chr10_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr11_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr12_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr13_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr14_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr15_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr16_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr17_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr18_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr19_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr1_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr20_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr21_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr2_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr3_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr5_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr6_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr7_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chr8_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample1_sample1_variants_chr9_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_sample1_variants_chrX_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr10_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr11_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr12_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr13_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample2_sample2_variants_chr14_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr15_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample2_sample2_variants_chr16_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr17_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample2_sample2_variants_chr18_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample2_sample2_variants_chr19_chunk_0_predicted_mhcflurry.csv",
+                "mhcflurry/sample2_sample2_variants_chr1_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr20_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr21_chunk_0_predicted_mhcflurry.csv",
                 "mhcflurry/sample2_sample2_variants_chr2_chunk_0_predicted_mhcflurry.csv",
@@ -188,14 +202,14 @@
                 "bcftools_stats_vqc_Count_Transversions.txt:md5,e301b8c8760fdd149b2e8924d8f9e9b7",
                 "multiqc_bcftools_stats.txt:md5,a3aca1d8f180bbbe0053a9210681ca5a",
                 "multiqc_binder_length_distribution.txt:md5,9fbb7555888c124b4458791617ced876",
-                "multiqc_binder_rank_distribution.txt:md5,39b463d978e49d3035459c30fd9d9d69",
-                "multiqc_binding_affinity_distribution.txt:md5,0a81bdee5fd881ac4ae24106fdf9caae",
+                "multiqc_binder_rank_distribution.txt:md5,828cac0b81d9fa6af40d10652eefc9a3",
+                "multiqc_binding_affinity_distribution.txt:md5,ef1ee77b7509afc4ac2ba7ca048694ff",
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2861dfd886f449d522e37c92889a474",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,617c4ff13b8a65d93d851f02e219c23e"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,0cf793e022bbbf14ba53f2338aae1450"
             ]
         ],
-        "timestamp": "2026-05-04T08:58:29.578297409",
+        "timestamp": "2026-07-22T17:27:42.451405513",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

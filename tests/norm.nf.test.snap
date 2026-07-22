@@ -1,7 +1,7 @@
 {
     "-profile test_norm": {
         "content": [
-            200,
+            87,
             {
                 "BCFTOOLS_NORM": {
                     "bcftools": "1.23.1"
@@ -90,41 +90,13 @@
                 "epytope/sample2_sample2.norm.9.tsv",
                 "epytope/sample2_sample2.norm.X.tsv",
                 "mhcnuggets",
-                "mhcnuggets/sample1_sample1_sample1_norm_10_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_11_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_12_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_13_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_14_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_15_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_16_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_17_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_18_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_19_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_1_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_22_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_2_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_3_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_4_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_5_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_6_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_7_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_8_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_9_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_sample1_norm_X_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_sample2_norm_10_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_11_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_sample2_norm_13_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_14_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_16_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_sample2_norm_15_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_sample2_norm_17_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_18_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_19_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_1_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_21_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_22_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_4_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_sample2_norm_20_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_sample2_norm_3_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_sample2_norm_5_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_sample2_sample2_norm_7_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_sample2_norm_9_chunk_0_predicted_mhcnuggets.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
@@ -191,7 +163,6 @@
                 "pipeline_info",
                 "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
                 "predictions",
-                "predictions/sample1.tsv",
                 "predictions/sample2.tsv"
             ],
             [
@@ -202,15 +173,15 @@
                 "bcftools_stats_vqc_Count_Transitions.txt:md5,dbf563a74240afcb77fffa214c89567a",
                 "bcftools_stats_vqc_Count_Transversions.txt:md5,f8f64dbb505ee5c39ffed7c3936eeb76",
                 "multiqc_bcftools_stats.txt:md5,314e8b6ee4a064dd557457187ea58a58",
-                "multiqc_binder_length_distribution.txt:md5,9fbb7555888c124b4458791617ced876",
-                "multiqc_binder_rank_distribution.txt:md5,9b76d469523c235da9adf72dcde50daf",
-                "multiqc_binding_affinity_distribution.txt:md5,b376931126f71dcfa4976daed52aaa87",
+                "multiqc_binder_length_distribution.txt:md5,75e39f687601d3d20be5c5ebb2229c7a",
+                "multiqc_binder_rank_distribution.txt:md5,b2d83d265966624e9e81ecbb9421507f",
+                "multiqc_binding_affinity_distribution.txt:md5,38e8ce86d3cca20ec4504de61e40dcce",
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,307deaa66b32521738bfc4c79a3a2cde",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,20efd130df5494010074f701c3bfeb8d"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,97aea264380229ced57fd7f4579c879d"
             ]
         ],
-        "timestamp": "2026-05-04T08:58:36.414868067",
+        "timestamp": "2026-07-22T16:21:28.319437234",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

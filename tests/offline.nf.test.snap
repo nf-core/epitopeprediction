@@ -221,7 +221,7 @@
     },
     "-profile test_offline": {
         "content": [
-            162,
+            218,
             {
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
@@ -314,25 +314,39 @@
                 "mhcnuggets/sample1_sample1_variants_chr14_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr15_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr16_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_sample1_variants_chr17_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr18_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_sample1_variants_chr19_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr1_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_sample1_variants_chr20_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_sample1_variants_chr21_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr2_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr3_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr5_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr6_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr7_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_sample1_variants_chr8_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chr9_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample1_sample1_variants_chrX_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr10_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr11_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr12_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr13_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr14_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr15_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr16_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr17_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr18_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr19_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr1_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr20_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr21_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr2_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr3_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr6_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr7_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chr8_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_sample2_variants_chr9_chunk_0_predicted_mhcnuggets.csv",
                 "mhcnuggets/sample2_sample2_variants_chrX_chunk_0_predicted_mhcnuggets.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
@@ -411,14 +425,14 @@
                 "bcftools_stats_vqc_Count_Transversions.txt:md5,e301b8c8760fdd149b2e8924d8f9e9b7",
                 "multiqc_bcftools_stats.txt:md5,a3aca1d8f180bbbe0053a9210681ca5a",
                 "multiqc_binder_length_distribution.txt:md5,9fbb7555888c124b4458791617ced876",
-                "multiqc_binder_rank_distribution.txt:md5,1b2209809df657113dee354c95c04ce4",
-                "multiqc_binding_affinity_distribution.txt:md5,e4220448420ff929243711c1315184f1",
+                "multiqc_binder_rank_distribution.txt:md5,4f85dcc569acc1ec9ab72fc08a8ff0c0",
+                "multiqc_binding_affinity_distribution.txt:md5,91a1b9964edb4f44c7ab3b5e67fcf4ef",
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2861dfd886f449d522e37c92889a474",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,73303dd3eee7c140e82ad887c5e73fec"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,1c289e5f25f2f9a5bc7d76bdb47cf555"
             ]
         ],
-        "timestamp": "2026-05-04T08:30:46.96635089",
+        "timestamp": "2026-07-22T15:02:43.738314423",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
