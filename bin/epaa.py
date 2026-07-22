@@ -1160,8 +1160,8 @@ def __main__():
     if args.proteome_reference:
         fasta_dict = parse_fasta(args.proteome_reference)
         num_mutated_peptides_pre_filter = mutated_peptides_df.shape[0]
-        # filter out peptides found in reference proteome
-        mutated_peptides_df = mutated_peptides_df[mutated_peptides_df["sequence"].apply(lambda pep: any([pep in prot for prot in fasta_dict.values()]))]
+        # filter out peptides found in reference proteome (keep only peptides absent from every reference protein)
+        mutated_peptides_df = mutated_peptides_df[mutated_peptides_df["sequence"].apply(lambda pep: not any([pep in prot for prot in fasta_dict.values()]))]
         logger.info(f"Filtered out {num_mutated_peptides_pre_filter - mutated_peptides_df.shape[0]} peptides that were found in the reference proteome.")
         if mutated_peptides_df.empty:
             write_empty_files(args)
