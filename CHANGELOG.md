@@ -36,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- Pinned `PVACSEQ_GENERATE_FASTA` to the bioconda pVACtools biocontainer (`pvactools:7.0.1--pyhdfd78af_0`) now that pVACtools is on bioconda, replacing the `griffithlab/pvactools` Docker Hub image and the pip-based conda env ([@axelwalter](https://github.com/axelwalter/))
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump` in `epaa.py` ([@SusiJo](https://github.com/SusiJo/)).
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).

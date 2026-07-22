@@ -3,11 +3,9 @@ process PVACSEQ_GENERATE_FASTA {
     label 'process_low'
 
     conda "${moduleDir}/environment.yml"
-    // pVACtools ships on Docker Hub, not quay.io — pin the full registry so the pipeline's
-    // `docker.registry = 'quay.io'` default does not prepend quay.io/ and 404.
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
-        ? 'docker://griffithlab/pvactools:7.0.1'
-        : 'docker.io/griffithlab/pvactools:7.0.1'}"
+        ? 'https://depot.galaxyproject.org/singularity/pvactools:7.0.1--pyhdfd78af_0'
+        : 'biocontainers/pvactools:7.0.1--pyhdfd78af_0'}"
 
     input:
     tuple val(meta), path(vcf), path(tbi)

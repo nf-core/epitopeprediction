@@ -1,14 +1,7 @@
 ---
 # yaml-language-server: $schema=https://raw.githubusercontent.com/nf-core/modules/master/modules/environment-schema.json
-# pVACtools is NOT on bioconda — it ships via PyPI, so this env is python + pip.
-# `pip install pvactools` pulls the full ML prediction stack (tensorflow, mhcflurry,
-# mhcnuggets, vaxrank, isovar, ...) even though generate_protein_fasta needs none of it —
-# a heavy, slow solve. Prefer `-profile docker` for this step; this env is for conda-only setups.
 channels:
   - conda-forge
   - bioconda
 dependencies:
-  - conda-forge::python=3.11
-  - conda-forge::pip
-  - pip:
-      - pvactools==7.0.1
+  - bioconda::pvactools=7.0.1
