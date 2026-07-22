@@ -196,17 +196,7 @@ class PredictionResult:
         return df
 
     def _parse_netmhc_xls(self, rank_column: str, ba_score_column: str, threshold: float) -> pd.DataFrame:
-        """
-        Parse a NetMHCpan / NetMHCIIpan multi-allele XLS into harmonized long format.
-        Row 1 lists allele names (sparse, one per per-allele block); row 2 holds the
-        per-allele subheaders. pandas reads with skiprows=1 and disambiguates duplicate
-        column names by appending `.1`, `.2`, … We match both rank and BA-score columns
-        with an optional `.N` suffix so every allele in the chunk survives.
-
-        Allele names are taken from row 1 — NetMHCIIpan re-sorts the alleles internally
-        (e.g. `DRB1_*` lex-sorts before `HLA-*`), so the `-a` argument order is NOT a
-        reliable column→allele mapping. The XLS row 1 is the source of truth.
-        """
+        """Parse a NetMHCpan/NetMHCIIpan multi-allele XLS to long format; alleles come from XLS row 1, since NetMHCIIpan re-sorts and -a order is unreliable."""
         with open(self.file_path) as fh:
             header_alleles = [a.strip() for a in next(fh).split('\t') if a.strip()]
         alleles_dict = {i: allele for i, allele in enumerate(header_alleles)}
@@ -222,7 +212,7 @@ class PredictionResult:
         df_long['allele'] = df_long['metric'].str.split('.').str[1]
         df_long['metric'] = df_long['metric'].apply(lambda x: x.split('.')[0].replace(rank_column, 'rank').replace(ba_score_column, 'BA'))
         df_pivot = df_long.pivot_table(index=[self.peptide_col_name, 'allele'], columns='metric', values='value').reset_index()
-        # NetMHCpan -mode 1 / 2 omits BA score; keep downstream schema stable.
+        # -mode 1/2 omits BA score
         if 'BA' not in df_pivot.columns:
             df_pivot['BA'] = np.nan
         df_pivot['allele'] = [alleles_dict[int(idx.strip('.'))] for idx in df_pivot['allele']]
@@ -236,7 +226,7 @@ class PredictionResult:
         return self._parse_netmhc_xls(rank_column, 'BA_score', PredictorBindingThreshold.NETMHCPAN.value)
 
     def _format_netmhciipan_prediction(self) -> pd.DataFrame:
-        # NetMHCIIpan 4.3 XLS: EL percentile is `Rank` (not `Rank_EL`); BA percentile is `Rank_BA`; BA score is `Score_BA`.
+        # EL percentile is `Rank`, BA percentile `Rank_BA`, BA score `Score_BA`
         rank_column = 'Rank_BA' if self.use_ba_rank else 'Rank'
         return self._parse_netmhc_xls(rank_column, 'Score_BA', PredictorBindingThreshold.NETMHCIIPAN.value)
 

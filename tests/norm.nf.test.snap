@@ -4,10 +4,10 @@
             200,
             {
                 "BCFTOOLS_NORM": {
-                    "bcftools": 1.22
+                    "bcftools": "1.23.1"
                 },
                 "BCFTOOLS_STATS": {
-                    "bcftools": 1.22
+                    "bcftools": "1.23.1"
                 },
                 "EPYTOPE_VARIANT_PREDICTION": {
                     "python": "3.7.12",
@@ -29,7 +29,7 @@
                 },
                 "mhcnuggets": "2.4.0",
                 "SNPSIFT_SPLIT": {
-                    "snpsift": 4.3
+                    "snpsift": "5.4c"
                 },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
