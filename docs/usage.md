@@ -89,7 +89,7 @@ To predict against every supported allele of a given species, use the sentinel `
 
 The bare keyword `all` is **not** supported because `supported_alleles.json` mixes species; using it would mean predicting e.g. cattle and mouse alleles in the same run.
 
-For tools with a hard allele-per-invocation cap (NetMHCpan and NetMHCIIpan: 50), allele chunking splits the selection into parallel tasks automatically. You can tune this with `--max_alleles_per_chunk` (0 = per-tool defaults).
+For tools with a per-invocation allele cap (NetMHCpan and NetMHCIIpan), allele chunking splits the selection into parallel tasks automatically.
 
 ```console
 sample,alleles,mhc_class,filename
