@@ -39,12 +39,7 @@ workflow MHC_BINDING_PREDICTION {
             .map { meta, file -> [meta + [file_id: meta.id + '_' + file.baseName], file] }
             .set { ch_peptides_to_predict }
 
-        // Prepare predictor-tailored input file and alleles supported by the predictor.
-        // The process emits a JSON listing one entry per (tool, chunk) with its peptide file
-        // name and supported allele set. We fan out one tuple per entry here so routing/merge
-        // keys live in meta rather than filenames. alleles_input (predictor-specific allele
-        // nomenclature) rides as a separate channel value so each predictor module declares it
-        // as an explicit `val` input.
+        // Fan out one tuple per (tool, chunk) entry from the emitted JSON manifest.
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
             .flatMap { meta, tool_chunks, files ->
@@ -96,9 +91,7 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
-    // Regroup predictor outputs by the original (pre-chunk) peptide file so MERGE_PREDICTIONS
-    // sees one task per source file. Per-chunk alleles ride alongside their prediction file
-    // through groupTuple so merge_predictions.py can map allele indices correctly per chunk.
+    // Regroup predictor outputs by the original (pre-chunk) peptide file, one MERGE task per source.
     ch_binding_predictors_out
         .map { meta, file ->
             def regroup_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'tool', 'source_file_id']) } + [

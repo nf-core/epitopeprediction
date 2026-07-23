@@ -1,7 +1,5 @@
 #!/usr/bin/env python
-"""
-Prepares input files for MHC binding prediction tools by filtering peptides and alleles,
-validating sequences, and formatting inputs per tool requirements.
+"""Prepare per-tool MHC binding prediction inputs: filter peptides/alleles, chunk alleles, format per tool.
 
 Author: Jonas Scheid
 License: MIT
@@ -11,7 +9,6 @@ import shlex
 import json
 import logging
 from enum import Enum
-from pathlib import Path
 
 import pandas as pd
 import mhcgnomes
@@ -21,6 +18,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S",
 )
+
 class MinLength(Enum):
     MHCFLURRY = 5
     MHCNUGGETS = 5
@@ -42,10 +40,17 @@ class MaxNumberOfAlleles(Enum):
     NETMHCPAN = 50
     NETMHCIIPAN = 40
 
+# Per-tool peptide length window, output-file extension, MHC class and CLI allele separator.
+TOOL_CONFIGS = {
+    "mhcflurry":    {"min": MinLength.MHCFLURRY.value,   "max": MaxLength.MHCFLURRY.value,          "ext": "csv", "mhc_class": "I",  "sep": ";"},
+    "mhcnuggets":   {"min": MinLength.MHCNUGGETS.value,  "max": MaxLength.MHCNUGGETS_CLASSI.value,  "ext": "tsv", "mhc_class": "I",  "sep": ";"},
+    "mhcnuggetsii": {"min": MinLength.MHCNUGGETS.value,  "max": MaxLength.MHCNUGGETS_CLASSII.value, "ext": "tsv", "mhc_class": "II", "sep": ";"},
+    "netmhcpan":    {"min": MinLength.NETMHCPAN.value,   "max": MaxLength.NETMHCPAN.value,          "ext": "tsv", "mhc_class": "I",  "sep": ","},
+    "netmhciipan":  {"min": MinLength.NETMHCIIPAN.value, "max": MaxLength.NETMHCIIPAN.value,        "ext": "tsv", "mhc_class": "II", "sep": ","},
+}
+
 class Arguments:
-    """
-    Parses the arguments, including the ones coming from $task.ext.args.
-    """
+    """Parse arguments, including those coming from $task.ext.args."""
 
     def __init__(self) -> None:
         self.input = "$tsv"
@@ -61,57 +66,36 @@ class Arguments:
         self.parse_ext_args("$task.ext.args")
 
     def parse_ext_args(self, args_string: str) -> None:
-        """
-        Parse the extended arguments.
-        """
-        # skip when there are no extended arguments
-        if args_string == "null":
-            args_string = ""
-
-        # Parse the extended arguments
-        args_list = shlex.split(args_string)  # Split the string into a list of arguments
+        """Turn the free-form $task.ext.args string into attributes."""
+        args_list = shlex.split("" if args_string == "null" else args_string)
         parser = argparse.ArgumentParser()
-
-        # Add both positional and optional arguments
         i = 0
         while i < len(args_list):
             if args_list[i].startswith('--'):
                 has_value = i + 1 < len(args_list) and not args_list[i + 1].startswith('--')
                 parser.add_argument(args_list[i], type=str if has_value else None,
-                                   action='store' if has_value else 'store_true')
+                                    action='store' if has_value else 'store_true')
                 i += 2 if has_value else 1
             else:
                 i += 1
+        vars(self).update(vars(parser.parse_args(args_list)))
 
-        args = parser.parse_args(args_list)
-        vars(self).update(vars(args))
+    def class_length_range(self) -> tuple:
+        """(min, max) peptide length for this sample's MHC class."""
+        if self.mhc_class == "I":
+            return self.min_peptide_length_classI, self.max_peptide_length_classI
+        return self.min_peptide_length_classII, self.max_peptide_length_classII
 
 
 class Version:
-    """
-    Parse the versions of the modules used in the script.
-    """
+    """Collect module versions for versions.yml."""
 
     @staticmethod
     def get_versions(modules: list) -> dict:
-        """
-        This function takes a list of modules and returns a dictionary with the
-        versions of each module.
-        """
         return {module.__name__: module.__version__ for module in modules}
 
     @staticmethod
     def format_yaml_like(data: dict, indent: int = 0) -> str:
-        """
-        Formats a dictionary to a YAML-like string.
-
-        Args:
-            data (dict): The dictionary to format.
-            indent (int): The current indentation level.
-
-        Returns:
-            yaml_str: A string formatted as YAML.
-        """
         yaml_str = ""
         for key, value in data.items():
             spaces = "  " * indent
@@ -123,187 +107,114 @@ class Version:
 
 
 class Utils:
-    def parse_alleles(allele_str: str) -> str:
-        """
-        Function that parses optional txt allele input and
-        normalizes alleles using mhcgnomes
-        Args:
-            alleles (str): File path (one allele per line) or string in required format ("Allele1;Allele2;..")
-
-        Returns:
-            alleles_normalized: mhcgnomes-normalized allele string in format "Allele1;Allele2;.."
-        """
-        if allele_str.endswith(('.txt','.csv','.tsv')):
-            with open(allele_str, 'r') as f:
-                alleles = [line.strip() for line in f.readlines()]
-        else:
-            alleles = allele_str.split(";")
-        # Truncate 3- and 4-field typings down to 2 fields so higher-resolution HLA inputs match the 2-field entries in assets/supported_alleles.json
-        alleles_normalized = [mhcgnomes.parse(allele).restrict_allele_fields(2).to_string() for allele in alleles]
-
-        return alleles_normalized
-
-    def keep_supported_alleles(allele_ls: list, tool: str, supported_alleles_tool: dict) -> list:
-        """
-        Function that filters out unsupported alleles of predictor for a given MHC class
-        Args:
-            allele_ls (list): List of alleles in mhcgnomes-normalized format
-            tool (str): Name of predictor tool
-            supported_alleles (dict): Dictionary with supported alleles or predictor
-
-        Returns:
-            tool_allele_input: List of supported alleles for the given tool
-        """
-        tool_allele_input = [allele for allele in allele_ls if allele in supported_alleles_tool]
-        # Print warning if allele not in supported alleles
-        logging.warning(f"Ignoring not supported alleles for {tool}: {set(allele_ls) - set(tool_allele_input)}")
-        if len(tool_allele_input) == 0:
-            logging.warning(f"No supported alleles for {tool} found. Aborting..")
-        elif len(tool_allele_input) < len(allele_ls):
-            logging.warning(f"Provided alleles {allele_ls}, but only {tool_allele_input} are supported by {tool}. Continuing with supported alleles..")
-
-        return tool_allele_input
-
+    @staticmethod
     def has_valid_aas(peptide: str) -> bool:
-        """
-        Check if a peptide contains only valid amino acids.
-        """
-        valid_aas = "ACDEFGHIKLMNPQRSTVWY"
-        return all(aa in valid_aas for aa in peptide)
+        return all(aa in "ACDEFGHIKLMNPQRSTVWY" for aa in peptide)
 
+    @staticmethod
     def filter_by_length(df: pd.DataFrame, min_length: int, max_length: int, peptide_col: str) -> pd.DataFrame:
-        """Filter dataframe based on length constraints."""
         return df[df[peptide_col].str.len().between(min_length, max_length)]
 
+    @staticmethod
+    def parse_alleles(allele_str: str) -> list:
+        """Read alleles from a txt/csv/tsv file or ';'-string and normalize to 2 fields via mhcgnomes."""
+        if allele_str.endswith(('.txt', '.csv', '.tsv')):
+            with open(allele_str) as f:
+                alleles = [line.strip() for line in f]
+        else:
+            alleles = allele_str.split(";")
+        return [mhcgnomes.parse(a).restrict_allele_fields(2).to_string() for a in alleles]
+
+    @staticmethod
+    def keep_supported_alleles(alleles: list, tool: str, supported: dict) -> list:
+        """Drop alleles the tool does not support, warning on the difference."""
+        kept = [a for a in alleles if a in supported]
+        if len(kept) < len(alleles):
+            logging.warning(f"Ignoring alleles unsupported by {tool}: {set(alleles) - set(kept)}")
+        if not kept:
+            logging.warning(f"No supported alleles for {tool} found.")
+        return kept
+
+    @staticmethod
+    def resolve_alleles(allele_str: str, tools: list, sa_dict: dict) -> dict:
+        """Map each tool to its ';'-joined supported alleles, expanding a '<species>-all' sentinel."""
+        s = allele_str.strip()
+        if s.lower() == 'all' or s.lower().endswith('-all'):
+            species = mhcgnomes.Species.get(s[:-3].rstrip('-'))
+            if species is None:
+                raise ValueError(f"Unrecognized species in alleles={s!r}. Use e.g. 'HLA-all', 'BoLA-all', 'mouse-all'.")
+            needle = species.prefix.lower() + '-'
+            resolved = {t: ';'.join(a for a in sa_dict[t] if a.lower().startswith(needle)) for t in tools}
+            if not any(resolved.values()):
+                raise ValueError(f"No supported '{species.prefix}-' alleles for any tool in {tools}.")
+            return resolved
+        normalized = Utils.parse_alleles(allele_str)
+        return {t: ';'.join(Utils.keep_supported_alleles(normalized, t, sa_dict[t])) for t in tools}
+
+    @staticmethod
     def chunk_alleles(alleles_str: str, max_per_chunk: int) -> list:
-        """Split a semicolon-separated allele string into chunks of at most max_per_chunk alleles.
-        Returns a list of semicolon-separated allele strings. If max_per_chunk <= 0, returns the original as a single-element list."""
+        """Split a ';'-allele string into chunks of at most max_per_chunk (<=0 keeps a single chunk)."""
         alleles = alleles_str.split(';')
         if max_per_chunk <= 0 or len(alleles) <= max_per_chunk:
             return [alleles_str]
-        return [';'.join(alleles[i:i+max_per_chunk]) for i in range(0, len(alleles), max_per_chunk)]
-
-    TOOL_JOIN_SEP = {
-        'mhcflurry': ';', 'mhcnuggets': ';', 'mhcnuggetsii': ';',
-        'netmhcpan': ',', 'netmhciipan': ',',
-    }
+        return [';'.join(alleles[i:i + max_per_chunk]) for i in range(0, len(alleles), max_per_chunk)]
 
     @staticmethod
-    def format_alleles_for_tool(allele_str: str, tool: str, sa_dict: dict) -> str:
-        """Look up tool-native spelling per allele in supported_alleles.json and join with the tool's CLI separator.
-        Per-tool format quirks live entirely in the json; runtime is a pure dict lookup — no regex, no per-species cases."""
-        return Utils.TOOL_JOIN_SEP[tool].join(sa_dict[tool][a] for a in allele_str.split(';'))
+    def build_entries(tools_alleles: dict, sa_dict: dict) -> list:
+        """One entry per (tool, chunk) with its alleles and tool-native alleles_input."""
+        entries = []
+        for tool, alleles in tools_alleles.items():
+            if not alleles:
+                continue
+            cap = MaxNumberOfAlleles[tool.upper()].value
+            chunks = Utils.chunk_alleles(alleles, cap - 5 if cap else 0)
+            if len(chunks) > 1:
+                logging.info(f"Split {tool} alleles into {len(chunks)} chunks")
+            sep = TOOL_CONFIGS[tool]["sep"]
+            entries += [{"tool": tool, "alleles": chunk, "chunk_id": f"chunk{i}" if len(chunks) > 1 else "",
+                         "alleles_input": sep.join(sa_dict[tool][a] for a in chunk.split(';'))}
+                        for i, chunk in enumerate(chunks)]
+        return entries
+
+    @staticmethod
+    def write_input(entry: dict, df: pd.DataFrame, peptide_col: str, prefix: str) -> str:
+        """Write the tool's peptide input file (mhcflurry needs peptide,allele rows) and return its name."""
+        tool = entry["tool"]
+        key = f"{tool}_{entry['chunk_id']}" if entry["chunk_id"] else tool
+        filename = f"{prefix}_{key}_input.{TOOL_CONFIGS[tool]['ext']}"
+        if tool == "mhcflurry":
+            out = df[[peptide_col]].rename(columns={peptide_col: "peptide"})
+            out.assign(allele=[entry["alleles_input"].split(';')] * len(out)).explode('allele').to_csv(filename, index=False)
+        else:
+            df[[peptide_col]].to_csv(filename, sep="\t", header=False, index=False)
+        return filename
 
 
 def main():
     args = Arguments()
+    sa_dict = json.load(open(args.supported_alleles_json))
+    entries = Utils.build_entries(Utils.resolve_alleles(args.alleles, args.tools, sa_dict), sa_dict)
 
-    # Parse alleles and save supported alleles per tool
-    supported_alleles_dict = json.load(open(args.supported_alleles_json))
-
-    alleles_in = args.alleles.strip()
-    if alleles_in.lower() == 'all' or alleles_in.lower().endswith('-all'):
-        # Pan-species sentinel '<species>-all' — mhcgnomes resolves species name variants
-        # (HLA/human, BoLA/cattle, H-2/H2/mouse, ...) to the canonical prefix stored in
-        # supported_alleles.json, so we can match by string prefix without re-parsing every allele.
-        species = mhcgnomes.Species.get(alleles_in[:-3].rstrip('-'))
-        if species is None:
-            raise ValueError(
-                f"Unrecognized species in alleles={alleles_in!r}. Use '<species>-all' with an "
-                f"mhcgnomes-known species (e.g. 'HLA-all', 'BoLA-all', 'H-2-all', 'mouse-all')."
-            )
-        needle = species.prefix.lower() + '-'
-        logging.info(f"Pan-{species.prefix} mode: selecting all supported '{species.prefix}-' alleles per tool")
-        tools_allele_input = {
-            tool: ';'.join(a for a in supported_alleles_dict[tool] if a.lower().startswith(needle))
-            for tool in args.tools
-        }
-        if not any(tools_allele_input.values()):
-            raise ValueError(f"No supported '{species.prefix}-' alleles for any tool in {args.tools}.")
-    else:
-        alleles_normalized = Utils.parse_alleles(args.alleles)
-        tools_allele_input = {
-            tool: ';'.join(Utils.keep_supported_alleles(alleles_normalized, tool, supported_alleles_dict[tool]))
-            for tool in args.tools
-        }
-
-    # Chunk alleles below each tool's per-call limit, keeping 5 alleles of headroom for parsing.
-    allele_entries = []
-    for tool, alleles_str in tools_allele_input.items():
-        if not alleles_str:
-            continue
-        cap = MaxNumberOfAlleles[tool.upper()].value
-        chunks = Utils.chunk_alleles(alleles_str, cap - 5 if cap else 0)
-        for ci, chunk in enumerate(chunks):
-            allele_entries.append({
-                "tool": tool,
-                "alleles": chunk,
-                "alleles_input": Utils.format_alleles_for_tool(chunk, tool, supported_alleles_dict),
-                "chunk_id": f"chunk{ci}" if len(chunks) > 1 else "",
-            })
-        if len(chunks) > 1:
-            logging.info(f"Split {tool} alleles into {len(chunks)} chunks")
-
-    # Read input peptides and filter invalid amino acids
-    df_input = pd.read_csv(args.input, sep="\t")
-    logging.info(f"Read file with {len(df_input)} peptides.")
-    df_input = df_input[df_input[args.peptide_col_name].apply(Utils.has_valid_aas)]
-
-    # Step 1: Apply *general MHC class length filtering* before tool-specific filtering
-    min_length = args.min_peptide_length_classI if args.mhc_class == "I" else args.min_peptide_length_classII
-    max_length = args.max_peptide_length_classI if args.mhc_class == "I" else args.max_peptide_length_classII
-    df_filtered = Utils.filter_by_length(df_input, min_length, max_length, args.peptide_col_name)
-
-    if df_filtered.empty:
+    df = pd.read_csv(args.input, sep="\t")
+    df = df[df[args.peptide_col_name].apply(Utils.has_valid_aas)]
+    df = Utils.filter_by_length(df, *args.class_length_range(), args.peptide_col_name)
+    if df.empty:
         raise ValueError("No peptides left after applying MHC class length filters! Aborting..")
 
-    logging.info(f"Filtered peptides based on MHC class length. {len(df_filtered)} peptides left for prediction..")
+    # Write one input file per (tool, chunk) whose tool runs for this sample's MHC class.
+    for entry in entries:
+        config = TOOL_CONFIGS[entry["tool"]]
+        if config["mhc_class"] != args.mhc_class:
+            continue
+        df_tool = Utils.filter_by_length(df, config["min"], config["max"], args.peptide_col_name)
+        if not df_tool.empty:
+            entry["filename"] = Utils.write_input(entry, df_tool, args.peptide_col_name, args.prefix)
 
-    # Define tool-specific configurations
-    tool_configs = {
-        "mhcflurry":    {"min": MinLength.MHCFLURRY.value,   "max": MaxLength.MHCFLURRY.value,          "suffix": "mhcflurry_input.csv",    "mhc_class": "I"},
-        "mhcnuggets":   {"min": MinLength.MHCNUGGETS.value,  "max": MaxLength.MHCNUGGETS_CLASSI.value,  "suffix": "mhcnuggets_input.tsv",   "mhc_class": "I"},
-        "mhcnuggetsii": {"min": MinLength.MHCNUGGETS.value,  "max": MaxLength.MHCNUGGETS_CLASSII.value, "suffix": "mhcnuggetsii_input.tsv", "mhc_class": "II"},
-        "netmhcpan":    {"min": MinLength.NETMHCPAN.value,   "max": MaxLength.NETMHCPAN.value,          "suffix": "netmhcpan_input.tsv",    "mhc_class": "I"},
-        "netmhciipan":  {"min": MinLength.NETMHCIIPAN.value, "max": MaxLength.NETMHCIIPAN.value,        "suffix": "netmhciipan_input.tsv",  "mhc_class": "II"},
-    }
+    json.dump([e for e in entries if "filename" in e], open(f"{args.prefix}_allele_input.json", "w"))
 
-    # Step 2: Apply tool-specific length filtering on top of MHC class filtering
-    for tool, config in tool_configs.items():
-        if tool in args.tools and config["mhc_class"] == args.mhc_class:
-            df_tool = Utils.filter_by_length(df_filtered, config["min"], config["max"], args.peptide_col_name)
-            if df_tool.empty:
-                logging.info(f"No peptides found for {tool}, skipping...")
-                continue
-
-            logging.info(f"Input for {tool} detected. Preparing {len(df_tool)} peptides for prediction..")
-
-            tool_entries = [e for e in allele_entries if e['tool'] == tool]
-
-            for entry in tool_entries:
-                chunk_id = entry['chunk_id']
-                key = f"{tool}_{chunk_id}" if chunk_id else tool
-                suffix = config["suffix"]
-                filename = f'{args.prefix}_{key}_input.{suffix.rsplit(".", 1)[1]}'
-                entry['filename'] = filename
-
-                if tool == "mhcflurry":
-                    df_chunk = df_tool.copy()
-                    df_chunk['allele'] = [entry['alleles_input'].split(';')] * len(df_chunk)
-                    df_chunk = df_chunk.explode('allele').reset_index(drop=True)
-                    df_chunk.rename(columns={args.peptide_col_name: "peptide"}, inplace=True)
-                    df_chunk[['peptide', 'allele']].to_csv(filename, index=False)
-                else:
-                    df_tool[[args.peptide_col_name]].to_csv(filename, sep="\t", header=False, index=False)
-
-    with open(f"{args.prefix}_allele_input.json", "w") as f:
-        json.dump([e for e in allele_entries if 'filename' in e], f)
-
-    # Parse versions
-    versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd, mhcgnomes])
+    versions = {"${task.process}": Version.get_versions([argparse, pd, mhcgnomes])}
     with open("versions.yml", "w") as f:
-        f.write(Version.format_yaml_like(versions_this_module))
+        f.write(Version.format_yaml_like(versions))
 
 if __name__ == "__main__":
     main()
