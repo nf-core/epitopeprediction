@@ -4,6 +4,10 @@ lint:
     - docs/images/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_dark.png
     - .vscode/settings.json
+    - .github/workflows/branch.yml
+    - .github/workflows/linting.yml
+  files_exist:
+    - .github/workflows/linting_comment.yml
 nf_core_version: 3.4.1
 repository_type: pipeline
 template:
