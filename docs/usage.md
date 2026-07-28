@@ -55,6 +55,12 @@ offline, pinned, fully reproducible chain — no live BioMart, no pre-annotation
 > Mutect2/Strelka, or DRAGEN), set the `tumor_sample` samplesheet column to the tumor sample name;
 > single-sample tumor-only VCFs can leave it empty.
 
+> [!NOTE]
+> Peptides come only from **coding-altering variants on complete protein-coding transcripts** — missense,
+> in-frame indels, and frameshifts. Synonymous, stop-gain/stop-loss, splice, and non-coding variants yield no
+> peptides. Non-coding-biotype (e.g. NMD) and incomplete-CDS (`cds_start_NF`/`cds_end_NF`) transcripts are
+> skipped, but such variants are still captured through the gene's complete transcripts.
+
 #### Reference data
 
 The variant path needs a VEP cache and reference FASTA, plus three parameters identifying the
