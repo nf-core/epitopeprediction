@@ -26,15 +26,15 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 workflow PIPELINE_INITIALISATION {
 
     take:
-    version           // boolean: Display version and exit
-    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
-    nextflow_cli_args //   array: List of positional nextflow CLI args
-    outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
-    help              // boolean: Display help message and exit
-    help_full         // boolean: Show the full help message
-    show_hidden       // boolean: Show hidden parameters in the help message
+    version            // boolean: Display version and exit
+    validate_params    // boolean: Boolean whether to validate parameters against the schema at runtime
+    _monochrome_logs   // boolean: Do not use coloured log outputs
+    nextflow_cli_args  //   array: List of positional nextflow CLI args
+    outdir             //  string: The output directory where the results will be saved
+    _input             //  string: Path to input samplesheet
+    help               // boolean: Display help message and exit
+    help_full          // boolean: Show the full help message
+    show_hidden        // boolean: Show hidden parameters in the help message
 
     main:
 
@@ -54,9 +54,7 @@ workflow PIPELINE_INITIALISATION {
     // Validate parameters and generate parameter summary to stdout
     //
 
-    def before_text = ""
-    def after_text = ""
-    before_text = """
+    def before_text = """
 -\033[2m----------------------------------------------------\033[0m-
                                         \033[0;32m,--.\033[0;30m/\033[0;32m,-.\033[0m
 \033[0;34m        ___     __   __   __   ___     \033[0;32m/,-._.--~\'\033[0m
@@ -66,14 +64,14 @@ workflow PIPELINE_INITIALISATION {
 \033[0;35m  nf-core/epitopeprediction ${workflow.manifest.version}\033[0m
 -\033[2m----------------------------------------------------\033[0m-
 """
-    after_text = """${workflow.manifest.doi ? "\n* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { doi -> "    https://doi.org/${doi.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
+    def after_text = """${workflow.manifest.doi ? "\n* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { doi -> "    https://doi.org/${doi.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
 * The nf-core framework
     https://doi.org/10.1038/s41587-020-0439-x
 
 * Software dependencies
     https://github.com/nf-core/epitopeprediction/blob/master/CITATIONS.md
 """
-    if (monochrome_logs) {
+    if (params.monochrome_logs) {
         before_text = before_text.replaceAll(/\033\[[0-9;]*m/, '')
     }
 
@@ -88,7 +86,8 @@ workflow PIPELINE_INITIALISATION {
         show_hidden,
         before_text,
         after_text,
-        command
+        command,
+        null
     )
 
     //
@@ -99,27 +98,16 @@ workflow PIPELINE_INITIALISATION {
     )
 
     //
+    // Custom validation for pipeline parameters
+    //
+    //validateInputParameters()
+
+    //
     // Create channel from input file provided through params.input
     //
-
     channel
-        .fromList(samplesheetToList(input, "${projectDir}/assets/schema_input.json"))
-        .map {
-            meta, fastq_1, fastq_2 ->
-                if (!fastq_2) {
-                    return [ meta.id, meta + [ single_end:true ], [ fastq_1 ] ]
-                } else {
-                    return [ meta.id, meta + [ single_end:false ], [ fastq_1, fastq_2 ] ]
-                }
-        }
-        .groupTuple()
-        .map { samplesheet ->
-            validateInputSamplesheet(samplesheet)
-        }
-        .map {
-            meta, fastqs ->
-                return [ meta, fastqs.flatten() ]
-        }
+        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .map { meta, f -> [meta + [alleles: readAlleles(meta.alleles)], f]} // Parse alleles from file
         .set { ch_samplesheet }
 
     emit:
@@ -177,6 +165,20 @@ workflow PIPELINE_COMPLETION {
     FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+//
+// Check and validate pipeline parameters
+//
+// Function to read the alleles from a file or use given string
+def readAlleles(allele_input) {
+    if (allele_input.endsWith(".txt")) {
+        def f = file(allele_input)
+        // Read all lines, strip whitespace, and join them with semicolons
+        return f.readLines()*.trim().join(";")
+    } else {
+        // Not a file path, return the original string
+        return allele_input
+    }
+}
 
 //
 // Validate channels from input samplesheet
@@ -196,11 +198,15 @@ def validateInputSamplesheet(input) {
 // Generate methods description for MultiQC
 //
 def toolCitationText() {
-    // TODO nf-core: Optionally add in-text citation tools to this list.
-    // Can use ternary operators to dynamically construct based conditions, e.g. params["run_xyz"] ? "Tool (Foo et al. 2023)" : "",
-    // Uncomment function in methodsDescriptionText to render in MultiQC report
     def citation_text = [
             "Tools used in the workflow included:",
+            "Epytope (Schuber et al. 2016)",
+            "SYFPEITHI (Schuler et al. 2007)",
+            "NetMHC (Andreatta and Nielsen 2016)",
+            "NetMHCpan (Reynisson et al. 2020)",
+            "NetMHCIIpan (Nilsson et al. 2023)",
+            "MHCnuggets (Shao et al. 2020)",
+            "MHCflurry (O'Donnell et al. 2020)",
             "MultiQC (Ewels et al. 2016)",
             "."
         ].join(' ').trim()
@@ -209,11 +215,15 @@ def toolCitationText() {
 }
 
 def toolBibliographyText() {
-    // TODO nf-core: Optionally add bibliographic entries to this list.
-    // Can use ternary operators to dynamically construct based conditions, e.g. params["run_xyz"] ? "<li>Author (2023) Pub name, Journal, DOI</li>" : "",
-    // Uncomment function in methodsDescriptionText to render in MultiQC report
     def reference_text = [
-            "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics , 32(19), 3047–3048. doi: /10.1093/bioinformatics/btw354</li>"
+            "<li>Schubert et al. (2016). FRED 2: an immunoinformatics framework for Python. Bioinformatics , 32(13), 2044–2046. doi: /10.1093/bioinformatics/btw113</li>",
+            "<li>Schuler et al. (2007). SYFPEITHI: database for searching and T-cell epitope prediction. Immunoinformatics, 75–93. doi: /10.1007/978-1-60327-118-9_5</li>",
+            "<li>Andreatta and Nielsen (2016). Gapped sequence alignment using artificial neural networks: application to the MHC class I system. Bioinformatics, 32(4), 511–517. doi: /10.1093/bioinformatics/btv639</li>",
+            "<li>Reynisson et al. (2020). NetMHCpan-4.1 and NetMHCIIpan-4.0: Improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Research, Volume 48, Issue W1, Pages W449–W454. doi: /10.1093/nar/gkaa379</li>",
+            "<li>Nilsson et al. (2023). Accurate prediction of HLA class II antigen presentation across all loci using tailored data acquisition and refined machine learning. Science Advances, Vol 9, Issue 47. doi: /10.1126/sciadv.adj6367</li>",
+            "<li>Shao et al. (2020). High-throughput prediction of MHC class I and II neoantigens with MHCnuggets. Cancer Immunology Research, 8(3), 396–408. doi: /10.1158/2326-6066.CIR-19-0464</li>",
+            "<li>O'Donnell et al. (2020). MHCflurry 2.0: improved pan-allele prediction of MHC class I-presented peptides by incorporating antigen processing. Cell Systems, 11, 42–48. doi: /10.1016/j.cels.2020.06.010</li>",
+            "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Science Advances , Vol 9, Issue 47. doi: /10.1126/sciadv.adj6367</li>"
         ].join(' ').trim()
 
     return reference_text
@@ -239,13 +249,8 @@ def methodsDescriptionText(mqc_methods_yaml) {
     } else meta["doi_text"] = ""
     meta["nodoi_text"] = meta.manifest_map.doi ? "" : "<li>If available, make sure to update the text to include the Zenodo DOI of version of the pipeline used. </li>"
 
-    // Tool references
-    meta["tool_citations"] = ""
-    meta["tool_bibliography"] = ""
-
-    // TODO nf-core: Only uncomment below if logic in toolCitationText/toolBibliographyText has been filled!
-    // meta["tool_citations"] = toolCitationText().replaceAll(", \\.", ".").replaceAll("\\. \\.", ".").replaceAll(", \\.", ".")
-    // meta["tool_bibliography"] = toolBibliographyText()
+    meta["tool_citations"] = toolCitationText().replaceAll(", \\.", ".").replaceAll("\\. \\.", ".").replaceAll(", \\.", ".")
+    meta["tool_bibliography"] = toolBibliographyText()
 
 
     def methods_text = mqc_methods_yaml.text

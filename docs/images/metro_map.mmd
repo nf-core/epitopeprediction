@@ -1,0 +1,71 @@
+%%metro title: nf-core/epitopeprediction
+%%metro style: dark
+%%metro line_order: span
+%%metro logo: docs/images/nf-core-epitopeprediction_logo_dark.png
+%%metro legend: bl
+%%metro line: vcf | Variant Input | #2db572
+%%metro line: protein | Protein Input | #e6550d
+%%metro line: peptide | Peptide Input | #756bb1
+%%metro file: VCF_IN | VCF
+%%metro file: FASTA_IN | FASTA
+%%metro file: TSV_IN | TSV
+%%metro file: TSV_OUT | TSV
+%%metro file: HTML_OUT | HTML
+
+graph LR
+    subgraph input_processing [Input Processing]
+        VCF_IN[ ]
+        gunzip_vcf([Gunzip VCF])
+        snpsift_split([SnpSift Split])
+        variant_pred([Variant Pred])
+        FASTA_IN[ ]
+        fasta2peptides([Fasta2Peptides])
+        TSV_IN[ ]
+
+        VCF_IN -->|vcf| gunzip_vcf
+        gunzip_vcf -->|vcf| snpsift_split
+        snpsift_split -->|vcf| variant_pred
+        FASTA_IN -->|protein| fasta2peptides
+    end
+
+    subgraph binding_prediction [Binding Prediction]
+        split_peptides([Split Peptides])
+        prepare_input([Prepare Input])
+        mhcflurry([MHCflurry])
+        mhcnuggets([MHCnuggets])
+        mhcnuggetsii([MHCnuggetsII])
+        netmhcpan([NetMHCpan])
+        netmhciipan([NetMHCIIpan])
+        merge_pred([Merge Pred])
+
+        split_peptides -->|vcf,protein,peptide| prepare_input
+        prepare_input -->|vcf,protein,peptide| mhcflurry
+        prepare_input -->|vcf,protein,peptide| mhcnuggets
+        prepare_input -->|vcf,protein,peptide| mhcnuggetsii
+        prepare_input -->|vcf,protein,peptide| netmhcpan
+        prepare_input -->|vcf,protein,peptide| netmhciipan
+        mhcflurry -->|vcf,protein,peptide| merge_pred
+        mhcnuggets -->|vcf,protein,peptide| merge_pred
+        mhcnuggetsii -->|vcf,protein,peptide| merge_pred
+        netmhcpan -->|vcf,protein,peptide| merge_pred
+        netmhciipan -->|vcf,protein,peptide| merge_pred
+    end
+
+    subgraph reporting [Reporting]
+        summarize([Summarize Results])
+        _tsv_pad[ ]
+        multiqc([MultiQC])
+        TSV_OUT[ ]
+        HTML_OUT[ ]
+
+        summarize -->|vcf,protein,peptide| _tsv_pad
+        summarize -->|vcf,protein,peptide| multiqc
+        _tsv_pad -->|vcf,protein,peptide| TSV_OUT
+        multiqc -->|vcf,protein,peptide| HTML_OUT
+    end
+
+    %% Inter-section edges
+    variant_pred -->|vcf| split_peptides
+    fasta2peptides -->|protein| split_peptides
+    TSV_IN -->|peptide| split_peptides
+    merge_pred -->|vcf,protein,peptide| summarize

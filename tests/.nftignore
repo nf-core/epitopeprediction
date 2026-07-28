@@ -8,3 +8,10 @@ multiqc/multiqc_data/llms-full.txt
 multiqc/multiqc_plots/{svg,pdf,png}/*.{svg,pdf,png}
 multiqc/multiqc_report.html
 pipeline_info/*.{html,json,txt,yml}
+epytope/*
+mhcflurry/*
+mhcnuggets/*
+mhcnuggetsii/*
+netmhcpan/*
+netmhciipan/*
+predictions/*

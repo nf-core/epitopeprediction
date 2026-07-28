@@ -17,8 +17,6 @@
                     "format": "file-path",
                     "exists": true,
                     "schema": "assets/schema_input.json",
-                    "mimetype": "text/csv",
-                    "pattern": "^\\S+\\.csv$",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
                     "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
                     "fa_icon": "fas fa-file-csv"
@@ -43,6 +41,187 @@
                 }
             }
         },
+        "reference_options": {
+            "title": "Reference options",
+            "type": "object",
+            "description": "Options for the genome and proteome reference.",
+            "fa_icon": "fas fa-stream",
+            "properties": {
+                "genome": {
+                    "type": "string",
+                    "description": "Path to genome, that is the variant reference fasta. Can be compressed (.gz).",
+                    "format": "file-path",
+                    "fa_icon": "fas fa-book",
+                    "help_text": "Path to variant reference fasta file. Chromosome names (i.e. chr1, Chr1, chrom1, 1, ...) must match those used in the input VCF files. Check the input vcf files for the correct formant and reference fasta version."
+                },
+                "genome_reference": {
+                    "type": "string",
+                    "default": "grch38",
+                    "help_text": "This defines the genome reference for the analysis. Human genomes (grch38, grch37, hg38, hg19) use the hsapiens_gene_ensembl dataset. Mouse genomes (grcm39, grcm38, mm39, mm10) use the mmusculus_gene_ensembl dataset. Alternatively, an Ensembl URL can be provided directly (e.g., https://www.ensembl.org), which defaults to the human dataset.",
+                    "description": "Specifies the genome reference (human: grch38, grch37, hg38, hg19; mouse: grcm39, grcm38, mm39, mm10) or an Ensembl URL."
+                },
+                "proteome_reference": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides derived from provided genomic variants."
+                }
+            }
+        },
+        "peptide_prediction_options": {
+            "title": "Peptide prediction options",
+            "type": "object",
+            "description": "Options for the peptide prediction step.",
+            "fa_icon": "far fa-chart-bar",
+            "properties": {
+                "biomart_dump_path": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "description": "Specifies the path to a local Biomart dump (CSV/TSV) for offline usage of the pipeline.",
+                    "help_text": "If you are running the pipeline in an environment without internet access, you can provide a local dump of the Ensembl Biomart here. The dump file can be created by querying the Ensembl Biomart for the relevant genome version (e.g. `grch37` or `grch38`) and selecting the attributes Protein stable ID (`ensembl_peptide_id`), RefSeq peptide ID (`refseq_peptide`), UniProtKB/Swiss-Prot ID (`uniprotswissprot`), Transcript stable ID (`ensembl_transcript_id`)."
+                },
+                "peptide_col_name": {
+                    "type": "string",
+                    "default": "sequence",
+                    "description": "Specifies the column name in the input file that contains the peptide sequences."
+                },
+                "min_peptide_length_classI": {
+                    "type": "integer",
+                    "default": 8,
+                    "description": "Specifies the minimum peptide length.",
+                    "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
+                },
+                "max_peptide_length_classI": {
+                    "type": "integer",
+                    "default": 12,
+                    "description": "Specifies the maximum peptide length.",
+                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
+                },
+                "min_peptide_length_classII": {
+                    "type": "integer",
+                    "default": 8,
+                    "description": "Specifies the minimum peptide length for MHC class II peptides."
+                },
+                "max_peptide_length_classII": {
+                    "type": "integer",
+                    "default": 25,
+                    "description": "Specifies the maximum peptide length for MHC class II peptides."
+                },
+                "tools": {
+                    "type": "string",
+                    "default": "mhcnuggets",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`,`netmhcpan`,`netmhciipan`.",
+                    "description": "Specifies the prediction tool(s) to use."
+                },
+                "wild_type": {
+                    "type": "boolean",
+                    "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
+                    "description": "Specifies whether wild-type sequences should be predicted."
+                },
+                "fasta_output": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
+                    "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences. Setting this flag will skip the MHC binding prediction entirely. One can provide arbitrary values for `alleles` and `mhc_class` in the samplesheet. Currently supports vcf files annotated with Ensembl VEP (recommended settings: `--pick --protein --uniprot --hgvs --vcf`)."
+                },
+                "fasta_peptide_flanking_region_size": {
+                    "type": "integer",
+                    "default": 25,
+                    "hidden": true,
+                    "description": "Specifies the size of the flanking regions around a mutation in a peptide in the FASTA file (if `fasta_output` is set to `true`)."
+                },
+                "wide_format_output": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Specifies that the output file will be in wide format.",
+                    "help_text": "Transforms output file such that for each predictor and allele a column `predictor_allele_predictionMetric` is created."
+                },
+                "binder_only": {
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Filter out non-binders from the final results.",
+                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file."
+                },
+                "use_ba_rank": {
+                    "type": "boolean",
+                    "default": false,
+                    "hidden": true,
+                    "description": "Use BA_Rank instead of EL_Rank for netMHCpan and netMHCIIpan predictions.",
+                    "help_text": "By default, netMHCpan and netMHCIIpan predictions use EL_Rank (Eluted Ligand Rank) as the rank metric, which is the recommended metric by the developers. When this flag is enabled, BA_Rank (Binding Affinity Rank) will be used instead. Note that EL_Rank and BA_Rank can differ significantly as they are computed against different reference sets."
+                }
+            }
+        },
+        "run_optimisation": {
+            "title": "Run optimisation",
+            "type": "object",
+            "description": "Options for optimising the pipeline run execution.",
+            "fa_icon": "fas fa-history",
+            "properties": {
+                "split_by_variants": {
+                    "type": "boolean",
+                    "description": "Split VCF file into multiple files by number of variants."
+                },
+                "split_by_variants_size": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten",
+                    "hidden": true
+                },
+                "split_by_variants_distance": {
+                    "type": "integer",
+                    "default": 110000,
+                    "description": "Number of nucleotides between previous and current variant across split.",
+                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. ",
+                    "hidden": true
+                },
+                "peptides_split_maxchunks": {
+                    "type": "integer",
+                    "default": 100,
+                    "help_text": "Used in combination with `--peptides` or `--proteins`. Maximum number of peptide chunks that will be created for parallelisation.",
+                    "description": "Specifies the maximum number of peptide chunks."
+                },
+                "peptides_split_minchunksize": {
+                    "type": "integer",
+                    "default": 5000,
+                    "help_text": "Used in combination with `--peptides` or `--proteins`: minimum number of peptides that should be written into one chunk.",
+                    "description": "Specifies the minimum number of peptides that should be written into one chunk."
+                }
+            }
+        },
+        "external_software": {
+            "title": "External software",
+            "type": "object",
+            "description": "External MHC binding prediction software that is not shipped with the pipeline.",
+            "default": null,
+            "properties": {
+                "external_tools_meta": {
+                    "type": "string",
+                    "description": "Specifies the path to the JSON file with meta information on external prediction tools.",
+                    "hidden": true
+                },
+                "netmhc_system": {
+                    "type": "string",
+                    "default": "linux",
+                    "enum": ["linux", "darwin"],
+                    "description": "Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used."
+                },
+                "netmhcpan_path": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tar\\.gz$",
+                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
+                },
+                "netmhciipan_path": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "pattern": "^\\S+\\.tar\\.gz$",
+                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
+                }
+            }
+        },
         "institutional_config_options": {
             "title": "Institutional config options",
             "type": "object",
@@ -55,14 +234,15 @@
                     "description": "Git commit id for Institutional configs.",
                     "default": "master",
                     "hidden": true,
-                    "fa_icon": "fas fa-users-cog"
+                    "fa_icon": "fas fa-users-cog",
+                    "help_text": "Provide git commit id for custom Institutional configs hosted at `nf-core/configs`. This was implemented for reproducibility purposes. Default: `master`.\n\n```bash\n## Download and use config file with following git commit id\n--custom_config_version d52db660777c4bf36546ddb188ec530c3ada1b96\n```"
                 },
                 "custom_config_base": {
                     "type": "string",
                     "description": "Base directory for Institutional configs.",
                     "default": "https://raw.githubusercontent.com/nf-core/configs/master",
                     "hidden": true,
-                    "help_text": "If you're running offline, Nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell Nextflow where to find them with this parameter.",
+                    "help_text": "If you're running offline, nextflow will not be able to fetch the institutional config files from the internet. If you don't need them, then this is not a problem. If you do need them, you should download the files from the repo and tell nextflow where to find them with the `custom_config_base` option. For example:\n\n```bash\n## Download and unzip the config files\ncd /path/to/my/configs\nwget https://github.com/nf-core/configs/archive/master.zip\nunzip master.zip\n\n## Run the pipeline\ncd /path/to/my/data\nnextflow run /path/to/pipeline/ --custom_config_base /path/to/my/configs/configs-master/\n```\n\n> Note that the nf-core/tools helper package has a `download` command to download all required pipeline files + singularity containers + institutional configs in one go for you, to make this process easier.",
                     "fa_icon": "fas fa-users-cog"
                 },
                 "config_profile_name": {
@@ -197,6 +377,18 @@
     "allOf": [
         {
             "$ref": "#/$defs/input_output_options"
+        },
+        {
+            "$ref": "#/$defs/reference_options"
+        },
+        {
+            "$ref": "#/$defs/peptide_prediction_options"
+        },
+        {
+            "$ref": "#/$defs/run_optimisation"
+        },
+        {
+            "$ref": "#/$defs/external_software"
         },
         {
             "$ref": "#/$defs/institutional_config_options"
