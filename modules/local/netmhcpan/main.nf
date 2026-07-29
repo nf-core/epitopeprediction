@@ -23,12 +23,55 @@ process NETMHCPAN {
     def alleles = meta.alleles_supported.tokenize(';').collect { allele -> allele.replace('*', '').replace('H2','H-2') }.join(',')
 
     """
+    # TEMPORARY DIAGNOSTIC BLOCK -- to be removed before this PR is un-drafted.
+    # netMHCpan-4.2 aborts with "*** buffer overflow detected ***" after printing
+    # "# Predict", exits 0 anyway (tcsh wrapper), so Nextflow only reports the
+    # missing *.xls. The probes below narrow down what triggers the overflow.
+    echo "### env"
+    echo "PWD=\$PWD"
+    echo "PWD_LEN=\${#PWD}"
+    echo "TMPDIR=\${TMPDIR:-unset}"
+    ldd --version 2>&1 | head -1
+    echo "stack_limit=\$(ulimit -s)"
+    echo "### input"
+    echo "alleles=$alleles"
+    echo "n_peptides=\$(wc -l < $tsv)"
+    echo "max_peptide_len=\$(awk '{ if (length(\$0) > m) m = length(\$0) } END { print m }' $tsv)"
+    head -3 $tsv | cat -A
+    tail -2 $tsv | cat -A
+
+    echo "### run 1: as-is"
     netmhcpan/netMHCpan \
         -p $tsv \
         -a $alleles \
         -xls \
         -xlsfile ${prefix}_predicted_netmhcpan.xls \
-        $args
+        $args && rc=0 || rc=\$?
+    echo "run1_exit=\$rc"
+    ls -l ${prefix}_predicted_netmhcpan.xls 2>&1 || echo "run1: NO XLS"
+
+    if [ ! -s ${prefix}_predicted_netmhcpan.xls ]; then
+        echo "### run 2: single peptide, same directory"
+        head -1 $tsv > one_peptide.txt
+        netmhcpan/netMHCpan -p one_peptide.txt -a $alleles -xls -xlsfile probe_one.out $args && rc=0 || rc=\$?
+        echo "run2_exit=\$rc"
+        ls -l probe_one.out 2>&1 || echo "run2: NO OUTPUT"
+
+        echo "### run 3: full input, short path (/tmp/nmp)"
+        rm -rf /tmp/nmp && mkdir -p /tmp/nmp
+        cp -rL netmhcpan /tmp/nmp/nm
+        cp $tsv /tmp/nmp/in.tsv
+        ( cd /tmp/nmp \
+            && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probe_short.out $args && rc=0 || rc=\$? \
+            ; echo "run3_exit=\$rc" \
+            ; ls -l /tmp/nmp/probe_short.out 2>&1 || echo "run3: NO OUTPUT" )
+
+        echo "### run 4: no -xls, stdout only"
+        netmhcpan/netMHCpan -p $tsv -a $alleles $args > probe_stdout.txt 2>&1 && rc=0 || rc=\$?
+        echo "run4_exit=\$rc"
+        echo "run4_stdout_lines=\$(wc -l < probe_stdout.txt)"
+        tail -5 probe_stdout.txt
+    fi
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
