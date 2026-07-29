@@ -53,26 +53,25 @@ process NETMHCPAN {
     ls -l ${prefix}_predicted_netmhcpan.xls 2>&1 || echo "run1: NO XLS"
 
     if [ ! -s ${prefix}_predicted_netmhcpan.xls ]; then
-        echo "### run 2: single peptide, same directory"
-        sed -n '1p' $tsv > one_peptide.txt
-        netmhcpan/netMHCpan -p one_peptide.txt -a $alleles -xls -xlsfile probe_one.out $args && rc=0 || rc=\$?
-        echo "run2_exit=\$rc"
-        ls -l probe_one.out 2>&1 || echo "run2: NO OUTPUT"
+        echo "software_dir_size=\$(du -sh --dereference netmhcpan | cut -f1)"
 
-        echo "### run 3: full input, short path (/tmp/nmp)"
-        rm -rf /tmp/nmp && mkdir -p /tmp/nmp
-        cp -rL netmhcpan /tmp/nmp/nm
-        cp $tsv /tmp/nmp/in.tsv
-        ( cd /tmp/nmp \
-            && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probe_short.out $args && rc=0 || rc=\$? \
-            ; echo "run3_exit=\$rc" \
-            ; ls -l /tmp/nmp/probe_short.out 2>&1 || echo "run3: NO OUTPUT" )
+        echo "### probe A: short cwd, software + input as SYMLINKS (cheap)"
+        rm -rf /tmp/nmpA && mkdir -p /tmp/nmpA
+        ln -s "\$(readlink -f netmhcpan)" /tmp/nmpA/nm
+        ln -s "\$(readlink -f $tsv)" /tmp/nmpA/in.tsv
+        ( cd /tmp/nmpA \
+            && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeA.out $args && rc=0 || rc=\$? \
+            ; echo "probeA_exit=\$rc" \
+            ; ls -l /tmp/nmpA/probeA.out 2>&1 || echo "probeA: NO OUTPUT" )
 
-        echo "### run 4: no -xls, stdout only"
-        netmhcpan/netMHCpan -p $tsv -a $alleles $args > probe_stdout.txt 2>&1 && rc=0 || rc=\$?
-        echo "run4_exit=\$rc"
-        echo "run4_stdout_lines=\$(wc -l < probe_stdout.txt)"
-        tail -5 probe_stdout.txt
+        echo "### probe B: short cwd, software COPIED, input symlinked"
+        rm -rf /tmp/nmpB && mkdir -p /tmp/nmpB
+        cp -rL netmhcpan /tmp/nmpB/nm
+        ln -s "\$(readlink -f $tsv)" /tmp/nmpB/in.tsv
+        ( cd /tmp/nmpB \
+            && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeB.out $args && rc=0 || rc=\$? \
+            ; echo "probeB_exit=\$rc" \
+            ; ls -l /tmp/nmpB/probeB.out 2>&1 || echo "probeB: NO OUTPUT" )
     fi
 
     cat <<-END_VERSIONS > versions.yml
