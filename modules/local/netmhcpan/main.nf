@@ -27,17 +27,19 @@ process NETMHCPAN {
     # netMHCpan-4.2 aborts with "*** buffer overflow detected ***" after printing
     # "# Predict", exits 0 anyway (tcsh wrapper), so Nextflow only reports the
     # missing *.xls. The probes below narrow down what triggers the overflow.
+    # NB: no `| head` anywhere below -- Nextflow runs this with `bash -ue -o pipefail`,
+    # so SIGPIPE on the producer aborts the whole script with exit 141.
     echo "### env"
-    echo "PWD=\$PWD"
     echo "PWD_LEN=\${#PWD}"
     echo "TMPDIR=\${TMPDIR:-unset}"
-    ldd --version 2>&1 | head -1
+    ldd --version > ldd.txt 2>&1 || true
+    sed -n '1p' ldd.txt
     echo "stack_limit=\$(ulimit -s)"
     echo "### input"
     echo "alleles=$alleles"
     echo "n_peptides=\$(wc -l < $tsv)"
     echo "max_peptide_len=\$(awk '{ if (length(\$0) > m) m = length(\$0) } END { print m }' $tsv)"
-    head -3 $tsv | cat -A
+    sed -n '1,3p' $tsv | cat -A
     tail -2 $tsv | cat -A
 
     echo "### run 1: as-is"
@@ -52,7 +54,7 @@ process NETMHCPAN {
 
     if [ ! -s ${prefix}_predicted_netmhcpan.xls ]; then
         echo "### run 2: single peptide, same directory"
-        head -1 $tsv > one_peptide.txt
+        sed -n '1p' $tsv > one_peptide.txt
         netmhcpan/netMHCpan -p one_peptide.txt -a $alleles -xls -xlsfile probe_one.out $args && rc=0 || rc=\$?
         echo "run2_exit=\$rc"
         ls -l probe_one.out 2>&1 || echo "run2: NO OUTPUT"
