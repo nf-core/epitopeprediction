@@ -24,54 +24,38 @@ process NETMHCPAN {
 
     """
     # TEMPORARY DIAGNOSTIC BLOCK -- to be removed before this PR is un-drafted.
-    # netMHCpan-4.2 aborts with "*** buffer overflow detected ***" after printing
-    # "# Predict", exits 0 anyway (tcsh wrapper), so Nextflow only reports the
-    # missing *.xls. The probes below narrow down what triggers the overflow.
-    # NB: no `| head` anywhere below -- Nextflow runs this with `bash -ue -o pipefail`,
-    # so SIGPIPE on the producer aborts the whole script with exit 141.
-    echo "### env"
-    echo "PWD_LEN=\${#PWD}"
-    echo "TMPDIR=\${TMPDIR:-unset}"
-    ldd --version > ldd.txt 2>&1 || true
-    sed -n '1p' ldd.txt
-    echo "stack_limit=\$(ulimit -s)"
-    echo "### input"
-    echo "alleles=$alleles"
-    echo "n_peptides=\$(wc -l < $tsv)"
-    echo "max_peptide_len=\$(awk '{ if (length(\$0) > m) m = length(\$0) } END { print m }' $tsv)"
-    sed -n '1,3p' $tsv | cat -A
-    tail -2 $tsv | cat -A
+    # All netMHCpan stdout is redirected to files: Nextflow only shows the TAIL of
+    # .command.out, and the per-peptide table drowns the verdicts otherwise.
+    # NB: no `| head` anywhere -- scripts run under `bash -ue -o pipefail`, so
+    # SIGPIPE on the producer aborts the whole script with exit 141.
+    sw=\$(readlink -f netmhcpan)
+    in_abs=\$(readlink -f $tsv)
+    sw_size=\$(du -sh --dereference netmhcpan | cut -f1)
 
-    echo "### run 1: as-is"
-    netmhcpan/netMHCpan \
-        -p $tsv \
-        -a $alleles \
-        -xls \
-        -xlsfile ${prefix}_predicted_netmhcpan.xls \
-        $args && rc=0 || rc=\$?
-    echo "run1_exit=\$rc"
-    ls -l ${prefix}_predicted_netmhcpan.xls 2>&1 || echo "run1: NO XLS"
+    netmhcpan/netMHCpan -p $tsv -a $alleles -xls \
+        -xlsfile ${prefix}_predicted_netmhcpan.xls $args > run1.log 2>&1 && r1=0 || r1=\$?
 
     if [ ! -s ${prefix}_predicted_netmhcpan.xls ]; then
-        echo "software_dir_size=\$(du -sh --dereference netmhcpan | cut -f1)"
+        rm -rf /tmp/nmpA /tmp/nmpB
+        mkdir -p /tmp/nmpA /tmp/nmpB
 
-        echo "### probe A: short cwd, software + input as SYMLINKS (cheap)"
-        rm -rf /tmp/nmpA && mkdir -p /tmp/nmpA
-        ln -s "\$(readlink -f netmhcpan)" /tmp/nmpA/nm
-        ln -s "\$(readlink -f $tsv)" /tmp/nmpA/in.tsv
-        ( cd /tmp/nmpA \
-            && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeA.out $args && rc=0 || rc=\$? \
-            ; echo "probeA_exit=\$rc" \
-            ; ls -l /tmp/nmpA/probeA.out 2>&1 || echo "probeA: NO OUTPUT" )
+        ln -s "\$sw" /tmp/nmpA/nm
+        ln -s "\$in_abs" /tmp/nmpA/in.tsv
+        ( cd /tmp/nmpA && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeA.out $args ) > probeA.log 2>&1 && rA=0 || rA=\$?
 
-        echo "### probe B: short cwd, software COPIED, input symlinked"
-        rm -rf /tmp/nmpB && mkdir -p /tmp/nmpB
         cp -rL netmhcpan /tmp/nmpB/nm
-        ln -s "\$(readlink -f $tsv)" /tmp/nmpB/in.tsv
-        ( cd /tmp/nmpB \
-            && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeB.out $args && rc=0 || rc=\$? \
-            ; echo "probeB_exit=\$rc" \
-            ; ls -l /tmp/nmpB/probeB.out 2>&1 || echo "probeB: NO OUTPUT" )
+        ln -s "\$in_abs" /tmp/nmpB/in.tsv
+        ( cd /tmp/nmpB && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeB.out $args ) > probeB.log 2>&1 && rB=0 || rB=\$?
+
+        echo "===== VERDICTS ====="
+        echo "PWD_LEN=\${#PWD}"
+        echo "software_dir_size=\$sw_size"
+        echo "symlink_target_len=\${#sw}"
+        echo "run1(long cwd)      exit=\$r1 xls_bytes=\$(stat -c%s ${prefix}_predicted_netmhcpan.xls 2>/dev/null || echo 0)"
+        echo "probeA(symlinked sw) exit=\$rA out_bytes=\$(stat -c%s /tmp/nmpA/probeA.out 2>/dev/null || echo 0)"
+        echo "probeB(copied sw)    exit=\$rB out_bytes=\$(stat -c%s /tmp/nmpB/probeB.out 2>/dev/null || echo 0)"
+        echo "probeA tail: \$(tail -2 probeA.log | tr '\\n' ' ')"
+        echo "===================="
     fi
 
     cat <<-END_VERSIONS > versions.yml
