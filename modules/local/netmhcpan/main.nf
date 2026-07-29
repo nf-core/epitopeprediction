@@ -23,40 +23,35 @@ process NETMHCPAN {
     def alleles = meta.alleles_supported.tokenize(';').collect { allele -> allele.replace('*', '').replace('H2','H-2') }.join(',')
 
     """
-    # TEMPORARY DIAGNOSTIC BLOCK -- to be removed before this PR is un-drafted.
-    # All netMHCpan stdout is redirected to files: Nextflow only shows the TAIL of
-    # .command.out, and the per-peptide table drowns the verdicts otherwise.
-    # NB: no `| head` anywhere -- scripts run under `bash -ue -o pipefail`, so
-    # SIGPIPE on the producer aborts the whole script with exit 141.
-    sw=\$(readlink -f netmhcpan)
-    in_abs=\$(readlink -f $tsv)
-    sw_size=\$(du -sh --dereference netmhcpan | cut -f1)
+    # netMHCpan-4.2 builds internal paths from the current working directory into
+    # fixed-size buffers. From a long cwd -- which Nextflow work dirs always are --
+    # it overruns them and glibc aborts it ("*** buffer overflow detected ***").
+    # The tcsh wrapper still exits 0, so the only symptom is a missing .xls.
+    # Running from a short scratch dir avoids it; symlinks keep the ~195 MB tool
+    # directory from being copied per task.
+    scratch=\$(mktemp -d /tmp/netmhcpan.XXXXXX)
+    ln -s "\$(readlink -f netmhcpan)" "\$scratch/nm"
+    ln -s "\$(readlink -f $tsv)" "\$scratch/input.tsv"
 
-    netmhcpan/netMHCpan -p $tsv -a $alleles -xls \
-        -xlsfile ${prefix}_predicted_netmhcpan.xls $args > run1.log 2>&1 && r1=0 || r1=\$?
+    (
+        cd "\$scratch"
+        ./nm/netMHCpan \
+            -p input.tsv \
+            -a $alleles \
+            -xls \
+            -xlsfile ${prefix}_predicted_netmhcpan.xls \
+            $args
+    )
 
-    if [ ! -s ${prefix}_predicted_netmhcpan.xls ]; then
-        rm -rf /tmp/nmpA /tmp/nmpB
-        mkdir -p /tmp/nmpA /tmp/nmpB
-
-        ln -s "\$sw" /tmp/nmpA/nm
-        ln -s "\$in_abs" /tmp/nmpA/in.tsv
-        ( cd /tmp/nmpA && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeA.out $args ) > probeA.log 2>&1 && rA=0 || rA=\$?
-
-        cp -rL netmhcpan /tmp/nmpB/nm
-        ln -s "\$in_abs" /tmp/nmpB/in.tsv
-        ( cd /tmp/nmpB && ./nm/netMHCpan -p in.tsv -a $alleles -xls -xlsfile probeB.out $args ) > probeB.log 2>&1 && rB=0 || rB=\$?
-
-        echo "===== VERDICTS ====="
-        echo "PWD_LEN=\${#PWD}"
-        echo "software_dir_size=\$sw_size"
-        echo "symlink_target_len=\${#sw}"
-        echo "run1(long cwd)      exit=\$r1 xls_bytes=\$(stat -c%s ${prefix}_predicted_netmhcpan.xls 2>/dev/null || echo 0)"
-        echo "probeA(symlinked sw) exit=\$rA out_bytes=\$(stat -c%s /tmp/nmpA/probeA.out 2>/dev/null || echo 0)"
-        echo "probeB(copied sw)    exit=\$rB out_bytes=\$(stat -c%s /tmp/nmpB/probeB.out 2>/dev/null || echo 0)"
-        echo "probeA tail: \$(tail -2 probeA.log | tr '\\n' ' ')"
-        echo "===================="
+    # netMHCpan exits 0 even when it crashes, so check the output explicitly.
+    if [ ! -s "\$scratch/${prefix}_predicted_netmhcpan.xls" ]; then
+        echo "ERROR: netMHCpan produced no output for ${prefix}" >&2
+        rm -rf "\$scratch"
+        exit 1
     fi
+
+    mv "\$scratch/${prefix}_predicted_netmhcpan.xls" .
+    rm -rf "\$scratch"
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
