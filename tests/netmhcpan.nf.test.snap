@@ -63,7 +63,7 @@
                 "multiqc_binder_rank_distribution.txt:md5,ec90da915e1e675ba4783a1ef333f5d6",
                 "multiqc_binding_affinity_distribution.txt:md5,971dc7e590882902783bd650e38caf39",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,f21634746a48cc909875f026c8dc470d"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,9ae5d3bb44ec4905ce1ad78a4c114ea2"
             ]
         ],
         "meta": {
