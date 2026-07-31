@@ -1,9 +1,6 @@
 process NETMHCPAN {
     label 'process_single'
     tag "${meta.id}"
-    // netMHCpan-4.2 overruns fixed-size buffers built from the working directory
-    // path and is aborted by glibc, so run it from a short scratch directory.
-    scratch true
 
     // conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
