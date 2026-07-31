@@ -12,8 +12,8 @@ process PREPARE_PREDICTION_INPUT {
     path(supported_alleles_json)
 
     output:
-    tuple val(meta), path("*.json"), path("*.{csv,tsv}"), emit: prepared
-    path "versions.yml"                                 , emit: versions
+    tuple val(meta), path("*.json"), path("*.{csv,tsv}", arity: '1..*'), emit: prepared
+    path "versions.yml"                                                , emit: versions
 
     script:
     template "prepare_prediction_input.py"
@@ -21,6 +21,7 @@ process PREPARE_PREDICTION_INPUT {
     stub:
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
+    echo '[]' > ${prefix}_allele_input.json
     touch ${prefix}_mhcflurry_input.csv
     touch ${prefix}_mhcnuggets_input.tsv
     touch ${prefix}_mhcnuggetsii_input.tsv

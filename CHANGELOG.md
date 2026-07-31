@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added automatic allele chunking, species-prefixed pan-MHC mode (`<species>-all` sentinel, e.g. `HLA-all`, `BoLA-all`, `mouse-all`) via mhcgnomes, and centralized per-tool allele format conversion in `prepare_prediction_input`. Closes [#340](https://github.com/nf-core/epitopeprediction/issues/340). ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Pass tool-specific allele input as an explicit `val(alleles_input)` to predictor modules instead of plumbing it through the meta map ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Chunk alleles automatically to stay under each tool's per-invocation cap (NetMHCpan/NetMHCIIpan), keeping headroom below the `-a` argument's 1024-char binary limit ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
@@ -23,16 +26,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#349](https://github.com/nf-core/epitopeprediction/pull/349) Fixed MultiQC stats mismatch: use per-peptide binder counts, fix unsupported count formula, fix netmhcpan multi-allele column parsing ([@jonasscheid](https://github.com/jonasscheid/))
 - [#331](https://github.com/nf-core/epitopeprediction/pull/331) Fixed Nextflow strict syntax lint errors ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mappings [@axelwalter](https://github.com/axelwalter)
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Fixed a merge regression for NetMHCIIpan single-allele chunks where the `Rank` column wasn't normalized to `Rank_EL`, and sanitized mhcnuggets output filenames for class II heterodimer alleles containing `/`. ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Regenerated `netmhcpan` (10,586) and `netmhciipan` (10,871) keys in `assets/supported_alleles.json` from the binary pseudo-sequence files of the pinned versions (NetMHCpan 4.2bstatic, NetMHCIIpan 4.3); mhcgnomes-canonical with round-trip filter so every entry is guaranteed-runnable in pan-mode ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Migrated `assets/supported_alleles.json` from per-tool canonical lists to per-tool `{canonical: native}` dicts; `prepare_prediction_input.format_alleles_for_tool` is now a pure dict lookup, dropping all per-species regex transforms. Recovers +766 NetMHCpan and +8 NetMHCIIpan alleles whose binary-native spelling didn't round-trip through the previous mhcgnomes-only filter ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Fixed `KeyError: nan` in `summarize_results.py` when all rows in a `(peptide, allele)` group had `NaN` rank (surfaced in pan-mode with NetMHCIIpan) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#348](https://github.com/nf-core/epitopeprediction/pull/348) Bumped Python container from 3.11 to 3.14 in SPLIT_PEPTIDES and VARIANT_SPLIT ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Dependencies`
 
-| Dependency | Old version | New version |
-| ---------- | ----------- | ----------- |
-| `bcftools` | 1.21        | 1.23.1      |
-| `multiqc`  | 1.32        | 1.35        |
-| `snpsift`  | 4.3         | 5.4c        |
-| `nf-core`  | 3.4.1       | 4.0.2       |
+| Dependency    | Old version | New version |
+| ------------- | ----------- | ----------- |
+| `bcftools`    | 1.21        | 1.23.1      |
+| `multiqc`     | 1.32        | 1.35        |
+| `snpsift`     | 4.3         | 5.4c        |
+| `nf-core`     | 3.4.1       | 4.0.2       |
+| `NetMHCIIpan` | 4.3e        | 4.3i        |
 
 ### `Changed`
 

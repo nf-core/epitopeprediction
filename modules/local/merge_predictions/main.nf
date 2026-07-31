@@ -8,7 +8,7 @@ process MERGE_PREDICTIONS {
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(prediction_files), path(source_file)
+    tuple val(meta), path(prediction_files), val(alleles_per_file), path(source_file)
 
     output:
     tuple val(meta), path("*.csv") , emit: merged

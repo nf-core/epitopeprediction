@@ -1,7 +1,7 @@
 {
     "-profile test_mhcnuggets": {
         "content": [
-            221,
+            213,
             {
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
@@ -186,17 +186,17 @@
                 "bcftools_stats_vqc_Count_Transversions.txt:md5,e301b8c8760fdd149b2e8924d8f9e9b7",
                 "multiqc_bcftools_stats.txt:md5,a3aca1d8f180bbbe0053a9210681ca5a",
                 "multiqc_binder_length_distribution.txt:md5,6d1dc0a6c076859c58186f23288ab9a4",
-                "multiqc_binder_rank_distribution.txt:md5,13d72ce0ab31cdee7dd3bfd265855895",
-                "multiqc_binding_affinity_distribution.txt:md5,3bf1fbf67bf4cd71bbed2d47bd4c4bdc",
+                "multiqc_binder_rank_distribution.txt:md5,56a7538b5dee366fdb2551ba2ee0f19c",
+                "multiqc_binding_affinity_distribution.txt:md5,3fef047800f0932335acc4339f25fda5",
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2861dfd886f449d522e37c92889a474",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,84d1236b5563c9e574d1ed3f95dba271"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,2cbcf698903654ecacece44a7d6bfa8a"
             ]
         ],
+        "timestamp": "2026-07-22T15:53:37.770970977",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2026-01-08T16:56:49.630116954"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

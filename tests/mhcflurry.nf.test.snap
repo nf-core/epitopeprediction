@@ -209,10 +209,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0cf793e022bbbf14ba53f2338aae1450"
             ]
         ],
+        "timestamp": "2026-07-22T17:27:42.451405513",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2026-01-08T16:41:58.000435528"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

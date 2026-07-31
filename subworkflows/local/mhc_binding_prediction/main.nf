@@ -39,27 +39,31 @@ workflow MHC_BINDING_PREDICTION {
             .map { meta, file -> [meta + [file_id: meta.id + '_' + file.baseName], file] }
             .set { ch_peptides_to_predict }
 
-        // Prepare predictor-tailored input file and alleles supported by the predictor
+        // Fan out one tuple per (tool, chunk) entry from the emitted JSON manifest.
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
-            .transpose()
-            .branch {
-                meta, json, file ->
-                    def allele_input_dict = json2map(json)
-                    mhcflurry : (file.name.contains('mhcflurry_input') && allele_input_dict['mhcflurry'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcflurry']], file]
-                    mhcnuggets : (file.name.contains('mhcnuggets_input') && allele_input_dict['mhcnuggets'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcnuggets']], file]
-                    mhcnuggetsii : (file.name.contains('mhcnuggetsii_input') && allele_input_dict['mhcnuggetsii'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcnuggetsii']], file]
-                    netmhcpan: (file.name.contains('netmhcpan_input') && allele_input_dict['netmhcpan'])
-                        return [meta + [alleles_supported: allele_input_dict['netmhcpan']], file]
-                    netmhciipan: (file.name.contains('netmhciipan_input') && allele_input_dict['netmhciipan'])
-                        return [meta + [alleles_supported: allele_input_dict['netmhciipan']], file]
-                    }
+            .flatMap { meta, tool_chunks, files ->
+                def files_by_name = files.collectEntries { f -> [(f.name): f] }
+                parseJson(tool_chunks).collect { entry ->
+                    [meta + [tool: entry.tool,
+                             alleles_supported: entry.alleles,
+                             source_file_id: meta.file_id,
+                             file_id: entry.chunk_id ? "${meta.file_id}_${entry.chunk_id}" : meta.file_id],
+                     entry.alleles_input,
+                     files_by_name[entry.filename]]
+                }
+            }
+            .branch { meta, _alleles_input, _file ->
+                mhcflurry    : meta.tool == 'mhcflurry'
+                mhcnuggets   : meta.tool == 'mhcnuggets'
+                mhcnuggetsii : meta.tool == 'mhcnuggetsii'
+                netmhcpan    : meta.tool == 'netmhcpan'
+                netmhciipan  : meta.tool == 'netmhciipan'
+            }
             .set{ ch_prediction_input }
 
-        MHCFLURRY ( ch_prediction_input.mhcflurry )
+        // MHCflurry encodes alleles inline in its CSV input, so it doesn't need alleles_input.
+        MHCFLURRY ( ch_prediction_input.mhcflurry.map { meta, _alleles_input, file -> [meta, file] } )
         ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
 
@@ -87,11 +91,16 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
-    // Join predicted file and subworkflow input file to add inputfile metadata
+    // Regroup predictor outputs by the original (pre-chunk) peptide file, one MERGE task per source.
     ch_binding_predictors_out
-        .map { meta, file -> [meta.findAll { k, _v -> k != 'alleles_supported' }, file] } // drop alleles_supported from meta
-        .groupTuple()
-        .join( ch_peptides_to_predict )
+        .map { meta, file ->
+            def regroup_meta = meta.findAll { k, _v -> !(k in ['alleles_supported', 'tool', 'source_file_id']) } + [
+                file_id: meta.source_file_id ?: meta.file_id,
+            ]
+            [regroup_meta, file, meta.alleles_supported]
+        }
+        .groupTuple()                   // → [meta, [files], [alleles_per_file]]
+        .join( ch_peptides_to_predict ) // → [meta, [files], [alleles_per_file], source_file]
         .set { ch_binding_predictors_out_meta}
 
     // Merge predictions from different predictors
@@ -147,9 +156,7 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
     return ch_netmhc_exe
 }
 
-// Groovy function to parse JSON and return a map
-def json2map(jsonString) {
-    def jsonSlurper = new groovy.json.JsonSlurper()
-    def parsedJson = jsonSlurper.parse(file(jsonString, checkIfExists: true))
-    return parsedJson
+// Groovy function to parse JSON and return a list/map
+def parseJson(jsonPath) {
+    new groovy.json.JsonSlurper().parse(file(jsonPath, checkIfExists: true))
 }
