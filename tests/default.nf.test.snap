@@ -34,7 +34,7 @@
                     "python": "3.11.5"
                 },
                 "Workflow": {
-                    "nf-core/epitopeprediction": "v3.1.0"
+                    "nf-core/epitopeprediction": "v3.1.1"
                 }
             },
             [
