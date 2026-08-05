@@ -138,7 +138,8 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
     ch_netmhc_exe.bind([
         tool_name,
         entry.version,
-        entry.software_md5,
+        // Several sub-releases of a version are accepted, pass them as a space-separated list
+        entry.software_md5.join(' '),
         file(params["${tool_name}_path"], checkIfExists:true),
         entry.data_url ? file(entry.data_url, checkIfExists:true) : [],
         entry.data_md5 ? entry.data_md5 : "",
