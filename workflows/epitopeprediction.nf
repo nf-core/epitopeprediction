@@ -136,9 +136,12 @@ workflow EPITOPEPREDICTION {
     */
 
     // decide between the split_by_variants and snpsift_split (by chromosome)
+    // split_id is the coordinate distinguishing the splits of one sample; it keeps downstream file names unique without repeating the sample id
     if (params.split_by_variants) {
         VARIANT_SPLIT( ch_samples_uncompressed.variant )
             .splitted
+            .transpose()
+            .map { meta, vcf -> [meta + [split_id: vcf.baseName.tokenize('_').last()], vcf] } // split_vcf_by_variants.py names groups <stem>_v<n>
             .set { ch_split_variants }
         ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
     }
@@ -146,11 +149,13 @@ workflow EPITOPEPREDICTION {
         SNPSIFT_SPLIT( ch_samples_uncompressed.variant
             .map {meta, vcf -> [meta + [split: true], vcf]} ) // need to add split: true to meta to trigger splitting (nf-core module)
             .out_vcfs
+            .transpose()
+            .map { meta, vcf -> [meta + [split_id: vcf.baseName.tokenize('.').last()], vcf] } // SnpSift appends .<chromosome> to the input basename
             .set { ch_split_variants }
     }
 
     // Generate mutated peptides from VCF and filter out empty files
-    EPYTOPE_VARIANT_PREDICTION( ch_split_variants.transpose(), ch_biomart_dump )
+    EPYTOPE_VARIANT_PREDICTION( ch_split_variants, ch_biomart_dump )
         .tsv
         .filter { _meta, file -> file.size() > 0 }
         .set { ch_peptides_from_variants }
@@ -173,7 +178,8 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
     ch_to_predict = ch_samples_uncompressed.peptide
-                        .mix(FASTA2PEPTIDES.out.tsv.transpose())
+                        .mix(FASTA2PEPTIDES.out.tsv.transpose()
+                                .map { meta, tsv -> [meta + [split_id: tsv.baseName - "${meta.id}_"], tsv] }) // fasta2peptides.py writes one file per peptide length: <id>_length_<k>
                         .mix(ch_peptides_from_variants)
 
     // Split tsv if size exceeds params.peptides_split_minchunksize

@@ -31,8 +31,8 @@ process VARIANT_SPLIT {
 
     stub:
     """
-    touch ${input_file.baseName}_1.vcf
-    touch ${input_file.baseName}_2.vcf
+    touch ${input_file.baseName}_v0.vcf
+    touch ${input_file.baseName}_v1.vcf
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

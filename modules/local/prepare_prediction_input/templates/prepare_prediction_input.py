@@ -171,7 +171,7 @@ class Utils:
             if len(chunks) > 1:
                 logging.info(f"Split {tool} alleles into {len(chunks)} chunks")
             sep = TOOL_CONFIGS[tool]["sep"]
-            entries += [{"tool": tool, "alleles": chunk, "chunk_id": f"chunk{i}" if len(chunks) > 1 else "",
+            entries += [{"tool": tool, "alleles": chunk, "chunk_id": f"a{i}" if len(chunks) > 1 else "",
                          "alleles_input": sep.join(sa_dict[tool][a] for a in chunk.split(';'))}
                         for i, chunk in enumerate(chunks)]
         return entries
