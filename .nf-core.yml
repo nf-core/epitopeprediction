@@ -18,7 +18,7 @@ template:
   name: epitopeprediction
   org: nf-core
   outdir: .
-  version: 3.1.0
+  version: 3.1.1
   skip_features:
     - fastqc
     - igenomes
