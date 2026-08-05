@@ -157,6 +157,16 @@ class PredictionResult:
             logging.error(f'Unsupported predictor type in file: {self.file_path}.')
             sys.exit(1)
 
+    def _parse_header_alleles(self) -> list:
+        """
+        Return the alleles of a netMHCpan/netMHCIIpan xls file in column order.
+        Its first header line names each allele above its column block. NetMHC sorts alleles by
+        its own naming (e.g. DRB1_0701 before HLA-DPA10103-DPB10401), which neither matches
+        sorted(meta.alleles) nor the order the alleles were passed in with -a.
+        """
+        with open(self.file_path) as f:
+            return [allele.strip() for allele in f.readline().split('\t') if allele.strip()]
+
     def _format_mhcflurry_prediction(self) -> pd.DataFrame:
         """
         Read in mhcflurry prediction output comprising the columns
@@ -191,8 +201,8 @@ class PredictionResult:
         return df
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
-        # Map with allele index to allele name
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Map column index to allele from the xls header, which is the true output order (#358)
+        alleles_dict = dict(enumerate(self._parse_header_alleles()))
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
@@ -225,8 +235,8 @@ class PredictionResult:
         Read in netmhciipan prediction output and extract the columns
         `Peptide,Rank,Score_BA` for multiple alleles.
         """
-        # Map with allele index to allele name. NetMHCIIpan sorts alleles alphabetically
-        alleles_dict = {i: allele for i, allele in enumerate(self.alleles)}
+        # Map column index to allele from the xls header, which is the true output order (#358)
+        alleles_dict = dict(enumerate(self._parse_header_alleles()))
         # Read the file into a DataFrame with no headers initially
         df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
         # Extract Peptide, percentile rank, binding affinity
