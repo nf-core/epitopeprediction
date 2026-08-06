@@ -139,7 +139,7 @@ class Utils:
         Summarize per-peptide best binding predictions from multiple predictors.
 
         For each predictor present in `df['predictor']`:
-          - If predictor ∈ {'mhcflurry', 'netmhcpan', 'netmhciipan'}, select the allele with the lowest 'rank'.
+          - If predictor ∈ {'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred'}, select the allele with the lowest 'rank'.
           - If predictor ∈ {'mhcnuggets', 'mhcnuggetsii'}, select the allele with the highest 'BA'.
 
         The returned DataFrame is indexed by peptide (column `peptide_col`) and contains:
@@ -162,7 +162,8 @@ class Utils:
             Wide-format summary indexed by peptide with best_value_*, best_allele_*,
             aggregated 'best_allele' and global 'binder' columns.
         """
-        rank_metric_best = {'mhcflurry', 'netmhcpan', 'netmhciipan'}
+        # MixMHCpred/MixMHCIIpred report a %Rank and no binding affinity (BA is NaN), so they are rank-metric
+        rank_metric_best = {'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred'}
         ba_metric_best   = {'mhcnuggets', 'mhcnuggetsii'} # here for clarity
 
         def _pick_best(group):
