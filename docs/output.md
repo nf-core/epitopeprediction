@@ -37,17 +37,17 @@ The annotated FASTA rewrites each pvacseq defline into a fixed, pipe-delimited s
 
 `>{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`
 
-| field | meaning |
-| -------------- | -------------------------------------------------------------------- |
-| kind | `WT` or `MT` (wild-type / mutant window) |
-| numbering | pvacseq per-entry index; identical for a variant's paired WT and MT record |
-| genomic_anchor | `chr:pos:ref:alt` |
-| gene | HGNC symbol |
-| transcript | Ensembl transcript (versioned) |
-| uniprot | SWISSPROT else TREMBL accession |
-| consequence | `missense` / `inframe_ins` / `inframe_del` / `FS` |
-| aa_change | pvacseq shorthand (e.g. `78Q/H`) |
-| hgvs | HGVSp, ENSP prefix stripped (e.g. `p.Gln78His`) |
+| field          | meaning                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| kind           | `WT` or `MT` (wild-type / mutant window)                                   |
+| numbering      | pvacseq per-entry index; identical for a variant's paired WT and MT record |
+| genomic_anchor | `chr:pos:ref:alt`                                                          |
+| gene           | HGNC symbol                                                                |
+| transcript     | Ensembl transcript (versioned)                                             |
+| uniprot        | SWISSPROT else TREMBL accession                                            |
+| consequence    | `missense` / `inframe_ins` / `inframe_del` / `FS`                          |
+| aa_change      | pvacseq shorthand (e.g. `78Q/H`)                                           |
+| hgvs           | HGVSp, ENSP prefix stripped (e.g. `p.Gln78His`)                            |
 
 Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
 
