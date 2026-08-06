@@ -47,7 +47,7 @@ sub run {
 
     # this handles the case where VEP hasn't precached the translation data
     if(!$tr->{_variation_effect_feature_cache}) {
-        
+
         # initialize so we don't try again on failure
         $tr->{_variation_effect_feature_cache} = {};
 

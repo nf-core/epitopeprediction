@@ -17,7 +17,7 @@ limitations under the License.
 =head1 CONTACT
 
  help@pvactools.org
-    
+
 =cut
 
 =head1 NAME
@@ -35,7 +35,7 @@ limitations under the License.
  predicts the effects of a frameshift variant on the protein
  sequence of a transcript. It provides the predicted mutated
  protein sequence of a frameshift variant.
- 
+
  Note that changes in splicing are not predicted - only the existing
  translateable (i.e. spliced) sequence is used as a source of
  translation. Any variants with a splice site consequence type are
@@ -79,18 +79,18 @@ sub get_header_info {
 
 sub run {
     my ($self, $tva) = @_;
-    
+
     my @ocs = @{$tva->get_all_OverlapConsequences};
-    
+
     if(grep {$_->SO_term eq 'frameshift_variant'} @ocs) {
-        
+
         # can't do it for splice sites
         return {} if grep {$_->SO_term =~ /splice/} @ocs;
-        
+
         my $tv = $tva->transcript_variation;
         my $tr = $tv->transcript;
         my $cds_seq = defined($tr->{_variation_effect_feature_cache}) ? $tr->{_variation_effect_feature_cache}->{translateable_seq} : $tr->translateable_seq;
-        
+
         # get the sequence to translate
         my ($low_pos, $high_pos) = sort {$a <=> $b} ($tv->cds_start, $tv->cds_end);
         my $is_insertion         = $tv->cds_start > $tv->cds_end ? 1 : 0;
@@ -102,14 +102,14 @@ sub run {
         my $three_prime_utr_seq  = $tr->three_prime_utr->seq() if ($tr->three_prime_utr);
         $to_translate            = $to_translate.$three_prime_utr_seq if ($three_prime_utr_seq);
         $to_translate            =~ s/\-//g;
-        
+
         # create a bioperl object
         my $codon_seq = Bio::Seq->new(
           -seq      => $to_translate,
           -moltype  => 'dna',
           -alphabet => 'dna'
         );
-        
+
         # get codon table
         my $codon_table;
         if(defined($tr->{_variation_effect_feature_cache})) {
@@ -119,15 +119,15 @@ sub run {
             my ($attrib) = @{$tr->slice->get_all_Attributes('codon_table')};
             $codon_table = $attrib ? $attrib->value || 1 : 1;
         }
-        
+
         # translate
         my $new_pep = $codon_seq->translate(undef, undef, undef, $codon_table)->seq();
         $new_pep =~ s/\*.*//;
-        
+
         # compare lengths
         #my $translation = defined($tr->{_variation_effect_feature_cache}) && defined($tr->{_variation_effect_feature_cache}->{peptide}) ? $tr->{_variation_effect_feature_cache}->{peptide} : $tr->translation->seq;
         #my $new_length = ($tv->translation_start < $tv->translation_end ? $tv->translation_start : $tv->translation_end) + length($new_pep);
-        
+
         return {
             FrameshiftSequence   => $new_pep,
             #ProteinLengthChange => $new_length - length($translation),
