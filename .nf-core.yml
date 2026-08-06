@@ -1,9 +1,12 @@
 lint:
+  files_exist:
+    - tests/default.nf.test
   files_unchanged:
     - assets/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_dark.png
     - .vscode/settings.json
+    - .gitignore
 nf_core_version: 4.0.3
 repository_type: pipeline
 template:
