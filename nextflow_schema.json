@@ -60,11 +60,11 @@
                 },
                 "vep_cache": {
                     "type": "string",
-                    "format": "directory-path",
+                    "format": "path",
                     "exists": true,
                     "fa_icon": "fas fa-folder",
-                    "description": "Path to the VEP offline Ensembl cache directory. Required for variant input unless --download_cache is set.",
-                    "help_text": "Download once with the reference helper script, or set --download_cache to fetch it in-pipeline. Must match the build and --vep_cache_version."
+                    "description": "Path to the VEP offline Ensembl cache. Either the cache directory or a `.tar.gz` of it. Required for variant input unless --download_cache is set.",
+                    "help_text": "Download once with the reference helper script, or set --download_cache to fetch it in-pipeline. A `.tar.gz` archive is unpacked automatically (used by the test profile). Must match the build and --vep_cache_version."
                 },
                 "vep_cache_version": {
                     "type": "integer",

@@ -71,7 +71,7 @@ build. The `Wildtype`/`Frameshift` VEP plugins ship with the pipeline, so you do
 | `--vep_species` | VEP species matching the cache, e.g. `homo_sapiens`, `mus_musculus`. Required. |
 | `--vep_genome` | VEP assembly matching the cache, e.g. `GRCh38`, `GRCh37`, `GRCm39`. Required. |
 | `--vep_cache_version` | VEP cache version matching the cache, e.g. `110`. Required. |
-| `--vep_cache` | VEP offline **Ensembl** cache directory. |
+| `--vep_cache` | VEP offline **Ensembl** cache — a directory, or a `.tar.gz` of it (unpacked automatically). |
 | `--ref_fasta` | Ensembl primary-assembly genome FASTA (uncompressed) with a `.fai` index alongside. |
 
 You can provide the cache and FASTA yourself, or have the pipeline fetch them for you.

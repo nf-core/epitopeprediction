@@ -33,6 +33,7 @@ include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
 include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats'
 include { ENSEMBLVEP_DOWNLOAD         } from '../modules/nf-core/ensemblvep/download'
 include { ENSEMBLVEP_VEP              } from '../modules/nf-core/ensemblvep/vep'
+include { UNTAR                       } from '../modules/nf-core/untar'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -145,10 +146,24 @@ workflow EPITOPEPREDICTION {
         ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
         ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa  -> [ [id:'ref'], fa  ] }
         ch_ref_fai   = DOWNLOAD_REF_FASTA.out.fai.map   { _meta, fai -> [ [id:'ref'], fai ] }
+    } else if (cache_from_params) {
+        // ref FASTA is always a single file (plain or bgzipped). The VEP cache is normally a
+        // directory, but test-datasets ships it as a .tar.gz (CI fetches by raw URL and cannot
+        // stage a directory) — unpack that on the fly; a directory cache is used as-is.
+        def vep_cache_input = file(params.vep_cache, checkIfExists: true)
+        def vep_cache_lc    = params.vep_cache.toString().toLowerCase()
+        if (vep_cache_lc.endsWith('.tar.gz') || vep_cache_lc.endsWith('.tgz')) {
+            UNTAR( [ [id:'vep'], vep_cache_input ] )
+            ch_vep_cache = UNTAR.out.untar
+        } else {
+            ch_vep_cache = channel.value([ [id:'vep'], vep_cache_input ])
+        }
+        ch_ref_fasta = channel.value([ [id:'ref'], file(params.ref_fasta, checkIfExists: true) ])
+        ch_ref_fai   = channel.value([ [id:'ref'], file("${params.ref_fasta}.fai", checkIfExists: true) ])
     } else {
-        ch_vep_cache = cache_from_params ? channel.value([ [id:'vep'], file(params.vep_cache, checkIfExists: true) ])          : channel.value([ [:], [] ])
-        ch_ref_fasta = cache_from_params ? channel.value([ [id:'ref'], file(params.ref_fasta, checkIfExists: true) ])          : channel.value([ [:], [] ])
-        ch_ref_fai   = cache_from_params ? channel.value([ [id:'ref'], file("${params.ref_fasta}.fai", checkIfExists: true) ]) : channel.value([ [:], [] ])
+        ch_vep_cache = channel.value([ [:], [] ])
+        ch_ref_fasta = channel.value([ [:], [] ])
+        ch_ref_fai   = channel.value([ [:], [] ])
     }
 
     // 1) bcftools: PASS-filter, rename chr->Ensembl, split multiallelics, normalize
