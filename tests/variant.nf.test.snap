@@ -1,0 +1,191 @@
+{
+    "-profile test": {
+        "content": [
+            17,
+            {
+                "ANNOTATE_FASTA_HEADERS": {
+                    "python": "3.13.1"
+                },
+                "BCFTOOLS_STATS": {
+                    "bcftools": "1.23.1"
+                },
+                "ENSEMBLVEP_VEP": {
+                    "ensemblvep": 116.0,
+                    "perl-math-cdf": 0.1,
+                    "tabix": "1.23.1"
+                },
+                "MERGE_PREDICTIONS": {
+                    "argparse": 1.1,
+                    "pandas": "2.1.0",
+                    "mhcgnomes": "1.8.6"
+                },
+                "MHCNUGGETS": {
+                    "argparse": 1.1,
+                    "pandas": "1.1.5"
+                },
+                "mhcnuggets": "2.4.0",
+                "PREP_VCF": {
+                    "bcftools": "1.23.1"
+                },
+                "PVACSEQ_GENERATE_FASTA": {
+                    "pvactools": "7.0.1"
+                },
+                "SPLIT_PEPTIDES": {
+                    "python": "3.14.3"
+                },
+                "SUMMARIZE_RESULTS": {
+                    "python": "3.11.5"
+                },
+                "UNTAR": {
+                    "untar": 1.34
+                },
+                "VARIANT_FASTA2PEPTIDES": {
+                    "python": "3.13.1"
+                },
+                "Workflow": {
+                    "nf-core/epitopeprediction": "v3.2.0dev"
+                }
+            },
+            [
+                "mhcnuggets",
+                "mhcnuggets/sample1_sample1_length_10_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_sample1_length_9_chunk_0_predicted_mhcnuggets.csv",
+                "multiqc",
+                "multiqc/multiqc_data",
+                "multiqc/multiqc_data/bcftools-stats-subtypes.txt",
+                "multiqc/multiqc_data/bcftools_stats_indel-lengths.txt",
+                "multiqc/multiqc_data/bcftools_stats_variant_depths.txt",
+                "multiqc/multiqc_data/bcftools_stats_vqc_Count_Indels.txt",
+                "multiqc/multiqc_data/bcftools_stats_vqc_Count_SNP.txt",
+                "multiqc/multiqc_data/bcftools_stats_vqc_Count_Transitions.txt",
+                "multiqc/multiqc_data/bcftools_stats_vqc_Count_Transversions.txt",
+                "multiqc/multiqc_data/llms-full.txt",
+                "multiqc/multiqc_data/multiqc.log",
+                "multiqc/multiqc_data/multiqc.parquet",
+                "multiqc/multiqc_data/multiqc_bcftools_stats.txt",
+                "multiqc/multiqc_data/multiqc_binder_length_distribution.txt",
+                "multiqc/multiqc_data/multiqc_binder_rank_distribution.txt",
+                "multiqc/multiqc_data/multiqc_binding_affinity_distribution.txt",
+                "multiqc/multiqc_data/multiqc_citations.txt",
+                "multiqc/multiqc_data/multiqc_data.json",
+                "multiqc/multiqc_data/multiqc_general_stats.txt",
+                "multiqc/multiqc_data/multiqc_peptide_binding_prediction_stats.txt",
+                "multiqc/multiqc_data/multiqc_software_versions.txt",
+                "multiqc/multiqc_data/multiqc_sources.txt",
+                "multiqc/multiqc_plots",
+                "multiqc/multiqc_plots/pdf",
+                "multiqc/multiqc_plots/pdf/bcftools-stats-subtypes-cnt.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools-stats-subtypes-pct.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_indel-lengths-cnt.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_indel-lengths-log.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_variant_depths.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_vqc_Count_Indels.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_vqc_Count_SNP.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_vqc_Count_Transitions.pdf",
+                "multiqc/multiqc_plots/pdf/bcftools_stats_vqc_Count_Transversions.pdf",
+                "multiqc/multiqc_plots/pdf/binder_length_distribution.pdf",
+                "multiqc/multiqc_plots/pdf/binder_rank_distribution.pdf",
+                "multiqc/multiqc_plots/pdf/binding_affinity_distribution.pdf",
+                "multiqc/multiqc_plots/pdf/peptide_binding_prediction_stats.pdf",
+                "multiqc/multiqc_plots/png",
+                "multiqc/multiqc_plots/png/bcftools-stats-subtypes-cnt.png",
+                "multiqc/multiqc_plots/png/bcftools-stats-subtypes-pct.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_indel-lengths-cnt.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_indel-lengths-log.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_variant_depths.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_vqc_Count_Indels.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_vqc_Count_SNP.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_vqc_Count_Transitions.png",
+                "multiqc/multiqc_plots/png/bcftools_stats_vqc_Count_Transversions.png",
+                "multiqc/multiqc_plots/png/binder_length_distribution.png",
+                "multiqc/multiqc_plots/png/binder_rank_distribution.png",
+                "multiqc/multiqc_plots/png/binding_affinity_distribution.png",
+                "multiqc/multiqc_plots/png/peptide_binding_prediction_stats.png",
+                "multiqc/multiqc_plots/svg",
+                "multiqc/multiqc_plots/svg/bcftools-stats-subtypes-cnt.svg",
+                "multiqc/multiqc_plots/svg/bcftools-stats-subtypes-pct.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_indel-lengths-cnt.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_indel-lengths-log.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_variant_depths.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_vqc_Count_Indels.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_vqc_Count_SNP.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_vqc_Count_Transitions.svg",
+                "multiqc/multiqc_plots/svg/bcftools_stats_vqc_Count_Transversions.svg",
+                "multiqc/multiqc_plots/svg/binder_length_distribution.svg",
+                "multiqc/multiqc_plots/svg/binder_rank_distribution.svg",
+                "multiqc/multiqc_plots/svg/binding_affinity_distribution.svg",
+                "multiqc/multiqc_plots/svg/peptide_binding_prediction_stats.svg",
+                "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
+                "predictions",
+                "predictions/sample1.tsv",
+                "prep_vcf",
+                "prep_vcf/sample1.prep.vcf.gz",
+                "prep_vcf/sample1.prep.vcf.gz.tbi",
+                "untar",
+                "untar/vep",
+                "untar/vep/homo_sapiens",
+                "untar/vep/homo_sapiens/110_GRCh38",
+                "untar/vep/homo_sapiens/110_GRCh38/19",
+                "untar/vep/homo_sapiens/110_GRCh38/19/33000001-34000000.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/19/33000001-34000000_reg.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/19/35000001-36000000.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/19/35000001-36000000_reg.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/4",
+                "untar/vep/homo_sapiens/110_GRCh38/4/1000001-2000000.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/4/1000001-2000000_reg.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/4/99000001-100000000.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/4/99000001-100000000_reg.gz",
+                "untar/vep/homo_sapiens/110_GRCh38/chr_synonyms.txt",
+                "untar/vep/homo_sapiens/110_GRCh38/info.txt",
+                "variant_fasta",
+                "variant_fasta/sample1.variant_peptides.annotated.fasta",
+                "variant_fasta/sample1.variant_peptides.raw.fasta",
+                "variant_peptides",
+                "variant_peptides/sample1_length_10.tsv",
+                "variant_peptides/sample1_length_9.tsv",
+                "vep",
+                "vep/sample1.vcf.gz"
+            ],
+            [
+                "bcftools-stats-subtypes.txt:md5,9e2582f4aea7ca638fccd95454660ba3",
+                "bcftools_stats_indel-lengths.txt:md5,8158837f66829465acf09b77e79cb6b8",
+                "bcftools_stats_variant_depths.txt:md5,ecebba942f6ea7a2c50558d92df71b23",
+                "bcftools_stats_vqc_Count_Indels.txt:md5,0f33d243f2608c50732c8c695dfcf31b",
+                "bcftools_stats_vqc_Count_SNP.txt:md5,0f33d243f2608c50732c8c695dfcf31b",
+                "bcftools_stats_vqc_Count_Transitions.txt:md5,fdfca6de376e1fcba182f48a0f77f20d",
+                "bcftools_stats_vqc_Count_Transversions.txt:md5,fdfca6de376e1fcba182f48a0f77f20d",
+                "multiqc_bcftools_stats.txt:md5,971b724417903475afc7bc4c32fb9f0b",
+                "multiqc_binder_length_distribution.txt:md5,d504b961afbe181b9ebc346f4640ed41",
+                "multiqc_binder_rank_distribution.txt:md5,486ea46593efc8305b1cc8dad6d46611",
+                "multiqc_binding_affinity_distribution.txt:md5,a4e54aed2adae20ae7f329ab68441390",
+                "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
+                "multiqc_general_stats.txt:md5,a2b5475eaf18375d8c4a60d194921e28",
+                "multiqc_peptide_binding_prediction_stats.txt:md5,0e2f935842191a847e9e6388de256cb0",
+                "sample1.prep.vcf.gz:md5,2b2787281a34f6ba79f0338e3470f35a",
+                "sample1.prep.vcf.gz.tbi:md5,587ccee32490fa54f93458553eb34a9e",
+                "33000001-34000000.gz:md5,6b397990f102f602bfdac1c0ee93a723",
+                "33000001-34000000_reg.gz:md5,4111d43d78e4223e5f2cc16621ae0e9b",
+                "35000001-36000000.gz:md5,95ae0df5f4777f04a80fb2e726c1b1da",
+                "35000001-36000000_reg.gz:md5,fd5f234aea15b4f75fd0b289d59293b4",
+                "1000001-2000000.gz:md5,9bbcbb2f6901187559f3e1cc54e1f85e",
+                "1000001-2000000_reg.gz:md5,3a35de6a65d888b8e229238b63c7536f",
+                "99000001-100000000.gz:md5,c21bc37c349752a6f3cff8301f66e66a",
+                "99000001-100000000_reg.gz:md5,0366b25e966e0c16cd163fe220c6a5f3",
+                "chr_synonyms.txt:md5,11e02fc243659e6ad768d6b78284ec98",
+                "info.txt:md5,0602ec9c683f5de9b058d9959ae31d18",
+                "sample1.variant_peptides.annotated.fasta:md5,1246a2dc698185378c5dbf3f5dd83597",
+                "sample1.variant_peptides.raw.fasta:md5,9475c917ee0c0ea443b282f9a3c99e08",
+                "sample1_length_10.tsv:md5,8a880a96a855621093789994a003cb40",
+                "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd",
+                "sample1.vcf.gz:md5,3adf72cad7ad114fe3fccd40ba6c8254"
+            ]
+        ],
+        "timestamp": "2026-08-06T13:39:40.481245843",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "26.04.6"
+        }
+    }
+}
