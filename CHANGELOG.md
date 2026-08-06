@@ -9,10 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Fixed wrong allele annotations in `netmhcpan` and `netmhciipan` results ([#358](https://github.com/nf-core/epitopeprediction/issues/358)). Allele labels are now taken from the prediction output header instead of the sorted samplesheet alleles, which could assign a peptide's score to the wrong allele.
 - [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Accept any known sub-release of a supported NetMHC version instead of a single tarball checksum. `netmhciipan` now also accepts NetMHCIIpan 4.3b and 4.3i next to 4.3e.
-
-### `Removed`
-
-- [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Removed the `nf-co2footprint` plugin. Its config block declared a variable inside a config scope, which the strict Nextflow config parser rejects and which made `nf-core pipelines lint --release` fail.
+- [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Fixed `nf-core pipelines lint --release` failing on the pipeline config. The `co2footprint` scope and `conf/modules.config` declared variables inside a config scope, which the strict Nextflow config parser rejects.
 
 ## 3.1.0 - Lustnau - 2025-10-22
 
