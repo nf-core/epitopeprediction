@@ -162,7 +162,7 @@ class Utils:
             Wide-format summary indexed by peptide with best_value_*, best_allele_*,
             aggregated 'best_allele' and global 'binder' columns.
         """
-        # MixMHCpred/MixMHCIIpred report a %Rank and no binding affinity (BA is NaN), so they are rank-metric
+        # MixMHC* set BA to NaN, so rank is the only usable metric
         rank_metric_best = {'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred'}
         ba_metric_best   = {'mhcnuggets', 'mhcnuggetsii'} # here for clarity
 
