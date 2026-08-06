@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
+- [#368](https://github.com/nf-core/epitopeprediction/pull/368) Fixed NetMHCpan crashing with a buffer overflow when run from a long working directory ([@jonasscheid](https://github.com/jonasscheid/))
+- [#364](https://github.com/nf-core/epitopeprediction/pull/364) Fixed inverted `--proteome_reference` self-filtering that retained self-epitopes instead of removing them (fixes [#363](https://github.com/nf-core/epitopeprediction/issues/363)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCpan/NetMHCIIpan allele labels by reading allele names from the xls header (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#352](https://github.com/nf-core/epitopeprediction/pull/352) Accept 3- and 4-field HLA typings by truncating to 2 fields via mhcgnomes (fixes [#350](https://github.com/nf-core/epitopeprediction/issues/350)) ([@jonasscheid](https://github.com/jonasscheid/))
 - Fixed NetMHCIIpan mouse class II allele conversion: `H2-AA*b/AB*b` now maps to `H-2-IAb` (and `H2-EA*d/EB*d` to `H-2-IEd`) instead of the invalid `H-2-AAb-ABb` ([@jonasscheid](https://github.com/jonasscheid/))
@@ -34,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `bcftools` | 1.21        | 1.23.1      |
 | `multiqc`  | 1.32        | 1.35        |
 | `snpsift`  | 4.3         | 5.4c        |
-| `nf-core`  | 3.4.1       | 4.0.2       |
+| `nf-core`  | 3.4.1       | 4.0.3       |
 
 ### `Changed`
 
@@ -46,6 +48,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ### `Removed`
 
