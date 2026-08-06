@@ -29,8 +29,8 @@
             },
             [
                 "mhcnuggets",
-                "mhcnuggets/sample1_sample1_length_10_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample1_sample1_length_9_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_length_10_c0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_length_9_c0_predicted_mhcnuggets.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/llms-full.txt",
@@ -74,10 +74,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,c99df1402adbfa839e68e5e0df3decd9"
             ]
         ],
+        "timestamp": "2026-08-05T12:11:35.021745004",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.3"
-        },
-        "timestamp": "2026-03-26T21:30:47.299019086"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

@@ -18,12 +18,14 @@ process SPLIT_PEPTIDES {
     task.ext.when == null || task.ext.when
 
     script:
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
     split_peptides.py \\
         --input $tsv \\
+        --prefix ${prefix} \\
         --min_size ${params.peptides_split_minchunksize} \\
-        --max_chunks ${params.peptides_split_maxchunks} \\
+        --max_chunks ${params.peptides_split_maxchunks}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
@@ -32,11 +34,11 @@ process SPLIT_PEPTIDES {
     """
 
     stub:
-    def prefix = task.ext.suffix ?: "${tsv.getExtension()}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
 
     """
-    touch ${prefix}_1.tsv
-    touch ${prefix}_2.tsv
+    touch ${prefix}_c0.tsv
+    touch ${prefix}_c1.tsv
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

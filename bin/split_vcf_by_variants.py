@@ -82,14 +82,14 @@ def main():
                     var_group_count += 1
                 # write split to new VCF file
                 else:
-                    with open(os.path.join(args.output, f"{file_name}_chunk_{file_count}.vcf"), "w") as output_file:
+                    with open(os.path.join(args.output, f"{file_name}_v{file_count}.vcf"), "w") as output_file:
                         output_file.write(metadata + var_group)
                         var_group = ""
                         var_group_count = 0
                         file_count += 1
                 previous_transcript = transcript
         if var_group:
-            with open(os.path.join(args.output, f"{file_name}_chunk_{file_count}.vcf"), "w") as output_file:
+            with open(os.path.join(args.output, f"{file_name}_v{file_count}.vcf"), "w") as output_file:
                 output_file.write(metadata + var_group)
 
 

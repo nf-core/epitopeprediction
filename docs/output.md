@@ -44,11 +44,17 @@ The chunksize is controlled by `--peptides_split_minchunksize` and `--peptides_s
 
 **Tools output directory:**
 
-- `mhcflurry/[sample]_chunk_[0-9]_predicted_mhcflurry.csv`
-- `mhcnuggets/[sample]_chunk_[0-9]_predicted_mhcnuggets.csv`
-- `mhcnuggetsii/[sample]_chunk_[0-9]_predicted_mhcnuggetsii.csv`
-- `netmhcpan/[sample]_chunk_[0-9]_predicted_netmhcpan.xls`
-- `netmhciipan/[sample]_chunk_[0-9]_predicted_netmhciipan.xls`
+- `mhcflurry/[sample]_[split]_c[0-9]_predicted_mhcflurry.csv`
+- `mhcnuggets/[sample]_[split]_c[0-9]_predicted_mhcnuggets.csv`
+- `mhcnuggetsii/[sample]_[split]_c[0-9]_predicted_mhcnuggetsii.csv`
+- `netmhcpan/[sample]_[split]_c[0-9]_predicted_netmhcpan.xls`
+- `netmhciipan/[sample]_[split]_c[0-9]_predicted_netmhciipan.xls`
+
+The name is built from the sample and its split coordinates, so it stays short no matter how many stages ran:
+
+- `[split]` identifies what the sample was split into upstream — the chromosome for variant input (`chr7`), the peptide length for protein input (`length_9`), or the variant group with `--split_by_variants` (`v3`). It is omitted for peptide input.
+- `_c[0-9]` is the peptide chunk, controlled by `--peptides_split_minchunksize` and `--peptides_split_maxchunks`.
+- `_a[0-9]` is appended when a sample has more alleles than a predictor accepts per call and they have to be chunked too, e.g. `netmhcpan/[sample]_chr7_c0_a3_predicted_netmhcpan.xls`.
 
 These predictor-specific output files are harmonized and chunks are merged on the `sample` information of your samplesheet.
 
