@@ -36,7 +36,7 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 ### Genomic variants
 
 For variant (VCF) input, the pipeline builds the mutated protein sequences itself with an
-offline, pinned, fully reproducible chain — no live BioMart, no pre-annotation required:
+offline, pinned, fully reproducible chain
 
 1. **`bcftools`** — PASS-filter, rename contigs to Ensembl style (`chr1`→`1`, `chrM`→`MT`),
    split multiallelic sites and left-align/normalize against the reference.
