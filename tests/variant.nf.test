@@ -5,7 +5,7 @@
 // validates the wiring with process stubs (no cache / containers needed).
 nextflow_pipeline {
 
-    name "Test pipeline"
+    name "Test pipeline variant path"
     script "../main.nf"
     tag "pipeline"
     tag "variant"
