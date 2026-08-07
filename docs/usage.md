@@ -61,6 +61,12 @@ offline, pinned, fully reproducible chain — no live BioMart, no pre-annotation
 > peptides. Non-coding-biotype (e.g. NMD) and incomplete-CDS (`cds_start_NF`/`cds_end_NF`) transcripts are
 > skipped, but such variants are still captured through the gene's complete transcripts.
 
+> [!TIP]
+> Set `--proteome_reference <proteome.fa>` (a UniProt or Ensembl `pep.all.fa`) to drop variant
+> peptides that also occur in the normal proteome — a self/novelty filter that removes peptides
+> which, despite arising from a variant, are byte-identical to an existing self peptide. Optional;
+> only the peptide lists are filtered (the annotated protein FASTA is left complete).
+
 #### Reference data
 
 The variant path needs a VEP cache and reference FASTA, plus three parameters identifying the

@@ -9,6 +9,7 @@ process VARIANT_FASTA2PEPTIDES {
 
     input:
     tuple val(meta), path(annotated_fasta)
+    path proteome_reference
 
     output:
     tuple val(meta), path("*.tsv"), emit: tsv
@@ -22,6 +23,7 @@ process VARIANT_FASTA2PEPTIDES {
     def min_length = meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
     def wild_type  = params.wild_type ? '--wild-type' : ''
+    def proteome   = proteome_reference ? "--proteome-reference ${proteome_reference}" : ''
     """
     variant_fasta2peptides.py \\
         --in-fasta ${annotated_fasta} \\
@@ -29,7 +31,8 @@ process VARIANT_FASTA2PEPTIDES {
         --min-length ${min_length} \\
         --max-length ${max_length} \\
         --peptide-col-name ${params.peptide_col_name} \\
-        ${wild_type}
+        ${wild_type} \\
+        ${proteome}
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":

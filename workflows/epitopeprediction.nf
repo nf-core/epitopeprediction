@@ -203,7 +203,11 @@ workflow EPITOPEPREDICTION {
     ch_versions = ch_versions.mix( ANNOTATE_FASTA_HEADERS.out.versions )
 
     // 5) mutation-overlapping k-mers + provenance -> peptide TSV per length (reads annotated headers, no VCF)
-    VARIANT_FASTA2PEPTIDES( ANNOTATE_FASTA_HEADERS.out.fasta )
+    //    optional self/novelty filter: drop variant peptides found in a reference proteome (--proteome_reference)
+    ch_proteome_reference = params.proteome_reference
+        ? channel.value( file(params.proteome_reference, checkIfExists: true) )
+        : channel.value( [] )
+    VARIANT_FASTA2PEPTIDES( ANNOTATE_FASTA_HEADERS.out.fasta, ch_proteome_reference )
     ch_versions = ch_versions.mix( VARIANT_FASTA2PEPTIDES.out.versions )
     ch_peptides_from_variants = VARIANT_FASTA2PEPTIDES.out.tsv
         .transpose()

@@ -127,6 +127,14 @@
                     "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
                     "description": "Specifies whether wild-type sequences should be predicted."
                 },
+                "proteome_reference": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "fa_icon": "fas fa-filter",
+                    "description": "Optional reference proteome FASTA for self-filtering variant peptides.",
+                    "help_text": "When set, variant-derived peptides that occur as a substring of any protein in this reference proteome (e.g. a UniProt or Ensembl `pep.all.fa`) are dropped before prediction, removing self peptides that are not truly variant-specific. Only affects the variant (VCF) path; unset means no filtering."
+                },
                 "flank": {
                     "type": "integer",
                     "default": 25,

@@ -192,6 +192,39 @@ def write_length_tsv(path, peptides, peptide_col, want_wildtype):
     return len(peptides)
 
 
+def load_proteome_blob(fasta_path):
+    """Concatenate every reference protein into one sentinel-joined string.
+
+    Peptides only ever contain standard amino acids, never the '*' sentinel, so a peptide
+    can never match across a protein boundary. Membership `pep in blob` is then exactly
+    epaa's old `any(pep in prot for prot in proteome)` self-filter, but a single C-level
+    substring search per peptide instead of a Python loop over ~20k proteins.
+    """
+    seqs = []
+    chunk = []
+    with open(fasta_path) as fh:
+        for line in fh:
+            if line.startswith('>'):
+                if chunk:
+                    seqs.append(''.join(chunk))
+                    chunk = []
+            else:
+                chunk.append(line.strip().upper())
+    if chunk:
+        seqs.append(''.join(chunk))
+    return '*'.join(seqs)
+
+
+def filter_self_peptides(by_length, blob):
+    """Drop peptides found in the reference proteome (in place); return the count removed."""
+    removed = 0
+    for k in by_length:
+        kept = {pep: rec for pep, rec in by_length[k].items() if pep not in blob}
+        removed += len(by_length[k]) - len(kept)
+        by_length[k] = kept
+    return removed
+
+
 def parse_args():
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
@@ -204,6 +237,9 @@ def parse_args():
     ap.add_argument('--peptide-col-name', default='sequence')
     ap.add_argument('--wild-type', action='store_true',
                     help='Add a wildtype column with the aligned WT k-mer (substitutions only)')
+    ap.add_argument('--proteome-reference',
+                    help='Optional reference proteome FASTA. Variant peptides occurring as a '
+                         'substring of any reference protein are dropped (self/novelty filter).')
     return ap.parse_args()
 
 
@@ -218,6 +254,12 @@ def main():
 
     by_length = generate_variant_peptides(
         mt_records, wt_by_key, args.min_length, args.max_length, args.wild_type)
+
+    if args.proteome_reference:
+        blob = load_proteome_blob(args.proteome_reference)
+        removed = filter_self_peptides(by_length, blob)
+        print(f"Filtered out {removed} peptide(s) found in the reference proteome "
+              f"{args.proteome_reference}.", file=sys.stderr)
 
     total = 0
     for k in range(args.min_length, args.max_length + 1):
