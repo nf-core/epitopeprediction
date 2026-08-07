@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # annotate_fasta_headers.py is stdlib-only; biopython pins the shared container image.
+  - bioconda::biopython=1.85

@@ -1,0 +1,71 @@
+// Real (non-stub) content test for the variant (VCF) path: bcftools -> VEP (offline cache) ->
+// pvacseq -> peptides, using the tiny GRCh38 chr4+chr19 fixture wired in conf/test.config.
+// Four real somatic variants cover all three peptide-producing consequence classes
+// (missense, in-frame indel, frameshift). Complements tests/variant_stub.nf.test, which
+// validates the wiring with process stubs (no cache / containers needed).
+nextflow_pipeline {
+
+    name "Test pipeline"
+    script "../main.nf"
+    tag "pipeline"
+    tag "variant"
+    profile "test"
+
+    test("-profile test") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            // stable_path: All files in ${params.outdir}/ with stable content
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            // the annotated variant FASTA must carry all three peptide-producing consequence classes
+            def annotated = path("${params.outdir}/variant_fasta/sample1.variant_peptides.annotated.fasta")
+            assertAll(
+                { assert workflow.success },
+                { assert annotated.text.contains('|missense|') },
+                { assert annotated.text.contains('|inframe_del|') },
+                { assert annotated.text.contains('|FS|') },
+                { assert snapshot(
+                    // Number of successful tasks
+                    workflow.trace.succeeded().size(),
+                    // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                    removeNextflowVersion("$outputDir/pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml"),
+                    // All stable path name, with a relative path
+                    stable_name,
+                    // All files with stable contents
+                    stable_path
+                ).match() }
+            )
+        }
+    }
+
+    test("-profile test --proteome_reference (self-filter)") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // tiny proteome = exactly the FGFR3 MT window from the chr4+chr19 fixture,
+                // so every FGFR3 variant peptide is "self" and must be filtered out
+                proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
+            }
+        }
+
+        then {
+            // only the peptide TSVs are filtered (the annotated FASTA stays complete): FGFR3
+            // peptides must be gone, while genes absent from the reference (e.g. CEBPA) remain.
+            def peptides = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").text +
+                           path("${params.outdir}/variant_peptides/sample1_length_10.tsv").text
+            assertAll(
+                { assert workflow.success },
+                { assert !peptides.contains('FGFR3') },
+                { assert peptides.contains('CEBPA') }
+            )
+        }
+    }
+}

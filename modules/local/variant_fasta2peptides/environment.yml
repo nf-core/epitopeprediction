@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  # variant_fasta2peptides.py is stdlib-only; biopython pins the shared container image.
+  - bioconda::biopython=1.85

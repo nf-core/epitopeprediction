@@ -1,0 +1,4 @@
+##fileformat=VCFv4.2
+##contig=<ID=chr1>
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO	FORMAT	TUMOR
+chr1	5	.	C	A	.	PASS	.	GT	0/1

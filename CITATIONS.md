@@ -14,13 +14,17 @@
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
-- [SnpSift](https://dx.doi.org/10.3389/fgene.2012.00035)
+- [BCFtools](https://dx.doi.org/10.1093/gigascience/giab008)
 
-  > Pablo Cingolani, Viral M. Patel, Melissa Coon, Tung Nguyen, Susan J. Land, Douglas M. Ruden and Xiangyi Lu. Using Drosophila melanogaster as a model for genotoxic chemical mutational studies with a new program, SnpSift. _Frontiers in Genetics_ 3, 35 (2012). doi: 10.3389/fgene.2012.00035.
+  > Petr Danecek, James K Bonfield, Jennifer Liddle, John Marshall, Valeriu Ohan, Martin O Pollard, Andrew Whitwham, Thomas Keane, Shane A McCarthy, Robert M Davies, Heng Li. Twelve years of SAMtools and BCFtools. _GigaScience_ 10(2), giab008 (2021). doi: 10.1093/gigascience/giab008.
 
-- [Epytope (FRED2)](https://dx.doi.org/10.1093/bioinformatics/btw113)
+- [Ensembl VEP](https://dx.doi.org/10.1186/s13059-016-0974-4)
 
-  > Benjamin Schubert, Mathias Walzer, Hans-Philipp Brachvogel, András Szolek, Christopher Mohr, Oliver Kohlbacher. FRED 2: an immunoinformatics framework for Pythonö Bioinformatics 32(13), 2044-2046 (2016). doi: 10.1093/bioinformatics/btw113.
+  > William McLaren, Laurent Gil, Sarah E. Hunt, Harpreet Singh Riat, Graham R. S. Ritchie, Anja Thormann, Paul Flicek, Fiona Cunningham. The Ensembl Variant Effect Predictor. _Genome Biology_ 17(1), 122 (2016). doi: 10.1186/s13059-016-0974-4.
+
+- [pVACtools](https://dx.doi.org/10.1158/2326-6066.CIR-19-0401)
+
+  > Jasreet Hundal, Susanna Kiwala, Joshua McMichael, Christopher A. Miller, et al. pVACtools: A Computational Toolkit to Identify and Visualize Cancer Neoantigens. _Cancer Immunology Research_ 8(3), 409-420 (2020). doi: 10.1158/2326-6066.CIR-19-0401.
 
 - [MHCflurry](https://dx.doi.org/10.1016/j.cels.2018.05.014)
 
