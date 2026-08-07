@@ -163,8 +163,6 @@
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2b5475eaf18375d8c4a60d194921e28",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0e2f935842191a847e9e6388de256cb0",
-                "sample1.prep.vcf.gz:md5,2b2787281a34f6ba79f0338e3470f35a",
-                "sample1.prep.vcf.gz.tbi:md5,587ccee32490fa54f93458553eb34a9e",
                 "33000001-34000000.gz:md5,6b397990f102f602bfdac1c0ee93a723",
                 "33000001-34000000_reg.gz:md5,4111d43d78e4223e5f2cc16621ae0e9b",
                 "35000001-36000000.gz:md5,95ae0df5f4777f04a80fb2e726c1b1da",
@@ -178,11 +176,10 @@
                 "sample1.variant_peptides.annotated.fasta:md5,1246a2dc698185378c5dbf3f5dd83597",
                 "sample1.variant_peptides.raw.fasta:md5,9475c917ee0c0ea443b282f9a3c99e08",
                 "sample1_length_10.tsv:md5,8a880a96a855621093789994a003cb40",
-                "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd",
-                "sample1.vcf.gz:md5,3adf72cad7ad114fe3fccd40ba6c8254"
+                "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-08-06T13:39:40.481245843",
+        "timestamp": "2026-08-07T11:25:38.024437905",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "26.04.6"
