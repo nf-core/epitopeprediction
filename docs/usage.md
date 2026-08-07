@@ -55,6 +55,13 @@ offline, pinned, fully reproducible chain — no live BioMart, no pre-annotation
 > Mutect2/Strelka, or DRAGEN), set the `tumor_sample` samplesheet column to the tumor sample name;
 > single-sample tumor-only VCFs can leave it empty.
 
+**Selecting the tumor sample (`tumor_sample`).** `pvacseq` reads genotypes from one VCF sample column. If
+your VCF has more than one sample column — check with `bcftools query -l your.vcf`; a matched tumor/normal
+call often (but not always) carries both — set `tumor_sample` to the **tumor** column's name exactly as
+listed, so it becomes pvacseq's `-s` and only the tumor genotypes drive peptide generation. With a single
+sample column, leave it empty. The tumor is not auto-detected from VCF headers, so set it whenever the VCF
+holds more than one sample.
+
 > [!NOTE]
 > Peptides come only from **coding-altering variants on complete protein-coding transcripts** — missense,
 > in-frame indels, and frameshifts. Synonymous, stop-gain/stop-loss, splice, and non-coding variants yield no
