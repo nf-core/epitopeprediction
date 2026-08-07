@@ -192,34 +192,44 @@ def write_length_tsv(path, peptides, peptide_col, want_wildtype):
     return len(peptides)
 
 
-def load_proteome_blob(fasta_path):
-    """Concatenate every reference protein into one sentinel-joined string.
-
-    Peptides only ever contain standard amino acids, never the '*' sentinel, so a peptide
-    can never match across a protein boundary. Membership `pep in blob` is then exactly
-    epaa's old `any(pep in prot for prot in proteome)` self-filter, but a single C-level
-    substring search per peptide instead of a Python loop over ~20k proteins.
-    """
-    seqs = []
+def _iter_fasta_sequences(fasta_path):
+    """Yield each protein sequence (uppercased) from a FASTA, one record at a time."""
     chunk = []
     with open(fasta_path) as fh:
         for line in fh:
             if line.startswith('>'):
                 if chunk:
-                    seqs.append(''.join(chunk))
+                    yield ''.join(chunk)
                     chunk = []
             else:
                 chunk.append(line.strip().upper())
     if chunk:
-        seqs.append(''.join(chunk))
-    return '*'.join(seqs)
+        yield ''.join(chunk)
 
 
-def filter_self_peptides(by_length, blob):
-    """Drop peptides found in the reference proteome (in place); return the count removed."""
+def filter_self_peptides(by_length, fasta_path):
+    """Drop variant peptides found in the reference proteome (in place); return the count removed.
+
+    A length-k peptide is "in the proteome" iff it equals one of some reference protein's
+    contiguous k-mers. We therefore scan each protein once and, for every peptide length in
+    play, intersect that protein's k-mer set with the (small) set of candidate peptides. This
+    is O(proteome_residues * n_lengths) and independent of the peptide count -- versus a naive
+    `pep in proteome` substring scan, which is O(n_peptides * proteome_length) and does not
+    scale to a full proteome (~10^7 residues).
+    """
+    candidates = {k: set(by_length[k]) for k in by_length if by_length[k]}
+    if not candidates:
+        return 0
+    lengths = sorted(candidates)
+    found = set()
+    for seq in _iter_fasta_sequences(fasta_path):
+        n = len(seq)
+        for k in lengths:
+            if n >= k:
+                found |= {seq[i:i + k] for i in range(n - k + 1)} & candidates[k]
     removed = 0
     for k in by_length:
-        kept = {pep: rec for pep, rec in by_length[k].items() if pep not in blob}
+        kept = {pep: rec for pep, rec in by_length[k].items() if pep not in found}
         removed += len(by_length[k]) - len(kept)
         by_length[k] = kept
     return removed
@@ -256,8 +266,7 @@ def main():
         mt_records, wt_by_key, args.min_length, args.max_length, args.wild_type)
 
     if args.proteome_reference:
-        blob = load_proteome_blob(args.proteome_reference)
-        removed = filter_self_peptides(by_length, blob)
+        removed = filter_self_peptides(by_length, args.proteome_reference)
         print(f"Filtered out {removed} peptide(s) found in the reference proteome "
               f"{args.proteome_reference}.", file=sys.stderr)
 
