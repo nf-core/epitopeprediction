@@ -44,4 +44,28 @@ nextflow_pipeline {
             )
         }
     }
+
+    test("-profile test --proteome_reference (self-filter)") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // tiny proteome = exactly the FGFR3 MT window from the chr4+chr19 fixture,
+                // so every FGFR3 variant peptide is "self" and must be filtered out
+                proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
+            }
+        }
+
+        then {
+            // only the peptide TSVs are filtered (the annotated FASTA stays complete): FGFR3
+            // peptides must be gone, while genes absent from the reference (e.g. CEBPA) remain.
+            def peptides = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").text +
+                           path("${params.outdir}/variant_peptides/sample1_length_10.tsv").text
+            assertAll(
+                { assert workflow.success },
+                { assert !peptides.contains('FGFR3') },
+                { assert peptides.contains('CEBPA') }
+            )
+        }
+    }
 }
