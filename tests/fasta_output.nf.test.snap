@@ -19,7 +19,7 @@
                     "snpsift": 4.3
                 },
                 "Workflow": {
-                    "nf-core/epitopeprediction": "v3.1.0"
+                    "nf-core/epitopeprediction": "v3.1.1"
                 }
             },
             [

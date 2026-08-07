@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 3.1.1 - Lustnau Hotfix - 2026-08-05
+
+### `Fixed`
+
+- [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Fixed wrong allele annotations in `netmhcpan` and `netmhciipan` results by reading allele labels from the prediction output header ([#358](https://github.com/nf-core/epitopeprediction/issues/358)), and accept any known sub-release of a supported NetMHC version (`netmhciipan` now also takes 4.3b and 4.3i next to 4.3e).
+
 ## 3.1.0 - Lustnau - 2025-10-22
 
 ### `Added`
