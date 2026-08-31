@@ -112,7 +112,7 @@ workflow EPITOPEPREDICTION {
                                           file("${projectDir}/assets/vep_plugins/Frameshift.pm", checkIfExists: true) ])
 
     // Variant references come from one of two sources: an opt-in in-pipeline download
-    // (--download_cache) or user-provided --vep_cache/--ref_fasta. Guarded so peptide/protein-only
+    // (--vep_download_cache) or user-provided --vep_cache/--ref_fasta. Guarded so peptide/protein-only
     // runs need nothing, but a VCF without a usable source fails fast with a clear message.
     def cache_from_params = params.ref_fasta && params.vep_cache
     ch_variants_guarded = ch_samples_uncompressed.variant.map { meta, vcf ->
@@ -120,14 +120,14 @@ workflow EPITOPEPREDICTION {
             error("Variant (VCF) input requires --vep_species, --vep_genome and --vep_cache_version " +
                   "(e.g. homo_sapiens GRCh38 110). See docs/usage.md.")
         }
-        if (!params.download_cache && !cache_from_params) {
-            error("Variant (VCF) input requires a VEP reference source: either --download_cache, " +
+        if (!params.vep_download_cache && !cache_from_params) {
+            error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
                   "or both --ref_fasta and --vep_cache. See docs/usage.md.")
         }
         [ meta, vcf ]
     }
 
-    if (params.download_cache) {
+    if (params.vep_download_cache) {
         // Opt-in: download the cache + reference FASTA once, and only when a VCF actually flows
         // in (so peptide/protein-only runs never trigger a ~20 GB pull). Needs internet on the
         // compute node; the pre-flight check fails fast if species/assembly/version are wrong.

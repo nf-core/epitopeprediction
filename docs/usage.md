@@ -105,8 +105,8 @@ nextflow run nf-core/epitopeprediction -profile docker \
   --vep_cache references/vep
 ```
 
-**Option B — download in-pipeline (`--download_cache`).** Instead of `--vep_cache`/`--ref_fasta`,
-set `--download_cache` and the pipeline fetches the Ensembl cache and reference FASTA itself
+**Option B — download in-pipeline (`--vep_download_cache`).** Instead of `--vep_cache`/`--ref_fasta`,
+set `--vep_download_cache` and the pipeline fetches the Ensembl cache and reference FASTA itself
 (publishing them under `<outdir>/references` for reuse). This needs internet on the compute node
 and pulls ~20 GB, so it is best run once — afterwards reuse the published files via Option A.
 
@@ -114,7 +114,7 @@ and pulls ~20 GB, so it is best run once — afterwards reuse the published file
 nextflow run nf-core/epitopeprediction -profile docker \
   --input samplesheet.csv --outdir results \
   --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 110 \
-  --download_cache
+  --vep_download_cache
 ```
 
 ### Full samplesheet

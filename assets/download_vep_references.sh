@@ -4,7 +4,7 @@
 #   1. VEP offline cache (Ensembl, ENST transcripts)        --vep_cache
 #   2. Reference genome FASTA + .fai (Ensembl primary asm)  --ref_fasta
 # (The Wildtype/Frameshift VEP plugins ship with the pipeline, so they are not downloaded here.
-#  You can also skip this script entirely and pass --download_cache to fetch both in-pipeline.)
+#  You can also skip this script entirely and pass --vep_download_cache to fetch both in-pipeline.)
 #
 # Multi-build: set SPECIES / ASSEMBLY / RELEASE for the genome you need. Defaults are
 # human GRCh38 release 110 (matches --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 110).

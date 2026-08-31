@@ -21,7 +21,6 @@ process PVACSEQ_GENERATE_FASTA {
     def prefix     = task.ext.prefix ?: "${meta.id}"
     def args       = task.ext.args ?: ''
     def flank      = params.flank
-    def downstream = params.downstream
     // Select the tumor sample's genotypes on multi-sample (matched tumor/normal) VCFs.
     // Optional: single-sample tumor-only VCFs leave meta.tumor_sample unset -> no -s.
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
@@ -30,7 +29,7 @@ process PVACSEQ_GENERATE_FASTA {
         ${vcf} \\
         ${flank} \\
         ${prefix}.variant_peptides.raw.fasta \\
-        -d ${downstream} \\
+        -d 'full' \\
         --pass-only \\
         ${sample_arg} \\
         ${args}
