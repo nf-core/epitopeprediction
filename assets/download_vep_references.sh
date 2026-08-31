@@ -22,7 +22,7 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REFDIR="${1:-$HERE/references}"
+REFDIR="${1:-$(cd "$HERE/.." && pwd)/references}"
 
 SPECIES="${SPECIES:-homo_sapiens}"
 ASSEMBLY="${ASSEMBLY:-GRCh38}"
