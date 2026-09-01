@@ -120,33 +120,12 @@
                 "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
                 "predictions",
                 "predictions/sample1.tsv",
-                "prep_vcf",
-                "prep_vcf/sample1.prep.vcf.gz",
-                "prep_vcf/sample1.prep.vcf.gz.tbi",
-                "untar",
-                "untar/vep",
-                "untar/vep/homo_sapiens",
-                "untar/vep/homo_sapiens/110_GRCh38",
-                "untar/vep/homo_sapiens/110_GRCh38/19",
-                "untar/vep/homo_sapiens/110_GRCh38/19/33000001-34000000.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/19/33000001-34000000_reg.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/19/35000001-36000000.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/19/35000001-36000000_reg.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/4",
-                "untar/vep/homo_sapiens/110_GRCh38/4/1000001-2000000.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/4/1000001-2000000_reg.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/4/99000001-100000000.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/4/99000001-100000000_reg.gz",
-                "untar/vep/homo_sapiens/110_GRCh38/chr_synonyms.txt",
-                "untar/vep/homo_sapiens/110_GRCh38/info.txt",
                 "variant_fasta",
                 "variant_fasta/sample1.variant_peptides.annotated.fasta",
                 "variant_fasta/sample1.variant_peptides.raw.fasta",
                 "variant_peptides",
                 "variant_peptides/sample1_length_10.tsv",
-                "variant_peptides/sample1_length_9.tsv",
-                "vep",
-                "vep/sample1.vcf.gz"
+                "variant_peptides/sample1_length_9.tsv"
             ],
             [
                 "bcftools-stats-subtypes.txt:md5,9e2582f4aea7ca638fccd95454660ba3",
@@ -163,26 +142,16 @@
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2b5475eaf18375d8c4a60d194921e28",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0e2f935842191a847e9e6388de256cb0",
-                "33000001-34000000.gz:md5,6b397990f102f602bfdac1c0ee93a723",
-                "33000001-34000000_reg.gz:md5,4111d43d78e4223e5f2cc16621ae0e9b",
-                "35000001-36000000.gz:md5,95ae0df5f4777f04a80fb2e726c1b1da",
-                "35000001-36000000_reg.gz:md5,fd5f234aea15b4f75fd0b289d59293b4",
-                "1000001-2000000.gz:md5,9bbcbb2f6901187559f3e1cc54e1f85e",
-                "1000001-2000000_reg.gz:md5,3a35de6a65d888b8e229238b63c7536f",
-                "99000001-100000000.gz:md5,c21bc37c349752a6f3cff8301f66e66a",
-                "99000001-100000000_reg.gz:md5,0366b25e966e0c16cd163fe220c6a5f3",
-                "chr_synonyms.txt:md5,11e02fc243659e6ad768d6b78284ec98",
-                "info.txt:md5,0602ec9c683f5de9b058d9959ae31d18",
                 "sample1.variant_peptides.annotated.fasta:md5,1246a2dc698185378c5dbf3f5dd83597",
                 "sample1.variant_peptides.raw.fasta:md5,9475c917ee0c0ea443b282f9a3c99e08",
                 "sample1_length_10.tsv:md5,8a880a96a855621093789994a003cb40",
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-08-07T11:25:38.024437905",
+        "timestamp": "2026-09-01T10:12:17.228488819",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "25.10.4"
         }
     }
 }

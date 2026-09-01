@@ -12,7 +12,7 @@ The directories listed below will be created in the results directory after the 
 
 ## Variant prediction
 
-Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) → [pVACtools](https://pvactools.readthedocs.io/) chain (see [usage](usage.md#genomic-variants)). Only peptides that actually **overlap the mutation** are kept — for missense, the mutated residue; for in-frame indels, the junction; for frameshifts, the novel C-terminal tail to the new stop — within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
+Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) → [pVACtools](https://pvactools.readthedocs.io/) chain (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
 **Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this (WT counterpart shown when `--wild_type` is set):
 | sequence | wildtype | gene | HGVSp | genomic_anchor |
@@ -25,10 +25,8 @@ Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](ht
 
 Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 
-**Intermediate output directories:**
+**Output directories:**
 
-- `prep_vcf/[sample].prep.vcf.gz` — PASS-filtered, Ensembl-named, normalized VCF
-- `vep/[sample].vcf.gz` — VEP annotation (with the Wildtype/Frameshift plugin sequences)
 - `variant_fasta/[sample].variant_peptides.raw.fasta` — pvacseq WT/MT protein windows
 - `variant_fasta/[sample].variant_peptides.annotated.fasta` — the same WT/MT windows with provenance-annotated headers (schema below)
 - `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance
