@@ -28,8 +28,6 @@ process PVACSEQ_GENERATE_FASTA {
         ${vcf} \\
         ${flank} \\
         ${prefix}.variant_peptides.raw.fasta \\
-        -d 'full' \\
-        --pass-only \\
         ${sample_arg} \\
         ${args}
 
