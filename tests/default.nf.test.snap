@@ -1,7 +1,7 @@
 {
     "-profile test": {
         "content": [
-            17,
+            18,
             {
                 "ANNOTATE_FASTA_HEADERS": {
                     "python": "3.13.1"
@@ -28,6 +28,9 @@
                     "bcftools": "1.23.1"
                 },
                 "PVACSEQ_GENERATE_FASTA": {
+                    "pvactools": "7.0.1"
+                },
+                "PVACSEQ_INSTALL_VEP_PLUGIN": {
                     "pvactools": "7.0.1"
                 },
                 "SPLIT_PEPTIDES": {
@@ -148,7 +151,7 @@
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-09-01T10:12:17.228488819",
+        "timestamp": "2026-09-01T10:40:14.520120624",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -8,6 +8,7 @@
 //
 include { PREP_VCF                    } from '../modules/local/prep_vcf'
 include { DOWNLOAD_REF_FASTA          } from '../modules/local/download_ref_fasta'
+include { PVACSEQ_INSTALL_VEP_PLUGIN  } from '../modules/local/pvacseq_install_vep_plugin'
 include { PVACSEQ_GENERATE_FASTA      } from '../modules/local/pvacseq_generate_fasta'
 include { ANNOTATE_FASTA_HEADERS      } from '../modules/local/annotate_fasta_headers'
 include { VARIANT_FASTA2PEPTIDES      } from '../modules/local/variant_fasta2peptides'
@@ -107,9 +108,10 @@ workflow EPITOPEPREDICTION {
     def vep_genome   = params.vep_genome
     def vep_cachever = params.vep_cache_version
 
-    // Wildtype/Frameshift plugins ship with the pipeline (assets/vep_plugins), keyed to pVACtools, not the build.
-    ch_vep_plugin_files = channel.value([ file("${projectDir}/assets/vep_plugins/Wildtype.pm", checkIfExists: true),
-                                          file("${projectDir}/assets/vep_plugins/Frameshift.pm", checkIfExists: true) ])
+    // The Wildtype/Frameshift plugins are copied out of the pinned pvactools container, so they
+    // always match it. Gated on a VCF so peptide/protein-only runs never pull the container.
+    PVACSEQ_INSTALL_VEP_PLUGIN( ch_samples_uncompressed.variant.map { _meta, _vcf -> 'plugins' }.first() )
+    ch_vep_plugin_files = PVACSEQ_INSTALL_VEP_PLUGIN.out.plugins
 
     // Variant references come from one of two sources: an opt-in in-pipeline download
     // (--vep_download_cache) or user-provided --vep_cache/--ref_fasta. Guarded so peptide/protein-only

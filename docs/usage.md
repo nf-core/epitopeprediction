@@ -77,7 +77,8 @@ holds more than one sample.
 #### Reference data
 
 The variant path needs a VEP cache and reference FASTA, plus three parameters identifying the
-build. The `Wildtype`/`Frameshift` VEP plugins ship with the pipeline, so you do **not** provide them.
+build. The `Wildtype`/`Frameshift` VEP plugins are taken from the pVACtools container at run time,
+so you do **not** provide them.
 
 | Parameter             | What                                                                                        |
 | --------------------- | ------------------------------------------------------------------------------------------- |
