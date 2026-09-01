@@ -44,7 +44,7 @@ offline, pinned, fully reproducible chain
    offline **Ensembl** cache (ENST transcripts), with the `Wildtype` and `Frameshift` plugins that
    add the wild-type and frameshift protein sequences pvacseq needs.
 3. **[pVACtools](https://pvactools.readthedocs.io/) `generate_protein_fasta`** — build the wild-type
-   and mutant protein windows (`--flank` residues each side; frameshifts run to the new stop).
+   and mutant protein windows (`--mutation_flanking_aas` residues each side; frameshifts run to the new stop).
 4. Mutation-overlapping peptides (with gene / transcript / HGVSp / genomic anchor / UniProt
    provenance) are generated within the length bounds set by `--min_peptide_length_class[I|II]`
    and `--max_peptide_length_class[I|II]`, then handed to MHC binding prediction.

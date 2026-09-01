@@ -20,7 +20,7 @@ process PVACSEQ_GENERATE_FASTA {
     script:
     def prefix     = task.ext.prefix ?: "${meta.id}"
     def args       = task.ext.args ?: ''
-    def flank      = params.flank
+    def flank      = params.mutation_flanking_aas
     // Select the tumor sample's genotypes on multi-sample (matched tumor/normal) VCFs.
     // Optional: single-sample tumor-only VCFs leave meta.tumor_sample unset -> no -s.
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''

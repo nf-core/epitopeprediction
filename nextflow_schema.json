@@ -135,7 +135,7 @@
                     "description": "Optional reference proteome FASTA for self-filtering variant peptides.",
                     "help_text": "When set, variant-derived peptides that occur as a substring of any protein in this reference proteome (e.g. a UniProt or Ensembl `pep.all.fa`) are dropped before prediction, removing self peptides that are not truly variant-specific. Only affects the variant (VCF) path; unset means no filtering."
                 },
-                "flank": {
+                "mutation_flanking_aas": {
                     "type": "integer",
                     "default": 25,
                     "description": "Number of amino acids flanking the mutation on each side of the generated variant peptide window (frameshifts kept full-length to the new stop).",
