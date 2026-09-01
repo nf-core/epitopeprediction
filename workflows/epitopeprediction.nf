@@ -6,12 +6,6 @@
 //
 // MODULE: Local to the pipeline
 //
-include { PREP_VCF                    } from '../modules/local/prep_vcf'
-include { DOWNLOAD_REF_FASTA          } from '../modules/local/download_ref_fasta'
-include { PVACSEQ_INSTALL_VEP_PLUGIN  } from '../modules/local/pvacseq_install_vep_plugin'
-include { PVACSEQ_GENERATE_FASTA      } from '../modules/local/pvacseq_generate_fasta'
-include { ANNOTATE_FASTA_HEADERS      } from '../modules/local/annotate_fasta_headers'
-include { VARIANT_FASTA2PEPTIDES      } from '../modules/local/variant_fasta2peptides'
 include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
 include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
 include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results'
@@ -19,7 +13,8 @@ include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 
-include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_prediction'
+include { GENERATE_VARIANT_PEPTIDES } from '../subworkflows/local/generate_variant_peptides'
+include { MHC_BINDING_PREDICTION    } from '../subworkflows/local/mhc_binding_prediction'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -31,10 +26,6 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 // MODULE: Installed directly from nf-core/modules
 //
 include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
-include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats'
-include { ENSEMBLVEP_DOWNLOAD         } from '../modules/nf-core/ensemblvep/download'
-include { ENSEMBLVEP_VEP              } from '../modules/nf-core/ensemblvep/vep'
-include { UNTAR                       } from '../modules/nf-core/untar'
 include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap            } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -97,109 +88,13 @@ workflow EPITOPEPREDICTION {
             protein :  meta_data.input_type == 'protein'
         }
 
-    /*
-    ========================================================================================
-        GENERATE MUTATED PEPTIDES FROM VCF  (bcftools -> VEP -> pvacseq -> peptides)
-    ========================================================================================
-    */
-
-    // VEP species / assembly / cache version — set explicitly to match your cache (no preset).
-    def vep_species  = params.vep_species
-    def vep_genome   = params.vep_genome
-    def vep_cachever = params.vep_cache_version
-
-    // The Wildtype/Frameshift plugins are copied out of the pinned pvactools container, so they
-    // always match it. Gated on a VCF so peptide/protein-only runs never pull the container.
-    PVACSEQ_INSTALL_VEP_PLUGIN( ch_samples_uncompressed.variant.map { _meta, _vcf -> 'plugins' }.first() )
-    ch_vep_plugin_files = PVACSEQ_INSTALL_VEP_PLUGIN.out.plugins
-
-    def cache_from_params = params.ref_fasta && params.vep_cache
-
-    if (params.vep_download_cache) {
-        // Opt-in: download the cache + reference FASTA once, and only when a VCF actually flows
-        // in (so peptide/protein-only runs never trigger a ~20 GB pull). Needs internet on the
-        // compute node; the pre-flight check fails fast if species/assembly/version are wrong.
-        ch_download_input = ch_samples_uncompressed.variant
-            .map { _meta, _vcf -> [ [id:'vep'], vep_genome, vep_species, vep_cachever ] }
-            .first()
-        ENSEMBLVEP_DOWNLOAD( ch_download_input, true )
-
-        // Fetch the build-matched reference FASTA straight from Ensembl (vep_install's --AUTO f
-        // is unreliable). Same (fasta, fai) contract as the user-provided --ref_fasta path.
-        DOWNLOAD_REF_FASTA( ch_download_input )
-        ch_versions = ch_versions.mix( DOWNLOAD_REF_FASTA.out.versions )
-
-        // These derive from processes fed a value channel, so they are already value channels
-        // (broadcast to every variant sample) — no .first() needed.
-        ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
-        ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa  -> [ [id:'ref'], fa  ] }
-        ch_ref_fai   = DOWNLOAD_REF_FASTA.out.fai.map   { _meta, fai -> [ [id:'ref'], fai ] }
-    } else if (cache_from_params) {
-        // ref FASTA is always a single file (plain or bgzipped). The VEP cache is normally a
-        // directory, but test-datasets ships it as a .tar.gz (CI fetches by raw URL and cannot
-        // stage a directory) — unpack that on the fly; a directory cache is used as-is.
-        def vep_cache_input = file(params.vep_cache, checkIfExists: true)
-        def vep_cache_lc    = params.vep_cache.toString().toLowerCase()
-        if (vep_cache_lc.endsWith('.tar.gz') || vep_cache_lc.endsWith('.tgz')) {
-            UNTAR( [ [id:'vep'], vep_cache_input ] )
-            ch_vep_cache = UNTAR.out.untar
-        } else {
-            ch_vep_cache = channel.value([ [id:'vep'], vep_cache_input ])
-        }
-        ch_ref_fasta = channel.value([ [id:'ref'], file(params.ref_fasta, checkIfExists: true) ])
-        ch_ref_fai   = channel.value([ [id:'ref'], file("${params.ref_fasta}.fai", checkIfExists: true) ])
-    } else {
-        ch_vep_cache = channel.value([ [:], [] ])
-        ch_ref_fasta = channel.value([ [:], [] ])
-        ch_ref_fai   = channel.value([ [:], [] ])
-    }
-
-    // 1) bcftools: PASS-filter, rename chr->Ensembl, split multiallelics, normalize
-    PREP_VCF( ch_samples_uncompressed.variant, ch_ref_fasta, ch_ref_fai )
-    ch_versions = ch_versions.mix( PREP_VCF.out.versions )
-
-    // Variant stats for the QC report (on the prepared VCF)
-    BCFTOOLS_STATS(
-        PREP_VCF.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
-         [[:],[]],
-         [[:],[]],
-         [[:],[]],
-         [[:],[]],
-         [[:],[]],
-         )
-    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ _meta, stats -> stats })
-
-    // 2) VEP: offline Ensembl cache + Wildtype/Frameshift plugins (flags set in conf/modules.config)
-    // ?: '' placeholders keep the val inputs non-null so the DAG builds on peptide-only runs;
-    // the guard above guarantees real values whenever a VCF actually flows into VEP.
-    ENSEMBLVEP_VEP(
-        PREP_VCF.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
-        vep_genome  ?: '',
-        vep_species ?: '',
-        vep_cachever ?: '',
-        ch_vep_cache,
-        ch_ref_fasta,
-        ch_vep_plugin_files
-    )
-
-    // 3) pvacseq generate_protein_fasta: WT/MT protein windows (carries the VEP VCF forward)
-    PVACSEQ_GENERATE_FASTA( ENSEMBLVEP_VEP.out.vcf.join( ENSEMBLVEP_VEP.out.tbi ) )
-    ch_versions = ch_versions.mix( PVACSEQ_GENERATE_FASTA.out.versions )
-
-    // 4) annotate the WT/MT deflines with VEP provenance (single VCF-join site)
-    ANNOTATE_FASTA_HEADERS( PVACSEQ_GENERATE_FASTA.out.fasta )
-    ch_versions = ch_versions.mix( ANNOTATE_FASTA_HEADERS.out.versions )
-
-    // 5) mutation-overlapping k-mers + provenance -> peptide TSV per length (reads annotated headers, no VCF)
-    //    optional self/novelty filter: drop variant peptides found in a reference proteome (--proteome_reference)
-    ch_proteome_reference = params.proteome_reference
-        ? channel.value( file(params.proteome_reference, checkIfExists: true) )
-        : channel.value( [] )
-    VARIANT_FASTA2PEPTIDES( ANNOTATE_FASTA_HEADERS.out.fasta, ch_proteome_reference )
-    ch_versions = ch_versions.mix( VARIANT_FASTA2PEPTIDES.out.versions )
-    ch_peptides_from_variants = VARIANT_FASTA2PEPTIDES.out.tsv
-        .transpose()
-        .filter { _meta, file -> file.size() > 0 }
+    //
+    // SUBWORKFLOW: variant (VCF) input -> mutation-overlapping peptides
+    //
+    GENERATE_VARIANT_PEPTIDES( ch_samples_uncompressed.variant )
+    ch_versions      = ch_versions.mix( GENERATE_VARIANT_PEPTIDES.out.versions )
+    ch_multiqc_files = ch_multiqc_files.mix( GENERATE_VARIANT_PEPTIDES.out.mqc )
+    ch_peptides_from_variants = GENERATE_VARIANT_PEPTIDES.out.peptides
 
     /*
     ========================================================================================
