@@ -4,8 +4,8 @@
             11,
             {
                 "FASTA2PEPTIDES": {
-                    "python": "3.13.1",
-                    "biopython": 1.85
+                    "biopython": 1.85,
+                    "python": "3.13.1"
                 },
                 "MERGE_PREDICTIONS": {
                     "argparse": 1.1,
@@ -14,9 +14,9 @@
                 },
                 "MHCNUGGETS": {
                     "argparse": 1.1,
-                    "pandas": "1.1.5"
+                    "pandas": "1.1.5",
+                    "mhcnuggets": "2.4.0"
                 },
-                "mhcnuggets": "2.4.0",
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
@@ -74,10 +74,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,c99df1402adbfa839e68e5e0df3decd9"
             ]
         ],
+        "timestamp": "2026-09-01T14:14:20.903331579",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.10.3"
-        },
-        "timestamp": "2026-03-26T21:30:47.299019086"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

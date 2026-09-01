@@ -13,7 +13,7 @@ process DOWNLOAD_REF_FASTA {
     output:
     tuple val(meta), path("${prefix}.fa")    , emit: fasta
     tuple val(meta), path("${prefix}.fa.fai"), emit: fai
-    path "versions.yml"                      , emit: versions
+    tuple val("${task.process}"), val('samtools'), eval("samtools --version | head -n1 | sed 's/^samtools //'"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -48,21 +48,11 @@ process DOWNLOAD_REF_FASTA {
 
     gunzip -f ${prefix}.fa.gz
     samtools faidx ${prefix}.fa
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        samtools: \$(samtools --version | head -n1 | sed 's/^samtools //')
-    END_VERSIONS
     """
 
     stub:
     prefix = task.ext.prefix ?: "${species}.${assembly}"
     """
     touch ${prefix}.fa ${prefix}.fa.fai
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        samtools: \$(samtools --version | head -n1 | sed 's/^samtools //')
-    END_VERSIONS
     """
 }

@@ -8,7 +8,9 @@
                     "pandas": "2.1.0",
                     "mhcgnomes": "1.8.6"
                 },
-                "MHCFLURRY": "2.1.4",
+                "MHCFLURRY": {
+                    "mhcflurry": "2.1.4"
+                },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
@@ -67,10 +69,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,ecd0edbf3142c1477178fb91b8a9740c"
             ]
         ],
-        "timestamp": "2026-08-07T11:11:57.735659274",
+        "timestamp": "2026-09-01T14:13:24.217080159",
         "meta": {
             "nf-test": "0.9.5",
-            "nextflow": "26.04.6"
+            "nextflow": "25.10.4"
         }
     }
 }

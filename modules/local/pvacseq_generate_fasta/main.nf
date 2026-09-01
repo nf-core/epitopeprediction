@@ -12,7 +12,7 @@ process PVACSEQ_GENERATE_FASTA {
 
     output:
     tuple val(meta), path("*.variant_peptides.raw.fasta"), path(vcf), emit: fasta
-    path "versions.yml"                                             , emit: versions
+    tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -30,21 +30,11 @@ process PVACSEQ_GENERATE_FASTA {
         ${prefix}.variant_peptides.raw.fasta \\
         ${sample_arg} \\
         ${args}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        pvactools: \$(pip show pvactools 2>/dev/null | awk '/^Version:/{print \$2}')
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.variant_peptides.raw.fasta
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        pvactools: \$(pip show pvactools 2>/dev/null | awk '/^Version:/{print \$2}')
-    END_VERSIONS
     """
 }

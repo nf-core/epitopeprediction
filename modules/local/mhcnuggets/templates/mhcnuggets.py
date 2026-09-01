@@ -115,8 +115,9 @@ def main():
     versions_this_module["${task.process}"] = Version.get_versions([argparse, pd])
     with open("versions.yml", "w") as f:
         f.write(Version.format_yaml_like(versions_this_module))
-        # No __version__ dunder or similar available, need to hardcode version
-        f.write('mhcnuggets: 2.4.0')
+        # No __version__ dunder or similar available, need to hardcode version.
+        # Two spaces: this belongs under the process key written above.
+        f.write('  mhcnuggets: 2.4.0\\n')
 
 
 if __name__ == "__main__":

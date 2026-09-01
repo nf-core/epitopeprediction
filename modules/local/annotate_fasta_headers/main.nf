@@ -13,7 +13,7 @@ process ANNOTATE_FASTA_HEADERS {
 
     output:
     tuple val(meta), path("*.variant_peptides.annotated.fasta"), emit: fasta
-    path "versions.yml"                                        , emit: versions
+    tuple val("${task.process}"), val('python'), eval("python3 --version | cut -d' ' -f2"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,21 +25,11 @@ process ANNOTATE_FASTA_HEADERS {
         --vep-vcf ${vep_vcf} \\
         --in-fasta ${raw_fasta} \\
         --out-fasta ${prefix}.variant_peptides.annotated.fasta
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version 2>&1 | cut -d' ' -f2)
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}.variant_peptides.annotated.fasta
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version 2>&1 | cut -d' ' -f2)
-    END_VERSIONS
     """
 }

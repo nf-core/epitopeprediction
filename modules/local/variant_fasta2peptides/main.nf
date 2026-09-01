@@ -13,7 +13,7 @@ process VARIANT_FASTA2PEPTIDES {
 
     output:
     tuple val(meta), path("*.tsv"), emit: tsv
-    path "versions.yml"           , emit: versions
+    tuple val("${task.process}"), val('python'), eval("python3 --version | cut -d' ' -f2"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -33,11 +33,6 @@ process VARIANT_FASTA2PEPTIDES {
         --peptide-col-name ${params.peptide_col_name} \\
         ${wild_type} \\
         ${proteome}
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version 2>&1 | cut -d' ' -f2)
-    END_VERSIONS
     """
 
     stub:
@@ -47,10 +42,5 @@ process VARIANT_FASTA2PEPTIDES {
     """
     touch ${prefix}_length_${min_length}.tsv
     touch ${prefix}_length_${max_length}.tsv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version 2>&1 | cut -d' ' -f2)
-    END_VERSIONS
     """
 }

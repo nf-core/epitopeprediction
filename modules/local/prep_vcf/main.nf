@@ -14,7 +14,7 @@ process PREP_VCF {
 
     output:
     tuple val(meta), path("*.prep.vcf.gz"), path("*.prep.vcf.gz.tbi"), emit: vcf
-    path "versions.yml"                                              , emit: versions
+    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | head -n1 | sed 's/^bcftools //'"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -32,11 +32,6 @@ process PREP_VCF {
         | bcftools annotate --rename-chrs chr_map.txt -Ou \\
         | bcftools norm -m- -f ${fasta} -Oz -o ${prefix}.prep.vcf.gz
     bcftools index -t ${prefix}.prep.vcf.gz
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bcftools: \$(bcftools --version 2>&1 | head -n1 | sed 's/^bcftools //')
-    END_VERSIONS
     """
 
     stub:
@@ -44,10 +39,5 @@ process PREP_VCF {
     """
     echo | gzip > ${prefix}.prep.vcf.gz
     touch ${prefix}.prep.vcf.gz.tbi
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        bcftools: \$(bcftools --version 2>&1 | head -n1 | sed 's/^bcftools //')
-    END_VERSIONS
     """
 }

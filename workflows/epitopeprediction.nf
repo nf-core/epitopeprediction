@@ -92,7 +92,6 @@ workflow EPITOPEPREDICTION {
     // SUBWORKFLOW: variant (VCF) input -> mutation-overlapping peptides
     //
     GENERATE_VARIANT_PEPTIDES( ch_samples_uncompressed.variant )
-    ch_versions      = ch_versions.mix( GENERATE_VARIANT_PEPTIDES.out.versions )
     ch_multiqc_files = ch_multiqc_files.mix( GENERATE_VARIANT_PEPTIDES.out.mqc )
     ch_peptides_from_variants = GENERATE_VARIANT_PEPTIDES.out.peptides
 
@@ -102,7 +101,6 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
     FASTA2PEPTIDES( ch_samples_uncompressed.protein )
-    ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
     ch_to_predict = ch_samples_uncompressed.peptide
                         .mix(FASTA2PEPTIDES.out.tsv.transpose())
@@ -110,7 +108,6 @@ workflow EPITOPEPREDICTION {
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
-    ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
 
 
     /*
@@ -134,7 +131,6 @@ workflow EPITOPEPREDICTION {
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple())
     ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ _meta, json -> json })
-    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
     //
     // Collate and save software versions

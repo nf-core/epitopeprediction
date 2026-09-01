@@ -22,8 +22,6 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
     main:
 
-    ch_versions = channel.empty()
-
     def vep_species  = params.vep_species
     def vep_genome   = params.vep_genome
     def vep_cachever = params.vep_cache_version
@@ -43,7 +41,6 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
         // Separate download because vep_install's --AUTO f step is unreliable.
         DOWNLOAD_REF_FASTA( ch_download_input )
-        ch_versions = ch_versions.mix( DOWNLOAD_REF_FASTA.out.versions )
 
         // Fed by a value channel, so these are value channels already -- no .first() needed.
         ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
@@ -68,7 +65,6 @@ workflow GENERATE_VARIANT_PEPTIDES {
     }
 
     PREP_VCF( ch_vcf, ch_ref_fasta, ch_ref_fai )
-    ch_versions = ch_versions.mix( PREP_VCF.out.versions )
 
     BCFTOOLS_STATS(
         PREP_VCF.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
@@ -92,20 +88,16 @@ workflow GENERATE_VARIANT_PEPTIDES {
     )
 
     PVACSEQ_GENERATE_FASTA( ENSEMBLVEP_VEP.out.vcf.join( ENSEMBLVEP_VEP.out.tbi ) )
-    ch_versions = ch_versions.mix( PVACSEQ_GENERATE_FASTA.out.versions )
 
     ANNOTATE_FASTA_HEADERS( PVACSEQ_GENERATE_FASTA.out.fasta )
-    ch_versions = ch_versions.mix( ANNOTATE_FASTA_HEADERS.out.versions )
 
     // Optional self/novelty filter: drop variant peptides found in a reference proteome.
     ch_proteome_reference = params.proteome_reference
         ? channel.value( file(params.proteome_reference, checkIfExists: true) )
         : channel.value( [] )
     VARIANT_FASTA2PEPTIDES( ANNOTATE_FASTA_HEADERS.out.fasta, ch_proteome_reference )
-    ch_versions = ch_versions.mix( VARIANT_FASTA2PEPTIDES.out.versions )
 
     emit:
     peptides = VARIANT_FASTA2PEPTIDES.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
     mqc      = BCFTOOLS_STATS.out.stats.collect { _meta, stats -> stats }
-    versions = ch_versions
 }
