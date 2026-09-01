@@ -98,15 +98,17 @@ workflow PIPELINE_INITIALISATION {
     )
 
     //
-    // Custom validation for pipeline parameters
-    //
-    //validateInputParameters()
-
-    //
     // Create channel from input file provided through params.input
     //
+    def samplesheet_rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+
+    //
+    // Custom validation for pipeline parameters
+    //
+    validateInputParameters(samplesheet_rows)
+
     channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .fromList(samplesheet_rows)
         .map { meta, f -> [meta + [alleles: readAlleles(meta.alleles)], f]} // Parse alleles from file
         .set { ch_samplesheet }
 
@@ -166,8 +168,27 @@ workflow PIPELINE_COMPLETION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 //
-// Check and validate pipeline parameters
+// Check that variant (VCF) input has the VEP references it needs. Only enforced when the
+// samplesheet actually holds a VCF, so peptide/protein-only runs need none of these params.
 //
+def validateInputParameters(samplesheet_rows) {
+    def has_vcf = samplesheet_rows.any { entry ->
+        def filename = entry[1].toString().toLowerCase()
+        filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')
+    }
+    if (!has_vcf) {
+        return
+    }
+    if (!params.vep_species || !params.vep_genome || !params.vep_cache_version) {
+        error("Variant (VCF) input requires --vep_species, --vep_genome and --vep_cache_version " +
+              "(e.g. homo_sapiens GRCh38 110). See docs/usage.md.")
+    }
+    if (!params.vep_download_cache && !(params.ref_fasta && params.vep_cache)) {
+        error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
+              "or both --ref_fasta and --vep_cache. See docs/usage.md.")
+    }
+}
+
 // Function to read the alleles from a file or use given string
 def readAlleles(allele_input) {
     if (allele_input.endsWith(".txt")) {

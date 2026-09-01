@@ -113,27 +113,13 @@ workflow EPITOPEPREDICTION {
     PVACSEQ_INSTALL_VEP_PLUGIN( ch_samples_uncompressed.variant.map { _meta, _vcf -> 'plugins' }.first() )
     ch_vep_plugin_files = PVACSEQ_INSTALL_VEP_PLUGIN.out.plugins
 
-    // Variant references come from one of two sources: an opt-in in-pipeline download
-    // (--vep_download_cache) or user-provided --vep_cache/--ref_fasta. Guarded so peptide/protein-only
-    // runs need nothing, but a VCF without a usable source fails fast with a clear message.
     def cache_from_params = params.ref_fasta && params.vep_cache
-    ch_variants_guarded = ch_samples_uncompressed.variant.map { meta, vcf ->
-        if (!vep_species || !vep_genome || !vep_cachever) {
-            error("Variant (VCF) input requires --vep_species, --vep_genome and --vep_cache_version " +
-                  "(e.g. homo_sapiens GRCh38 110). See docs/usage.md.")
-        }
-        if (!params.vep_download_cache && !cache_from_params) {
-            error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
-                  "or both --ref_fasta and --vep_cache. See docs/usage.md.")
-        }
-        [ meta, vcf ]
-    }
 
     if (params.vep_download_cache) {
         // Opt-in: download the cache + reference FASTA once, and only when a VCF actually flows
         // in (so peptide/protein-only runs never trigger a ~20 GB pull). Needs internet on the
         // compute node; the pre-flight check fails fast if species/assembly/version are wrong.
-        ch_download_input = ch_variants_guarded
+        ch_download_input = ch_samples_uncompressed.variant
             .map { _meta, _vcf -> [ [id:'vep'], vep_genome, vep_species, vep_cachever ] }
             .first()
         ENSEMBLVEP_DOWNLOAD( ch_download_input, true )
@@ -169,7 +155,7 @@ workflow EPITOPEPREDICTION {
     }
 
     // 1) bcftools: PASS-filter, rename chr->Ensembl, split multiallelics, normalize
-    PREP_VCF( ch_variants_guarded, ch_ref_fasta, ch_ref_fai )
+    PREP_VCF( ch_samples_uncompressed.variant, ch_ref_fasta, ch_ref_fai )
     ch_versions = ch_versions.mix( PREP_VCF.out.versions )
 
     // Variant stats for the QC report (on the prepared VCF)
