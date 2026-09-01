@@ -1,24 +1,13 @@
 #!/usr/bin/env bash
 #
-# Download the references the variant (VCF) path of nf-core/epitopeprediction needs:
-#   1. VEP offline cache (Ensembl, ENST transcripts)        --vep_cache
-#   2. Reference genome FASTA + .fai (Ensembl primary asm)  --ref_fasta
-# (The Wildtype/Frameshift VEP plugins ship with the pipeline, so they are not downloaded here.
-#  You can also skip this script entirely and pass --vep_download_cache to fetch both in-pipeline.)
+# Downloads the VEP offline cache (--vep_cache) and the reference genome FASTA + .fai
+# (--ref_fasta) that the variant path needs, ~20 GB / ~26 GB extracted. Alternatively pass
+# --vep_download_cache to fetch both in-pipeline. Needs curl, tar, gunzip and docker
+# (docker only to samtools-faidx the FASTA).
 #
-# Multi-build: set SPECIES / ASSEMBLY / RELEASE for the genome you need. Defaults are
-# human GRCh38 release 110 (matches --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 110).
-#
-# Examples:
-#   ./download_vep_references.sh                                  # human GRCh38, release 110
-#   SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=110 ./download_vep_references.sh
-#   SPECIES=homo_sapiens ASSEMBLY=GRCh37 RELEASE=110 ./download_vep_references.sh
-#
-# The Ensembl cache is ~20 GB download / ~26 GB extracted — this is NOT a CI download.
-# Host tools: curl, tar, gunzip. Docker is used only to samtools-faidx the FASTA.
-#
-# Usage:  ./download_vep_references.sh [REFDIR]        (default: ./references)
-#         KEEP_ARCHIVES=1 ./download_vep_references.sh  (keep archives after extract)
+# Usage:  ./download_vep_references.sh [REFDIR]        (default: <repo>/references)
+#         SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=110 ./download_vep_references.sh
+#         KEEP_ARCHIVES=1 ./download_vep_references.sh
 set -euo pipefail
 
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -75,7 +64,6 @@ cat >&2 <<EOF
 
 === DONE. References in: $REFDIR ===
 
-Pass them to the pipeline (variant/VCF samplesheet rows):
   nextflow run nf-core/epitopeprediction -profile docker \\
     --input samplesheet.csv --outdir results \\
     --vep_species ${SPECIES} --vep_genome ${ASSEMBLY} --vep_cache_version ${RELEASE} \\

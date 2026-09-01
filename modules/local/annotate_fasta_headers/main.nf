@@ -3,9 +3,7 @@ process ANNOTATE_FASTA_HEADERS {
     tag "${meta.id}"
 
     // conda "${moduleDir}/environment.yml"
-    // annotate_fasta_headers.py is stdlib-only; reuse the sibling biopython image so the
-    // variant path needs one fewer container. This is the single VCF-join site: it enriches
-    // the pvacseq WT/MT windows with VEP provenance so VARIANT_FASTA2PEPTIDES needs no VCF.
+    // The script is stdlib-only; reusing the sibling biopython image saves a container.
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/83/8372f6241b480332d91bc00a88ec8c72c8f7fcc9994177a5dd67a07007cd6e32/data' :
         'community.wave.seqera.io/library/biopython:1.85--6f761292fa9881b4' }"

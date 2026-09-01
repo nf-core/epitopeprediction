@@ -1,37 +1,28 @@
 #!/usr/bin/env python3
-"""Annotate pvacseq generate_protein_fasta headers with VEP provenance.
-
-This is the single VCF-join site of the variant path. It reads the WT/MT protein
-windows written by `pvacseq generate_protein_fasta` plus the VEP-annotated VCF,
-and rewrites every defline into a fixed, pipe-delimited schema so the downstream
-peptide step (variant_fasta2peptides.py) needs only this FASTA and never the VCF:
+"""
+Rewrites the deflines of a pvacseq generate_protein_fasta output into a fixed,
+pipe-delimited provenance schema (field list in docs/output.md), joining each
+WT/MT window back to its VEP CSQ entry:
 
   >{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}
 
-  1 kind            WT or MT (the pvacseq wild-type / mutant window)
-  2 numbering       pvacseq per-entry index; identical for a variant's WT and MT record
-  3 genomic_anchor  chr:pos:ref:alt from the VCF (NA if the join misses)
-  4 gene            HGNC symbol
-  5 transcript      Ensembl transcript, versioned (e.g. ENST00000379370.7)
-  6 uniprot         SWISSPROT else TREMBL accession (NA if none)
-  7 consequence     missense | inframe_ins | inframe_del | FS
-  8 aa_change       pvacseq shorthand (e.g. 1381S/Y, or the indel nt change for FS)
-  9 hgvs            HGVSp with the ENSP prefix stripped (e.g. p.Ser1381Tyr)
+Missing values become NA so the layout stays 9 fields wide. This is the variant
+path's only VCF-join site; downstream steps read provenance from the FASTA alone.
 
-Missing values are written as NA (never an empty field), so the 9-field layout is
-fixed and downstream positional parsing is unambiguous. No field value can contain
-a '|' (gene symbols, ENST/UniProt ids, consequence tokens, the pvacseq shorthand,
-and p.HGVS are all pipe-free), so '|' is a safe separator. Sequence lines are copied
-through untouched. Stdlib only — no pysam/BioPython.
-
-The VCF join (build_key_map + helpers below) mirrors how pVACtools indexes the VCF
-(resolve_consequence + construct_index), so the key derived from each pvacseq header
-tail resolves losslessly to its CSQ annotation.
+Author: Axel Walter
+License: MIT
 """
+
 import argparse
 import gzip
+import logging
 import re
-import sys
+
+# Configure logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
 
 HEX_RE = re.compile(r'%[0-9A-Fa-f][0-9A-Fa-f]')
 # consequence tokens as they appear in the pvacseq FASTA header tail
@@ -96,72 +87,65 @@ def first(value):
 
 
 def build_key_map(vcf_path):
-    """Map pvacseq index tail ({gene}.{transcript}.{consequence}.{aacp}) -> annotation.
-
-    The tail is exactly the key pVACtools embeds in each FASTA header, so this dict
-    joins each window back to its CSQ entry. Values carry the three VCF-only fields
-    the header needs (genomic anchor, uniprot, HGVSp); gene/transcript/consequence
-    are also kept for a graceful fallback.
-    """
-    fmt = parse_csq_format(vcf_path)
-    idx = {name: i for i, name in enumerate(fmt)}
+    """Maps the pvacseq header tail ({gene}.{transcript}.{consequence}.{aa_change}) to its
+    CSQ annotation. The tail is the key pVACtools embeds in each defline, so this joins
+    every window back to the VCF."""
+    csq_format = parse_csq_format(vcf_path)
+    csq_index = {name: i for i, name in enumerate(csq_format)}
     required = ['Consequence', 'Feature', 'Protein_position', 'Amino_acids', 'SYMBOL', 'Gene']
-    for r in required:
-        if r not in idx:
-            raise SystemExit(f"ERROR: CSQ is missing required field '{r}'. "
+    for name in required:
+        if name not in csq_index:
+            raise SystemExit(f"ERROR: CSQ is missing required field '{name}'. "
                              f"Re-run VEP with --symbol --hgvs (and plugins).")
 
     keymap = {}
-    n_multi = 0
     with _open(vcf_path) as fh:
         for line in fh:
             if line.startswith('#'):
                 continue
-            col = line.rstrip('\n').split('\t')
-            chrom, pos, ref, alt, info = col[0], col[1], col[3], col[4], col[7]
-            if ',' in alt:
-                n_multi += 1  # expected 0 after `bcftools norm -m-`
-            m = re.search(r'(?:^|;)CSQ=([^;]+)', info)
-            if not m:
+            cols = line.rstrip('\n').split('\t')
+            chrom, pos, ref, alt, info = cols[0], cols[1], cols[3], cols[4], cols[7]
+            match = re.search(r'(?:^|;)CSQ=([^;]+)', info)
+            if not match:
                 continue
-            for entry in m.group(1).split(','):
-                f = entry.split('|')
-                if len(f) < len(fmt):
-                    f += [''] * (len(fmt) - len(f))
+            for entry in match.group(1).split(','):
+                fields = entry.split('|')
+                if len(fields) < len(csq_format):
+                    fields += [''] * (len(csq_format) - len(fields))
 
-                def g(name):
-                    return f[idx[name]] if name in idx else ''
+                def csq(name):
+                    return fields[csq_index[name]] if name in csq_index else ''
 
-                consequence = resolve_consequence(g('Consequence'), ref, alt)
+                consequence = resolve_consequence(csq('Consequence'), ref, alt)
                 if consequence is None:
                     continue
 
-                pp = g('Protein_position')
-                if '/' in pp:
-                    pp = pp.split('/')[0]
-                    if pp == '-':
-                        pp = g('Protein_position').split('/')[1]
-                if pp in ('-', ''):
+                protein_position = csq('Protein_position')
+                if '/' in protein_position:
+                    protein_position = protein_position.split('/')[0]
+                    if protein_position == '-':
+                        protein_position = csq('Protein_position').split('/')[1]
+                if protein_position in ('-', ''):
                     continue
 
                 if consequence == 'FS':
-                    if 'FrameshiftSequence' in idx and g('FrameshiftSequence') == '':
+                    if 'FrameshiftSequence' in csq_index and csq('FrameshiftSequence') == '':
                         continue
-                    aacp = f"{pp}{ref}/{alt}"
+                    aa_change = f"{protein_position}{ref}/{alt}"
                 else:
-                    aa = g('Amino_acids')
-                    if aa == '':
+                    amino_acids = csq('Amino_acids')
+                    if amino_acids == '':
                         continue
-                    aacp = f"{pp}{aa}"
+                    aa_change = f"{protein_position}{amino_acids}"
 
-                gene = g('SYMBOL') or g('Gene')
-                transcript = g('Feature')
-                key = f"{gene}.{transcript}.{consequence}.{aacp}"
+                gene = csq('SYMBOL') or csq('Gene')
+                transcript = csq('Feature')
+                key = f"{gene}.{transcript}.{consequence}.{aa_change}"
 
-                hgvsp = decode_hex(g('HGVSp'))
+                hgvsp = decode_hex(csq('HGVSp'))
                 if ':' in hgvsp:
                     hgvsp = hgvsp.split(':', 1)[1]  # keep p.XxxNNNYyy, drop ENSP prefix
-                uniprot = first(g('SWISSPROT')) or first(g('TREMBL'))
+                uniprot = first(csq('SWISSPROT')) or first(csq('TREMBL'))
                 keymap[key] = {
                     'gene': gene or 'NA',
                     'transcript': transcript or 'NA',
@@ -170,49 +154,40 @@ def build_key_map(vcf_path):
                     'anchor': f"{chrom}:{pos}:{ref}:{alt}",
                     'uniprot': uniprot or 'NA',
                 }
-    if n_multi:
-        print(f"WARNING: {n_multi} multiallelic record(s) in VCF; run `bcftools norm -m-` "
-              f"upstream for exact frameshift matching.", file=sys.stderr)
     return keymap
 
 
 def split_tail(tail):
-    """Split a pvacseq header tail '{gene}.{transcript}.{consequence}.{aacp}'.
-
-    The transcript carries a version dot, so we anchor on the consequence token
-    rather than splitting positionally. Returns (gene, transcript, consequence, aacp).
-    """
-    for tok in CONSEQUENCE_TOKENS:
-        marker = f".{tok}."
+    """Splits a header tail into (gene, transcript, consequence, aa_change), anchoring on the
+    consequence token because the transcript itself carries a version dot."""
+    for token in CONSEQUENCE_TOKENS:
+        marker = f".{token}."
         i = tail.find(marker)
         if i == -1:
             continue
-        left = tail[:i]                       # '{gene}.{transcript}'
-        gene, _, transcript = left.partition('.')
-        aacp = tail[i + len(marker):]         # '{aacp}'
-        return gene or 'NA', transcript or 'NA', tok, aacp or 'NA'
+        gene, _, transcript = tail[:i].partition('.')
+        aa_change = tail[i + len(marker):]
+        return gene or 'NA', transcript or 'NA', token, aa_change or 'NA'
     return 'NA', 'NA', 'NA', 'NA'
 
 
 def annotate_fasta(in_fasta, out_fasta, keymap):
-    """Rewrite each pvacseq defline into the pipe-delimited provenance schema.
+    """Rewrites each defline into the provenance schema; returns (n_records, n_miss).
 
-    Tail-derived fields (gene, transcript, consequence, aa_change) come from the
-    header itself so they survive even when the VCF join misses; the three VCF-only
-    fields (genomic anchor, uniprot, hgvs) fall back to NA on a miss.
+    Tail-derived fields survive a failed VCF join; the VCF-only fields fall back to NA.
     """
     n_records = 0
     n_miss = 0
     with open(in_fasta) as fin, open(out_fasta, 'w') as fout:
         for line in fin:
             if not line.startswith('>'):
-                fout.write(line)  # sequence line, copied verbatim
+                fout.write(line)
                 continue
             n_records += 1
             raw_id = line[1:].rstrip('\n').split()[0]
             kind, _, remainder = raw_id.partition('.')       # 'MT', '1.{tail}'
-            numbering, _, tail = remainder.partition('.')     # '1', '{tail}'
-            gene, transcript, consequence, aacp = split_tail(tail)
+            numbering, _, tail = remainder.partition('.')    # '1', '{tail}'
+            gene, transcript, consequence, aa_change = split_tail(tail)
             ann = keymap.get(tail)
             if ann is None:
                 n_miss += 1
@@ -220,12 +195,13 @@ def annotate_fasta(in_fasta, out_fasta, keymap):
             else:
                 anchor, uniprot, hgvsp = ann['anchor'], ann['uniprot'], ann['hgvsp']
             fields = [kind or 'NA', numbering or 'NA', anchor,
-                      gene, transcript, uniprot, consequence, aacp, hgvsp]
+                      gene, transcript, uniprot, consequence, aa_change, hgvsp]
             fout.write('>' + '|'.join(fields) + '\n')
     return n_records, n_miss
 
 
 def parse_args():
+    """Parse CLI args"""
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--vep-vcf', required=True, help='VEP-annotated VCF (.vcf or .vcf.gz)')
@@ -239,10 +215,17 @@ def parse_args():
 def main():
     args = parse_args()
     keymap = build_key_map(args.vep_vcf)
-    print(f"Built {len(keymap)} index keys from {args.vep_vcf}.", file=sys.stderr)
+    logging.info(f"Built {len(keymap):,.0f} index keys from {args.vep_vcf}")
     n_records, n_miss = annotate_fasta(args.in_fasta, args.out_fasta, keymap)
-    print(f"Annotated {n_records} FASTA record(s) -> {args.out_fasta} "
-          f"({n_miss} with no VCF match; anchor/uniprot/hgvs = NA).", file=sys.stderr)
+    # The FASTA and VCF travel in the same channel tuple, so a correct pairing joins ~100%.
+    if n_records and n_miss == n_records:
+        raise SystemExit(f"ERROR: none of the {n_records} FASTA records matched a VEP CSQ entry. "
+                         f"Do {args.in_fasta} and {args.vep_vcf} belong to the same sample?")
+    if n_records and n_miss > 0.1 * n_records:
+        logging.warning(f"{n_miss} of {n_records} records did not match a VEP CSQ entry; "
+                        f"check that {args.in_fasta} and {args.vep_vcf} belong to the same sample")
+    logging.info(f"Annotated {n_records:,.0f} FASTA record(s) to {args.out_fasta} "
+                 f"({n_miss} without a VCF match)")
 
 
 if __name__ == '__main__':

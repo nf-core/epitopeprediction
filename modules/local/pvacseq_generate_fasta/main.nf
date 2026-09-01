@@ -2,7 +2,7 @@ process PVACSEQ_GENERATE_FASTA {
     tag "${meta.id}"
     label 'process_low'
 
-    conda "${moduleDir}/environment.yml"
+    // conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
         ? 'https://depot.galaxyproject.org/singularity/pvactools:7.0.1--pyhdfd78af_0'
         : 'biocontainers/pvactools:7.0.1--pyhdfd78af_0'}"
@@ -21,8 +21,7 @@ process PVACSEQ_GENERATE_FASTA {
     def prefix     = task.ext.prefix ?: "${meta.id}"
     def args       = task.ext.args ?: ''
     def flank      = params.mutation_flanking_aas
-    // Select the tumor sample's genotypes on multi-sample (matched tumor/normal) VCFs.
-    // Optional: single-sample tumor-only VCFs leave meta.tumor_sample unset -> no -s.
+    // -s picks the tumor column on multi-sample VCFs; single-sample VCFs leave it unset.
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
     """
     pvacseq generate_protein_fasta \\

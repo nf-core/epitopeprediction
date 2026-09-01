@@ -2,7 +2,7 @@ process DOWNLOAD_REF_FASTA {
     tag "${meta.id}"
     label 'process_low'
 
-    conda "${moduleDir}/environment.yml"
+    // conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
         ? 'https://depot.galaxyproject.org/singularity/samtools:1.21--h50ea8bc_0'
         : 'biocontainers/samtools:1.21--h50ea8bc_0'}"
@@ -19,8 +19,7 @@ process DOWNLOAD_REF_FASTA {
     task.ext.when == null || task.ext.when
 
     script:
-    // Fetch the reference FASTA straight from Ensembl rather than via vep_install's flaky
-    // --AUTO f step, which silently no-ops for many species. Matches the cache build/version.
+    // Fetched straight from Ensembl: vep_install's --AUTO f silently no-ops for many species.
     prefix = task.ext.prefix ?: "${species}.${assembly}"
     def args = task.ext.args ?: ''
     """
@@ -33,8 +32,7 @@ process DOWNLOAD_REF_FASTA {
     sp="${species}"
     sp_cap="\${sp^}"   # homo_sapiens -> Homo_sapiens
 
-    # Prefer the primary assembly (chromosomes + scaffolds, no patches/haplotypes); some
-    # genomes only ship a toplevel FASTA, so fall back to it.
+    # Some genomes only ship a toplevel FASTA, so fall back to it.
     got=""
     for kind in primary_assembly toplevel; do
         url="\${base}/fasta/${species}/dna/\${sp_cap}.${assembly}.dna.\${kind}.fa.gz"
@@ -48,8 +46,6 @@ process DOWNLOAD_REF_FASTA {
     fi
     echo "Downloaded \${got} FASTA" >&2
 
-    # One-off decompression to a plain, indexed FASTA (the --ref_fasta contract shared with
-    # the user-provided path, so PREP_VCF/VEP are identical across both).
     gunzip -f ${prefix}.fa.gz
     samtools faidx ${prefix}.fa
 

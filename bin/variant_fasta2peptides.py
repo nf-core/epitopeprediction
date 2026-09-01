@@ -1,47 +1,33 @@
 #!/usr/bin/env python3
-"""Generate mutation-overlapping peptides from an annotated pvacseq FASTA.
-
-This is the epytope-free replacement for the variant peptide step. It takes the
-WT/MT protein windows written by `pvacseq generate_protein_fasta` *after* they have
-been provenance-annotated by annotate_fasta_headers.py, and emits one TSV per
-peptide length (like fasta2peptides.py) containing only the k-mers that actually
-overlap the mutation, each carrying its provenance (gene, transcript, consequence,
-HGVSp, genomic anchor, UniProt).
-
-All provenance is read straight from the pipe-delimited FASTA headers, so this step
-never touches the VCF — annotate_fasta_headers.py is the single VCF-join site.
-Header schema (see annotate_fasta_headers.py):
-
-  >{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}
-
-How it decides which k-mers are "neo":
-  pvacseq emits paired records with kind WT and MT sharing the same numbering (the
-  mutant protein windowed with `--flank` residues of wild-type context on each side).
-  We diff each MT window against its WT partner (longest common prefix/suffix) to
-  locate the changed region, then keep only the k-mers overlapping it — reproducing
-  epytope's `is_created_by_variant()` filter without epytope. Frameshifts keep the
-  whole novel tail; clean deletions keep k-mers spanning the junction.
-
-Stdlib only — no pysam/BioPython.
 """
+Generates mutation-overlapping k-mer peptides from a provenance-annotated pvacseq
+FASTA (see annotate_fasta_headers.py) and writes them in TSV format per peptide
+length k. Each MT window is diffed against its WT partner to locate the mutated
+region; only k-mers overlapping it are kept, carrying the header's provenance.
+
+Author: Axel Walter
+License: MIT
+"""
+
 import argparse
-import sys
+import logging
 from collections import defaultdict
+
+# Configure logging
+logging.basicConfig(
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    level=logging.INFO
+)
 
 AA_SET = set("ACDEFGHIKLMNPQRSTVWY")
 N_HEADER_FIELDS = 9  # kind|numbering|anchor|gene|transcript|uniprot|consequence|aa_change|hgvs
 
 
 def parse_annotated_fasta(fasta_path):
-    """Parse the annotated pipe-delimited FASTA into paired WT/MT windows.
+    """Parses the annotated FASTA into (MT records, {pair_key: WT sequence}).
 
-    Returns (mt_records, wt_by_key) where:
-      mt_records = list of (pair_key, ann, sequence) for MT records
-      wt_by_key  = {pair_key: sequence} for WT records
-    `pair_key` = '{numbering}.{gene}.{transcript}.{consequence}.{aa_change}' — identical
-    for a variant's WT and MT record, so it pairs them; it also reconstructs the original
-    pvacseq id, which feeds the protein_ids column as 'MT.{pair_key}'.
-    `ann` = provenance dict {gene, transcript, consequence, hgvsp, anchor, uniprot}.
+    pair_key is '{numbering}.{gene}.{transcript}.{consequence}.{aa_change}', identical for a
+    variant's WT and MT record; prefixed with 'MT.' it is also the original pvacseq id.
     """
     mt_records = []
     wt_by_key = {}
@@ -81,19 +67,14 @@ def parse_annotated_fasta(fasta_path):
                 seq_chunks.append(line.strip())
         flush()
     if n_bad:
-        print(f"WARNING: {n_bad} FASTA header(s) had fewer than {N_HEADER_FIELDS} fields "
-              f"and were skipped; is the FASTA annotated by annotate_fasta_headers.py?",
-              file=sys.stderr)
+        logging.warning(f"Skipped {n_bad} FASTA header(s) with fewer than {N_HEADER_FIELDS} fields; "
+                        f"is the FASTA annotated by annotate_fasta_headers.py?")
     return mt_records, wt_by_key
 
 
 def changed_interval(wt, mt, is_fs):
-    """Locate the mutated region of `mt` relative to its WT partner.
-
-    Returns (a, b, junction):
-      - substitution/insertion/frameshift: novel residues span [a, b); junction=False
-      - clean deletion: a == b at the deletion junction; junction=True
-    """
+    """Locates the mutated region of `mt` as (a, b, junction): novel residues span [a, b),
+    except for a clean deletion where a == b marks the junction and junction is True."""
     n = min(len(wt), len(mt))
     lcp = 0
     while lcp < n and wt[lcp] == mt[lcp]:
@@ -111,7 +92,7 @@ def changed_interval(wt, mt, is_fs):
 
 
 def is_neo(start, k, a, b, junction):
-    """True if k-mer [start, start+k) overlaps the mutated region (or spans a deletion junction)."""
+    """True if k-mer [start, start+k) overlaps the mutated region or spans a deletion junction."""
     end = start + k
     if junction:
         # must cover both residues now adjacent across the deletion (positions a-1 and a)
@@ -124,10 +105,7 @@ def valid_peptide(pep):
 
 
 def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len, want_wildtype):
-    """Yield per-length dicts of deduplicated mutation-overlapping peptides.
-
-    Returns {k: {peptide: {provenance sets ...}}}.
-    """
+    """Collapses mutation-overlapping k-mers into {k: {peptide: provenance sets}}."""
     by_length = {k: defaultdict(lambda: {
         'gene': set(), 'transcript': set(), 'consequence': set(),
         'hgvsp': set(), 'anchor': set(), 'uniprot': set(),
@@ -165,8 +143,7 @@ def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len, want_wild
                     # WT counterpart only cleanly defined when coordinates align (substitutions)
                     rec['wildtype'].add(wt[start:start + k] if same_len else 'NA')
     if n_no_wt:
-        print(f"WARNING: {n_no_wt} MT record(s) had no WT partner and were skipped.",
-              file=sys.stderr)
+        logging.warning(f"Skipped {n_no_wt} MT record(s) without a WT partner")
     return by_length
 
 
@@ -174,7 +151,8 @@ def _join(values):
     return ';'.join(sorted(v for v in values if v)) or 'NA'
 
 
-def write_length_tsv(path, peptides, peptide_col, want_wildtype):
+def write_peptide_tsv(path, peptides, peptide_col, want_wildtype):
+    """Writes one peptide table, sorted by sequence, with multi-valued provenance joined by ';'."""
     cols = [peptide_col, 'gene', 'transcript', 'consequence', 'HGVSp',
             'genomic_anchor', 'uniprot', 'protein_ids', 'counts']
     if want_wildtype:
@@ -193,7 +171,7 @@ def write_length_tsv(path, peptides, peptide_col, want_wildtype):
 
 
 def _iter_fasta_sequences(fasta_path):
-    """Yield each protein sequence (uppercased) from a FASTA, one record at a time."""
+    """Yields each protein sequence (uppercased) from a FASTA, one record at a time."""
     chunk = []
     with open(fasta_path) as fh:
         for line in fh:
@@ -208,14 +186,11 @@ def _iter_fasta_sequences(fasta_path):
 
 
 def filter_self_peptides(by_length, fasta_path):
-    """Drop variant peptides found in the reference proteome (in place); return the count removed.
+    """Drops variant peptides occurring in the reference proteome, in place; returns the count.
 
-    A length-k peptide is "in the proteome" iff it equals one of some reference protein's
-    contiguous k-mers. We therefore scan each protein once and, for every peptide length in
-    play, intersect that protein's k-mer set with the (small) set of candidate peptides. This
-    is O(proteome_residues * n_lengths) and independent of the peptide count -- versus a naive
-    `pep in proteome` substring scan, which is O(n_peptides * proteome_length) and does not
-    scale to a full proteome (~10^7 residues).
+    Scans each protein once and intersects its k-mer set with the candidates, which is
+    O(proteome_residues * n_lengths) and independent of the peptide count. A naive
+    `pep in proteome` scan is O(n_peptides * proteome_length) and does not scale.
     """
     candidates = {k: set(by_length[k]) for k in by_length if by_length[k]}
     if not candidates:
@@ -236,6 +211,7 @@ def filter_self_peptides(by_length, fasta_path):
 
 
 def parse_args():
+    """Parse CLI args"""
     ap = argparse.ArgumentParser(description=__doc__,
                                  formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--in-fasta', required=True,
@@ -259,25 +235,23 @@ def main():
         raise SystemExit("ERROR: --min-length must be <= --max-length.")
 
     mt_records, wt_by_key = parse_annotated_fasta(args.in_fasta)
-    print(f"Parsed {len(mt_records)} MT and {len(wt_by_key)} WT records from "
-          f"{args.in_fasta}.", file=sys.stderr)
+    logging.info(f"Parsed {len(mt_records)} MT and {len(wt_by_key)} WT records from {args.in_fasta}")
 
     by_length = generate_variant_peptides(
         mt_records, wt_by_key, args.min_length, args.max_length, args.wild_type)
 
     if args.proteome_reference:
         removed = filter_self_peptides(by_length, args.proteome_reference)
-        print(f"Filtered out {removed} peptide(s) found in the reference proteome "
-              f"{args.proteome_reference}.", file=sys.stderr)
+        logging.info(f"Filtered out {removed} peptide(s) found in {args.proteome_reference}")
 
     total = 0
     for k in range(args.min_length, args.max_length + 1):
         out = f"{args.output_prefix}_length_{k}.tsv"
-        n = write_length_tsv(out, by_length[k], args.peptide_col_name, args.wild_type)
+        n = write_peptide_tsv(out, by_length[k], args.peptide_col_name, args.wild_type)
         total += n
-        print(f"  length {k}: {n} peptides -> {out}", file=sys.stderr)
-    print(f"Wrote {total} deduplicated variant peptides across "
-          f"{args.max_length - args.min_length + 1} lengths.", file=sys.stderr)
+        logging.info(f"Wrote {n:,.0f} peptides of length {k} to {out}")
+    logging.info(f"Wrote {total:,.0f} deduplicated variant peptides across "
+                 f"{args.max_length - args.min_length + 1} lengths")
 
 
 if __name__ == '__main__':
