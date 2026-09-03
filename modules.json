@@ -27,7 +27,7 @@
                     },
                     "multiqc": {
                         "branch": "master",
-                        "git_sha": "cd0ad387832473916b1f1c80c2ca673a7883bf94",
+                        "git_sha": "98403d15b0e50edae1f3fec5eae5e24982f1fade",
                         "installed_by": ["modules"]
                     },
                     "snpsift/split": {
@@ -41,7 +41,7 @@
                 "nf-core": {
                     "utils_nextflow_pipeline": {
                         "branch": "master",
-                        "git_sha": "1a545fcbd762911c21a64ced3dbef99b2b51ac75",
+                        "git_sha": "c2b22d85f30a706a3073387f30380704fcae013b",
                         "installed_by": ["subworkflows"]
                     },
                     "utils_nfcore_pipeline": {
