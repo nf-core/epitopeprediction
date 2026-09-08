@@ -40,7 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
-- Wild-type counterparts of variant peptides are now emitted as their own rows (new `peptide_origin` column: `MT`/`WT`/`MT;WT`) so they are predicted in the same run; WT rows are exempt from `--proteome_reference` filtering and MultiQC statistics. `--wild_type` is deprecated and ignored.
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) Wild-type counterparts of variant peptides are now emitted as their own rows (new `peptide_origin` column: `MT`/`WT`/`MT;WT`) so they are predicted in the same run; WT rows are exempt from `--proteome_reference` filtering and MultiQC statistics. `--wild_type` is deprecated and ignored.
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump` in `epaa.py` ([@SusiJo](https://github.com/SusiJo/)).
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
