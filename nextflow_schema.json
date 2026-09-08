@@ -124,8 +124,9 @@
                 },
                 "wild_type": {
                     "type": "boolean",
-                    "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
-                    "description": "Specifies whether wild-type sequences should be predicted."
+                    "hidden": true,
+                    "help_text": "Deprecated and ignored; wild-type peptides are always emitted (see `peptide_origin` in docs/output.md).",
+                    "description": "Deprecated: wild-type sequences are always predicted."
                 },
                 "proteome_reference": {
                     "type": "string",

@@ -22,7 +22,6 @@ process VARIANT_FASTA2PEPTIDES {
     def prefix     = task.ext.prefix ?: "${meta.id}"
     def min_length = meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
-    def wild_type  = params.wild_type ? '--wild-type' : ''
     def proteome   = proteome_reference ? "--proteome-reference ${proteome_reference}" : ''
     """
     variant_fasta2peptides.py \\
@@ -31,7 +30,6 @@ process VARIANT_FASTA2PEPTIDES {
         --min-length ${min_length} \\
         --max-length ${max_length} \\
         --peptide-col-name ${params.peptide_col_name} \\
-        ${wild_type} \\
         ${proteome}
 
     cat <<-END_VERSIONS > versions.yml

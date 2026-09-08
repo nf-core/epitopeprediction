@@ -8,6 +8,9 @@ peptide length (like fasta2peptides.py) containing only the k-mers that actually
 overlap the mutation, each carrying its provenance (gene, transcript, consequence,
 HGVSp, genomic anchor, UniProt).
 
+Wild-type counterparts of substitution peptides are also emitted as rows (peptide_origin=WT)
+so they are predicted too.
+
 All provenance is read straight from the pipe-delimited FASTA headers, so this step
 never touches the VCF — annotate_fasta_headers.py is the single VCF-join site.
 Header schema (see annotate_fasta_headers.py):
@@ -123,16 +126,34 @@ def valid_peptide(pep):
     return all(c in AA_SET for c in pep)
 
 
-def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len, want_wildtype):
-    """Yield per-length dicts of deduplicated mutation-overlapping peptides.
+def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len):
+    """Yield per-length dicts of deduplicated MT and WT peptides.
+
+    Each mutation-overlapping MT k-mer becomes a row (`peptide_origin=MT`, `protein_ids=MT.{key}`,
+    `wildtype` = aligned WT k-mer). Where MT and WT windows have equal length (substitutions) that
+    WT k-mer is also a row of its own (`peptide_origin=WT`, `protein_ids=WT.{key}`, same provenance).
+    A sequence that is MT for one variant and WT for another gets `MT;WT`.
 
     Returns {k: {peptide: {provenance sets ...}}}.
     """
     by_length = {k: defaultdict(lambda: {
         'gene': set(), 'transcript': set(), 'consequence': set(),
         'hgvsp': set(), 'anchor': set(), 'uniprot': set(),
-        'protein_ids': set(), 'wildtype': set(), 'counts': 0,
+        'protein_ids': set(), 'wildtype': set(), 'origin': set(), 'counts': 0,
     }) for k in range(min_len, max_len + 1)}
+
+    def annotate(rec, ann, pair_key, origin, wildtype):
+        rec['counts'] += 1
+        rec['origin'].add(origin)
+        rec['protein_ids'].add(f"{origin}.{pair_key}")
+        rec['gene'].add(ann['gene'])
+        rec['transcript'].add(ann['transcript'])
+        rec['consequence'].add(ann['consequence'])
+        rec['hgvsp'].add(ann['hgvsp'])
+        rec['anchor'].add(ann['anchor'])
+        rec['uniprot'].add(ann['uniprot'])
+        if wildtype:
+            rec['wildtype'].add(wildtype)
 
     n_no_wt = 0
     for pair_key, ann, mt in mt_records:
@@ -152,18 +173,13 @@ def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len, want_wild
                 pep = mt[start:start + k]
                 if not valid_peptide(pep):
                     continue
-                rec = by_length[k][pep]
-                rec['counts'] += 1
-                rec['protein_ids'].add(f"MT.{pair_key}")
-                rec['gene'].add(ann['gene'])
-                rec['transcript'].add(ann['transcript'])
-                rec['consequence'].add(ann['consequence'])
-                rec['hgvsp'].add(ann['hgvsp'])
-                rec['anchor'].add(ann['anchor'])
-                rec['uniprot'].add(ann['uniprot'])
-                if want_wildtype:
-                    # WT counterpart only cleanly defined when coordinates align (substitutions)
-                    rec['wildtype'].add(wt[start:start + k] if same_len else 'NA')
+                # WT counterpart only cleanly defined when coordinates align (substitutions)
+                wt_pep = wt[start:start + k] if same_len else ''
+                if not valid_peptide(wt_pep):
+                    wt_pep = ''
+                annotate(by_length[k][pep], ann, pair_key, 'MT', wt_pep)
+                if wt_pep and wt_pep != pep:
+                    annotate(by_length[k][wt_pep], ann, pair_key, 'WT', '')
     if n_no_wt:
         print(f"WARNING: {n_no_wt} MT record(s) had no WT partner and were skipped.",
               file=sys.stderr)
@@ -174,21 +190,20 @@ def _join(values):
     return ';'.join(sorted(v for v in values if v)) or 'NA'
 
 
-def write_length_tsv(path, peptides, peptide_col, want_wildtype):
+def write_length_tsv(path, peptides, peptide_col):
     cols = [peptide_col, 'gene', 'transcript', 'consequence', 'HGVSp',
-            'genomic_anchor', 'uniprot', 'protein_ids', 'counts']
-    if want_wildtype:
-        cols.append('wildtype')
+            'genomic_anchor', 'uniprot', 'protein_ids', 'counts',
+            'peptide_origin', 'wildtype']
     with open(path, 'w') as fh:
         fh.write('\t'.join(cols) + '\n')
         for pep in sorted(peptides):
             r = peptides[pep]
-            row = [pep, _join(r['gene']), _join(r['transcript']), _join(r['consequence']),
-                   _join(r['hgvsp']), _join(r['anchor']), _join(r['uniprot']),
-                   _join(r['protein_ids']), str(r['counts'])]
-            if want_wildtype:
-                row.append(_join(r['wildtype']))
-            fh.write('\t'.join(row) + '\n')
+            fh.write('\t'.join([
+                pep, _join(r['gene']), _join(r['transcript']), _join(r['consequence']),
+                _join(r['hgvsp']), _join(r['anchor']), _join(r['uniprot']),
+                _join(r['protein_ids']), str(r['counts']),
+                _join(r['origin']), _join(r['wildtype']),
+            ]) + '\n')
     return len(peptides)
 
 
@@ -210,6 +225,9 @@ def _iter_fasta_sequences(fasta_path):
 def filter_self_peptides(by_length, fasta_path):
     """Drop variant peptides found in the reference proteome (in place); return the count removed.
 
+    Only purely mutant rows (origin == {'MT'}) are candidates; WT rows are reference
+    sequence by construction.
+
     A length-k peptide is "in the proteome" iff it equals one of some reference protein's
     contiguous k-mers. We therefore scan each protein once and, for every peptide length in
     play, intersect that protein's k-mer set with the (small) set of candidate peptides. This
@@ -217,7 +235,8 @@ def filter_self_peptides(by_length, fasta_path):
     `pep in proteome` substring scan, which is O(n_peptides * proteome_length) and does not
     scale to a full proteome (~10^7 residues).
     """
-    candidates = {k: set(by_length[k]) for k in by_length if by_length[k]}
+    candidates = {k: peps for k in by_length
+                  if (peps := {p for p, r in by_length[k].items() if r['origin'] == {'MT'}})}
     if not candidates:
         return 0
     lengths = sorted(candidates)
@@ -246,7 +265,7 @@ def parse_args():
     ap.add_argument('--max-length', type=int, required=True)
     ap.add_argument('--peptide-col-name', default='sequence')
     ap.add_argument('--wild-type', action='store_true',
-                    help='Add a wildtype column with the aligned WT k-mer (substitutions only)')
+                    help='Deprecated; ignored.')
     ap.add_argument('--proteome-reference',
                     help='Optional reference proteome FASTA. Variant peptides occurring as a '
                          'substring of any reference protein are dropped (self/novelty filter).')
@@ -263,7 +282,7 @@ def main():
           f"{args.in_fasta}.", file=sys.stderr)
 
     by_length = generate_variant_peptides(
-        mt_records, wt_by_key, args.min_length, args.max_length, args.wild_type)
+        mt_records, wt_by_key, args.min_length, args.max_length)
 
     if args.proteome_reference:
         removed = filter_self_peptides(by_length, args.proteome_reference)
@@ -273,7 +292,7 @@ def main():
     total = 0
     for k in range(args.min_length, args.max_length + 1):
         out = f"{args.output_prefix}_length_{k}.tsv"
-        n = write_length_tsv(out, by_length[k], args.peptide_col_name, args.wild_type)
+        n = write_length_tsv(out, by_length[k], args.peptide_col_name)
         total += n
         print(f"  length {k}: {n} peptides -> {out}", file=sys.stderr)
     print(f"Wrote {total} deduplicated variant peptides across "

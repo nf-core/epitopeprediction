@@ -14,14 +14,25 @@ The directories listed below will be created in the results directory after the 
 
 Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) → [pVACtools](https://pvactools.readthedocs.io/) chain (see [usage](usage.md#genomic-variants)). Only peptides that actually **overlap the mutation** are kept — for missense, the mutated residue; for in-frame indels, the junction; for frameshifts, the novel C-terminal tail to the new stop — within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
-**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this (WT counterpart shown when `--wild_type` is set):
-| sequence | wildtype | gene | HGVSp | genomic_anchor |
-| ------------- | ------------- | ---- | ----- | -------------- |
-| SKRQTVED**Y** | SKRQTVEDC | ... | p.Cys138Tyr | ... |
-| KRQTVED**Y**P | KRQTVEDCP | ... | p.Cys138Tyr | ... |
-| RQTVED**Y**PR | RQTVEDCPR | ... | p.Cys138Tyr | ... |
-| ... | ... | ... | ... | ... |
-| **Y**PRMGEHQP | CPRMGEHQP | ... | p.Cys138Tyr | ... |
+**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this:
+| sequence | peptide_origin | wildtype | gene | HGVSp | genomic_anchor |
+| ------------- | -------------- | ------------- | ---- | ----- | -------------- |
+| SKRQTVED**Y** | MT | SKRQTVEDC | ... | p.Cys138Tyr | ... |
+| SKRQTVEDC | WT | NA | ... | p.Cys138Tyr | ... |
+| KRQTVED**Y**P | MT | KRQTVEDCP | ... | p.Cys138Tyr | ... |
+| KRQTVEDCP | WT | NA | ... | p.Cys138Tyr | ... |
+| ... | ... | ... | ... | ... | ... |
+
+### Wild-type peptides
+
+Each mutant row carries its aligned wild-type k-mer in `wildtype`, and that k-mer is also emitted as its own row so both are scored against the same alleles.
+
+- `peptide_origin`: `MT`, `WT`, or `MT;WT` (mutant for one variant, wild-type for another). WT rows share the variant's provenance; `protein_ids` is `WT.{pair_key}` vs `MT.{pair_key}`.
+- A wild-type counterpart only exists where the mutant and wild-type windows have the same length, i.e. substitutions. Frameshifts and length-changing indels have no equal-length wild-type window, so `wildtype` stays `NA` and no wild-type row is added.
+- `--proteome_reference` self-filtering never drops wild-type rows: they are reference sequence by construction. Only rows with `peptide_origin == MT` are eligible for that filter.
+- Wild-type rows are excluded from the MultiQC binder statistics so they are not counted as candidate epitopes, but they remain in the published prediction table.
+
+`--wild_type` is deprecated and ignored; the behaviour above is always on.
 
 Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 
