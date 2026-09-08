@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+- Replaced the epytope/BioMart variant path with an offline `bcftools` → Ensembl VEP (Ensembl cache + bundled Wildtype/Frameshift plugins) → pVACtools `generate_protein_fasta` → mutation-overlapping peptides chain. New params `--ref_fasta`, `--vep_cache`, `--vep_species`, `--vep_genome`, `--vep_cache_version`, `--flank`, `--downstream`, and opt-in `--download_cache` (fetch the VEP cache + reference FASTA in-pipeline); optional `tumor_sample` samplesheet column; `download_vep_references.sh` helper ([@axelwalter](https://github.com/axelwalter/))
+- Added `ANNOTATE_FASTA_HEADERS` as the single VCF-join site of the variant path: it rewrites the pvacseq WT/MT deflines into a pipe-delimited provenance schema (`{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`) and publishes the annotated FASTA next to the raw one; `variant_fasta2peptides.py` now reads provenance from those headers and no longer touches the VCF ([@axelwalter](https://github.com/axelwalter/))
+- The variant path emits peptides only for coding-altering consequences (missense, in-frame indels, frameshifts) on complete protein-coding transcripts; non-coding/NMD and incomplete-CDS (`cds_start_NF`/`cds_end_NF`) transcripts are skipped (their variants are still captured via the gene's canonical transcript). Frameshift peptides now extend through the shifted frame to the true stop codon (VEP `Frameshift` plugin `FrameshiftSequence`) instead of being truncated at the original protein length as in the epytope path ([@axelwalter](https://github.com/axelwalter/))
+- `--vep_cache` now accepts a `.tar.gz` archive in addition to a cache directory; the archive is unpacked in-pipeline via the nf-core `UNTAR` module. This lets the `test` profile fetch a tiny GRCh38 chr4+chr19 VEP cache subset (~15 MB) from nf-core/test-datasets instead of the full ~25 GB cache. Added a variant-path nf-test (`tests/variant.nf.test`) over four real somatic variants covering missense, in-frame-indel and frameshift consequences ([@axelwalter](https://github.com/axelwalter/))
+- Retained the `--proteome_reference` self/novelty filter from the old epytope path, reimplemented as a dependency-free post-processing step in `variant_fasta2peptides.py`: variant peptides occurring as a substring of any protein in the given reference proteome are dropped before prediction (only the peptide lists are filtered; the annotated protein FASTA is left complete), asserted by a variant-path nf-test case ([@axelwalter](https://github.com/axelwalter/))
 - [#333](https://github.com/nf-core/epitopeprediction/pull/333) Added metro map to README
 - [#315](https://github.com/nf-core/epitopeprediction/pull/315) Added module bcftools/norm and parameter `--genome` for reference.fasta input ([@SusiJo](https://github.com/SusiJo/))
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
@@ -16,7 +21,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Fixed`
 
 - [#368](https://github.com/nf-core/epitopeprediction/pull/368) Fixed NetMHCpan crashing with a buffer overflow when run from a long working directory ([@jonasscheid](https://github.com/jonasscheid/))
-- [#364](https://github.com/nf-core/epitopeprediction/pull/364) Fixed inverted `--proteome_reference` self-filtering that retained self-epitopes instead of removing them (fixes [#363](https://github.com/nf-core/epitopeprediction/issues/363)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCpan/NetMHCIIpan allele labels by reading allele names from the xls header (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#352](https://github.com/nf-core/epitopeprediction/pull/352) Accept 3- and 4-field HLA typings by truncating to 2 fields via mhcgnomes (fixes [#350](https://github.com/nf-core/epitopeprediction/issues/350)) ([@jonasscheid](https://github.com/jonasscheid/))
 - Fixed NetMHCIIpan mouse class II allele conversion: `H2-AA*b/AB*b` now maps to `H-2-IAb` (and `H2-EA*d/EB*d` to `H-2-IEd`) instead of the invalid `H-2-AAb-ABb` ([@jonasscheid](https://github.com/jonasscheid/))
@@ -36,6 +40,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) Wild-type counterparts of variant peptides are now emitted as their own rows (new `peptide_origin` column: `MT`/`WT`/`MT;WT`) so they are predicted in the same run; WT rows are exempt from `--proteome_reference` filtering and MultiQC statistics. `--wild_type` is deprecated and ignored.
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump` in `epaa.py` ([@SusiJo](https://github.com/SusiJo/)).
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
@@ -44,6 +49,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
+
+### `Removed`
+
+- Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--biomart_dump_path`, `--genome`, `--fasta_output`, `--fasta_peptide_flanking_region_size`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
 
 ## 3.1.0 - Lustnau - 2025-10-22
 

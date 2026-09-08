@@ -12,30 +12,57 @@ The directories listed below will be created in the results directory after the 
 
 ## Variant prediction
 
-[Epytope](https://github.com/KohlbacherLab/epytope) is used to parse _annotated_ variants (by [SnpEff](http://pcingola.> github.io/SnpEff/) or [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)). Based on this information, epytope generates all possible mutated peptides within the length boundary set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Essentially the same peptide generation from proteins is applied when specifying `.fasta` files in the samplesheet.
+Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) → [pVACtools](https://pvactools.readthedocs.io/) chain (see [usage](usage.md#genomic-variants)). Only peptides that actually **overlap the mutation** are kept — for missense, the mutated residue; for in-frame indels, the junction; for frameshifts, the novel C-terminal tail to the new stop — within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
-**Example**: Suppose you have the missense mutation `p.Cys138Tyr` in `ENSP00000235347` and you set `min_peptide_length_class[I|II] = max_peptide_length_class[I|II] = 9`. A subset of the table epytope generates looks like this:
-| Mutated | Wildtype | Metadata
-| ------------- | ------------- | ------------- |
-| SKRQTVED**Y** | SKRQTVEDC | ...
-| KRQTVED**Y**P | KRQTVEDCP | ...
-| RQTVED**Y**PR | RQTVEDCPR | ...
-| QTVED**Y**PRM | QTVEDCPRM | ...
-| TVED**Y**PRMG | TVEDCPRMG | ...
-| VED**Y**PRMGE | VEDCPRMGE | ...
-| ED**Y**PRMGEH | EDCPRMGEH | ...
-| D**Y**PRMGEHQ | DCPRMGEHQ | ...
-| **Y**PRMGEHQP | CPRMGEHQP | ...
+**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this:
+| sequence | peptide_origin | wildtype | gene | HGVSp | genomic_anchor |
+| ------------- | -------------- | ------------- | ---- | ----- | -------------- |
+| SKRQTVED**Y** | MT | SKRQTVEDC | ... | p.Cys138Tyr | ... |
+| SKRQTVEDC | WT | NA | ... | p.Cys138Tyr | ... |
+| KRQTVED**Y**P | MT | KRQTVEDCP | ... | p.Cys138Tyr | ... |
+| KRQTVEDCP | WT | NA | ... | p.Cys138Tyr | ... |
+| ... | ... | ... | ... | ... | ... |
 
-Tables are written per chromosome in a `tsv`.
+### Wild-type peptides
 
-**Output directory:** `epytope/[sample]_chr[1-22|X|Y].tsv`
+Each mutant row carries its aligned wild-type k-mer in `wildtype`, and that k-mer is also emitted as its own row so both are scored against the same alleles.
 
-These generated mutated peptides are then passed to the MHC binding prediction subworkflow, where they are scored against the sample's individual MHC alleles.
+- `peptide_origin`: `MT`, `WT`, or `MT;WT` (mutant for one variant, wild-type for another). WT rows share the variant's provenance; `protein_ids` is `WT.{pair_key}` vs `MT.{pair_key}`.
+- A wild-type counterpart only exists where the mutant and wild-type windows have the same length, i.e. substitutions. Frameshifts and length-changing indels have no equal-length wild-type window, so `wildtype` stays `NA` and no wild-type row is added.
+- `--proteome_reference` self-filtering never drops wild-type rows: they are reference sequence by construction. Only rows with `peptide_origin == MT` are eligible for that filter.
+- Wild-type rows are excluded from the MultiQC binder statistics so they are not counted as candidate epitopes, but they remain in the published prediction table.
 
-**Optionally** you can obtain a **FASTA** file containing the variant protein sequences by providing `--fasta_output`. This can be specifically useful as input database for mass spectrometry-based pipelines such as [nf-core/mhcquant](https://github.com/nf-core/mhcquant). Sequences will be provided in full length for the wildtype and spliced around the mutation site for variant sequences (`--fasta_peptide_flanking_region_size` parameter).
+`--wild_type` is deprecated and ignored; the behaviour above is always on.
 
-**Output directory:** `epytope/[sample].fasta`
+Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
+
+**Intermediate output directories:**
+
+- `prep_vcf/[sample].prep.vcf.gz` — PASS-filtered, Ensembl-named, normalized VCF
+- `vep/[sample].vcf.gz` — VEP annotation (with the Wildtype/Frameshift plugin sequences)
+- `variant_fasta/[sample].variant_peptides.raw.fasta` — pvacseq WT/MT protein windows
+- `variant_fasta/[sample].variant_peptides.annotated.fasta` — the same WT/MT windows with provenance-annotated headers (schema below)
+- `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance
+
+The annotated FASTA rewrites each pvacseq defline into a fixed, pipe-delimited schema (`NA` for any missing value):
+
+`>{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`
+
+| field          | meaning                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| kind           | `WT` or `MT` (wild-type / mutant window)                                   |
+| numbering      | pvacseq per-entry index; identical for a variant's paired WT and MT record |
+| genomic_anchor | `chr:pos:ref:alt`                                                          |
+| gene           | HGNC symbol                                                                |
+| transcript     | Ensembl transcript (versioned)                                             |
+| uniprot        | SWISSPROT else TREMBL accession                                            |
+| consequence    | `missense` / `inframe_ins` / `inframe_del` / `FS`                          |
+| aa_change      | pvacseq shorthand (e.g. `78Q/H`)                                           |
+| hgvs           | HGVSp, ENSP prefix stripped (e.g. `p.Gln78His`)                            |
+
+Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
+
+One record is written per variant × transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
 
 ## Epitopeprediction
 

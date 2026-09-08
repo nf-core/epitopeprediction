@@ -1,4 +1,5 @@
 .nextflow*
+.nf-test*
 work/
 data/
 results/
@@ -8,3 +9,7 @@ testing*
 *.pyc
 null/
 .lineage/
+
+# Claude Code
+CLAUDE.md
+.claude/
