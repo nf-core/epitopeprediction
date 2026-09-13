@@ -15,17 +15,18 @@ The directories listed below will be created in the results directory after the 
 [Epytope](https://github.com/KohlbacherLab/epytope) is used to parse _annotated_ variants (by [SnpEff](http://pcingola.> github.io/SnpEff/) or [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)). Based on this information, epytope generates all possible mutated peptides within the length boundary set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Essentially the same peptide generation from proteins is applied when specifying `.fasta` files in the samplesheet.
 
 **Example**: Suppose you have the missense mutation `p.Cys138Tyr` in `ENSP00000235347` and you set `min_peptide_length_class[I|II] = max_peptide_length_class[I|II] = 9`. A subset of the table epytope generates looks like this:
-| Mutated | Wildtype | Metadata
-| ------------- | ------------- | ------------- |
-| SKRQTVED**Y** | SKRQTVEDC | ...
-| KRQTVED**Y**P | KRQTVEDCP | ...
-| RQTVED**Y**PR | RQTVEDCPR | ...
-| QTVED**Y**PRM | QTVEDCPRM | ...
-| TVED**Y**PRMG | TVEDCPRMG | ...
-| VED**Y**PRMGE | VEDCPRMGE | ...
-| ED**Y**PRMGEH | EDCPRMGEH | ...
-| D**Y**PRMGEHQ | DCPRMGEHQ | ...
-| **Y**PRMGEHQP | CPRMGEHQP | ...
+
+| Mutated       | Wildtype  | Metadata |
+| ------------- | --------- | -------- |
+| SKRQTVED**Y** | SKRQTVEDC | ...      |
+| KRQTVED**Y**P | KRQTVEDCP | ...      |
+| RQTVED**Y**PR | RQTVEDCPR | ...      |
+| QTVED**Y**PRM | QTVEDCPRM | ...      |
+| TVED**Y**PRMG | TVEDCPRMG | ...      |
+| VED**Y**PRMGE | VEDCPRMGE | ...      |
+| ED**Y**PRMGEH | EDCPRMGEH | ...      |
+| D**Y**PRMGEHQ | DCPRMGEHQ | ...      |
+| **Y**PRMGEHQP | CPRMGEHQP | ...      |
 
 Tables are written per chromosome in a `tsv`.
 
@@ -119,4 +120,4 @@ For more information about how to use MultiQC reports, see <http://multiqc.info>
 
 </details>
 
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
+[Nextflow](https://docs.seqera.io/platform-cloud/reports/overview) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
