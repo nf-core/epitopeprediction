@@ -21,14 +21,36 @@ process PREP_VCF {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
+    def tumor  = meta.tumor_sample ?: ''
     """
+    # pvacseq refuses VCFs without GT (Strelka emits none): tumor sample gets 0/1, the rest stay missing.
+    if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=GT,'; then
+        input_vcf=${vcf}
+    else
+        tumor="${tumor}"
+        if [ -z "\${tumor}" ]; then
+            if [ "\$(bcftools query -l ${vcf} | wc -l)" -ne 1 ]; then
+                echo "ERROR: ${vcf} has no GT field and more than one sample; set tumor_sample in the samplesheet." >&2
+                exit 1
+            fi
+            tumor=\$(bcftools query -l ${vcf})
+        fi
+        mkdir gt
+        bcftools view ${vcf} -Oz -o gt/input.vcf.gz && bcftools index -t gt/input.vcf.gz
+        bcftools view -s "\${tumor}" gt/input.vcf.gz -Ou \\
+            | bcftools +setGT -Oz -o gt/tumor.vcf.gz -- -t a -n c:0/1
+        bcftools index -t gt/tumor.vcf.gz
+        bcftools annotate -a gt/tumor.vcf.gz -c FMT/GT gt/input.vcf.gz -Oz -o gt/with_gt.vcf.gz
+        input_vcf=gt/with_gt.vcf.gz
+    fi
+
     # Rename map from the VCF's own ##contig headers (chr1->1, chrM->MT) so records match
     # the Ensembl-named VEP cache. Already-Ensembl VCFs map to themselves.
     bcftools view -h ${vcf} \\
         | awk -F'[<,=>]' '/^##contig/{for(i=1;i<=NF;i++) if(\$i=="ID"){c=\$(i+1); e=c; sub(/^chr/,"",e); if(e=="M")e="MT"; print c"\\t"e}}' \\
         > chr_map.txt
 
-    bcftools view -f PASS ${vcf} -Ou \\
+    bcftools view -f PASS \${input_vcf} -Ou \\
         | bcftools annotate --rename-chrs chr_map.txt -Ou \\
         | bcftools norm -m- -f ${fasta} -Oz -o ${prefix}.prep.vcf.gz
     bcftools index -t ${prefix}.prep.vcf.gz
