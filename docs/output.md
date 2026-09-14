@@ -15,13 +15,14 @@ The directories listed below will be created in the results directory after the 
 Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) → [pVACtools](https://pvactools.readthedocs.io/) chain (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
 **Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this (WT counterpart shown when `--wild_type` is set):
-| sequence | wildtype | gene | HGVSp | genomic_anchor |
-| ------------- | ------------- | ---- | ----- | -------------- |
-| SKRQTVED**Y** | SKRQTVEDC | ... | p.Cys138Tyr | ... |
-| KRQTVED**Y**P | KRQTVEDCP | ... | p.Cys138Tyr | ... |
-| RQTVED**Y**PR | RQTVEDCPR | ... | p.Cys138Tyr | ... |
-| ... | ... | ... | ... | ... |
-| **Y**PRMGEHQP | CPRMGEHQP | ... | p.Cys138Tyr | ... |
+
+| sequence      | wildtype  | gene | HGVSp       | genomic_anchor |
+| ------------- | --------- | ---- | ----------- | -------------- |
+| SKRQTVED**Y** | SKRQTVEDC | ...  | p.Cys138Tyr | ...            |
+| KRQTVED**Y**P | KRQTVEDCP | ...  | p.Cys138Tyr | ...            |
+| RQTVED**Y**PR | RQTVEDCPR | ...  | p.Cys138Tyr | ...            |
+| ...           | ...       | ...  | ...         | ...            |
+| **Y**PRMGEHQP | CPRMGEHQP | ...  | p.Cys138Tyr | ...            |
 
 Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 
