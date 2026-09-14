@@ -34,8 +34,10 @@ process UNPACK_NETMHC_SOFTWARE {
     #
     checksum="\$(md5sum "$tooltarball" | cut -f1 -d' ')"
     echo "\$checksum"
-    if [ "\$checksum" != "${toolchecksum}" ]; then
-        echo "Checksum error for $toolname. Please make sure to provide the original tarball for $toolname version $toolversion" >&2
+    # Any sub-release of the supported version is accepted, so match against the whole list
+    if ! echo "${toolchecksum}" | tr ' ' '\\n' | grep -qxF "\$checksum"; then
+        echo "Checksum error for $toolname. Please make sure to provide an original tarball for $toolname version $toolversion." >&2
+        echo "Provided tarball has md5 \$checksum, accepted are: ${toolchecksum}" >&2
         exit 2
     fi
 
