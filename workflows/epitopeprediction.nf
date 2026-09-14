@@ -139,22 +139,24 @@ workflow EPITOPEPREDICTION {
     if (params.split_by_variants) {
         VARIANT_SPLIT( ch_samples_uncompressed.variant )
             .splitted
+            .transpose()
+            .map { meta, vcf -> [meta + [split_id: splitId(meta, vcf)], vcf] }
             .set { ch_split_variants }
-        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
     }
     else {
         SNPSIFT_SPLIT( ch_samples_uncompressed.variant
             .map {meta, vcf -> [meta + [split: true], vcf]} ) // need to add split: true to meta to trigger splitting (nf-core module)
             .out_vcfs
+            .transpose()
+            .map { meta, vcf -> [meta + [split_id: splitId(meta, vcf)], vcf] }
             .set { ch_split_variants }
     }
 
     // Generate mutated peptides from VCF and filter out empty files
-    EPYTOPE_VARIANT_PREDICTION( ch_split_variants.transpose(), ch_biomart_dump )
+    EPYTOPE_VARIANT_PREDICTION( ch_split_variants, ch_biomart_dump )
         .tsv
         .filter { _meta, file -> file.size() > 0 }
         .set { ch_peptides_from_variants }
-    ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
 
     // Merge optional fasta output of EPYTOPE_VARIANT_PREDICTION (containing mutated protein sequences) since they are splited
     if (params.fasta_output) {
@@ -170,15 +172,13 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
     FASTA2PEPTIDES( ch_samples_uncompressed.protein )
-    ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
     ch_to_predict = ch_samples_uncompressed.peptide
-                        .mix(FASTA2PEPTIDES.out.tsv.transpose())
+                        .mix(FASTA2PEPTIDES.out.tsv.transpose().map { meta, tsv -> [meta + [split_id: splitId(meta, tsv)], tsv] })
                         .mix(ch_peptides_from_variants)
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
-    ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
 
 
     /*
@@ -190,7 +190,6 @@ workflow EPITOPEPREDICTION {
                             params.tools,
                             supported_alleles_json,
                             netmhc_software_meta)
-    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
 /*     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
@@ -202,7 +201,6 @@ workflow EPITOPEPREDICTION {
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple())
     ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ _meta, json -> json })
-    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
     //
     // Collate and save software versions
@@ -269,3 +267,21 @@ workflow EPITOPEPREDICTION {
     THE END
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// <stem>_v<n>.vcf -> v<n> | <stem>.<chr>.vcf -> <chr> | <id>_length_<k>.tsv -> length_<k>
+def splitId(meta, file) {
+    def stem = file.baseName
+    if (stem ==~ /.*_v\d+/) {
+        return stem.tokenize('_').last()
+    }
+    if (stem.startsWith("${meta.id}_length_")) {
+        return stem - "${meta.id}_"
+    }
+    return stem.tokenize('.').last()
+}

@@ -75,10 +75,11 @@ class MultiQC:
     def write_mqc_rank_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
+        # NetMHCIIpan can emit NaN ranks; drop them so idxmin never returns NaN
         best_rank = (
-            df_valid[df_valid['predictor'] == best_predictor]
+            df_valid[(df_valid['predictor'] == best_predictor) & df_valid['rank'].notna()]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)])
+                .apply(lambda x: x.loc[x['rank'].idxmin()])
         )
         bins = np.linspace(0, 10, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2

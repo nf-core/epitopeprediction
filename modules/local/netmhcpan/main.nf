@@ -8,11 +8,11 @@ process NETMHCPAN {
         'community.wave.seqera.io/library/bash_gawk_perl_tcsh:a941b4e9bd4b8805' }"
 
     input:
-    tuple val(meta), path(tsv), path(software)
+    tuple val(meta), val(alleles_input), path(tsv), path(software)
 
     output:
     tuple val(meta), path("*.xls"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('netMHCpan'), eval("sed 's/.*version //' netmhcpan/data/version"), topic: versions
 
     script:
     if (meta.mhc_class != "I") {
@@ -20,30 +20,25 @@ process NETMHCPAN {
     }
     def args    = task.ext.args ?: ''
     def prefix  = task.ext.prefix ?: "${meta.id}"
-    def alleles = meta.alleles_supported.tokenize(';').collect { allele -> allele.replace('*', '').replace('H2','H-2') }.join(',')
-
+    // netMHCpan copies its install dir (NMHOME) and TMPDIR into fixed-size buffers (~95 chars) and aborts on long
+    // work dir paths, so it is run through a short /tmp symlink with TMPDIR pointed there. See #341.
     """
-    netmhcpan/netMHCpan \
+    nm=\$(mktemp -d /tmp/nm.XXXXXX)
+    trap 'rm -rf "\$nm"' EXIT
+    ln -s "\$PWD/netmhcpan" "\$nm/netmhcpan"
+    export TMPDIR="\$nm"
+
+    "\$nm/netmhcpan/netMHCpan" \
         -p $tsv \
-        -a $alleles \
+        -a $alleles_input \
         -xls \
         -xlsfile ${prefix}_predicted_netmhcpan.xls \
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhcpan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predicted_netmhcpan.xls
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhcpan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 }

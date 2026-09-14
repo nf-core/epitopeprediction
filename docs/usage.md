@@ -16,12 +16,12 @@ You will need to create a samplesheet with information about the samples you wou
 
 An [example samplesheet](../assets/samplesheet.tsv) has been provided with the pipeline.
 
-| Column      | Description                                                                                                                                     |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`    | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                   |
-| `alleles`   | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row. |
-| `mhc_class` | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                              |
-| `filename`  | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                             |
+| Column      | Description                                                                                                                                                                                                                                                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sample`    | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                                                                                                                                                                                                                          |
+| `alleles`   | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row. A species-prefixed sentinel `<prefix>-all` (e.g. `HLA-all`, `BoLA-all`, `H-2-all`) expands to every supported allele of that species per tool — see [Pan-species prediction](#pan-species-prediction). |
+| `mhc_class` | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                                                                                                                                                                                                                                     |
+| `filename`  | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                                                                                                                                                                                                                                    |
 
 The pipeline will auto-detect whether a sample is either in variant, protein or peptide file file format using the information provided in the samplesheet. If you provide peptide format (tsv), make sure your peptide list aligns with `--peptide_col_name` (default: "sequence").
 
@@ -79,6 +79,20 @@ GBM_1,DRB1*01:01,II,gbm_1_peptides.tsv
 
 You can also perform predictions for MHC class `I` and `II` in the same run by specifying the value in the corresponding column (one value per row). Please make sure to select the alleles accordingly. You can also provide your alleles in a `.txt` file containing one allele per row.
 
+### Pan-species prediction
+
+To predict against every supported allele of a given species, use the sentinel `<species>-all` in the `alleles` column. Species names are resolved via `mhcgnomes`, so prefix tags and common names both work:
+
+- `HLA-all` or `human-all` — all supported human HLA alleles (class depends on `mhc_class` and tool)
+- `BoLA-all` or `cattle-all` — all supported bovine alleles
+- `H-2-all`, `H2-all`, or `mouse-all` — all supported mouse alleles
+- `Mamu-all`, `Patr-all`, `SLA-all`, `DLA-all`, ... — other species supported by mhcgnomes and the specified predictor
+
+```console
+sample,alleles,mhc_class,filename
+sample1,HLA-all,I,peptides.tsv
+```
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:
@@ -123,7 +137,7 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 ### Running the pipeline with NetMHC
 
-The pipeline supports NetMHCpan 4.2bstatic and NetMHCIIpan 4.3e. If one of the external tools is specified, the path to the corresponding tarball has to be specified. See the download sections for [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/).
+The pipeline supports NetMHCpan 4.2b and NetMHCIIpan 4.3 (sub-releases b, e and i). If one of the external tools is specified, the path to the corresponding tarball has to be specified. See the download sections for [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/).
 
 When using `conda`, the parameter `--netmhc_system` must also be specified if the default value `linux` is not applicable.
 
@@ -140,7 +154,7 @@ process {
 ```
 
 > [!IMPORTANT]
-> Only the specific versions `netMHCpan-4.2bstatic.Linux.tar.gz` and `netMHCIIpan-4.3e.Linux.tar.gz` are supported, as the pipeline validates these tarballs via checksum to ensure integrity.
+> Only the specific versions `netMHCpan-4.2bstatic.Linux.tar.gz` and `netMHCIIpan-4.3{b,e,i}.Linux.tar.gz` are supported, as the pipeline validates these tarballs via checksum to ensure integrity.
 
 A typical command is as follows:
 
@@ -155,7 +169,7 @@ nextflow run nf-core/epitopeprediction \
   --min_peptide_length_classII 12 \
   --max_peptide_length_classII 25 \
   --netmhcpan_path /path/to/netMHCpan-4.2bstatic.Linux.tar.gz \
-  --netmhciipan_path /path/to/netMHCIIpan-4.3e.Linux.tar.gz \
+  --netmhciipan_path /path/to/netMHCIIpan-4.3i.Linux.tar.gz \
 ```
 
 ### Updating the pipeline
