@@ -16,6 +16,7 @@ process EPYTOPE_VARIANT_PREDICTION {
     tuple val("${task.process}"), val('epytope'), eval("python -c \"import pkg_resources; print(pkg_resources.get_distribution('epytope').version)\""), topic: versions
     tuple val("${task.process}"), val('pandas'), eval("python -c \"import pkg_resources; print(pkg_resources.get_distribution('pandas').version)\""), topic: versions
     tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions
+    tuple val("${task.process}"), val('pyvcf'), eval("python -c \"import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)\""), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
