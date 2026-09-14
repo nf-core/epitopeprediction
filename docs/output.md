@@ -27,8 +27,8 @@ Tables are written per peptide length as a `tsv`, then passed to the MHC binding
 
 **Output directories:**
 
-- `variant_fasta/[sample].variant_peptides.raw.fasta` — pvacseq WT/MT protein windows
-- `variant_fasta/[sample].variant_peptides.annotated.fasta` — the same WT/MT windows with provenance-annotated headers (schema below)
+- `variant_fasta/[sample].raw.fasta` — pvacseq WT/MT protein windows
+- `variant_fasta/[sample].annotated.fasta` — the same WT/MT windows with provenance-annotated headers (schema below)
 - `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance
 
 The annotated FASTA rewrites each pvacseq defline into a fixed, pipe-delimited schema (`NA` for any missing value):

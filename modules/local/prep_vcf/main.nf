@@ -46,9 +46,14 @@ process PREP_VCF {
 
     # Rename map from the VCF's own ##contig headers (chr1->1, chrM->MT) so records match
     # the Ensembl-named VEP cache. Already-Ensembl VCFs map to themselves.
-    bcftools view -h ${vcf} \\
-        | awk -F'[<,=>]' '/^##contig/{for(i=1;i<=NF;i++) if(\$i=="ID"){c=\$(i+1); e=c; sub(/^chr/,"",e); if(e=="M")e="MT"; print c"\\t"e}}' \\
-        > chr_map.txt
+    bcftools view -h ${vcf} | awk -F'[<,=>]' '
+        /^##contig/ {
+            for (i = 1; i <= NF; i++) if (\$i == "ID") name = \$(i + 1)
+            ensembl = name
+            sub(/^chr/, "", ensembl)
+            if (ensembl == "M") ensembl = "MT"
+            print name "\\t" ensembl
+        }' > chr_map.txt
 
     bcftools view -f PASS \${input_vcf} -Ou \\
         | bcftools annotate --rename-chrs chr_map.txt -Ou \\

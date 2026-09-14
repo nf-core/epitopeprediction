@@ -124,8 +124,8 @@
                 "predictions",
                 "predictions/sample1.tsv",
                 "variant_fasta",
-                "variant_fasta/sample1.variant_peptides.annotated.fasta",
-                "variant_fasta/sample1.variant_peptides.raw.fasta",
+                "variant_fasta/sample1.annotated.fasta",
+                "variant_fasta/sample1.raw.fasta",
                 "variant_peptides",
                 "variant_peptides/sample1_length_10.tsv",
                 "variant_peptides/sample1_length_9.tsv"
@@ -145,8 +145,8 @@
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2b5475eaf18375d8c4a60d194921e28",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,0e2f935842191a847e9e6388de256cb0",
-                "sample1.variant_peptides.annotated.fasta:md5,1246a2dc698185378c5dbf3f5dd83597",
-                "sample1.variant_peptides.raw.fasta:md5,9475c917ee0c0ea443b282f9a3c99e08",
+                "sample1.annotated.fasta:md5,1246a2dc698185378c5dbf3f5dd83597",
+                "sample1.raw.fasta:md5,9475c917ee0c0ea443b282f9a3c99e08",
                 "sample1_length_10.tsv:md5,8a880a96a855621093789994a003cb40",
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]

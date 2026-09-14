@@ -11,7 +11,7 @@ process PVACSEQ_GENERATE_FASTA {
     tuple val(meta), path(vcf), path(tbi)
 
     output:
-    tuple val(meta), path("*.variant_peptides.raw.fasta"), path(vcf), emit: fasta
+    tuple val(meta), path("*.raw.fasta"), path(vcf), emit: fasta
     tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions
 
     when:
@@ -27,7 +27,7 @@ process PVACSEQ_GENERATE_FASTA {
     pvacseq generate_protein_fasta \\
         ${vcf} \\
         ${flank} \\
-        ${prefix}.variant_peptides.raw.fasta \\
+        ${prefix}.raw.fasta \\
         ${sample_arg} \\
         ${args}
     """
@@ -35,6 +35,6 @@ process PVACSEQ_GENERATE_FASTA {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.variant_peptides.raw.fasta
+    touch ${prefix}.raw.fasta
     """
 }
