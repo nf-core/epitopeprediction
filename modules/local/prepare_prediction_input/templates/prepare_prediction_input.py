@@ -65,24 +65,6 @@ class Arguments:
         return self.min_peptide_length_classII, self.max_peptide_length_classII
 
 
-class Version:
-    """Collect module versions for versions.yml."""
-
-    @staticmethod
-    def get_versions(modules: list) -> dict:
-        return {module.__name__: module.__version__ for module in modules}
-
-    @staticmethod
-    def format_yaml_like(data: dict, indent: int = 0) -> str:
-        yaml_str = ""
-        for key, value in data.items():
-            spaces = "  " * indent
-            if isinstance(value, dict):
-                yaml_str += f"{spaces}{key}:\\n{Version.format_yaml_like(value, indent + 1)}"
-            else:
-                yaml_str += f"{spaces}{key}: {value}\\n"
-        return yaml_str
-
 
 class Utils:
     @staticmethod
@@ -194,10 +176,9 @@ def main():
         raise ValueError(f"No peptides within the length range of any MHC class {args.mhc_class} tool in {args.tools}. Aborting..")
     with open(f"{args.prefix}_allele_input.json", "w") as f:
         json.dump(written, f)
-
-    versions = {"${task.process}": Version.get_versions([argparse, pd, mhcgnomes])}
     with open("versions.yml", "w") as f:
-        f.write(Version.format_yaml_like(versions))
+        f.write(f'"${task.process}":\\n    mhcgnomes: {mhcgnomes.__version__}\\n    pandas: {pd.__version__}\\n')
+
 
 if __name__ == "__main__":
     main()

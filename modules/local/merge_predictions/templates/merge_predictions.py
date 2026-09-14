@@ -75,39 +75,6 @@ class Arguments:
         vars(self).update(vars(args))
 
 
-class Version:
-    """
-    Parse the versions of the modules used in the script.
-    """
-
-    @staticmethod
-    def get_versions(modules: list) -> dict:
-        """
-        This function takes a list of modules and returns a dictionary with the
-        versions of each module.
-        """
-        return {module.__name__: module.__version__ for module in modules}
-
-    @staticmethod
-    def format_yaml_like(data: dict, indent: int = 0) -> str:
-        """
-        Formats a dictionary to a YAML-like string.
-
-        Args:
-            data (dict): The dictionary to format.
-            indent (int): The current indentation level.
-
-        Returns:
-            yaml_str: A string formatted as YAML.
-        """
-        yaml_str = ""
-        for key, value in data.items():
-            spaces = "  " * indent
-            if isinstance(value, dict):
-                yaml_str += f"{spaces}{key}:\\n{Version.format_yaml_like(value, indent + 1)}"
-            else:
-                yaml_str += f"{spaces}{key}: {value}\\n"
-        return yaml_str
 
 # -------------------------------------------
 #           Utility Functions
@@ -250,12 +217,9 @@ def main():
 
     # Write output file
     output_df.to_csv(f'{args.prefix}_predictions.csv', index=False)
-
-    # Parse versions
-    versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd, mhcgnomes])
     with open("versions.yml", "w") as f:
-        f.write(Version.format_yaml_like(versions_this_module))
+        f.write(f'"${task.process}":\\n    mhcgnomes: {mhcgnomes.__version__}\\n    pandas: {pd.__version__}\\n')
+
 
 if __name__ == "__main__":
     main()

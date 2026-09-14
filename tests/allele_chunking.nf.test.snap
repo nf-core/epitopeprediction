@@ -4,11 +4,16 @@
             8,
             {
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
-                "MHCFLURRY": "2.1.4",
+                "MHCFLURRY": {
+                    "mhcflurry": "2.1.4"
+                },
+                "PREPARE_PREDICTION_INPUT": {
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
+                },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
@@ -66,7 +71,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,6ad0c8b1a4601eedb1f325ddbbfca560"
             ]
         ],
-        "timestamp": "2026-09-14T11:11:23.208194631",
+        "timestamp": "2026-09-14T14:37:50.889757417",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

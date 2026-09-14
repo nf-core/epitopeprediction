@@ -1,7 +1,6 @@
 process MHCFLURRY_DOWNLOAD_MODELS {
     label 'process_single'
 
-    // conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcflurry:2.1.4--pyh7e72e81_1' :
         'quay.io/biocontainers/mhcflurry:2.1.4--pyh7e72e81_1' }"

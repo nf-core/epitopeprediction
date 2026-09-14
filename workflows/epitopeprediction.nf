@@ -142,7 +142,6 @@ workflow EPITOPEPREDICTION {
             .transpose()
             .map { meta, vcf -> [meta + [split_id: splitId(meta, vcf)], vcf] }
             .set { ch_split_variants }
-        ch_versions = ch_versions.mix( VARIANT_SPLIT.out.versions )
     }
     else {
         SNPSIFT_SPLIT( ch_samples_uncompressed.variant
@@ -158,7 +157,6 @@ workflow EPITOPEPREDICTION {
         .tsv
         .filter { _meta, file -> file.size() > 0 }
         .set { ch_peptides_from_variants }
-    ch_versions = ch_versions.mix( EPYTOPE_VARIANT_PREDICTION.out.versions )
 
     // Merge optional fasta output of EPYTOPE_VARIANT_PREDICTION (containing mutated protein sequences) since they are splited
     if (params.fasta_output) {
@@ -174,7 +172,6 @@ workflow EPITOPEPREDICTION {
     ========================================================================================
     */
     FASTA2PEPTIDES( ch_samples_uncompressed.protein )
-    ch_versions = ch_versions.mix( FASTA2PEPTIDES.out.versions )
 
     ch_to_predict = ch_samples_uncompressed.peptide
                         .mix(FASTA2PEPTIDES.out.tsv.transpose().map { meta, tsv -> [meta + [split_id: splitId(meta, tsv)], tsv] })
@@ -182,7 +179,6 @@ workflow EPITOPEPREDICTION {
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
-    ch_versions = ch_versions.mix(SPLIT_PEPTIDES.out.versions)
 
 
     /*
@@ -194,7 +190,6 @@ workflow EPITOPEPREDICTION {
                             params.tools,
                             supported_alleles_json,
                             netmhc_software_meta)
-    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
 /*     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
@@ -206,7 +201,6 @@ workflow EPITOPEPREDICTION {
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple())
     ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ _meta, json -> json })
-    ch_versions = ch_versions.mix(SUMMARIZE_RESULTS.out.versions)
 
     //
     // Collate and save software versions

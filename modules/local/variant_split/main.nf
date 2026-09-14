@@ -11,7 +11,7 @@ process VARIANT_SPLIT {
 
     output:
     tuple val(meta), path("*.vcf"), emit: splitted
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -19,24 +19,13 @@ process VARIANT_SPLIT {
     script:
     def size_parameter = params.split_by_variants_size != 0 ? "--size ${params.split_by_variants_size}" : ''
     def distance_parameter = params.split_by_variants_distance ? "--distance ${params.split_by_variants_distance}" : ''
-
     """
     split_vcf_by_variants.py --input ${input_file} ${size_parameter} ${distance_parameter} --output .
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version 2>&1 | sed 's/Python //g')
-    END_VERSIONS
     """
 
     stub:
     """
     touch ${input_file.baseName}_v0.vcf
     touch ${input_file.baseName}_v1.vcf
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version 2>&1 | sed 's/Python //g')
-    END_VERSIONS
     """
 }

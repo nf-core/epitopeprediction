@@ -20,7 +20,6 @@ include { MERGE_PREDICTIONS                          } from '../../../modules/lo
 //     netmhc_software_meta_json: JSON file with metadata for NetMHC software
 // Output:
 //     predicted: Channel of predicted MHC binding
-//     versions: Channel of software versions
 
 workflow MHC_BINDING_PREDICTION {
     take:
@@ -30,7 +29,6 @@ workflow MHC_BINDING_PREDICTION {
         netmhc_software_meta_json
 
     main:
-        ch_versions = channel.empty()
         ch_binding_predictors_out = channel.empty()
 
         validate_tools_param(tools)
@@ -67,23 +65,19 @@ workflow MHC_BINDING_PREDICTION {
         {
             MHCFLURRY_DOWNLOAD_MODELS()
             MHCFLURRY ( ch_prediction_input.mhcflurry.map { meta, _alleles_input, file -> [meta, file] }.combine(MHCFLURRY_DOWNLOAD_MODELS.out.models) )
-            ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
         }
 
         MHCNUGGETS ( ch_prediction_input.mhcnuggets )
-        ch_versions = ch_versions.mix(MHCNUGGETS.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETS.out.predicted)
 
         MHCNUGGETSII ( ch_prediction_input.mhcnuggetsii )
-        ch_versions = ch_versions.mix(MHCNUGGETSII.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETSII.out.predicted)
 
         if ( "netmhcpan" in tools.tokenize(",") )
         {
             NETMHCPAN_IMPORT( parse_netmhc_params("netmhcpan", netmhc_software_meta_json) )
             NETMHCPAN ( ch_prediction_input.netmhcpan.combine(NETMHCPAN_IMPORT.out.nonfree_tools) )
-            ch_versions = ch_versions.mix(NETMHCPAN.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCPAN.out.predicted)
         }
 
@@ -91,7 +85,6 @@ workflow MHC_BINDING_PREDICTION {
         {
             NETMHCIIPAN_IMPORT( parse_netmhc_params("netmhciipan", netmhc_software_meta_json) )
             NETMHCIIPAN ( ch_prediction_input.netmhciipan.combine(NETMHCIIPAN_IMPORT.out.nonfree_tools) )
-            ch_versions = ch_versions.mix(NETMHCIIPAN.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
@@ -108,11 +101,9 @@ workflow MHC_BINDING_PREDICTION {
 
         // Merge predictions from different predictors
         MERGE_PREDICTIONS( ch_binding_predictors_out_meta )
-        ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
 
     emit:
     predicted = MERGE_PREDICTIONS.out.merged
-    versions = ch_versions
 }
 
 //==============================================================================

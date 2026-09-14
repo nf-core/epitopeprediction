@@ -12,7 +12,7 @@ process NETMHCPAN {
 
     output:
     tuple val(meta), path("*.xls"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('netMHCpan'), eval("sed 's/.*version //' netmhcpan/data/version"), topic: versions
 
     script:
     if (meta.mhc_class != "I") {
@@ -22,7 +22,6 @@ process NETMHCPAN {
     def prefix  = task.ext.prefix ?: "${meta.id}"
     // netMHCpan copies its install dir (NMHOME) and TMPDIR into fixed-size buffers (~95 chars) and aborts on long
     // work dir paths, so it is run through a short /tmp symlink with TMPDIR pointed there. See #341.
-
     """
     nm=\$(mktemp -d /tmp/nm.XXXXXX)
     trap 'rm -rf "\$nm"' EXIT
@@ -35,21 +34,11 @@ process NETMHCPAN {
         -xls \
         -xlsfile ${prefix}_predicted_netmhcpan.xls \
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhcpan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predicted_netmhcpan.xls
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhcpan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 }

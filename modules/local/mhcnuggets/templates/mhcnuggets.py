@@ -6,6 +6,7 @@ Author: Jonas Scheid
 License: MIT
 """
 import argparse
+import pkg_resources
 import shlex
 import logging
 from pathlib import Path
@@ -52,39 +53,6 @@ class Arguments:
             setattr(self, attr, getattr(args, attr))
 
 
-class Version:
-    """
-    Parse the versions of the modules used in the script.
-    """
-
-    @staticmethod
-    def get_versions(modules: list) -> dict:
-        """
-        This function takes a list of modules and returns a dictionary with the
-        versions of each module.
-        """
-        return {module.__name__: module.__version__ for module in modules}
-
-    @staticmethod
-    def format_yaml_like(data: dict, indent: int = 0) -> str:
-        """
-        Formats a dictionary to a YAML-like string.
-
-        Args:
-            data (dict): The dictionary to format.
-            indent (int): The current indentation level.
-
-        Returns:
-            yaml_str: A string formatted as YAML.
-        """
-        yaml_str = ""
-        for key, value in data.items():
-            spaces = "  " * indent
-            if isinstance(value, dict):
-                yaml_str += f"{spaces}{key}:\\n{Version.format_yaml_like(value, indent + 1)}"
-            else:
-                yaml_str += f"{spaces}{key}: {value}\\n"
-        return yaml_str
 
 def main():
     args = Arguments()
@@ -110,15 +78,8 @@ def main():
     predicted_df = pd.concat(predicted_df)
     filename_out = f'{args.prefix}_predicted_mhcnuggets.csv' if args.mhc_class == 'I' else f'{args.prefix}_predicted_mhcnuggetsii.csv'
     predicted_df.to_csv(filename_out, index=False)
-
-    # Parse versions
-    versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd])
     with open("versions.yml", "w") as f:
-        f.write(Version.format_yaml_like(versions_this_module))
-        # No __version__ dunder or similar available, need to hardcode version
-        f.write('mhcnuggets: 2.4.0')
-
+        f.write(f'"${task.process}":\\n    mhcnuggets: {pkg_resources.get_distribution("mhcnuggets").version}\\n    pandas: {pd.__version__}\\n')
 
 if __name__ == "__main__":
     main()

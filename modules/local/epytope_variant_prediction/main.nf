@@ -13,7 +13,9 @@ process EPYTOPE_VARIANT_PREDICTION {
     output:
     tuple val(meta), path("*.tsv")  , emit: tsv
     tuple val(meta), path("*.fasta"), emit: fasta, optional: true
-    path "versions.yml"             , emit: versions
+    tuple val("${task.process}"), val('epytope'), eval("python -c \"import pkg_resources; print(pkg_resources.get_distribution('epytope').version)\""), topic: versions
+    tuple val("${task.process}"), val('pandas'), eval("python -c \"import pkg_resources; print(pkg_resources.get_distribution('pandas').version)\""), topic: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -25,7 +27,6 @@ process EPYTOPE_VARIANT_PREDICTION {
     def min_length = (meta.mhc_class == "I") ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = (meta.mhc_class == "I") ? params.max_peptide_length_classI : params.max_peptide_length_classII
     def flanking_region_size = params.fasta_peptide_flanking_region_size
-
     """
     epaa.py \
         -i ${vcf} \
@@ -35,14 +36,6 @@ process EPYTOPE_VARIANT_PREDICTION {
         --min_length ${min_length} \
         --flanking_region_size ${flanking_region_size} \
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version 2>&1 | sed 's/Python //g')
-        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
-    END_VERSIONS
     """
 
     stub:
@@ -50,13 +43,5 @@ process EPYTOPE_VARIANT_PREDICTION {
     """
     touch ${prefix}.tsv
     touch ${prefix}.fasta
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version 2>&1 | sed 's/Python //g')
-        epytope: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('epytope').version)")
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        pyvcf: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('PyVCF3').version)")
-    END_VERSIONS
     """
 }
