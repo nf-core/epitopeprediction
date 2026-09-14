@@ -25,7 +25,8 @@
                     "mhcnuggets": "2.4.0"
                 },
                 "PREP_VCF": {
-                    "bcftools": "1.23.1"
+                    "bcftools": "1.23.1",
+                    "vatools": "6.0.1"
                 },
                 "PVACSEQ_GENERATE_FASTA": {
                     "pvactools": "7.0.1"
@@ -151,7 +152,7 @@
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-09-01T14:08:44.371735739",
+        "timestamp": "2026-09-14T13:05:13.693474479",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

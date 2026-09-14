@@ -8,3 +8,5 @@ dependencies:
   - bioconda::htslib=1.23.1
   # renovate: datasource=conda depName=bioconda/bcftools
   - bioconda::bcftools=1.23.1
+  # renovate: datasource=conda depName=bioconda/vatools
+  - bioconda::vatools=6.0.1
