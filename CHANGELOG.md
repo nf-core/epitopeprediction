@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
-- Replaced the epytope/BioMart variant path with an offline `bcftools` → Ensembl VEP → pVACtools `generate_protein_fasta` chain. New params `--ref_fasta`, `--vep_cache`, `--vep_species`, `--vep_genome`, `--vep_cache_version`, `--mutation_flanking_aas` and `--vep_download_cache`, plus an optional `tumor_sample` samplesheet column. VCFs without a `GT` field (Strelka) are accepted ([@axelwalter](https://github.com/axelwalter/))
+- Replaced the epytope/BioMart variant path with an offline `bcftools` → Ensembl VEP → pVACtools `generate_protein_fasta` chain. New params `--ref_fasta`, `--vep_cache`, `--vep_species`, `--vep_genome`, `--vep_cache_version`, `--mutation_flanking_aas` and `--vep_download_cache`, plus an optional `tumor_sample` samplesheet column. VCFs without a `GT` field (Strelka) are accepted ([@axelwalter](https://github.com/axelwalter/)), with a Strelka-style test case in [#373](https://github.com/nf-core/epitopeprediction/pull/373) ([@Ngarciar24](https://github.com/Ngarciar24/))
 - Variant peptides are restricted to k-mers overlapping the mutation and carry provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt) in their FASTA headers. Frameshifts now extend to the new stop codon instead of being truncated at the original protein length ([@axelwalter](https://github.com/axelwalter/))
 - `--vep_cache` also accepts a `.tar.gz`, which lets the `test` profile run the variant path on a 15 MB GRCh38 chr4+chr19 cache subset ([@axelwalter](https://github.com/axelwalter/))
 - Kept `--proteome_reference`: variant peptides found in the given reference proteome are dropped before prediction ([@axelwalter](https://github.com/axelwalter/))
