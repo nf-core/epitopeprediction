@@ -95,15 +95,15 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
-        // Regroup chunks per source file; the sized groupKey lets MERGE start before all predictions are done
+        // Regroup predictions per source file
         ch_binding_predictors_out
             .map { meta, file ->
                 def regroup_meta = meta.subMap(meta.keySet() - ['alleles_supported', 'tool', 'source_file_id', 'n_prediction_files']) + [file_id: meta.source_file_id]
                 [groupKey(regroup_meta, meta.n_prediction_files), file]
             }
-            .groupTuple()                                    // → [groupKey, [files]]
+            .groupTuple()
             .map { key, files -> [key.getGroupTarget(), files] }
-            .join( ch_peptides_to_predict )                  // → [meta, [files], source_file]
+            .join( ch_peptides_to_predict )
             .set { ch_binding_predictors_out_meta }
 
         // Merge predictions from different predictors
@@ -150,7 +150,7 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
     ch_netmhc_exe.bind([
         tool_name,
         entry.version,
-        entry.software_md5,
+        entry.software_md5.join(' '),
         file(params["${tool_name}_path"], checkIfExists:true),
         entry.data_url ? file(entry.data_url, checkIfExists:true) : [],
         entry.data_md5 ? entry.data_md5 : "",

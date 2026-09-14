@@ -86,11 +86,7 @@ To predict against every supported allele of a given species, use the sentinel `
 - `HLA-all` or `human-all` — all supported human HLA alleles (class depends on `mhc_class` and tool)
 - `BoLA-all` or `cattle-all` — all supported bovine alleles
 - `H-2-all`, `H2-all`, or `mouse-all` — all supported mouse alleles
-- `Mamu-all`, `Patr-all`, `SLA-all`, `DLA-all`, ... — other species supported by mhcgnomes
-
-The bare keyword `all` is **not** supported because `supported_alleles.json` mixes species; using it would mean predicting e.g. cattle and mouse alleles in the same run.
-
-For tools with a per-invocation allele cap (NetMHCpan and NetMHCIIpan), allele chunking splits the selection into parallel tasks automatically.
+- `Mamu-all`, `Patr-all`, `SLA-all`, `DLA-all`, ... — other species supported by mhcgnomes and the specified predictor
 
 ```console
 sample,alleles,mhc_class,filename
@@ -141,7 +137,7 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 ### Running the pipeline with NetMHC
 
-The pipeline supports NetMHCpan 4.2bstatic and NetMHCIIpan 4.3i. If one of the external tools is specified, the path to the corresponding tarball has to be specified. See the download sections for [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/).
+The pipeline supports NetMHCpan 4.2b and NetMHCIIpan 4.3 (sub-releases b, e and i). If one of the external tools is specified, the path to the corresponding tarball has to be specified. See the download sections for [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/).
 
 When using `conda`, the parameter `--netmhc_system` must also be specified if the default value `linux` is not applicable.
 
@@ -158,7 +154,7 @@ process {
 ```
 
 > [!IMPORTANT]
-> Only the specific versions `netMHCpan-4.2bstatic.Linux.tar.gz` and `netMHCIIpan-4.3i.Linux.tar.gz` are supported, as the pipeline validates these tarballs via checksum to ensure integrity.
+> Only the specific versions `netMHCpan-4.2bstatic.Linux.tar.gz` and `netMHCIIpan-4.3{b,e,i}.Linux.tar.gz` are supported, as the pipeline validates these tarballs via checksum to ensure integrity.
 
 A typical command is as follows:
 

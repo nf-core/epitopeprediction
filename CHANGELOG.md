@@ -34,7 +34,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `multiqc`     | 1.32        | 1.35        |
 | `snpsift`     | 4.3         | 5.4c        |
 | `nf-core`     | 3.4.1       | 4.1.0       |
-| `NetMHCIIpan` | 4.3e        | 4.3i        |
+| `NetMHCIIpan` | 4.3e        | 4.3b/e/i    |
 
 ### `Changed`
 
