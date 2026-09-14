@@ -62,7 +62,9 @@ listed, so it becomes pvacseq's `-s` and only the tumor genotypes drive peptide 
 sample column, leave it empty. The tumor is not auto-detected from VCF headers, so set it whenever the VCF
 holds more than one sample.
 VCFs without a `GT` field (e.g. Strelka) are accepted: the pipeline assigns the tumor sample `0/1` with
-VAtools' `vcf-genotype-annotator`, as pVACtools recommends, before running `pvacseq`.
+VAtools' `vcf-genotype-annotator`, as pVACtools recommends, before running `pvacseq`. Strelka names its
+columns `NORMAL` and `TUMOR`, so set `tumor_sample` to `TUMOR`, and its SNV and indel VCFs need one
+samplesheet row each.
 
 > [!NOTE]
 > Peptides come only from **coding-altering variants on complete protein-coding transcripts** — missense,
