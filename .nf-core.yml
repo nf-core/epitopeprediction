@@ -6,6 +6,7 @@ lint:
     - .vscode/settings.json
     - .gitignore
 nf_core_version: 4.0.3
+nf_core_version: 4.1.0
 repository_type: pipeline
 template:
   author: Christopher Mohr, Jonas Scheid

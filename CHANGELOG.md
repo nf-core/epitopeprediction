@@ -35,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `bcftools` | 1.21        | 1.23.1      |
 | `multiqc`  | 1.32        | 1.35        |
 | `snpsift`  | 4.3         | 5.4c        |
-| `nf-core`  | 3.4.1       | 4.0.3       |
+| `nf-core`  | 3.4.1       | 4.1.0       |
 
 ### `Changed`
 
@@ -47,6 +47,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#371](https://github.com/nf-core/epitopeprediction/pull/371) Merge nf-core template updates up to `4.1.0` ([@jonasscheid](https://github.com/jonasscheid/)).
+
+## 3.1.1 - Lustnau Hotfix - 2026-08-05
+
+### `Fixed`
+
+- [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Fixed wrong allele annotations in `netmhcpan` and `netmhciipan` results by reading allele labels from the prediction output header ([#358](https://github.com/nf-core/epitopeprediction/issues/358)), and accept any known sub-release of a supported NetMHC version (`netmhciipan` now also takes 4.3b and 4.3i next to 4.3e).
 
 ### `Removed`
 
