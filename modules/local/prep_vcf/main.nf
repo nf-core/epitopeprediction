@@ -4,8 +4,8 @@ process PREP_VCF {
 
     // conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
-        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/0b/0b4d52ca9a56d07be3f78a12af654e5116f5112908dba277e6796fd9dfb83fe5/data'
-        : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/3c/3cc9ab3025e57f15ff3d58e45dd31c746d0801b8f2456fbf39eb7db8368de4e8/data'
+        : 'community.wave.seqera.io/library/bcftools_htslib_vatools:ef4839f79b3f57f7'}"
 
     input:
     tuple val(meta), path(vcf)
@@ -15,6 +15,7 @@ process PREP_VCF {
     output:
     tuple val(meta), path("*.prep.vcf.gz"), path("*.prep.vcf.gz.tbi"), emit: vcf
     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | head -n1 | sed 's/^bcftools //'"), topic: versions
+    tuple val("${task.process}"), val('vatools'), eval("pip show vatools | sed -n 's/^Version: //p'"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -23,7 +24,8 @@ process PREP_VCF {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def tumor  = meta.tumor_sample ?: ''
     """
-    # pvacseq refuses VCFs without GT (Strelka emits none): tumor sample gets 0/1, the rest stay missing.
+    # pvacseq refuses VCFs without GT (Strelka emits none). Add GT=0/1 for the tumor sample with vatools,
+    # as pVACtools recommends (https://pvactools.readthedocs.io/en/latest/pvacseq/input_file_prep/gt.html).
     if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=GT,'; then
         input_vcf=${vcf}
     else
@@ -34,14 +36,12 @@ process PREP_VCF {
                 exit 1
             fi
             tumor=\$(bcftools query -l ${vcf})
+        elif ! bcftools query -l ${vcf} | grep -qx "\${tumor}"; then
+            echo "ERROR: sample '\${tumor}' not found in ${vcf}." >&2
+            exit 1
         fi
-        mkdir gt
-        bcftools view ${vcf} -Oz -o gt/input.vcf.gz && bcftools index -t gt/input.vcf.gz
-        bcftools view -s "\${tumor}" gt/input.vcf.gz -Ou \\
-            | bcftools +setGT -Oz -o gt/tumor.vcf.gz -- -t a -n c:0/1
-        bcftools index -t gt/tumor.vcf.gz
-        bcftools annotate -a gt/tumor.vcf.gz -c FMT/GT gt/input.vcf.gz -Oz -o gt/with_gt.vcf.gz
-        input_vcf=gt/with_gt.vcf.gz
+        vcf-genotype-annotator ${vcf} "\${tumor}" 0/1 -o ${prefix}.gt.vcf
+        input_vcf=${prefix}.gt.vcf
     fi
 
     # Rename map from the VCF's own ##contig headers (chr1->1, chrM->MT) so records match
