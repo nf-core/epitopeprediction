@@ -5,13 +5,13 @@
 
 include { PREP_VCF                   } from '../../../modules/local/prep_vcf'
 include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref_fasta'
+include { DOWNLOAD_VEP_CACHE         } from '../../../modules/local/download_vep_cache'
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
 include { PVACSEQ_GENERATE_FASTA     } from '../../../modules/local/pvacseq_generate_fasta'
 include { ANNOTATE_FASTA_HEADERS     } from '../../../modules/local/annotate_fasta_headers'
 include { VARIANT_FASTA2PEPTIDES     } from '../../../modules/local/variant_fasta2peptides'
 
 include { BCFTOOLS_STATS             } from '../../../modules/nf-core/bcftools/stats'
-include { ENSEMBLVEP_DOWNLOAD        } from '../../../modules/nf-core/ensemblvep/download'
 include { ENSEMBLVEP_VEP             } from '../../../modules/nf-core/ensemblvep/vep'
 include { UNTAR                      } from '../../../modules/nf-core/untar'
 
@@ -37,13 +37,11 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_download_input = ch_vcf
             .map { _meta, _vcf -> [ [id:'vep'], vep_genome, vep_species, vep_cachever ] }
             .first()
-        ENSEMBLVEP_DOWNLOAD( ch_download_input, true )
-
-        // Separate download because vep_install's --AUTO f step is unreliable.
+        DOWNLOAD_VEP_CACHE( ch_download_input )
         DOWNLOAD_REF_FASTA( ch_download_input )
 
         // Fed by a value channel, so these are value channels already -- no .first() needed.
-        ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
+        ch_vep_cache = DOWNLOAD_VEP_CACHE.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
         ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa  -> [ [id:'ref'], fa  ] }
         ch_ref_fai   = DOWNLOAD_REF_FASTA.out.fai.map   { _meta, fai -> [ [id:'ref'], fai ] }
     } else if (cache_from_params) {

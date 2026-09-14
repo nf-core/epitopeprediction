@@ -108,7 +108,8 @@ nextflow run nf-core/epitopeprediction -profile docker \
 
 **Option B — download in-pipeline (`--vep_download_cache`).** Instead of `--vep_cache`/`--ref_fasta`,
 set `--vep_download_cache` and the pipeline fetches the Ensembl cache and reference FASTA itself
-(publishing them under `<outdir>/references` for reuse). This needs internet on the compute node
+over HTTPS, verifying the cache tarball against Ensembl's CHECKSUMS (publishing both under
+`<outdir>/references` for reuse). This needs internet on the compute node
 and pulls ~20 GB, so it is best run once — afterwards reuse the published files via Option A.
 
 ```bash

@@ -79,7 +79,7 @@
                     "type": "boolean",
                     "fa_icon": "fas fa-download",
                     "description": "Download the VEP cache and reference FASTA in-pipeline instead of providing --vep_cache/--ref_fasta.",
-                    "help_text": "Opt-in convenience for internet-connected compute nodes. Fetches the Ensembl cache + build-matched FASTA (vep_install --AUTO cf) for the given --vep_species/--vep_genome/--vep_cache_version, publishing them under <outdir>/references for reuse. A ~20 GB download; run once, then reuse via --vep_cache/--ref_fasta."
+                    "help_text": "Opt-in convenience for internet-connected compute nodes. Fetches the indexed Ensembl VEP cache + build-matched FASTA straight from the Ensembl FTP site over HTTPS for the given --vep_species/--vep_genome/--vep_cache_version, publishing them under <outdir>/references for reuse. A ~20 GB download; run once, then reuse via --vep_cache/--ref_fasta."
                 }
             }
         },
