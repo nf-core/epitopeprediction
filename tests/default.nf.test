@@ -62,4 +62,26 @@ nextflow_pipeline {
             )
         }
     }
+
+    test("-profile test Strelka-style VCF without FORMAT/GT") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // the same four variants as Strelka writes them: no FORMAT/GT, NORMAL and TUMOR columns
+                def sheet = new File("${outputDir}/samplesheet_strelka.csv")
+                sheet.parentFile.mkdirs()
+                sheet.text = "sample,alleles,mhc_class,filename,tumor_sample\nstrelka,A*01:01,I,${baseDir}/tests/fixtures/variants_chr4_chr19_strelka.vcf,TUMOR\n"
+                input = sheet.path
+            }
+        }
+
+        then {
+            def annotated = path("${params.outdir}/variant_fasta/strelka.annotated.fasta").text
+            assertAll(
+                { assert workflow.success },
+                { assert ['|missense|', '|inframe_del|', '|FS|'].every { annotated.contains(it) } }
+            )
+        }
+    }
 }
