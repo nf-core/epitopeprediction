@@ -8,36 +8,16 @@ process MHCFLURRY_DOWNLOAD_MODELS {
 
     output:
     path "mhcflurry-data", emit: models
-    path "versions.yml"  , emit: versions
 
     script:
     """
     export MHCFLURRY_DATA_DIR=./mhcflurry-data
     export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=2.2.0
-
-    # A fetch interrupted mid-extraction leaves a partial dir that mhcflurry treats as downloaded, so check for weights.csv
-    models=\$MHCFLURRY_DATA_DIR/\$MHCFLURRY_DOWNLOADS_CURRENT_RELEASE/models_class1_presentation
-    for attempt in 1 2 3; do
-        [ -f "\$models/models/weights.csv" ] && break
-        rm -rf "\$models"
-        mhcflurry-downloads fetch models_class1_presentation || sleep 30
-    done
-    [ -f "\$models/models/weights.csv" ] || { echo "MHCflurry model download failed" >&2; exit 1; }
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(mhcflurry-predict --version | cut -d' ' -f2)
-    END_VERSIONS
+    mhcflurry-downloads fetch models_class1_presentation
     """
 
     stub:
     """
-    mkdir -p mhcflurry-data/2.2.0/models_class1_presentation/models
-    touch mhcflurry-data/2.2.0/models_class1_presentation/models/weights.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(mhcflurry-predict --version | cut -d' ' -f2)
-    END_VERSIONS
+    mkdir -p mhcflurry-data
     """
 }

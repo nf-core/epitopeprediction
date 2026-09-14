@@ -21,7 +21,6 @@
                     "mhcgnomes": "1.8.6"
                 },
                 "MHCFLURRY": "2.1.4",
-                "MHCFLURRY_DOWNLOAD_MODELS": "2.1.4",
                 "SNPSIFT_SPLIT": {
                     "snpsift": "5.4c"
                 },

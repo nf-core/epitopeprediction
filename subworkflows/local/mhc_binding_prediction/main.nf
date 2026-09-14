@@ -67,7 +67,7 @@ workflow MHC_BINDING_PREDICTION {
         {
             MHCFLURRY_DOWNLOAD_MODELS()
             MHCFLURRY ( ch_prediction_input.mhcflurry.map { meta, _alleles_input, file -> [meta, file] }.combine(MHCFLURRY_DOWNLOAD_MODELS.out.models) )
-            ch_versions = ch_versions.mix(MHCFLURRY_DOWNLOAD_MODELS.out.versions, MHCFLURRY.out.versions)
+            ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
         }
 

@@ -9,7 +9,6 @@
                     "mhcgnomes": "1.8.6"
                 },
                 "MHCFLURRY": "2.1.4",
-                "MHCFLURRY_DOWNLOAD_MODELS": "2.1.4",
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
@@ -67,7 +66,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,6ad0c8b1a4601eedb1f325ddbbfca560"
             ]
         ],
-        "timestamp": "2026-09-12T22:24:55.352797467",
+        "timestamp": "2026-09-14T11:11:23.208194631",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
