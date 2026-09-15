@@ -17,7 +17,7 @@ process MHCFLURRY {
 
     output:
     tuple val(meta), path("*.csv"), emit: predicted
-    path "versions.yml"           , emit: versions
+    tuple val("${task.process}"), val('mhcflurry'), eval("mhcflurry-predict --version | cut -d' ' -f2"), topic: versions
 
     script:
     if (meta.mhc_class == "II") {
@@ -41,21 +41,11 @@ process MHCFLURRY {
         $csv \\
         --out ${prefix}_predicted_mhcflurry.csv \\
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(mhcflurry-predict --version | cut -d' ' -f2)
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predicted_mhcflurry.csv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(mhcflurry-predict --version | cut -d' ' -f2)
-    END_VERSIONS
     """
 }

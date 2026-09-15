@@ -1,0 +1,40 @@
+process PVACSEQ_GENERATE_FASTA {
+    tag "${meta.id}"
+    label 'process_low'
+
+    // conda "${moduleDir}/environment.yml"
+    container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/pvactools:7.0.1--pyhdfd78af_0'
+        : 'biocontainers/pvactools:7.0.1--pyhdfd78af_0'}"
+
+    input:
+    tuple val(meta), path(vcf), path(tbi)
+
+    output:
+    tuple val(meta), path("*.raw.fasta"), path(vcf), emit: fasta
+    tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions
+
+    when:
+    task.ext.when == null || task.ext.when
+
+    script:
+    def prefix     = task.ext.prefix ?: "${meta.id}"
+    def args       = task.ext.args ?: ''
+    def flank      = params.mutation_flanking_aas
+    // -s picks the tumor column on multi-sample VCFs; single-sample VCFs leave it unset.
+    def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
+    """
+    pvacseq generate_protein_fasta \\
+        ${vcf} \\
+        ${flank} \\
+        ${prefix}.raw.fasta \\
+        ${sample_arg} \\
+        ${args}
+    """
+
+    stub:
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    """
+    touch ${prefix}.raw.fasta
+    """
+}

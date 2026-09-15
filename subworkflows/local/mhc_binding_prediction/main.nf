@@ -60,16 +60,15 @@ workflow MHC_BINDING_PREDICTION {
             .set{ ch_prediction_input }
 
         MHCFLURRY ( ch_prediction_input.mhcflurry )
-        ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
 
         MHCNUGGETS ( ch_prediction_input.mhcnuggets )
-        ch_versions = ch_versions.mix(MHCNUGGETS.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETS.out.predicted)
+        ch_versions = ch_versions.mix(MHCNUGGETS.out.versions)
 
         MHCNUGGETSII ( ch_prediction_input.mhcnuggetsii )
-        ch_versions = ch_versions.mix(MHCNUGGETSII.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETSII.out.predicted)
+        ch_versions = ch_versions.mix(MHCNUGGETSII.out.versions)
 
         if ( "netmhcpan" in tools.tokenize(",") )
         {

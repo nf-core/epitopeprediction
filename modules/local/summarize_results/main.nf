@@ -13,7 +13,7 @@ process SUMMARIZE_RESULTS {
     output:
     tuple val(meta), path("*.tsv") , emit: tsv
     tuple val(meta), path("*.json"), emit: json
-    path "versions.yml"            , emit: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | cut -d' ' -f2"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -29,11 +29,6 @@ process SUMMARIZE_RESULTS {
         --peptide_col_name ${params.peptide_col_name} \\
         $args
 
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 
     stub:
@@ -42,10 +37,5 @@ process SUMMARIZE_RESULTS {
     """
     touch ${prefix}.tsv
     touch ${prefix}_mqc.json
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }
