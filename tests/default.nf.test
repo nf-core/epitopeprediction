@@ -1,5 +1,3 @@
-// Variant (VCF) path over four real somatic variants covering missense, in-frame indel
-// and frameshift, using the GRCh38 chr4+chr19 fixture wired in conf/test.config.
 nextflow_pipeline {
 
     name "Test pipeline"

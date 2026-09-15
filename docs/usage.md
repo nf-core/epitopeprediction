@@ -37,7 +37,7 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 ### Genomic variants
 
 For variant (VCF) input, the pipeline builds the mutated protein sequences itself with an
-offline, pinned, fully reproducible chain
+offline `bcftools` → VEP → pVACtools chain:
 
 1. **`bcftools`** — PASS-filter, rename contigs to Ensembl style (`chr1`→`1`, `chrM`→`MT`),
    split multiallelic sites and left-align/normalize against the reference.
@@ -91,7 +91,7 @@ so you do **not** provide them.
 | `--vep_genome`        | VEP assembly matching the cache, e.g. `GRCh38`, `GRCh37`, `GRCm39`. Required.               |
 | `--vep_cache_version` | VEP cache version matching the cache, e.g. `110`. Required.                                 |
 | `--vep_cache`         | VEP offline **Ensembl** cache — a directory, or a `.tar.gz` of it (unpacked automatically). |
-| `--ref_fasta`         | Ensembl primary-assembly genome FASTA (uncompressed) with a `.fai` index alongside.         |
+| `--ref_fasta`         | Ensembl primary-assembly genome FASTA, plain or bgzipped, with `.fai` (and `.gzi`) alongside. |
 
 You can provide the cache and FASTA yourself, or have the pipeline fetch them for you.
 
@@ -99,8 +99,8 @@ You can provide the cache and FASTA yourself, or have the pipeline fetch them fo
 ~26 GB extracted):
 
 ```bash
-./download_vep_references.sh                                        # human GRCh38, release 110
-SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=110 ./download_vep_references.sh
+assets/download_vep_references.sh                                        # human GRCh38, release 110
+SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=110 assets/download_vep_references.sh
 ```
 
 ```bash

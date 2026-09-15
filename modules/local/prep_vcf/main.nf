@@ -44,16 +44,11 @@ process PREP_VCF {
         input_vcf=${prefix}.gt.vcf
     fi
 
-    # Rename map from the VCF's own ##contig headers (chr1->1, chrM->MT) so records match
-    # the Ensembl-named VEP cache. Already-Ensembl VCFs map to themselves.
-    bcftools view -h ${vcf} | awk -F'[<,=>]' '
-        /^##contig/ {
-            for (i = 1; i <= NF; i++) if (\$i == "ID") name = \$(i + 1)
-            ensembl = name
-            sub(/^chr/, "", ensembl)
-            if (ensembl == "M") ensembl = "MT"
-            print name "\\t" ensembl
-        }' > chr_map.txt
+    # Rename contigs to Ensembl style (chr1->1, chrM->MT) so records match the VEP cache; names come
+    # from the ##contig headers, or from the records when a VCF has none.
+    names=\$(bcftools view -h ${vcf} | awk -F'[<,=>]' '/^##contig/ { for (i = 1; i <= NF; i++) if (\$i == "ID") print \$(i + 1) }')
+    [ -n "\${names}" ] || names=\$(bcftools query -f '%CHROM\\n' ${vcf} | sort -u)
+    echo "\${names}" | awk '{ ensembl = \$1; sub(/^chr/, "", ensembl); if (ensembl == "M") ensembl = "MT"; print \$1 "\\t" ensembl }' > chr_map.txt
 
     bcftools view -f PASS \${input_vcf} -Ou \\
         | bcftools annotate --rename-chrs chr_map.txt -Ou \\

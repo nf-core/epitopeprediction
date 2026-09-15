@@ -54,8 +54,13 @@ workflow GENERATE_VARIANT_PEPTIDES {
         } else {
             ch_vep_cache = channel.value([ [id:'vep'], vep_cache_input ])
         }
+        // A bgzipped FASTA also needs its .gzi next to it.
+        def ref_index = [ file("${params.ref_fasta}.fai", checkIfExists: true) ]
+        if (file("${params.ref_fasta}.gzi").exists()) {
+            ref_index << file("${params.ref_fasta}.gzi")
+        }
         ch_ref_fasta = channel.value([ [id:'ref'], file(params.ref_fasta, checkIfExists: true) ])
-        ch_ref_fai   = channel.value([ [id:'ref'], file("${params.ref_fasta}.fai", checkIfExists: true) ])
+        ch_ref_fai   = channel.value([ [id:'ref'], ref_index ])
     } else {
         ch_vep_cache = channel.value([ [:], [] ])
         ch_ref_fasta = channel.value([ [:], [] ])

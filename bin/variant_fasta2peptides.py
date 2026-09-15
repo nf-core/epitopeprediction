@@ -186,12 +186,7 @@ def _iter_fasta_sequences(fasta_path):
 
 
 def filter_self_peptides(by_length, fasta_path):
-    """Drops variant peptides occurring in the reference proteome, in place; returns the count.
-
-    Scans each protein once and intersects its k-mer set with the candidates, which is
-    O(proteome_residues * n_lengths) and independent of the peptide count. A naive
-    `pep in proteome` scan is O(n_peptides * proteome_length) and does not scale.
-    """
+    """Drops variant peptides occurring in the reference proteome, in place; returns the count."""
     candidates = {k: set(by_length[k]) for k in by_length if by_length[k]}
     if not candidates:
         return 0

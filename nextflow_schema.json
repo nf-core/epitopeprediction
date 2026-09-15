@@ -52,7 +52,7 @@
                     "format": "file-path",
                     "exists": true,
                     "fa_icon": "fas fa-book",
-                    "description": "Reference genome FASTA matching the build (Ensembl primary assembly, contigs 1..MT). Required for variant (VCF) input unless --vep_download_cache is set.",
+                    "description": "Reference genome FASTA matching the build (Ensembl primary assembly, contigs 1..MT), plain or bgzipped, with a .fai (and .gzi) index alongside. Required for variant (VCF) input unless --vep_download_cache is set.",
                     "help_text": "Used for VCF normalization (bcftools norm -m- -f) and to give VEP HGVS/protein context. Input VCF contigs are renamed to Ensembl style (chr1->1, chrM->MT) before annotation."
                 },
                 "vep_cache": {

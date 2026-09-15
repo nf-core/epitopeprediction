@@ -6,8 +6,7 @@ WT/MT window back to its VEP CSQ entry:
 
   >{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}
 
-Missing values become NA so the layout stays 9 fields wide. This is the variant
-path's only VCF-join site; downstream steps read provenance from the FASTA alone.
+Missing values become NA so the layout stays 9 fields wide.
 
 Author: Axel Walter
 License: MIT
@@ -146,12 +145,16 @@ def build_key_map(vcf_path):
                 if ':' in hgvsp:
                     hgvsp = hgvsp.split(':', 1)[1]  # keep p.XxxNNNYyy, drop ENSP prefix
                 uniprot = first(csq('SWISSPROT')) or first(csq('TREMBL'))
+                anchor = f"{chrom}:{pos}:{ref}:{alt}"
+                if key in keymap and keymap[key]['anchor'] != anchor:
+                    logging.warning(f"{key} is produced by {keymap[key]['anchor']} and {anchor}; "
+                                    f"provenance of the latter is kept for both")
                 keymap[key] = {
                     'gene': gene or 'NA',
                     'transcript': transcript or 'NA',
                     'consequence': consequence,
                     'hgvsp': hgvsp or 'NA',
-                    'anchor': f"{chrom}:{pos}:{ref}:{alt}",
+                    'anchor': anchor,
                     'uniprot': uniprot or 'NA',
                 }
     return keymap
@@ -215,16 +218,15 @@ def parse_args():
 def main():
     args = parse_args()
     keymap = build_key_map(args.vep_vcf)
-    logging.info(f"Built {len(keymap):,.0f} index keys from {args.vep_vcf}")
+    logging.info(f"Built {len(keymap):,} index keys from {args.vep_vcf}")
     n_records, n_miss = annotate_fasta(args.in_fasta, args.out_fasta, keymap)
-    # The FASTA and VCF travel in the same channel tuple, so a correct pairing joins ~100%.
     if n_records and n_miss == n_records:
         raise SystemExit(f"ERROR: none of the {n_records} FASTA records matched a VEP CSQ entry. "
                          f"Do {args.in_fasta} and {args.vep_vcf} belong to the same sample?")
     if n_records and n_miss > 0.1 * n_records:
         logging.warning(f"{n_miss} of {n_records} records did not match a VEP CSQ entry; "
                         f"check that {args.in_fasta} and {args.vep_vcf} belong to the same sample")
-    logging.info(f"Annotated {n_records:,.0f} FASTA record(s) to {args.out_fasta} "
+    logging.info(f"Annotated {n_records:,} FASTA record(s) to {args.out_fasta} "
                  f"({n_miss} without a VCF match)")
 
 
