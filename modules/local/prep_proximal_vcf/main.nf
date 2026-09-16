@@ -22,14 +22,19 @@ process PREP_PROXIMAL_VCF {
     def tumor  = meta.tumor_sample ?: ''
     """
     # pvacseq folds proximal variants into a window only when their HP phasing tag matches the main
-    # variant's; the same HP on every record of the tumor sample treats all of them as cis.
+    # variant's. Real phasing (HP already present) is kept; otherwise the same HP on every record
+    # of the tumor sample treats all of them as cis.
     tumor="${tumor}"
     [ -n "\${tumor}" ] || tumor=\$(bcftools query -l ${vcf} | head -n 1)
-    bcftools view -s "\${tumor}" ${vcf} -Oz -o tumor.vcf.gz
-    bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t1-1,1-2\\n' tumor.vcf.gz | bgzip > hp.tsv.gz
-    tabix -s 1 -b 2 -e 2 hp.tsv.gz
-    echo '##FORMAT=<ID=HP,Number=.,Type=String,Description="Read-backed phasing haplotype identifiers">' > hp.hdr
-    bcftools annotate -a hp.tsv.gz -h hp.hdr -c CHROM,POS,REF,ALT,FMT/HP tumor.vcf.gz -Oz -o ${prefix}.proximal.vcf.gz
+    if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=HP,'; then
+        bcftools view -s "\${tumor}" ${vcf} -Oz -o ${prefix}.proximal.vcf.gz
+    else
+        bcftools view -s "\${tumor}" ${vcf} -Oz -o tumor.vcf.gz
+        bcftools query -f '%CHROM\\t%POS\\t%REF\\t%ALT\\t1-1,1-2\\n' tumor.vcf.gz | bgzip > hp.tsv.gz
+        tabix -s 1 -b 2 -e 2 hp.tsv.gz
+        echo '##FORMAT=<ID=HP,Number=.,Type=String,Description="Read-backed phasing haplotype identifiers">' > hp.hdr
+        bcftools annotate -a hp.tsv.gz -h hp.hdr -c CHROM,POS,REF,ALT,FMT/HP tumor.vcf.gz -Oz -o ${prefix}.proximal.vcf.gz
+    fi
     bcftools index -t ${prefix}.proximal.vcf.gz
     """
 

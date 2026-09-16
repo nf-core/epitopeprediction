@@ -77,7 +77,9 @@ samplesheet row each.
 transcript are assumed to be in cis: pvacseq is run once with each variant alone and once with the
 nearby variants folded in (`--phased-proximal-variants-vcf`), and both sets of windows are kept. A peptide
 spanning two mutations is therefore generated whether the mutations share an allele or not; the trans
-case only costs a few extra candidates. In-frame indels and frameshifts are not combined, and germline
+case only costs a few extra candidates. If your VCF already carries read-backed phasing (a `FORMAT/HP`
+tag, e.g. from GATK ReadBackedPhasing), that phasing is used instead and only variants on the same
+haplotype are combined. In-frame indels and frameshifts are not combined, and germline
 variants are not considered, so the wild-type context around a mutation is the reference sequence.
 Peptides must overlap a mutated residue; in a window that pairs an indel with a distant missense variant,
 k-mers between the two changes are kept as well.
