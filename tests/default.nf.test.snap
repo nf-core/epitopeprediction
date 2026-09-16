@@ -1,7 +1,7 @@
 {
     "-profile test": {
         "content": [
-            18,
+            19,
             {
                 "ANNOTATE_FASTA_HEADERS": {
                     "python": "3.13.1"
@@ -23,6 +23,9 @@
                     "argparse": 1.1,
                     "pandas": "1.1.5",
                     "mhcnuggets": "2.4.0"
+                },
+                "PREP_PROXIMAL_VCF": {
+                    "bcftools": "1.23.1"
                 },
                 "PREP_VCF": {
                     "bcftools": "1.23.1",
@@ -152,7 +155,7 @@
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-09-14T13:05:13.693474479",
+        "timestamp": "2026-09-15T14:36:46.716759701",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

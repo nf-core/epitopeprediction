@@ -1,7 +1,7 @@
 {
     "-profile test_grcm39": {
         "content": [
-            18,
+            19,
             {
                 "ANNOTATE_FASTA_HEADERS": {
                     "python": "3.13.1"
@@ -23,6 +23,9 @@
                     "argparse": 1.1,
                     "pandas": "1.1.5",
                     "mhcnuggets": "2.4.0"
+                },
+                "PREP_PROXIMAL_VCF": {
+                    "bcftools": "1.23.1"
                 },
                 "PREP_VCF": {
                     "bcftools": "1.23.1",
@@ -152,7 +155,7 @@
                 "mouse01_length_9.tsv:md5,6f63c803365628cf5821e554d357712a"
             ]
         ],
-        "timestamp": "2026-09-15T10:54:11.904148352",
+        "timestamp": "2026-09-15T14:43:09.917698257",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

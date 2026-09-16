@@ -8,7 +8,7 @@ process PVACSEQ_GENERATE_FASTA {
         : 'biocontainers/pvactools:7.0.1--pyhdfd78af_0'}"
 
     input:
-    tuple val(meta), path(vcf), path(tbi)
+    tuple val(meta), path(vcf), path(tbi), path(proximal_vcf), path(proximal_tbi)
 
     output:
     tuple val(meta), path("*.raw.fasta"), path(vcf), emit: fasta
@@ -24,12 +24,14 @@ process PVACSEQ_GENERATE_FASTA {
     // -s picks the tumor column on multi-sample VCFs; single-sample VCFs leave it unset.
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
     """
-    pvacseq generate_protein_fasta \\
-        ${vcf} \\
-        ${flank} \\
-        ${prefix}.raw.fasta \\
-        ${sample_arg} \\
-        ${args}
+    # Each variant alone, then with its proximal variants folded in (assumed cis); keep both so
+    # single- and multi-variant peptides are generated, dropping windows that came out identical.
+    pvacseq generate_protein_fasta ${vcf} ${flank} single.fasta ${sample_arg} ${args}
+    pvacseq generate_protein_fasta ${vcf} ${flank} proximal.fasta ${sample_arg} ${args} -p ${proximal_vcf}
+    awk 'function emit() { if (header != "" && !seen[header SUBSEP seq]++) print header seq }
+         /^>/ { emit(); header = \$0; seq = ""; next }
+         { seq = seq "\\n" \$0 }
+         END { emit() }' single.fasta proximal.fasta > ${prefix}.raw.fasta
     """
 
     stub:

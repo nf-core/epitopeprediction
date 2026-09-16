@@ -7,6 +7,7 @@ include { PREP_VCF                   } from '../../../modules/local/prep_vcf'
 include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref_fasta'
 include { DOWNLOAD_VEP_CACHE         } from '../../../modules/local/download_vep_cache'
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
+include { PREP_PROXIMAL_VCF          } from '../../../modules/local/prep_proximal_vcf'
 include { PVACSEQ_GENERATE_FASTA     } from '../../../modules/local/pvacseq_generate_fasta'
 include { ANNOTATE_FASTA_HEADERS     } from '../../../modules/local/annotate_fasta_headers'
 include { VARIANT_FASTA2PEPTIDES     } from '../../../modules/local/variant_fasta2peptides'
@@ -90,7 +91,9 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_vep_plugin_files
     )
 
-    PVACSEQ_GENERATE_FASTA( ENSEMBLVEP_VEP.out.vcf.join( ENSEMBLVEP_VEP.out.tbi ) )
+    ch_vep_vcf = ENSEMBLVEP_VEP.out.vcf.join( ENSEMBLVEP_VEP.out.tbi )
+    PREP_PROXIMAL_VCF( ch_vep_vcf )
+    PVACSEQ_GENERATE_FASTA( ch_vep_vcf.join( PREP_PROXIMAL_VCF.out.vcf ) )
 
     ANNOTATE_FASTA_HEADERS( PVACSEQ_GENERATE_FASTA.out.fasta )
 

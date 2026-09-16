@@ -91,13 +91,19 @@ def changed_interval(wt, mt, is_fs):
     return lcp, lcp, True  # pure deletion junction at position lcp
 
 
-def is_neo(start, k, a, b, junction):
-    """True if k-mer [start, start+k) overlaps the mutated region or spans a deletion junction."""
+def changed_blocks(wt, mt, is_fs):
+    """Mutated regions of `mt` as [(a, b), ...]: one block per substituted residue when the lengths
+    match (windows may carry several proximal substitutions), else the single changed_interval span."""
+    if not is_fs and len(wt) == len(mt):
+        return [(i, i + 1) for i in range(len(mt)) if wt[i] != mt[i]]
+    a, b, _junction = changed_interval(wt, mt, is_fs)
+    return [(a, b)]
+
+
+def is_neo(start, k, blocks):
+    """True if k-mer [start, start+k) overlaps a mutated block or spans a deletion junction (a == b)."""
     end = start + k
-    if junction:
-        # must cover both residues now adjacent across the deletion (positions a-1 and a)
-        return start < a and end > a
-    return start < b and end > a
+    return any((start < a and end > a) if a == b else (start < b and end > a) for a, b in blocks)
 
 
 def valid_peptide(pep):
@@ -119,13 +125,13 @@ def generate_variant_peptides(mt_records, wt_by_key, min_len, max_len, want_wild
             n_no_wt += 1
             continue
         is_fs = ann['consequence'] == 'FS'
-        a, b, junction = changed_interval(wt, mt, is_fs)
+        blocks = changed_blocks(wt, mt, is_fs)
         same_len = len(wt) == len(mt)
         for k in range(min_len, max_len + 1):
             if len(mt) < k:
                 continue
             for start in range(0, len(mt) - k + 1):
-                if not is_neo(start, k, a, b, junction):
+                if not is_neo(start, k, blocks):
                     continue
                 pep = mt[start:start + k]
                 if not valid_peptide(pep):

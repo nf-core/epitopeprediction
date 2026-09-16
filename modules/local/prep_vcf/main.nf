@@ -26,19 +26,21 @@ process PREP_VCF {
     """
     # pvacseq refuses VCFs without GT (Strelka emits none). Add GT=0/1 for the tumor sample with vatools,
     # as pVACtools recommends (https://pvactools.readthedocs.io/en/latest/pvacseq/input_file_prep/gt.html).
+    tumor="${tumor}"
+    if [ -n "\${tumor}" ] && ! bcftools query -l ${vcf} | grep -qx "\${tumor}"; then
+        echo "ERROR: sample '\${tumor}' not found in ${vcf}." >&2
+        exit 1
+    fi
+
     if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=GT,'; then
         input_vcf=${vcf}
     else
-        tumor="${tumor}"
         if [ -z "\${tumor}" ]; then
             if [ "\$(bcftools query -l ${vcf} | wc -l)" -ne 1 ]; then
                 echo "ERROR: ${vcf} has no GT field and more than one sample; set tumor_sample in the samplesheet." >&2
                 exit 1
             fi
             tumor=\$(bcftools query -l ${vcf})
-        elif ! bcftools query -l ${vcf} | grep -qx "\${tumor}"; then
-            echo "ERROR: sample '\${tumor}' not found in ${vcf}." >&2
-            exit 1
         fi
         vcf-genotype-annotator ${vcf} "\${tumor}" 0/1 -o ${prefix}.gt.vcf
         input_vcf=${prefix}.gt.vcf

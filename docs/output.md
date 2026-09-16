@@ -28,7 +28,7 @@ Tables are written per peptide length as a `tsv`, then passed to the MHC binding
 
 **Output directories:**
 
-- `variant_fasta/[sample].raw.fasta` — pvacseq WT/MT protein windows
+- `variant_fasta/[sample].raw.fasta` — pvacseq WT/MT protein windows, each variant alone and with nearby somatic missense variants folded in (see [usage](usage.md#genomic-variants)); a combined window keeps the header of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
 - `variant_fasta/[sample].annotated.fasta` — the same WT/MT windows with provenance-annotated headers (schema below)
 - `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance
 

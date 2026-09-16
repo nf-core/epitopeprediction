@@ -73,6 +73,15 @@ samplesheet row each.
 > peptides. Non-coding-biotype (e.g. NMD) and incomplete-CDS (`cds_start_NF`/`cds_end_NF`) transcripts are
 > skipped, but such variants are still captured through the gene's complete transcripts.
 
+**Nearby variants.** Somatic missense variants within the flanking window of each other on the same
+transcript are assumed to be in cis: pvacseq is run once with each variant alone and once with the
+nearby variants folded in (`--phased-proximal-variants-vcf`), and both sets of windows are kept. A peptide
+spanning two mutations is therefore generated whether the mutations share an allele or not; the trans
+case only costs a few extra candidates. In-frame indels and frameshifts are not combined, and germline
+variants are not considered, so the wild-type context around a mutation is the reference sequence.
+Peptides must overlap a mutated residue; in a window that pairs an indel with a distant missense variant,
+k-mers between the two changes are kept as well.
+
 > [!TIP]
 > Set `--proteome_reference <proteome.fa>` (a UniProt or Ensembl `pep.all.fa`) to drop variant
 > peptides that also occur in the normal proteome — a self/novelty filter that removes peptides

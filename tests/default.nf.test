@@ -79,4 +79,24 @@ nextflow_pipeline {
             )
         }
     }
+
+    test("-profile test proximal missense variants") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // FGFR3 S249C plus two synthetic missense SNVs two and three codons downstream
+                input  = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/sample_sheets/sample_sheet_variants_grch38_proximal.csv"
+            }
+        }
+
+        then {
+            def peptides = path("${params.outdir}/variant_peptides/proximal_length_9.tsv").readLines().drop(1).collect { it.split('\t')[0] }
+            assertAll(
+                { assert workflow.success },
+                // each variant alone (CPHR, SPRR, SPHQ) and all three combined (CPRQ)
+                { assert ['CPHR', 'SPRR', 'SPHQ', 'CPRQ'].every { motif -> peptides.any { it.contains(motif) } } }
+            )
+        }
+    }
 }
