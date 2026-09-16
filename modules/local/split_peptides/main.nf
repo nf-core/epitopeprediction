@@ -12,7 +12,7 @@ process SPLIT_PEPTIDES {
 
     output:
     tuple val(meta), path("*.tsv"), emit: splitted
-    path "versions.yml"           , emit: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | cut -d' ' -f2"), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -24,11 +24,6 @@ process SPLIT_PEPTIDES {
         --input $tsv \\
         --min_size ${params.peptides_split_minchunksize} \\
         --max_chunks ${params.peptides_split_maxchunks} \\
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 
     stub:
@@ -37,10 +32,5 @@ process SPLIT_PEPTIDES {
     """
     touch ${prefix}_1.tsv
     touch ${prefix}_2.tsv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
     """
 }

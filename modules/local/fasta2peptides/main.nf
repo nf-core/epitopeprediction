@@ -12,7 +12,8 @@ process FASTA2PEPTIDES {
 
     output:
     tuple val(meta), path("*.tsv"), emit: tsv
-    path "versions.yml"           , emit: versions
+    tuple val("${task.process}"), val('python'), eval("python3 --version | cut -d' ' -f2"), topic: versions
+    tuple val("${task.process}"), val('biopython'), eval('python3 -c "import Bio; print(Bio.__version__)"'), topic: versions
 
     when:
     task.ext.when == null || task.ext.when
@@ -30,12 +31,6 @@ process FASTA2PEPTIDES {
         -maxl ${max_length} \\
         -pepcol ${params.peptide_col_name} \\
 
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version 2>&1 | cut -d' ' -f2)
-        biopython: \$(python3 -c "import Bio; print(Bio.__version__)")
-    END_VERSIONS
     """
 
     stub:
@@ -46,12 +41,6 @@ process FASTA2PEPTIDES {
     """
     touch ${prefix}_length_${min_length}.tsv
     touch ${prefix}_length_${max_length}.tsv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python3 --version 2>&1 | cut -d' ' -f2)
-        biopython: \$(python3 -c "import Bio; print(Bio.__version__)")
-    END_VERSIONS
     """
 
 }

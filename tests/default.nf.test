@@ -3,6 +3,8 @@ nextflow_pipeline {
     name "Test pipeline"
     script "../main.nf"
     tag "pipeline"
+    tag "variant"
+    profile "test"
 
     test("-profile test") {
 
@@ -13,20 +15,87 @@ nextflow_pipeline {
         }
 
         then {
-            // stable_path: All files + folders in ${params.outdir}/ with a stable path (including file name)
-            def stable_path = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
-            // stable_content: All files in ${params.outdir}/ with stable content
-            def stable_content = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            assert workflow.success
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            // stable_path: All files in ${params.outdir}/ with stable content
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            def annotated = path("${params.outdir}/variant_fasta/sample1.annotated.fasta")
             assertAll(
+                { assert workflow.success },
+                { assert annotated.text.contains('|missense|') },
+                { assert annotated.text.contains('|inframe_del|') },
+                { assert annotated.text.contains('|FS|') },
                 { assert snapshot(
+                    // Number of successful tasks
+                    workflow.trace.succeeded().size(),
                     // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
                     removeNextflowVersion("$outputDir/pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml"),
                     // All stable path name, with a relative path
-                    stable_path,
+                    stable_name,
                     // All files with stable contents
-                    stable_content
+                    stable_path
                 ).match() }
+            )
+        }
+    }
+
+    test("-profile test --proteome_reference (self-filter)") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // this reference proteome is exactly the FGFR3 MT window of the fixture,
+                // so every FGFR3 peptide is "self" while other genes are untouched
+                proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
+            }
+        }
+
+        then {
+            def peptides = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").text +
+                           path("${params.outdir}/variant_peptides/sample1_length_10.tsv").text
+            assertAll(
+                { assert workflow.success },
+                { assert !peptides.contains('FGFR3') },
+                { assert peptides.contains('CEBPA') }
+            )
+        }
+    }
+
+    test("-profile test Strelka-style VCF without FORMAT/GT") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // the same four variants as Strelka writes them: no FORMAT/GT, NORMAL and TUMOR columns
+                input  = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/sample_sheets/sample_sheet_variants_grch38_strelka.csv"
+            }
+        }
+
+        then {
+            def annotated = path("${params.outdir}/variant_fasta/strelka.annotated.fasta").text
+            assertAll(
+                { assert workflow.success },
+                { assert ['|missense|', '|inframe_del|', '|FS|'].every { annotated.contains(it) } }
+            )
+        }
+    }
+
+    test("-profile test proximal missense variants") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+                // FGFR3 S249C plus two synthetic missense SNVs two and three codons downstream
+                input  = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/sample_sheets/sample_sheet_variants_grch38_proximal.csv"
+            }
+        }
+
+        then {
+            def peptides = path("${params.outdir}/variant_peptides/proximal_length_9.tsv").readLines().drop(1).collect { it.split('\t')[0] }
+            assertAll(
+                { assert workflow.success },
+                // each variant alone (CPHR, SPRR, SPHQ) and all three combined (CPRQ)
+                { assert ['CPHR', 'SPRR', 'SPHQ', 'CPRQ'].every { motif -> peptides.any { it.contains(motif) } } }
             )
         }
     }
