@@ -8,11 +8,11 @@ process NETMHCIIPAN {
         'community.wave.seqera.io/library/bash_gawk_perl_tcsh:a941b4e9bd4b8805' }"
 
     input:
-    tuple val(meta), path(tsv), path(software)
+    tuple val(meta), val(alleles_input), path(tsv), path(software)
 
     output:
     tuple val(meta), path("*.xls"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('netMHCIIpan'), eval("sed 's/.*version //' netmhciipan/data/version"), topic: versions
 
     script:
     if (meta.mhc_class != "II") {
@@ -20,45 +20,26 @@ process NETMHCIIPAN {
     }
     def args    = task.ext.args ?: ''
     def prefix  = task.ext.prefix ?: "${meta.id}"
-    // Adjust for netMHCIIpan allele format (e.g. DRB1_0101, HLA-DPA10103-DPB10101, H-2-IAb)
-    def alleles = meta.alleles_supported.tokenize(';')
-                    .collect { allele ->
-                        if (allele.contains('DRB')) {
-                            // HLA-DRB1*01:01 -> DRB1_0101
-                            allele.replace('*', '_').replace(':', '').replace('HLA-', '')
-                        } else if (allele.startsWith('H2-') && allele.contains('/')) {
-                            // mhcgnomes mouse class II canonical form is H2-<X>A*<Y>/<X>B*<Y>
-                            // (locus X = A or E, haplotype Y = b/d/k/...). NetMHCIIpan wants H-2-I<X><Y>.
-                            "H-2-I${allele[3]}${allele.substring(allele.lastIndexOf('*') + 1)}"
-                        } else {
-                            // HLA-DPA1*01:03/DPB1*04:01 -> HLA-DPA10103-DPB10401
-                            allele.replace('*', '').replace(':', '').replace('/','-').replace('H2','H-2')
-                        }
-                    }.join(',')
-
+    // netMHCIIpan copies its install dir (NMHOME) and TMPDIR into fixed-size buffers (~200 chars) and aborts on long
+    // work dir paths, so it is run through a short /tmp symlink with TMPDIR pointed there. See #341.
     """
-    netmhciipan/netMHCIIpan \
+    nm=\$(mktemp -d /tmp/nm.XXXXXX)
+    trap 'rm -rf "\$nm"' EXIT
+    ln -s "\$PWD/netmhciipan" "\$nm/netmhciipan"
+    export TMPDIR="\$nm"
+
+    "\$nm/netmhciipan/netMHCIIpan" \
         -f $tsv \
         -inptype 1 \
-        -a $alleles \
+        -a $alleles_input \
         -xls \
         -xlsfile ${prefix}_predicted_netmhciipan.xls \
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhciipan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 
     stub:
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predicted_netmhciipan.xls
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhciipan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 }

@@ -12,7 +12,7 @@ process MERGE_PREDICTIONS {
 
     output:
     tuple val(meta), path("*.csv") , emit: merged
-    path "versions.yml"            , emit: versions
+    path "versions.yml", topic: versions
 
     script:
     template "merge_predictions.py"
@@ -21,12 +21,9 @@ process MERGE_PREDICTIONS {
     def prefix     = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predictions.csv
-
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        python: \$(python --version 2>&1 | sed 's/Python //g')
-        pandas: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('pandas').version)")
-        mhcgnomes: \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcgnomes').version)")
+        python: \$(python --version | sed 's/Python //')
     END_VERSIONS
     """
 }

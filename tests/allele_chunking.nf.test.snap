@@ -1,15 +1,14 @@
 {
-    "-profile test_peptides": {
+    "-profile test_allele_chunking": {
         "content": [
-            11,
+            8,
             {
                 "MERGE_PREDICTIONS": {
                     "mhcgnomes": "1.8.6",
                     "pandas": "2.1.0"
                 },
-                "MHCNUGGETS": {
-                    "mhcnuggets": "2.4.0",
-                    "pandas": "1.1.5"
+                "MHCFLURRY": {
+                    "mhcflurry": "2.1.4"
                 },
                 "PREPARE_PREDICTION_INPUT": {
                     "mhcgnomes": "1.8.6",
@@ -26,9 +25,9 @@
                 }
             },
             [
-                "mhcnuggets",
-                "mhcnuggets/sample1_c0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_c0_predicted_mhcnuggets.csv",
+                "mhcflurry",
+                "mhcflurry/sample1_c0_a0_predicted_mhcflurry.csv",
+                "mhcflurry/sample1_c0_a1_predicted_mhcflurry.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/llms-full.txt",
@@ -62,18 +61,17 @@
                 "pipeline_info",
                 "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
                 "predictions",
-                "predictions/sample1.tsv",
-                "predictions/sample2.tsv"
+                "predictions/sample1.tsv"
             ],
             [
-                "multiqc_binder_length_distribution.txt:md5,de696e8183c37f510c25d5a339844d7d",
-                "multiqc_binder_rank_distribution.txt:md5,666bbe007b239667ee5bff300b3419d2",
-                "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
+                "multiqc_binder_length_distribution.txt:md5,44b79146eababdbcbbc8c8982e6780da",
+                "multiqc_binder_rank_distribution.txt:md5,19f4a8ec9e0517e7b4c8b369deba7f48",
+                "multiqc_binding_affinity_distribution.txt:md5,850ad8f13ef4727e7395092b8b2efe0f",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,6ad0c8b1a4601eedb1f325ddbbfca560"
             ]
         ],
-        "timestamp": "2026-09-14T14:42:56.639881252",
+        "timestamp": "2026-09-14T14:37:50.889757417",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

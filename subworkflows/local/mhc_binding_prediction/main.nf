@@ -4,6 +4,7 @@
 
 include { PREPARE_PREDICTION_INPUT                   } from '../../../modules/local/prepare_prediction_input'
 include { MHCFLURRY                                  } from '../../../modules/local/mhcflurry'
+include { MHCFLURRY_DOWNLOAD_MODELS                  } from '../../../modules/local/mhcflurry_download_models'
 include { MHCNUGGETS;
         MHCNUGGETS as MHCNUGGETSII                   } from '../../../modules/local/mhcnuggets'
 include { NETMHCPAN                                  } from '../../../modules/local/netmhcpan'
@@ -19,7 +20,6 @@ include { MERGE_PREDICTIONS                          } from '../../../modules/lo
 //     netmhc_software_meta_json: JSON file with metadata for NetMHC software
 // Output:
 //     predicted: Channel of predicted MHC binding
-//     versions: Channel of software versions
 
 workflow MHC_BINDING_PREDICTION {
     take:
@@ -29,53 +29,55 @@ workflow MHC_BINDING_PREDICTION {
         netmhc_software_meta_json
 
     main:
-        ch_versions = channel.empty()
         ch_binding_predictors_out = channel.empty()
 
         validate_tools_param(tools)
 
-        // Add file identifier to meta to prevent overwriting identically named files
         ch_peptides
-            .map { meta, file -> [meta + [file_id: meta.id + '_' + file.baseName], file] }
+            .map { meta, file -> [meta + [file_id: file.baseName], file] }
             .set { ch_peptides_to_predict }
 
-        // Prepare predictor-tailored input file and alleles supported by the predictor
         PREPARE_PREDICTION_INPUT( ch_peptides_to_predict, supported_alleles_json)
             .prepared
-            .transpose()
-            .branch {
-                meta, json, file ->
-                    def allele_input_dict = json2map(json)
-                    mhcflurry : (file.name.contains('mhcflurry_input') && allele_input_dict['mhcflurry'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcflurry']], file]
-                    mhcnuggets : (file.name.contains('mhcnuggets_input') && allele_input_dict['mhcnuggets'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcnuggets']], file]
-                    mhcnuggetsii : (file.name.contains('mhcnuggetsii_input') && allele_input_dict['mhcnuggetsii'])
-                        return [meta + [alleles_supported: allele_input_dict['mhcnuggetsii']], file]
-                    netmhcpan: (file.name.contains('netmhcpan_input') && allele_input_dict['netmhcpan'])
-                        return [meta + [alleles_supported: allele_input_dict['netmhcpan']], file]
-                    netmhciipan: (file.name.contains('netmhciipan_input') && allele_input_dict['netmhciipan'])
-                        return [meta + [alleles_supported: allele_input_dict['netmhciipan']], file]
-                    }
+            .flatMap { meta, tool_chunks, files ->
+                def files_by_name = files.collectEntries { f -> [(f.name): f] }
+                def entries = new groovy.json.JsonSlurper().parse(tool_chunks)
+                entries.collect { entry ->
+                    [meta + [tool: entry.tool,
+                             alleles_supported: entry.alleles,
+                             source_file_id: meta.file_id,
+                             n_prediction_files: entries.size(),
+                             file_id: entry.chunk_id ? "${meta.file_id}_${entry.chunk_id}" : meta.file_id],
+                     entry.alleles_input,
+                     files_by_name[entry.filename]]
+                }
+            }
+            .branch { meta, _alleles_input, _file ->
+                mhcflurry    : meta.tool == 'mhcflurry'
+                mhcnuggets   : meta.tool == 'mhcnuggets'
+                mhcnuggetsii : meta.tool == 'mhcnuggetsii'
+                netmhcpan    : meta.tool == 'netmhcpan'
+                netmhciipan  : meta.tool == 'netmhciipan'
+            }
             .set{ ch_prediction_input }
 
-        MHCFLURRY ( ch_prediction_input.mhcflurry )
-        ch_versions = ch_versions.mix(MHCFLURRY.out.versions)
-        ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
+        if ( "mhcflurry" in tools.tokenize(",") )
+        {
+            MHCFLURRY_DOWNLOAD_MODELS()
+            MHCFLURRY ( ch_prediction_input.mhcflurry.map { meta, _alleles_input, file -> [meta, file] }.combine(MHCFLURRY_DOWNLOAD_MODELS.out.models) )
+            ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCFLURRY.out.predicted)
+        }
 
         MHCNUGGETS ( ch_prediction_input.mhcnuggets )
-        ch_versions = ch_versions.mix(MHCNUGGETS.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETS.out.predicted)
 
         MHCNUGGETSII ( ch_prediction_input.mhcnuggetsii )
-        ch_versions = ch_versions.mix(MHCNUGGETSII.out.versions)
         ch_binding_predictors_out = ch_binding_predictors_out.mix(MHCNUGGETSII.out.predicted)
 
         if ( "netmhcpan" in tools.tokenize(",") )
         {
             NETMHCPAN_IMPORT( parse_netmhc_params("netmhcpan", netmhc_software_meta_json) )
             NETMHCPAN ( ch_prediction_input.netmhcpan.combine(NETMHCPAN_IMPORT.out.nonfree_tools) )
-            ch_versions = ch_versions.mix(NETMHCPAN.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCPAN.out.predicted)
         }
 
@@ -83,24 +85,25 @@ workflow MHC_BINDING_PREDICTION {
         {
             NETMHCIIPAN_IMPORT( parse_netmhc_params("netmhciipan", netmhc_software_meta_json) )
             NETMHCIIPAN ( ch_prediction_input.netmhciipan.combine(NETMHCIIPAN_IMPORT.out.nonfree_tools) )
-            ch_versions = ch_versions.mix(NETMHCIIPAN.out.versions)
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
-    // Join predicted file and subworkflow input file to add inputfile metadata
-    ch_binding_predictors_out
-        .map { meta, file -> [meta.findAll { k, _v -> k != 'alleles_supported' }, file] } // drop alleles_supported from meta
-        .groupTuple()
-        .join( ch_peptides_to_predict )
-        .set { ch_binding_predictors_out_meta}
+        // Regroup predictions per source file
+        ch_binding_predictors_out
+            .map { meta, file ->
+                def regroup_meta = meta.subMap(meta.keySet() - ['alleles_supported', 'tool', 'source_file_id', 'n_prediction_files']) + [file_id: meta.source_file_id]
+                [groupKey(regroup_meta, meta.n_prediction_files), file]
+            }
+            .groupTuple()
+            .map { key, files -> [key.getGroupTarget(), files] }
+            .join( ch_peptides_to_predict )
+            .set { ch_binding_predictors_out_meta }
 
-    // Merge predictions from different predictors
-    MERGE_PREDICTIONS( ch_binding_predictors_out_meta )
-    ch_versions = ch_versions.mix(MERGE_PREDICTIONS.out.versions)
+        // Merge predictions from different predictors
+        MERGE_PREDICTIONS( ch_binding_predictors_out_meta )
 
     emit:
     predicted = MERGE_PREDICTIONS.out.merged
-    versions = ch_versions
 }
 
 //==============================================================================
@@ -138,7 +141,6 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
     ch_netmhc_exe.bind([
         tool_name,
         entry.version,
-        // Several sub-releases of a version are accepted, pass them as a space-separated list
         entry.software_md5.join(' '),
         file(params["${tool_name}_path"], checkIfExists:true),
         entry.data_url ? file(entry.data_url, checkIfExists:true) : [],
@@ -146,11 +148,4 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
         entry.binary_name
     ])
     return ch_netmhc_exe
-}
-
-// Groovy function to parse JSON and return a map
-def json2map(jsonString) {
-    def jsonSlurper = new groovy.json.JsonSlurper()
-    def parsedJson = jsonSlurper.parse(file(jsonString, checkIfExists: true))
-    return parsedJson
 }

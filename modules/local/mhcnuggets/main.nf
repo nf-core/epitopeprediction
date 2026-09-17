@@ -8,11 +8,11 @@ process MHCNUGGETS {
         'quay.io/biocontainers/mhcnuggets:2.4.0--pyh7cba7a3_0' }"
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), val(alleles_input), path(tsv)
 
     output:
     tuple val(meta), path("*{_predicted_mhcnuggets.csv,_predicted_mhcnuggetsii.csv}"), emit: predicted
-    path "versions.yml"                                , emit: versions
+    path "versions.yml", topic: versions
 
     script:
 
@@ -20,13 +20,12 @@ process MHCNUGGETS {
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
-
+    def tool   = meta.mhc_class == "II" ? "mhcnuggetsii" : "mhcnuggets"
     """
-    touch ${prefix}_predicted_mhcnuggets.tsv
-
+    touch ${prefix}_predicted_${tool}.csv
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        mhcnuggets \$(python -c "import pkg_resources; print(pkg_resources.get_distribution('mhcnuggets').version)")
+        python: \$(python --version | sed 's/Python //')
     END_VERSIONS
     """
 }
