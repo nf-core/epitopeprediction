@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
-- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added pan-species prediction via a `<species>-all` sentinel (e.g. `HLA-all`), automatic allele chunking for tools with a per-call allele cap, a fix for the NetMHCpan/NetMHCIIpan buffer overflow on long work directory paths, and a one-off MHCflurry model download shared by all prediction tasks. Closes [#340](https://github.com/nf-core/epitopeprediction/issues/340) ([@jonasscheid](https://github.com/jonasscheid/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added `<species>-all` alleles (e.g. `HLA-all`) and allele chunking, fixed the NetMHCpan/NetMHCIIpan buffer overflow on long paths, download MHCflurry models once per run (fixes [#340](https://github.com/nf-core/epitopeprediction/issues/340)) ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
