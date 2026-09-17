@@ -93,6 +93,18 @@ sample,alleles,mhc_class,filename
 sample1,HLA-all,I,peptides.tsv
 ```
 
+### Peptide length limits
+
+`--min/max_peptide_length_classI` and `--min/max_peptide_length_classII` select the peptide lengths to predict. Each predictor additionally has a fixed length window it can handle, so a peptide is only passed to a predictor if it falls into both the requested range and the predictor's window:
+
+| Predictor      | MHC class | Peptide lengths |
+| -------------- | --------- | --------------- |
+| `mhcflurry`    | I         | 5-15            |
+| `mhcnuggets`   | I         | 5-15            |
+| `mhcnuggetsii` | II        | 5-30            |
+| `netmhcpan`    | I         | 8-14            |
+| `netmhciipan`  | II        | 9-50            |
+
 ## Running the pipeline
 
 The typical command for running the pipeline is as follows:

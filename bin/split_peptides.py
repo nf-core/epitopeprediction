@@ -14,7 +14,7 @@ from pathlib import Path
 def split_peptides(input_file, prefix, min_size, max_chunks):
     """Splits the peptide input file into smaller chunks in a single pass."""
     input_path = Path(input_file)
-    prefix = prefix.replace(".", "_")
+    prefix = prefix.replace(".", "_")  # chunk name becomes the file_id downstream, so no extension-like dots
 
     with input_path.open("r") as infile:
         lines = infile.readlines()  # Read all lines into memory
