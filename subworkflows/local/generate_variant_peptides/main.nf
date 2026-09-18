@@ -5,7 +5,6 @@
 
 include { ADD_GT                     } from '../../../modules/local/add_gt'
 include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref_fasta'
-include { DOWNLOAD_VEP_CACHE         } from '../../../modules/local/download_vep_cache'
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
 include { PREP_PROXIMAL_VCF          } from '../../../modules/local/prep_proximal_vcf'
 include { PVACSEQ_GENERATE_FASTA     } from '../../../modules/local/pvacseq_generate_fasta'
@@ -16,6 +15,7 @@ include { BCFTOOLS_ANNOTATE          } from '../../../modules/nf-core/bcftools/a
 include { BCFTOOLS_NORM              } from '../../../modules/nf-core/bcftools/norm'
 include { BCFTOOLS_STATS             } from '../../../modules/nf-core/bcftools/stats'
 include { BCFTOOLS_VIEW              } from '../../../modules/nf-core/bcftools/view'
+include { ENSEMBLVEP_DOWNLOAD        } from '../../../modules/nf-core/ensemblvep/download'
 include { ENSEMBLVEP_VEP             } from '../../../modules/nf-core/ensemblvep/vep'
 include { UNTAR                      } from '../../../modules/nf-core/untar'
 
@@ -41,11 +41,11 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_download_input = ch_vcf
             .map { _meta, _vcf -> [ [id:'vep'], vep_genome, vep_species, vep_cachever ] }
             .first()
-        DOWNLOAD_VEP_CACHE( ch_download_input )
+        ENSEMBLVEP_DOWNLOAD( ch_download_input, true )
         DOWNLOAD_REF_FASTA( ch_download_input )
 
         // Fed by a value channel, so these are value channels already -- no .first() needed.
-        ch_vep_cache = DOWNLOAD_VEP_CACHE.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
+        ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
         ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa -> [ [id:'ref'], fa ] }
     } else if (cache_from_params) {
         // test-datasets ships the cache as a .tar.gz because CI cannot stage a directory.

@@ -25,6 +25,11 @@
                         "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
                         "installed_by": ["modules"]
                     },
+                    "ensemblvep/download": {
+                        "branch": "master",
+                        "git_sha": "e308fe14c49cf664228866a2f17f175efae6bf88",
+                        "installed_by": ["modules"]
+                    },
                     "ensemblvep/vep": {
                         "branch": "master",
                         "git_sha": "db055f5f8c726a924bf51dadce3978da3bbdad7e",
