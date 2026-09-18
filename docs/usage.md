@@ -16,13 +16,13 @@ You will need to create a samplesheet with information about the samples you wou
 
 An [example samplesheet](../assets/samplesheet.tsv) has been provided with the pipeline.
 
-| Column         | Description                                                                                                                                                                                   |
-| -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample`       | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                                                                 |
-| `alleles`      | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.                                               |
-| `mhc_class`    | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                                                                            |
-| `filename`     | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                                                                           |
-| `tumor_sample` | _Optional._ For multi-sample (matched tumor/normal) somatic VCFs, the name of the tumor sample column in the VCF, passed to pvacseq as `-s`. Leave empty for single-sample (tumor-only) VCFs. |
+| Column         | Description                                                                                                                                                                          |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `sample`       | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                                                        |
+| `alleles`      | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.                                      |
+| `mhc_class`    | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                                                                   |
+| `filename`     | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                                                                  |
+| `tumor_sample` | _Optional._ Name of the tumor sample as it appears in the VCF header (e.g. `TUMOR` for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs. |
 
 The pipeline will auto-detect whether a sample is either in variant, protein or peptide file file format using the information provided in the samplesheet. If you provide peptide format (tsv), make sure your peptide list aligns with `--peptide_col_name` (default: "sequence").
 
@@ -36,102 +36,68 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 
 ### Genomic variants
 
-For variant (VCF) input, the pipeline builds the mutated protein sequences itself with an
-offline `bcftools` → VEP → pVACtools chain:
+Input VCFs are **raw somatic calls** — VEP runs inside the pipeline, so do not pre-annotate them.
+Only `PASS` records are used, contigs are renamed to Ensembl style (`chr1`→`1`, `chrM`→`MT`), and
+multiallelic sites are split.
 
-1. **`bcftools`** — PASS-filter, rename contigs to Ensembl style (`chr1`→`1`, `chrM`→`MT`),
-   split multiallelic sites and left-align/normalize against the reference.
-2. **[Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)** — annotate against an
-   offline **Ensembl** cache (ENST transcripts), with the `Wildtype` and `Frameshift` plugins that
-   add the wild-type and frameshift protein sequences pvacseq needs.
-3. **[pVACtools](https://pvactools.readthedocs.io/) `generate_protein_fasta`** — build the wild-type
-   and mutant protein windows (`--mutation_flanking_aas` residues each side; frameshifts run to the new stop).
-4. Mutation-overlapping peptides (with gene / transcript / HGVSp / genomic anchor / UniProt
-   provenance) are generated within the length bounds set by `--min_peptide_length_class[I|II]`
-   and `--max_peptide_length_class[I|II]`, then handed to MHC binding prediction.
+For VCFs with more than one sample column (matched tumor/normal from sarek's Mutect2 or Strelka, or
+DRAGEN), set the `tumor_sample` samplesheet column to the tumor sample's name as it appears in the
+VCF header — `bcftools query -l your.vcf` lists them, and Strelka names them `NORMAL` and `TUMOR`.
+Leave it empty for single-sample VCFs. Callers that emit no `GT` field are handled automatically.
 
-> [!IMPORTANT]
-> Input VCFs should be **raw somatic** calls — VEP is run inside the pipeline, so you do **not**
-> pre-annotate them. For matched tumor/normal (multi-sample) VCFs (e.g. from nf-core/sarek's
-> Mutect2/Strelka, or DRAGEN), set the `tumor_sample` samplesheet column to the tumor sample name;
-> single-sample tumor-only VCFs can leave it empty.
+Peptides come only from **coding-altering variants on complete protein-coding transcripts**:
+missense, in-frame indels and frameshifts. Synonymous, stop-gain/loss, splice and non-coding
+variants yield none, and so do incomplete-CDS or non-coding-biotype transcripts, though such
+variants are still captured through the gene's complete transcripts.
 
-**Selecting the tumor sample (`tumor_sample`).** `pvacseq` reads genotypes from one VCF sample column. If
-your VCF has more than one sample column — check with `bcftools query -l your.vcf`; a matched tumor/normal
-call often (but not always) carries both — set `tumor_sample` to the **tumor** column's name exactly as
-listed, so it becomes pvacseq's `-s` and only the tumor genotypes drive peptide generation. With a single
-sample column, leave it empty. The tumor is not auto-detected from VCF headers, so set it whenever the VCF
-holds more than one sample.
-VCFs without a `GT` field (e.g. Strelka) are accepted: the pipeline assigns the tumor sample `0/1` with
-VAtools' `vcf-genotype-annotator`, as pVACtools recommends, before running `pvacseq`. Strelka names its
-columns `NORMAL` and `TUMOR`, so set `tumor_sample` to `TUMOR`, and its SNV and indel VCFs need one
-samplesheet row each.
-
-> [!NOTE]
-> Peptides come only from **coding-altering variants on complete protein-coding transcripts** — missense,
-> in-frame indels, and frameshifts. Synonymous, stop-gain/stop-loss, splice, and non-coding variants yield no
-> peptides. Non-coding-biotype (e.g. NMD) and incomplete-CDS (`cds_start_NF`/`cds_end_NF`) transcripts are
-> skipped, but such variants are still captured through the gene's complete transcripts.
-
-**Nearby variants.** Somatic missense variants within the flanking window of each other on the same
-transcript are assumed to be in cis: pvacseq is run once with each variant alone and once with the
-nearby variants folded in (`--phased-proximal-variants-vcf`), and both sets of windows are kept. A peptide
-spanning two mutations is therefore generated whether the mutations share an allele or not; the trans
-case only costs a few extra candidates. If your VCF already carries read-backed phasing (a `FORMAT/HP`
-tag, e.g. from GATK ReadBackedPhasing), that phasing is used instead and only variants on the same
-haplotype are combined. In-frame indels and frameshifts are not combined, and germline
-variants are not considered, so the wild-type context around a mutation is the reference sequence.
-Peptides must overlap a mutated residue; in a window that pairs an indel with a distant missense variant,
-k-mers between the two changes are kept as well.
+Somatic variants close enough to share a peptide are assumed to be in cis and are also evaluated
+together, so a peptide spanning two mutations is generated either way. If the VCF already carries
+read-backed phasing (`FORMAT/HP`), that phasing is used instead.
 
 > [!TIP]
 > Set `--proteome_reference <proteome.fa>` (a UniProt or Ensembl `pep.all.fa`) to drop variant
-> peptides that also occur in the normal proteome — a self/novelty filter that removes peptides
-> which, despite arising from a variant, are byte-identical to an existing self peptide. Optional;
-> only the peptide lists are filtered (the annotated protein FASTA is left complete).
+> peptides that also occur in the normal proteome.
 
 #### Reference data
 
-The variant path needs a VEP cache and reference FASTA, plus three parameters identifying the
-build. The `Wildtype`/`Frameshift` VEP plugins are taken from the pVACtools container at run time,
-so you do **not** provide them.
+The variant path needs a VEP cache and a matching genome FASTA. The `Wildtype`/`Frameshift` VEP
+plugins come from the pVACtools container, so you do not provide them.
 
-| Parameter             | What                                                                                          |
-| --------------------- | --------------------------------------------------------------------------------------------- |
-| `--vep_species`       | VEP species matching the cache, e.g. `homo_sapiens`, `mus_musculus`. Required.                |
-| `--vep_genome`        | VEP assembly matching the cache, e.g. `GRCh38`, `GRCh37`, `GRCm39`. Required.                 |
-| `--vep_cache_version` | VEP cache version matching the cache, e.g. `110`. Required.                                   |
-| `--vep_cache`         | VEP offline **Ensembl** cache — a directory, or a `.tar.gz` of it (unpacked automatically).   |
-| `--ref_fasta`         | Ensembl primary-assembly genome FASTA, plain or bgzipped, with `.fai` (and `.gzi`) alongside. |
+| Parameter             | What                                                                 |
+| --------------------- | -------------------------------------------------------------------- |
+| `--vep_species`       | VEP species matching the cache, e.g. `homo_sapiens`, `mus_musculus`. |
+| `--vep_genome`        | VEP assembly matching the cache, e.g. `GRCh38`, `GRCm39`.            |
+| `--vep_cache_version` | VEP cache version matching the cache, e.g. `116`.                    |
+| `--vep_cache`         | VEP offline Ensembl cache — a directory, or a `.tar.gz` of it.       |
+| `--ref_fasta`         | Ensembl genome FASTA for that build, plain or bgzipped.              |
 
-You can provide the cache and FASTA yourself, or have the pipeline fetch them for you.
-
-**Option A — provide them.** A helper script downloads both (the Ensembl cache is ~20 GB download /
-~26 GB extracted):
-
-```bash
-assets/download_vep_references.sh                                        # human GRCh38, release 110
-SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=110 assets/download_vep_references.sh
-```
+**Provide them.** Caches are published at [annotation-cache](https://annotation-cache.github.io/ensemblvep/),
+which needs no download of your own:
 
 ```bash
 nextflow run nf-core/epitopeprediction -profile docker \
   --input samplesheet.csv --outdir results \
-  --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 110 \
-  --ref_fasta references/Homo_sapiens.GRCh38.dna.primary_assembly.fa \
-  --vep_cache references/vep
+  --vep_species mus_musculus --vep_genome GRCm39 --vep_cache_version 116 \
+  --vep_cache s3://annotation-cache/vep_cache/116_GRCm39/ \
+  --ref_fasta <genome.fa>
 ```
 
-**Option B — download in-pipeline (`--vep_download_cache`).** Instead of `--vep_cache`/`--ref_fasta`,
-set `--vep_download_cache` and the pipeline fetches the Ensembl cache and reference FASTA itself
-over HTTPS, verifying the cache tarball against Ensembl's CHECKSUMS (publishing both under
-`<outdir>/references` for reuse). This needs internet on the compute node
-and pulls ~20 GB, so it is best run once — afterwards reuse the published files via Option A.
+Reading that bucket anonymously needs `aws.client.anonymous = true` in your config. For species or
+releases it does not carry, `assets/download_vep_references.sh` fetches a cache and FASTA straight
+from Ensembl:
+
+```bash
+SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=116 assets/download_vep_references.sh
+```
+
+**Or download in-pipeline (`--vep_download_cache`).** The pipeline fetches the cache and the genome
+FASTA itself and publishes both under `<outdir>/references` for reuse. This pulls ~20 GB, so run it
+once and reuse the result via `--vep_cache`/`--ref_fasta`.
 
 ```bash
 nextflow run nf-core/epitopeprediction -profile docker \
   --input samplesheet.csv --outdir results \
-  --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 110 \
+  --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 116 \
   --vep_download_cache
 ```
 
