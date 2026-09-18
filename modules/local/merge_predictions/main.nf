@@ -12,7 +12,7 @@ process MERGE_PREDICTIONS {
 
     output:
     tuple val(meta), path("*.csv") , emit: merged
-    path "versions.yml"            , emit: versions
+    path "versions.yml"            , emit: versions, topic: versions
 
     script:
     template "merge_predictions.py"

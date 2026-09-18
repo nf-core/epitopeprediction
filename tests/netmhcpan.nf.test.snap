@@ -11,11 +11,19 @@
                 "NETMHCPAN": {
                     "NetMHCpan": "4.2b"
                 },
+                "PREPARE_PREDICTION_INPUT": {
+                    "argparse": 1.1,
+                    "pandas": "2.1.0",
+                    "mhcgnomes": "1.8.6"
+                },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"
+                },
+                "UNPACK_NETMHC_SOFTWARE": {
+                    "netmhcpan": "4.2bstatic"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0dev"

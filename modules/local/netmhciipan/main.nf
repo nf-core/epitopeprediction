@@ -12,7 +12,7 @@ process NETMHCIIPAN {
 
     output:
     tuple val(meta), path("*.xls"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val('NetMHCIIpan'), eval("cat netmhciipan/data/version | sed 's/.* version //'"), topic: versions, emit: versions_netmhciipan
 
     script:
     if (meta.mhc_class != "II") {
@@ -45,10 +45,6 @@ process NETMHCIIPAN {
         -xlsfile ${prefix}_predicted_netmhciipan.xls \
         $args
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhciipan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 
     stub:
@@ -56,9 +52,5 @@ process NETMHCIIPAN {
     """
     touch ${prefix}_predicted_netmhciipan.xls
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        \$(cat netmhciipan/data/version | sed -s 's/ version/:/g')
-    END_VERSIONS
     """
 }

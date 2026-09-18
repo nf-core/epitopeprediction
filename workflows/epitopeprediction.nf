@@ -50,7 +50,6 @@ workflow EPITOPEPREDICTION {
     main:
 
     // Initialise needed channels
-    ch_versions      = channel.empty()
     ch_multiqc_files = channel.empty()
 
     // Load supported alleles file
@@ -119,7 +118,6 @@ workflow EPITOPEPREDICTION {
                             params.tools,
                             supported_alleles_json,
                             netmhc_software_meta)
-    ch_versions = ch_versions.mix(MHC_BINDING_PREDICTION.out.versions)
 
 /*     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
@@ -152,7 +150,7 @@ workflow EPITOPEPREDICTION {
             "${process}:\n${tool_versions.join('\n')}"
         }
 
-    def ch_collated_versions = softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
+    def ch_collated_versions = softwareVersionsToYAML(topic_versions.versions_file)
         .mix(topic_versions_string)
         .collectFile(
             storeDir: "${outdir}/pipeline_info",
@@ -189,7 +187,6 @@ workflow EPITOPEPREDICTION {
     )
     emit:
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
 }
 
 /*

@@ -11,6 +11,11 @@
                 "MHCFLURRY": {
                     "mhcflurry": "2.1.4"
                 },
+                "PREPARE_PREDICTION_INPUT": {
+                    "argparse": 1.1,
+                    "pandas": "2.1.0",
+                    "mhcgnomes": "1.8.6"
+                },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
@@ -69,7 +74,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,ecd0edbf3142c1477178fb91b8a9740c"
             ]
         ],
-        "timestamp": "2026-09-01T14:13:24.217080159",
+        "timestamp": "2026-09-18T13:26:25.720447358",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

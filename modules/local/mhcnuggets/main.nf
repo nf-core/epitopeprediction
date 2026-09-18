@@ -12,7 +12,7 @@ process MHCNUGGETS {
 
     output:
     tuple val(meta), path("*{_predicted_mhcnuggets.csv,_predicted_mhcnuggetsii.csv}"), emit: predicted
-    path "versions.yml"                                , emit: versions
+    path "versions.yml"                                , emit: versions, topic: versions
 
     script:
 

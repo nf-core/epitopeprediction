@@ -13,7 +13,7 @@ process PREPARE_PREDICTION_INPUT {
 
     output:
     tuple val(meta), path("*.json"), path("*.{csv,tsv}"), emit: prepared
-    path "versions.yml"                                 , emit: versions
+    path "versions.yml"                                 , emit: versions, topic: versions
 
     script:
     template "prepare_prediction_input.py"

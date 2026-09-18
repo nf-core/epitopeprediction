@@ -37,6 +37,11 @@
                     "pandas": "1.1.5",
                     "mhcnuggets": "2.4.0"
                 },
+                "PREPARE_PREDICTION_INPUT": {
+                    "argparse": 1.1,
+                    "pandas": "2.1.0",
+                    "mhcgnomes": "1.8.6"
+                },
                 "PREP_PROXIMAL_VCF": {
                     "bcftools": "1.23.1"
                 },
@@ -159,7 +164,7 @@
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-09-18T12:43:57.782668615",
+        "timestamp": "2026-09-18T13:17:54.646058033",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

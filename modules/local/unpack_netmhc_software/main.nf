@@ -14,7 +14,7 @@ process UNPACK_NETMHC_SOFTWARE {
 
     output:
     path "${toolname}", emit: nonfree_tools
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val(toolname), val(toolversion), topic: versions, emit: versions_netmhc
 
     when:
     task.ext.when == null || task.ext.when
@@ -61,19 +61,11 @@ process UNPACK_NETMHC_SOFTWARE {
     #
     # CREATE VERSION FILE
     #
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        ${toolname}: ${toolversion}
-    END_VERSIONS
     """
 
     stub:
     """
     mkdir "${toolname}"
 
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        ${toolname}: ${toolversion}
-    END_VERSIONS
     """
 }
