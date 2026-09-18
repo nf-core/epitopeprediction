@@ -1,8 +1,3 @@
-//
-// Turn variant (VCF) input into mutation-overlapping peptides:
-// bcftools -> Ensembl VEP -> pvacseq generate_protein_fasta -> peptide tables.
-//
-
 include { ADD_GT                     } from '../../../modules/local/add_gt'
 include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref_fasta'
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
@@ -30,20 +25,17 @@ workflow GENERATE_VARIANT_PEPTIDES {
     def vep_cachever = params.vep_cache_version
     def cache_from_params = params.ref_fasta && params.vep_cache
 
-    // The Wildtype/Frameshift plugins are copied out of the pinned pvactools container, so they
-    // always match it. Gated on a VCF so peptide/protein-only runs never pull the container.
+    // Gated on a VCF so peptide/protein-only runs never pull the pvactools container.
     PVACSEQ_INSTALL_VEP_PLUGIN( ch_vcf.map { _meta, _vcf -> 'plugins' }.first() )
     ch_vep_plugin_files = PVACSEQ_INSTALL_VEP_PLUGIN.out.plugins
 
     if (params.vep_download_cache) {
-        // Fetched once, and only when a VCF actually flows in, so other runs never pull ~20 GB.
         ch_download_input = ch_vcf
             .map { _meta, _vcf -> [ [id:'vep'], vep_genome, vep_species, vep_cachever ] }
             .first()
         ENSEMBLVEP_DOWNLOAD( ch_download_input, true )
         DOWNLOAD_REF_FASTA( ch_download_input )
 
-        // Fed by a value channel, so these are value channels already -- no .first() needed.
         ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
         ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa -> [ [id:'ref'], fa ] }
     } else if (cache_from_params) {
@@ -62,11 +54,10 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_ref_fasta = channel.value([ [:], [] ])
     }
 
-    // GT is added first so the sample name is checked before anything else runs.
+    // GT first, so an unknown tumor_sample fails before anything else runs.
     ADD_GT( ch_vcf )
     BCFTOOLS_VIEW( ADD_GT.out.vcf, [], [], [] )
 
-    // Contigs are renamed to Ensembl style so they match the cache and the reference FASTA.
     def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
     BCFTOOLS_ANNOTATE( BCFTOOLS_VIEW.out.vcf.map { meta, vcf -> [ meta, vcf, [], [], [], [], [], ch_chr_map ] } )
     BCFTOOLS_NORM( BCFTOOLS_ANNOTATE.out.vcf.map { meta, vcf -> [ meta, vcf, [] ] }, ch_ref_fasta )
@@ -82,8 +73,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
         [[:],[]],
         )
 
-    // ?: '' keeps the val inputs non-null so the DAG builds on peptide-only runs;
-    // validateInputParameters() guarantees real values whenever a VCF is present.
+    // ?: '' keeps the DAG buildable on peptide-only runs, where these params are unset.
     ENSEMBLVEP_VEP(
         ch_vcf_prepared.map { meta, vcf -> [ meta, vcf, [] ] },
         vep_genome  ?: '',

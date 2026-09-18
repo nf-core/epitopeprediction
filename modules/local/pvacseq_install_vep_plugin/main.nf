@@ -17,8 +17,7 @@ process PVACSEQ_INSTALL_VEP_PLUGIN {
     task.ext.when == null || task.ext.when
 
     script:
-    // Copies Wildtype.pm/Frameshift.pm out of the pinned pvactools package. No network,
-    // and the plugins always match the container that consumes them downstream.
+    // Taken from the pinned pvactools package, so the plugins always match the container using them.
     """
     mkdir -p vep_plugins
     pvacseq install_vep_plugin vep_plugins

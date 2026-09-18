@@ -21,9 +21,8 @@ process PREP_PROXIMAL_VCF {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def tumor  = meta.tumor_sample ?: ''
     """
-    # pvacseq folds proximal variants into a window only when their HP phasing tag matches the main
-    # variant's. Real phasing (HP already present) is kept; otherwise the same HP on every record
-    # of the tumor sample treats all of them as cis.
+    # pvacseq only folds in proximal variants whose HP tag matches. Existing phasing is kept;
+    # otherwise one HP for every record treats them as cis.
     tumor="${tumor}"
     [ -n "\${tumor}" ] || tumor=\$(bcftools query -l ${vcf} | head -n 1)
     if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=HP,'; then
