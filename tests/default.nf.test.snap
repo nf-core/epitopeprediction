@@ -1,12 +1,24 @@
 {
     "-profile test": {
         "content": [
-            19,
+            22,
             {
+                "ADD_GT": {
+                    "bcftools": "1.23.1"
+                },
                 "ANNOTATE_FASTA_HEADERS": {
                     "python": "3.13.1"
                 },
+                "BCFTOOLS_ANNOTATE": {
+                    "bcftools": "1.23.1"
+                },
+                "BCFTOOLS_NORM": {
+                    "bcftools": "1.23.1"
+                },
                 "BCFTOOLS_STATS": {
+                    "bcftools": "1.23.1"
+                },
+                "BCFTOOLS_VIEW": {
                     "bcftools": "1.23.1"
                 },
                 "ENSEMBLVEP_VEP": {
@@ -26,10 +38,6 @@
                 },
                 "PREP_PROXIMAL_VCF": {
                     "bcftools": "1.23.1"
-                },
-                "PREP_VCF": {
-                    "bcftools": "1.23.1",
-                    "vatools": "6.0.1"
                 },
                 "PVACSEQ_GENERATE_FASTA": {
                     "pvactools": "7.0.1"
@@ -155,7 +163,7 @@
                 "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
             ]
         ],
-        "timestamp": "2026-09-15T14:36:46.716759701",
+        "timestamp": "2026-09-18T10:36:54.667541043",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -3,7 +3,7 @@
 // bcftools -> Ensembl VEP -> pvacseq generate_protein_fasta -> peptide tables.
 //
 
-include { PREP_VCF                   } from '../../../modules/local/prep_vcf'
+include { ADD_GT                     } from '../../../modules/local/add_gt'
 include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref_fasta'
 include { DOWNLOAD_VEP_CACHE         } from '../../../modules/local/download_vep_cache'
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
@@ -12,7 +12,10 @@ include { PVACSEQ_GENERATE_FASTA     } from '../../../modules/local/pvacseq_gene
 include { ANNOTATE_FASTA_HEADERS     } from '../../../modules/local/annotate_fasta_headers'
 include { VARIANT_FASTA2PEPTIDES     } from '../../../modules/local/variant_fasta2peptides'
 
+include { BCFTOOLS_ANNOTATE          } from '../../../modules/nf-core/bcftools/annotate'
+include { BCFTOOLS_NORM              } from '../../../modules/nf-core/bcftools/norm'
 include { BCFTOOLS_STATS             } from '../../../modules/nf-core/bcftools/stats'
+include { BCFTOOLS_VIEW              } from '../../../modules/nf-core/bcftools/view'
 include { ENSEMBLVEP_VEP             } from '../../../modules/nf-core/ensemblvep/vep'
 include { UNTAR                      } from '../../../modules/nf-core/untar'
 
@@ -43,8 +46,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
         // Fed by a value channel, so these are value channels already -- no .first() needed.
         ch_vep_cache = DOWNLOAD_VEP_CACHE.out.cache.map { _meta, cache -> [ [id:'vep'], cache ] }
-        ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa  -> [ [id:'ref'], fa  ] }
-        ch_ref_fai   = DOWNLOAD_REF_FASTA.out.fai.map   { _meta, fai -> [ [id:'ref'], fai ] }
+        ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa -> [ [id:'ref'], fa ] }
     } else if (cache_from_params) {
         // test-datasets ships the cache as a .tar.gz because CI cannot stage a directory.
         def vep_cache_input = file(params.vep_cache, checkIfExists: true)
@@ -55,23 +57,25 @@ workflow GENERATE_VARIANT_PEPTIDES {
         } else {
             ch_vep_cache = channel.value([ [id:'vep'], vep_cache_input ])
         }
-        // A bgzipped FASTA also needs its .gzi next to it.
-        def ref_index = [ file("${params.ref_fasta}.fai", checkIfExists: true) ]
-        if (file("${params.ref_fasta}.gzi").exists()) {
-            ref_index << file("${params.ref_fasta}.gzi")
-        }
         ch_ref_fasta = channel.value([ [id:'ref'], file(params.ref_fasta, checkIfExists: true) ])
-        ch_ref_fai   = channel.value([ [id:'ref'], ref_index ])
     } else {
         ch_vep_cache = channel.value([ [:], [] ])
         ch_ref_fasta = channel.value([ [:], [] ])
-        ch_ref_fai   = channel.value([ [:], [] ])
     }
 
-    PREP_VCF( ch_vcf, ch_ref_fasta, ch_ref_fai )
+    // GT is added first so the sample name is checked before anything else runs.
+    ADD_GT( ch_vcf )
+    BCFTOOLS_VIEW( ADD_GT.out.vcf, [], [], [] )
+
+    // Contigs are renamed to Ensembl style so they match the cache and the reference FASTA.
+    def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
+    BCFTOOLS_ANNOTATE( BCFTOOLS_VIEW.out.vcf.map { meta, vcf -> [ meta, vcf, [], [], [], [], [], ch_chr_map ] } )
+    BCFTOOLS_NORM( BCFTOOLS_ANNOTATE.out.vcf.map { meta, vcf -> [ meta, vcf, [] ] }, ch_ref_fasta )
+
+    ch_vcf_prepared = BCFTOOLS_NORM.out.vcf
 
     BCFTOOLS_STATS(
-        PREP_VCF.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
+        ch_vcf_prepared.map { meta, vcf -> [ meta, vcf, [] ] },
         [[:],[]],
         [[:],[]],
         [[:],[]],
@@ -82,7 +86,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
     // ?: '' keeps the val inputs non-null so the DAG builds on peptide-only runs;
     // validateInputParameters() guarantees real values whenever a VCF is present.
     ENSEMBLVEP_VEP(
-        PREP_VCF.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
+        ch_vcf_prepared.map { meta, vcf -> [ meta, vcf, [] ] },
         vep_genome  ?: '',
         vep_species ?: '',
         vep_cachever ?: '',
