@@ -4,8 +4,8 @@ process DOWNLOAD_REF_FASTA {
 
     // conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
-        ? 'https://depot.galaxyproject.org/singularity/samtools:1.21--h50ea8bc_0'
-        : 'biocontainers/samtools:1.21--h50ea8bc_0'}"
+        ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/00/005c1db71d4d7be9e1ae48fdc6be903819df349bc0d4100b8136162436792e76/data'
+        : 'community.wave.seqera.io/library/samtools_wget_gzip:5027d4ec1db618a6'}"
 
     input:
     tuple val(meta), val(assembly), val(species), val(cache_version)
@@ -13,7 +13,9 @@ process DOWNLOAD_REF_FASTA {
     output:
     tuple val(meta), path("${prefix}.fa")    , emit: fasta
     tuple val(meta), path("${prefix}.fa.fai"), emit: fai
-    tuple val("${task.process}"), val('samtools'), eval("samtools --version | head -n1 | sed 's/^samtools //'"), topic: versions
+    tuple val("${task.process}"), val('wget'), eval("wget --version | head -n1 | sed 's/^GNU Wget //; s/ .*//'"), topic: versions, emit: versions_wget
+    tuple val("${task.process}"), val('gzip'), eval("gzip --version | head -n1 | sed 's/^gzip //'"), topic: versions, emit: versions_gzip
+    tuple val("${task.process}"), val('samtools'), eval("samtools --version | head -n1 | sed 's/^samtools //'"), topic: versions, emit: versions_samtools
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,7 +23,9 @@ process DOWNLOAD_REF_FASTA {
     script:
     // Fetched straight from Ensembl: vep_install's --AUTO f silently no-ops for many species.
     prefix = task.ext.prefix ?: "${species}.${assembly}"
-    def args = task.ext.args ?: ''
+    def args  = task.ext.args ?: ''
+    def args2 = task.ext.args2 ?: ''
+    def args3 = task.ext.args3 ?: ''
     """
     # GRCh37 lives under a dedicated Ensembl FTP tree; everything else under the release root.
     if [ "${assembly}" = "GRCh37" ]; then
@@ -46,8 +50,8 @@ process DOWNLOAD_REF_FASTA {
     fi
     echo "Downloaded \${got} FASTA" >&2
 
-    gunzip -f ${prefix}.fa.gz
-    samtools faidx ${prefix}.fa
+    gunzip ${args2} -f ${prefix}.fa.gz
+    samtools faidx ${args3} ${prefix}.fa
     """
 
     stub:
