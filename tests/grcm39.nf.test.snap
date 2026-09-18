@@ -1,13 +1,10 @@
 {
     "-profile test_grcm39": {
         "content": [
-            22,
+            21,
             {
                 "ADD_GT": {
                     "bcftools": "1.23.1"
-                },
-                "ANNOTATE_FASTA_HEADERS": {
-                    "python": "3.13.1"
                 },
                 "BCFTOOLS_ANNOTATE": {
                     "bcftools": "1.23.1"
@@ -25,6 +22,10 @@
                     "ensemblvep": 116.0,
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
+                },
+                "FASTA2PEPTIDES": {
+                    "biopython": 1.85,
+                    "python": "3.13.1"
                 },
                 "MERGE_PREDICTIONS": {
                     "argparse": 1.1,
@@ -53,9 +54,6 @@
                 },
                 "UNTAR": {
                     "untar": 1.34
-                },
-                "VARIANT_FASTA2PEPTIDES": {
-                    "python": "3.13.1"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0dev"
@@ -137,7 +135,6 @@
                 "predictions/mouse01.tsv",
                 "variant_fasta",
                 "variant_fasta/mouse01.annotated.fasta",
-                "variant_fasta/mouse01.raw.fasta",
                 "variant_peptides",
                 "variant_peptides/mouse01_length_10.tsv",
                 "variant_peptides/mouse01_length_9.tsv"
@@ -158,12 +155,11 @@
                 "multiqc_general_stats.txt:md5,f3eaf910845f5da42f3b2f617f7ae0ea",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,a9cd926ceb9ffb5d0c28fc5fa7b9d7db",
                 "mouse01.annotated.fasta:md5,87017804267e3279c107256bfb8995e7",
-                "mouse01.raw.fasta:md5,ae7e609627f5a82ff9f13a1f768c68dc",
                 "mouse01_length_10.tsv:md5,34a8a43e34b9130499bb35845d7faa01",
                 "mouse01_length_9.tsv:md5,6f63c803365628cf5821e554d357712a"
             ]
         ],
-        "timestamp": "2026-09-18T10:45:18.602816593",
+        "timestamp": "2026-09-18T12:49:55.14617286",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

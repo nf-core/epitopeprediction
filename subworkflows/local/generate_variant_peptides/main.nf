@@ -8,8 +8,7 @@ include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
 include { PREP_PROXIMAL_VCF          } from '../../../modules/local/prep_proximal_vcf'
 include { PVACSEQ_GENERATE_FASTA     } from '../../../modules/local/pvacseq_generate_fasta'
-include { ANNOTATE_FASTA_HEADERS     } from '../../../modules/local/annotate_fasta_headers'
-include { VARIANT_FASTA2PEPTIDES     } from '../../../modules/local/variant_fasta2peptides'
+include { FASTA2PEPTIDES             } from '../../../modules/local/fasta2peptides'
 
 include { BCFTOOLS_ANNOTATE          } from '../../../modules/nf-core/bcftools/annotate'
 include { BCFTOOLS_NORM              } from '../../../modules/nf-core/bcftools/norm'
@@ -99,15 +98,13 @@ workflow GENERATE_VARIANT_PEPTIDES {
     PREP_PROXIMAL_VCF( ch_vep_vcf )
     PVACSEQ_GENERATE_FASTA( ch_vep_vcf.join( PREP_PROXIMAL_VCF.out.vcf ) )
 
-    ANNOTATE_FASTA_HEADERS( PVACSEQ_GENERATE_FASTA.out.fasta )
-
     // Optional self/novelty filter: drop variant peptides found in a reference proteome.
     ch_proteome_reference = params.proteome_reference
         ? channel.value( file(params.proteome_reference, checkIfExists: true) )
         : channel.value( [] )
-    VARIANT_FASTA2PEPTIDES( ANNOTATE_FASTA_HEADERS.out.fasta, ch_proteome_reference )
+    FASTA2PEPTIDES( PVACSEQ_GENERATE_FASTA.out.fasta, ch_proteome_reference )
 
     emit:
-    peptides = VARIANT_FASTA2PEPTIDES.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
+    peptides = FASTA2PEPTIDES.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
     mqc      = BCFTOOLS_STATS.out.stats.collect { _meta, stats -> stats }
 }

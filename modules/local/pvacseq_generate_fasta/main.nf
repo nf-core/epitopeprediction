@@ -11,8 +11,8 @@ process PVACSEQ_GENERATE_FASTA {
     tuple val(meta), path(vcf), path(tbi), path(proximal_vcf), path(proximal_tbi)
 
     output:
-    tuple val(meta), path("*.raw.fasta"), path(vcf), emit: fasta
-    tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions
+    tuple val(meta), path("*.raw.fasta"), path("*.variants.tsv"), emit: fasta
+    tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions, emit: versions_pvactools
 
     when:
     task.ext.when == null || task.ext.when
@@ -21,7 +21,6 @@ process PVACSEQ_GENERATE_FASTA {
     def prefix     = task.ext.prefix ?: "${meta.id}"
     def args       = task.ext.args ?: ''
     def flank      = params.mutation_flanking_aas
-    // -s picks the tumor column on multi-sample VCFs; single-sample VCFs leave it unset.
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
     """
     # Each variant alone, then with its proximal variants folded in (assumed cis); keep both so
@@ -32,11 +31,17 @@ process PVACSEQ_GENERATE_FASTA {
          /^>/ { emit(); header = \$0; seq = ""; next }
          { seq = seq "\\n" \$0 }
          END { emit() }' single.fasta proximal.fasta > ${prefix}.raw.fasta
+
+    # pvacseq deletes the table its own FASTA ids are built from, so write it out here.
+    pvacseq_variants_tsv.py \\
+        --vep-vcf ${vcf} \\
+        --output ${prefix}.variants.tsv \\
+        ${sample_arg.replace('-s ', '--sample-name ')}
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.raw.fasta
+    touch ${prefix}.raw.fasta ${prefix}.variants.tsv
     """
 }

@@ -100,7 +100,7 @@ workflow EPITOPEPREDICTION {
         GENERATE PEPTIDES FROM PROTEIN SEQUENCES
     ========================================================================================
     */
-    FASTA2PEPTIDES( ch_samples_uncompressed.protein )
+    FASTA2PEPTIDES( ch_samples_uncompressed.protein.map { meta, fasta -> [ meta, fasta, [] ] }, [] )
 
     ch_to_predict = ch_samples_uncompressed.peptide
                         .mix(FASTA2PEPTIDES.out.tsv.transpose())
