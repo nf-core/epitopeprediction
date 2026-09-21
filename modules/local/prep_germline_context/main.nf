@@ -9,6 +9,7 @@ process PREP_GERMLINE_CONTEXT {
 
     input:
     tuple val(meta), path(vcf), path(germline_vcf)
+    path chr_map
 
     output:
     tuple val(meta), path("*.context.vcf.gz"), path("*.context.vcf.gz.tbi"), emit: vcf
@@ -41,14 +42,28 @@ process PREP_GERMLINE_CONTEXT {
     bcftools view -s "\${tumor}" ${vcf} -Oz -o somatic.vcf.gz
     bcftools index -t somatic.vcf.gz
 
+    # the somatic calls are already Ensembl-named at this point, so the germline ones must be too
     printf '%s\\n' "\${tumor}" > rename.txt
     bcftools view ${args} ${germline_vcf} -Ou \\
+        | bcftools annotate --rename-chrs ${chr_map} -Ou \\
         | bcftools norm -m- -Oz -o germline.vcf.gz
     bcftools reheader -s rename.txt germline.vcf.gz -o germline.renamed.vcf.gz
     bcftools index -t germline.renamed.vcf.gz
+
+    comm -12 <(bcftools query -f '%CHROM\\n' ${vcf} | sort -u) \\
+             <(bcftools query -f '%CHROM\\n' germline.renamed.vcf.gz | sort -u) > shared_contigs.txt
+    if [ ! -s shared_contigs.txt ]; then
+        echo "ERROR: ${germline_vcf} shares no contig names with ${vcf}; is it the same genome build?" >&2
+        exit 1
+    fi
+
     bcftools view -R windows.bed germline.renamed.vcf.gz -Oz -o germline.near.vcf.gz
     bcftools index -t germline.near.vcf.gz
-    echo "Germline records kept as context: \$(bcftools view -H germline.near.vcf.gz | wc -l)" >&2
+    kept=\$(bcftools view -H germline.near.vcf.gz | wc -l)
+    echo "Germline records kept as context: \${kept}" >&2
+    if [ "\${kept}" -eq 0 ]; then
+        echo "WARNING: no germline record falls within a somatic window; the run proceeds without context." >&2
+    fi
 
     bcftools concat -a somatic.vcf.gz germline.near.vcf.gz -Ou \\
         | bcftools sort -Oz -o ${prefix}.context.vcf.gz

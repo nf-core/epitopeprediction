@@ -101,7 +101,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
     ch_vep_cache_val = ch_vep_cache.first()
     ch_ref_fasta_val = ch_ref_fasta.first()
 
-    PREP_GERMLINE_CONTEXT( ch_context.germline.map { meta, vcf -> [ meta, vcf, meta.germline_vcf ] } )
+    PREP_GERMLINE_CONTEXT( ch_context.germline.map { meta, vcf -> [ meta, vcf, meta.germline_vcf ] }, ch_chr_map )
 
     ENSEMBLVEP_VEP_CONTEXT(
         PREP_GERMLINE_CONTEXT.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
