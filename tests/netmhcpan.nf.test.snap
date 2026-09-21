@@ -11,6 +11,9 @@
                 "NETMHCPAN": {
                     "NetMHCpan": "4.2b"
                 },
+                "NETMHCPAN_IMPORT": {
+                    "netmhcpan": "4.2bstatic"
+                },
                 "PREPARE_PREDICTION_INPUT": {
                     "argparse": 1.1,
                     "pandas": "2.1.0",
@@ -21,9 +24,6 @@
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"
-                },
-                "UNPACK_NETMHC_SOFTWARE": {
-                    "netmhcpan": "4.2bstatic"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0dev"
@@ -74,10 +74,10 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,9ae5d3bb44ec4905ce1ad78a4c114ea2"
             ]
         ],
+        "timestamp": "2026-09-21T11:29:01.040153562",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2026-01-08T20:49:54.397171295"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }
