@@ -11,7 +11,7 @@ process PVACSEQ_GENERATE_FASTA {
     tuple val(meta), path(vcf), path(tbi), path(proximal_vcf), path(proximal_tbi)
 
     output:
-    tuple val(meta), path("*.raw.fasta"), path("*.variants.tsv"), emit: fasta
+    tuple val(meta), path("*.windows.fasta"), path("*.variants.tsv"), emit: fasta
     tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions, emit: versions_pvactools
 
     when:
@@ -23,14 +23,11 @@ process PVACSEQ_GENERATE_FASTA {
     def flank      = params.mutation_flanking_aas
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
     """
-    # Each variant alone, then with its proximal variants folded in (assumed cis); keep both so
-    # single- and multi-variant peptides are generated, dropping windows that came out identical.
-    pvacseq generate_protein_fasta ${vcf} ${flank} single.fasta ${sample_arg} ${args}
-    pvacseq generate_protein_fasta ${vcf} ${flank} proximal.fasta ${sample_arg} ${args} -p ${proximal_vcf}
-    awk 'function emit() { if (header != "" && !seen[header SUBSEP seq]++) print header seq }
-         /^>/ { emit(); header = \$0; seq = ""; next }
-         { seq = seq "\\n" \$0 }
-         END { emit() }' single.fasta proximal.fasta > ${prefix}.raw.fasta
+    # Each variant alone, then with its nearby variants folded in (assumed cis). Both sets are
+    # kept, and stay in separate files so each mutant window is compared with the wild-type
+    # window from the same run.
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.1.windows.fasta ${sample_arg} ${args}
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.2.windows.fasta ${sample_arg} ${args} -p ${proximal_vcf}
 
     # pvacseq deletes the table its own FASTA ids are built from, so write it out here.
     pvacseq_variants_tsv.py \\
@@ -42,6 +39,6 @@ process PVACSEQ_GENERATE_FASTA {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.raw.fasta ${prefix}.variants.tsv
+    touch ${prefix}.1.windows.fasta ${prefix}.2.windows.fasta ${prefix}.variants.tsv
     """
 }

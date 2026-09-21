@@ -8,7 +8,7 @@ process FASTA2PEPTIDES {
         'community.wave.seqera.io/library/biopython:1.85--6f761292fa9881b4' }"
 
     input:
-    tuple val(meta), path(fasta), path(variants_tsv)
+    tuple val(meta), path(fastas), path(variants_tsv)
     path proteome_reference
 
     output:
@@ -29,7 +29,7 @@ process FASTA2PEPTIDES {
     def proteome   = variants_tsv && proteome_reference ? "--proteome-reference ${proteome_reference}" : ''
     """
     fasta2peptides.py \\
-        -i ${fasta} \\
+        -i ${fastas} \\
         -o ${prefix} \\
         -minl ${min_length} \\
         -maxl ${max_length} \\

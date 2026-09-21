@@ -1,0 +1,38 @@
+nextflow_pipeline {
+
+    name "Test pipeline with germline context"
+    script "../main.nf"
+    tag "pipeline"
+    tag "variant"
+    profile "test_germline"
+
+    test("-profile test_germline") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            def peptides = path("${params.outdir}/variant_peptides/germline_length_9.tsv").readLines()
+            def sequences = peptides.drop(1).collect { it.split('\t')[0] }
+            def wildtypes = peptides.drop(1).collectEntries { def f = it.split('\t'); [(f[0]): f[-1]] }
+            assertAll(
+                { assert workflow.success },
+                // the somatic FGFR3 S249C in reference context and with the germline P250R folded in
+                { assert sequences.any { it.contains('ERCPHR') } },
+                { assert sequences.any { it.contains('ERCRHR') } },
+                // every peptide keeps the wild-type partner from its own window, so the two differ
+                // from their peptide at the somatic residue only
+                { assert wildtypes['DVLERCPHR'] == 'DVLERSPHR' },
+                { assert wildtypes['DVLERCRHR'] == 'DVLERSRHR' },
+                // germline variants are context only, so neither is ever a candidate of its own
+                { assert !peptides.any { it.contains('4:1801844') || it.contains('19:35878587') } },
+                // a window compared with the wrong run's wild type emits k-mers carrying no
+                // somatic change at all; this is the first one that would appear
+                { assert !sequences.any { it == 'PHRPILQAG' } }
+            )
+        }
+    }
+}

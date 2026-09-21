@@ -23,6 +23,7 @@ An [example samplesheet](../assets/samplesheet.tsv) has been provided with the p
 | `mhc_class`    | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                                                                   |
 | `filename`     | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                                                                  |
 | `tumor_sample` | _Optional._ Name of the tumor sample as it appears in the VCF header (e.g. `TUMOR` for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs. |
+| `germline_vcf` | _Optional._ Path to the patient's germline VCF, used only as context so the windows carry their own variants. Never scanned for candidates.                                          |
 
 The pipeline will auto-detect whether a sample is either in variant, protein or peptide file file format using the information provided in the samplesheet. If you provide peptide format (tsv), make sure your peptide list aligns with `--peptide_col_name` (default: "sequence").
 
@@ -53,6 +54,16 @@ variants are still captured through the gene's complete transcripts.
 Somatic variants close enough to share a peptide are assumed to be in cis and are also evaluated
 together, so a peptide spanning two mutations is generated either way. If the VCF already carries
 read-backed phasing (`FORMAT/HP`), that phasing is used instead.
+
+**Germline context (`germline_vcf`).** Windows are cut from the reference genome, so a somatic
+variant with a germline variant beside it yields a peptide the patient never makes. Point the
+optional `germline_vcf` samplesheet column at the patient's germline calls (sarek and comparable
+callers emit one per normal sample) and those variants are folded into the windows, wild-type as
+well as mutant, giving the patient's own sequence instead of the reference. Germline calls are
+context only: they are never scanned for candidates and never become peptides of their own. Only
+germline records near a somatic site are used, and only missense ones are folded in, a pvacseq
+limitation. Peptides are reported in both contexts, with and without the germline change, so
+nothing is lost if the two variants turn out to be on opposite chromosomes.
 
 > [!TIP]
 > Set `--proteome_reference <proteome.fa>` (a UniProt or Ensembl `pep.all.fa`) to drop variant

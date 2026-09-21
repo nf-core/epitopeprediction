@@ -109,45 +109,94 @@ def split_record_id(record_id):
     return kind, index
 
 
-def write_annotated_fasta(in_fasta, out_fasta, variants):
-    """Rewrites deflines into the provenance schema, leaving sequence lines untouched."""
+def annotated_defline(record_id, variants):
+    """The provenance defline for a pvacseq record id, or all-NA when it has no variant row."""
+    kind, index = split_record_id(record_id)
+    ann = variants.get(index)
+    if ann is None:
+        return '>' + '|'.join([kind or 'NA'] + ['NA'] * 8), False
+    return '>' + '|'.join([kind, ann['numbering'], ann['genomic_anchor'], ann['gene'],
+                           ann['transcript'], ann['uniprot'], ann['consequence'],
+                           ann['aa_change'], ann['hgvsp']]), True
+
+
+def write_annotated_fasta(in_fastas, out_fasta, variants):
+    """Writes the runs as one provenance-annotated FASTA, dropping records already written.
+
+    Sequence lines are copied verbatim, so the wrapping pvacseq chose is preserved.
+    """
     n_records = 0
     n_missing = 0
-    with open(in_fasta) as fin, open(out_fasta, 'w') as fout:
-        for line in fin:
-            if not line.startswith('>'):
-                fout.write(line)
-                continue
+    seen = set()
+    with open(out_fasta, 'w') as fout:
+        pending = None
+        body = []
+
+        def flush():
+            nonlocal n_records, n_missing
+            if pending is None:
+                return
+            defline, matched = pending
+            key = (defline, ''.join(body))
+            if key in seen:
+                return
+            seen.add(key)
             n_records += 1
-            kind, index = split_record_id(line[1:].rstrip('\n').split()[0])
-            ann = variants.get(index)
-            if ann is None:
+            if not matched:
                 n_missing += 1
-                fields = [kind or 'NA'] + ['NA'] * 8
-            else:
-                fields = [kind, ann['numbering'], ann['genomic_anchor'], ann['gene'],
-                          ann['transcript'], ann['uniprot'], ann['consequence'],
-                          ann['aa_change'], ann['hgvsp']]
-            fout.write('>' + '|'.join(fields) + '\n')
+            fout.write(defline + '\n')
+            fout.writelines(body)
+
+        for path in in_fastas:
+            for line in open(path):
+                if line.startswith('>'):
+                    flush()
+                    pending = annotated_defline(line[1:].rstrip('\n').split()[0], variants)
+                    body = []
+                else:
+                    body.append(line)
+            flush()
+            pending, body = None, []
     if n_records and n_missing == n_records:
         raise SystemExit(f"ERROR: none of the {n_records} FASTA records matched a variant row. "
-                         f"Do {in_fasta} and the variant table belong to the same sample?")
+                         f"Do the windows and the variant table belong to the same sample?")
     if n_missing:
         logging.warning(f"{n_missing} of {n_records} records had no variant row")
     return n_records
 
 
-def read_windows(fasta_path):
-    """Splits the pvacseq FASTA into MT records and their WT partners, keyed by index."""
-    mt_records = []
-    wt_by_index = {}
-    for record in SeqIO.parse(fasta_path, "fasta"):
-        kind, index = split_record_id(record.id)
-        if kind == 'WT':
-            wt_by_index[index] = str(record.seq)
-        elif kind == 'MT':
-            mt_records.append((index, str(record.seq)))
-    return mt_records, wt_by_index
+def read_window_pairs(fasta_paths):
+    """Yields unique (index, wt, mt) triples across the pvacseq runs.
+
+    Each run is read on its own, so a mutant window is always paired with the wild-type window
+    from the same run: with germline context the two runs have different wild-type sequences, and
+    pairing across them would diff a window against the wrong reference. Triples repeated between
+    runs are emitted once, so a variant with no nearby variant contributes its peptides once.
+    """
+    pairs = []
+    seen = set()
+    n_no_wt = 0
+    for path in fasta_paths:
+        wt_by_index = {}
+        mt_by_index = {}
+        for record in SeqIO.parse(path, "fasta"):
+            kind, index = split_record_id(record.id)
+            if kind == 'WT':
+                wt_by_index[index] = str(record.seq)
+            elif kind == 'MT':
+                mt_by_index[index] = str(record.seq)
+        for index, mt in mt_by_index.items():
+            wt = wt_by_index.get(index)
+            if wt is None:
+                n_no_wt += 1
+                continue
+            key = (index, wt, mt)
+            if key not in seen:
+                seen.add(key)
+                pairs.append(key)
+    if n_no_wt:
+        logging.warning(f"Skipped {n_no_wt} MT record(s) without a WT partner")
+    return pairs
 
 
 def changed_interval(wt, mt, is_fs):
@@ -185,19 +234,14 @@ def valid_peptide(pep):
     return all(c in AA_SET for c in pep)
 
 
-def generate_variant_peptides(mt_records, wt_by_index, variants, min_len, max_len, want_wildtype):
+def generate_variant_peptides(pairs, variants, min_len, max_len, want_wildtype):
     """Collapses mutation-overlapping k-mers into {k: {peptide: provenance sets}}."""
     by_length = {k: defaultdict(lambda: {
         **{field: set() for field in PROVENANCE},
         'protein_ids': set(), 'wildtype': set(), 'counts': 0,
     }) for k in range(min_len, max_len + 1)}
 
-    n_no_wt = 0
-    for index, mt in mt_records:
-        wt = wt_by_index.get(index)
-        if wt is None:
-            n_no_wt += 1
-            continue
+    for index, wt, mt in pairs:
         ann = variants.get(index, {field: 'NA' for field in PROVENANCE})
         is_fs = ann.get('consequence') == 'FS'
         blocks = changed_blocks(wt, mt, is_fs)
@@ -219,8 +263,6 @@ def generate_variant_peptides(mt_records, wt_by_index, variants, min_len, max_le
                 if want_wildtype:
                     # only cleanly defined when coordinates align (substitutions)
                     rec['wildtype'].add(wt[start:start + k] if same_len else 'NA')
-    if n_no_wt:
-        logging.warning(f"Skipped {n_no_wt} MT record(s) without a WT partner")
     return by_length
 
 
@@ -275,7 +317,8 @@ def filter_self_peptides(by_length, fasta_path):
 def parse_args() -> argparse.Namespace:
     """Parse CLI args"""
     parser = argparse.ArgumentParser(description="Generate peptides from a protein fasta file.")
-    parser.add_argument("-i", "--input", required=True, help="Input FASTA file.")
+    parser.add_argument("-i", "--input", required=True, nargs="+",
+                        help="Input FASTA file(s). Variant mode takes one per pvacseq run.")
     parser.add_argument("-o", "--output_prefix", required=True, help="Output file prefix (each length will have its own file)")
     parser.add_argument("-minl", "--min_length", type=int, required=True, help="Minimum length of peptides to be generated from protein.")
     parser.add_argument("-maxl", "--max_length", type=int, required=True, help="Maximum length of peptides to be generated from protein.")
@@ -293,7 +336,9 @@ def parse_args() -> argparse.Namespace:
 
 
 def run_protein_mode(args):
-    fasta_map = parse_fasta(args.input)
+    fasta_map = {}
+    for path in args.input:
+        fasta_map.update(parse_fasta(path))
     for k in range(args.min_length, args.max_length + 1):
         peptides_set = generate_peptides(fasta_map, k)
         peptides = group_peptides(peptides_set, args.peptide_col_name)
@@ -308,10 +353,10 @@ def run_variant_mode(args):
         n = write_annotated_fasta(args.input, args.annotated_fasta, variants)
         logging.info(f"Annotated {n:,} FASTA record(s) to {args.annotated_fasta}")
 
-    mt_records, wt_by_index = read_windows(args.input)
-    logging.info(f"Parsed {len(mt_records)} MT and {len(wt_by_index)} WT records from {args.input}")
+    pairs = read_window_pairs(args.input)
+    logging.info(f"Parsed {len(pairs)} wild-type/mutant window pair(s) from {len(args.input)} file(s)")
 
-    by_length = generate_variant_peptides(mt_records, wt_by_index, variants,
+    by_length = generate_variant_peptides(pairs, variants,
                                           args.min_length, args.max_length, args.wild_type)
     if args.proteome_reference:
         removed = filter_self_peptides(by_length, args.proteome_reference)
