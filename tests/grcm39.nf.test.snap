@@ -19,7 +19,7 @@
                     "bcftools": "1.23.1"
                 },
                 "ENSEMBLVEP_VEP": {
-                    "ensemblvep": 116.0,
+                    "ensemblvep": 116.1,
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
                 },
@@ -164,7 +164,7 @@
                 "mouse01_length_9.tsv:md5,6f63c803365628cf5821e554d357712a"
             ]
         ],
-        "timestamp": "2026-09-18T13:23:11.445787202",
+        "timestamp": "2026-09-22T09:36:57.827551992",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
