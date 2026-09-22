@@ -1,4 +1,3 @@
-include { ADD_GT } from '../../../modules/local/add_gt'
 include { DOWNLOAD_REF_FASTA } from '../../../modules/local/download_ref_fasta'
 include { PVACSEQ_INSTALLVEPPLUGIN } from '../../../modules/local/pvacseq/installvepplugin'
 include { PREP_GERMLINE_CONTEXT } from '../../../modules/local/prep_germline_context'
@@ -8,6 +7,7 @@ include { FASTA2PEPTIDES as FASTA2PEPTIDES_FROM_VARIANTS } from '../../../module
 
 include { BCFTOOLS_ANNOTATE } from '../../../modules/nf-core/bcftools/annotate'
 include { BCFTOOLS_NORM } from '../../../modules/nf-core/bcftools/norm'
+include { BCFTOOLS_PLUGINSETGT } from '../../../modules/nf-core/bcftools/pluginsetgt'
 include { BCFTOOLS_STATS } from '../../../modules/nf-core/bcftools/stats'
 include { BCFTOOLS_VIEW } from '../../../modules/nf-core/bcftools/view'
 include { ENSEMBLVEP_DOWNLOAD } from '../../../modules/nf-core/ensemblvep/download'
@@ -79,25 +79,16 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_ref_fasta = channel.value([[:], []])
     }
 
-    // pvacseq refuses VCFs without GT; only those go through +setGT.
-    ch_vcf_by_gt = ch_vcf
-        .map { meta, vcf ->
-            def header = readVcfHeader(vcf)
-            checkTumorSample(meta, vcf, header)
-            [meta, vcf, header.any { line -> line.startsWith('##FORMAT=<ID=GT,') }]
-        }
-        .branch { _meta, _vcf, has_gt ->
-            with_gt: has_gt
-            without_gt: true
-        }
-    ADD_GT(ch_vcf_by_gt.without_gt.map { meta, vcf, _has_gt -> [meta, vcf] })
+    // An unknown tumor_sample fails here, before any task runs.
+    ch_vcf_checked = ch_vcf.map { meta, vcf ->
+        checkTumorSample(meta, vcf, readVcfHeader(vcf))
+        [meta, vcf, []]
+    }
 
-    BCFTOOLS_VIEW(
-        ch_vcf_by_gt.with_gt.map { meta, vcf, _has_gt -> [meta, vcf, []] }.mix(ADD_GT.out.vcf.map { meta, vcf -> [meta, vcf, []] }),
-        [],
-        [],
-        [],
-    )
+    // pvacseq refuses uncalled genotypes and Strelka writes no GT at all; setGT adds the field
+    // where it is missing and fills only missing calls, so VCFs that carry GT are left as they are.
+    BCFTOOLS_PLUGINSETGT(ch_vcf_checked, '.', 'c:0/1', [], [])
+    BCFTOOLS_VIEW(BCFTOOLS_PLUGINSETGT.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
 
     def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
     BCFTOOLS_ANNOTATE(BCFTOOLS_VIEW.out.vcf.map { meta, vcf -> [meta, vcf, [], [], [], [], [], ch_chr_map] })

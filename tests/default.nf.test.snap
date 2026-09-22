@@ -9,6 +9,9 @@
                 "BCFTOOLS_NORM": {
                     "bcftools": "1.23.1"
                 },
+                "BCFTOOLS_PLUGINSETGT": {
+                    "bcftools": "1.23.1"
+                },
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
                 },
