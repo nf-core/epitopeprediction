@@ -20,6 +20,9 @@ nextflow_pipeline {
             def wildtypes = peptides.drop(1).collectEntries { def f = it.split('\t'); [(f[0]): f[-1]] }
             assertAll(
                 { assert workflow.success },
+                { assert snapshot(
+                    removeNextflowVersion("$outputDir/pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml")
+                ).match() },
                 // the somatic FGFR3 S249C in reference context and with the germline P250R folded in
                 { assert sequences.any { it.contains('ERCPHR') } },
                 { assert sequences.any { it.contains('ERCRHR') } },
