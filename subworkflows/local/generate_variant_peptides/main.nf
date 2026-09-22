@@ -26,6 +26,8 @@ workflow GENERATE_VARIANT_PEPTIDES {
     def vep_genome   = params.vep_genome
     def vep_cachever = params.vep_cache_version
     def cache_from_params = params.ref_fasta && params.vep_cache
+    def min_length = { meta -> meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII }
+    def max_length = { meta -> meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII }
 
     // Gated on a VCF so peptide/protein-only runs never pull the pvactools container.
     PVACSEQ_INSTALL_VEP_PLUGIN( ch_vcf.map { _meta, _vcf -> 'plugins' }.first() )
@@ -101,7 +103,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
     ch_vep_cache_val = ch_vep_cache.first()
     ch_ref_fasta_val = ch_ref_fasta.first()
 
-    PREP_GERMLINE_CONTEXT( ch_context.germline.map { meta, vcf -> [ meta, vcf, meta.germline_vcf ] }, ch_chr_map )
+    PREP_GERMLINE_CONTEXT( ch_context.germline.map { meta, vcf -> [ meta, vcf, meta.germline_vcf, max_length(meta) ] }, ch_chr_map )
 
     ENSEMBLVEP_VEP_CONTEXT(
         PREP_GERMLINE_CONTEXT.out.vcf.map { meta, vcf, _tbi -> [ meta, vcf, [] ] },
@@ -119,7 +121,9 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
     PREP_PROXIMAL_VCF( ch_proximal_in )
 
-    PVACSEQ_GENERATE_FASTA( ch_vep_vcf.join( PREP_PROXIMAL_VCF.out.vcf ) )
+    PVACSEQ_GENERATE_FASTA(
+        ch_vep_vcf.join( PREP_PROXIMAL_VCF.out.vcf ).map { meta, vcf, tbi, pvcf, ptbi -> [ meta, vcf, tbi, pvcf, ptbi, min_length(meta), max_length(meta) ] }
+    )
 
     // Optional self/novelty filter: drop variant peptides found in a reference proteome.
     ch_proteome_reference = params.proteome_reference
