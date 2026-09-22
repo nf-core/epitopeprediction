@@ -138,6 +138,8 @@
                 "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
                 "predictions",
                 "predictions/mouse01.tsv",
+                "variant_fasta",
+                "variant_fasta/mouse01.annotated.fasta",
                 "variant_peptides",
                 "variant_peptides/mouse01_length_10.tsv",
                 "variant_peptides/mouse01_length_9.tsv"
@@ -157,11 +159,12 @@
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,f3eaf910845f5da42f3b2f617f7ae0ea",
                 "multiqc_peptide_binding_prediction_stats.txt:md5,a9cd926ceb9ffb5d0c28fc5fa7b9d7db",
+                "mouse01.annotated.fasta:md5,87017804267e3279c107256bfb8995e7",
                 "mouse01_length_10.tsv:md5,34a8a43e34b9130499bb35845d7faa01",
                 "mouse01_length_9.tsv:md5,6f63c803365628cf5821e554d357712a"
             ]
         ],
-        "timestamp": "2026-09-22T12:05:08.428108406",
+        "timestamp": "2026-09-22T19:55:18.250336307",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

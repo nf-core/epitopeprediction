@@ -26,9 +26,30 @@ Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](ht
 
 Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 
-**Output directory:** `variant_peptides/[sample]_length_[k].tsv`
+**Output directories:**
 
-As in `pvacseq run`, the protein windows are cut with `k - 1` residues on each side of the mutation for each peptide length `k`, so every k-mer of a mutant window covers the mutation. Nearby somatic missense variants are folded in as described in the [usage docs](usage.md#genomic-variants); a combined window keeps the identity of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`.
+- `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance. As in `pvacseq run`, windows are cut with `k - 1` residues on each side of the mutation for each peptide length `k`, so every k-mer covers the mutation; nearby somatic missense variants are folded in (see [usage](usage.md#genomic-variants)), and a combined window keeps the identity of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
+- `variant_fasta/[sample].annotated.fasta` — WT/MT protein windows with `--mutation_flanking_aas` residues on each side of the mutation (frameshifts to the new stop) and provenance-annotated headers (schema below), e.g. as a search database for [nf-core/mhcquant](https://github.com/nf-core/mhcquant)
+
+Each pvacseq defline is rewritten into a fixed, pipe-delimited schema (`NA` for any missing value). The values come from pVACtools' own variant table, joined to the FASTA records on its `index`:
+
+`>{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`
+
+| field          | meaning                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| kind           | `WT` or `MT` (wild-type / mutant window)                                   |
+| numbering      | pvacseq per-entry index; identical for a variant's paired WT and MT record |
+| genomic_anchor | `chr:pos:ref:alt`                                                          |
+| gene           | HGNC symbol                                                                |
+| transcript     | Ensembl transcript (versioned)                                             |
+| uniprot        | SWISSPROT else TREMBL accession                                            |
+| consequence    | `missense` / `inframe_ins` / `inframe_del` / `FS`                          |
+| aa_change      | pvacseq shorthand (e.g. `78Q/H`)                                           |
+| hgvs           | HGVSp, ENSP prefix stripped (e.g. `p.Gln78His`)                            |
+
+Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
+
+One record is written per variant × transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
 
 ## Epitopeprediction
 

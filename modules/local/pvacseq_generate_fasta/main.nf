@@ -8,10 +8,10 @@ process PVACSEQ_GENERATE_FASTA {
         : 'biocontainers/pvactools:7.0.1--pyhdfd78af_0'}"
 
     input:
-    tuple val(meta), path(vcf), path(tbi), path(proximal_vcf), path(proximal_tbi), val(min_length), val(max_length)
+    tuple val(meta), path(vcf), path(tbi), path(proximal_vcf), path(proximal_tbi), val(min_length), val(max_length), val(flank)
 
     output:
-    tuple val(meta), path("*.len*.fasta"), path("*.variants.tsv"), emit: fasta
+    tuple val(meta), path("*.len*.fasta"), path("*.flank.*.fasta"), path("*.variants.tsv"), emit: fasta
     tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions, emit: versions_pvactools
 
     when:
@@ -31,6 +31,10 @@ process PVACSEQ_GENERATE_FASTA {
         pvacseq generate_protein_fasta ${vcf} \$((k - 1)) ${prefix}.len\${k}.2.fasta ${sample_arg} ${args} -p ${proximal_vcf}
     done
 
+    # Wider windows for the published variant protein FASTA (search database use).
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.flank.1.fasta ${sample_arg} ${args}
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.flank.2.fasta ${sample_arg} ${args} -p ${proximal_vcf}
+
     # pvacseq deletes the table its own FASTA ids are built from, so write it out here.
     pvacseq_variants_tsv.py \\
         --vep-vcf ${vcf} \\
@@ -41,6 +45,6 @@ process PVACSEQ_GENERATE_FASTA {
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}.len${min_length}.1.fasta ${prefix}.len${max_length}.2.fasta ${prefix}.variants.tsv
+    touch ${prefix}.len${min_length}.1.fasta ${prefix}.len${max_length}.2.fasta ${prefix}.flank.1.fasta ${prefix}.variants.tsv
     """
 }

@@ -3,10 +3,11 @@
 Generates k-mer peptides from a protein FASTA and writes them per peptide length k.
 
 Protein input: every k-mer of every sequence, grouped by sequence.
-Variant input (--variants-tsv): the FASTAs hold pvacseq WT/MT windows cut with k-1 flanking
-residues for peptide length k (file name `*.len<k>.*`), so every k-mer of a mutant window
-covers the mutation, as in `pvacseq run`. Records are joined to pVACtools' variant table on
-their `index` for provenance.
+Variant input (--variants-tsv): the FASTAs hold pvacseq WT/MT windows. Files named
+`*.len<k>.*` were cut with k-1 flanking residues for peptide length k, so every k-mer of a
+mutant window covers the mutation, as in `pvacseq run`. Files named `*.flank.*` are wider
+windows that are only rewritten into the provenance-annotated FASTA (--annotated-fasta).
+Records are joined to pVACtools' variant table on their `index`.
 
 Author: Jonas Scheid, Axel Walter
 License: MIT
@@ -111,6 +112,63 @@ def split_record_id(record_id):
     """'MT.3.GENE.ENST.….FS.…' -> ('MT', '3.GENE.ENST.….FS.…'); the id carries no other structure."""
     kind, _, index = record_id.partition('.')
     return kind, index
+
+
+def annotated_defline(record_id, variants):
+    """The provenance defline for a pvacseq record id, or all-NA when it has no variant row."""
+    kind, index = split_record_id(record_id)
+    ann = variants.get(index)
+    if ann is None:
+        return '>' + '|'.join([kind or 'NA'] + ['NA'] * 8), False
+    return '>' + '|'.join([kind, ann['numbering'], ann['genomic_anchor'], ann['gene'],
+                           ann['transcript'], ann['uniprot'], ann['consequence'],
+                           ann['aa_change'], ann['hgvsp']]), True
+
+
+def write_annotated_fasta(in_fastas, out_fasta, variants):
+    """Writes the runs as one provenance-annotated FASTA, dropping records already written.
+
+    Sequence lines are copied verbatim, so the wrapping pvacseq chose is preserved.
+    """
+    n_records = 0
+    n_missing = 0
+    seen = set()
+    with open(out_fasta, 'w') as fout:
+        pending = None
+        body = []
+
+        def flush():
+            nonlocal n_records, n_missing
+            if pending is None:
+                return
+            defline, matched = pending
+            key = (defline, ''.join(body))
+            if key in seen:
+                return
+            seen.add(key)
+            n_records += 1
+            if not matched:
+                n_missing += 1
+            fout.write(defline + '\n')
+            fout.writelines(body)
+
+        for path in in_fastas:
+            with open(path) as fin:
+                for line in fin:
+                    if line.startswith('>'):
+                        flush()
+                        pending = annotated_defline(line[1:].rstrip('\n').split()[0], variants)
+                        body = []
+                    else:
+                        body.append(line)
+            flush()
+            pending, body = None, []
+    if n_records and n_missing == n_records:
+        raise SystemExit(f"ERROR: none of the {n_records} FASTA records matched a variant row. "
+                         f"Do the windows and the variant table belong to the same sample?")
+    if n_missing:
+        logging.warning(f"{n_missing} of {n_records} records had no variant row")
+    return n_records
 
 
 def peptide_length(fasta_path):
@@ -240,6 +298,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("-pepcol", "--peptide_col_name", type=str, required=True, help="Peptide column name")
     parser.add_argument("--variants-tsv",
                         help="pVACtools variant table; switches to variant mode.")
+    parser.add_argument("--annotated-fasta",
+                        help="Variant mode: write the '*.flank.*' windows as one FASTA with provenance deflines.")
     parser.add_argument("--wild-type", action="store_true",
                         help="Variant mode: add the aligned WT k-mer (substitutions only).")
     parser.add_argument("--proteome-reference",
@@ -261,9 +321,15 @@ def run_variant_mode(args):
     variants = load_variants(args.variants_tsv)
     logging.info(f"Read {len(variants):,} variant rows from {args.variants_tsv}")
 
+    protein_fastas = [path for path in args.input if '.flank.' in os.path.basename(path)]
+    if args.annotated_fasta:
+        n = write_annotated_fasta(protein_fastas, args.annotated_fasta, variants)
+        logging.info(f"Annotated {n:,} FASTA record(s) to {args.annotated_fasta}")
+
     fastas_by_length = defaultdict(list)
     for path in args.input:
-        fastas_by_length[peptide_length(path)].append(path)
+        if path not in protein_fastas:
+            fastas_by_length[peptide_length(path)].append(path)
     missing = [k for k in range(args.min_length, args.max_length + 1) if k not in fastas_by_length]
     if missing:
         raise SystemExit(f"ERROR: no window FASTA for peptide length(s) {missing}.")
