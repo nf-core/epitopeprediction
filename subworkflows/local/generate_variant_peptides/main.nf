@@ -86,6 +86,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_vep_cache,
         ch_ref_fasta,
         ch_vep_plugin_files,
+        [[], []],
     )
 
     ch_vep_vcf = ENSEMBLVEP_VEP.out.vcf.join(ENSEMBLVEP_VEP.out.tbi)
@@ -113,6 +114,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_vep_cache_val,
         ch_ref_fasta_val,
         ch_vep_plugin_files,
+        [[], []],
     )
 
     ch_proximal_in = ENSEMBLVEP_VEP_CONTEXT.out.vcf

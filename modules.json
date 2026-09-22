@@ -17,7 +17,7 @@
                     },
                     "bcftools/stats": {
                         "branch": "master",
-                        "git_sha": "6d46786420b4d7bc88eba026eb389c0c5535d120",
+                        "git_sha": "feef37435aea56816adf4b3bde1fc76aac327a8d",
                         "installed_by": ["modules"]
                     },
                     "bcftools/view": {
@@ -32,7 +32,7 @@
                     },
                     "ensemblvep/vep": {
                         "branch": "master",
-                        "git_sha": "db055f5f8c726a924bf51dadce3978da3bbdad7e",
+                        "git_sha": "7047ebe92547d7f029fa6e71d2c893d5fb131938",
                         "installed_by": ["modules"]
                     },
                     "gunzip": {
