@@ -3,23 +3,23 @@ process PREPARE_PREDICTION_INPUT {
     tag "${meta.id}"
 
     // conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
-        'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0'
+        : 'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0'}"
 
     input:
     tuple val(meta), path(tsv)
-    path(supported_alleles_json)
+    path supported_alleles_json
 
     output:
     tuple val(meta), path("*.json"), path("*.{csv,tsv}"), emit: prepared
-    path "versions.yml"                                 , emit: versions, topic: versions
+    path "versions.yml", emit: versions, topic: versions
 
     script:
-    template "prepare_prediction_input.py"
+    template("prepare_prediction_input.py")
 
     stub:
-    def prefix     = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_mhcflurry_input.csv
     touch ${prefix}_mhcnuggets_input.tsv

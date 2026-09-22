@@ -11,7 +11,7 @@ process DOWNLOAD_REF_FASTA {
     tuple val(meta), val(assembly), val(species), val(cache_version)
 
     output:
-    tuple val(meta), path("${prefix}.fa")    , emit: fasta
+    tuple val(meta), path("${prefix}.fa"), emit: fasta
     tuple val(meta), path("${prefix}.fa.fai"), emit: fai
     tuple val("${task.process}"), val('wget'), eval("wget --version | head -n1 | sed 's/^GNU Wget //; s/ .*//'"), topic: versions, emit: versions_wget
     tuple val("${task.process}"), val('gzip'), eval("gzip --version | head -n1 | sed 's/^gzip //'"), topic: versions, emit: versions_gzip
@@ -23,7 +23,7 @@ process DOWNLOAD_REF_FASTA {
     script:
     // Fetched straight from Ensembl: vep_install's --AUTO f silently no-ops for many species.
     prefix = task.ext.prefix ?: "${species}.${assembly}"
-    def args  = task.ext.args ?: ''
+    def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
     def args3 = task.ext.args3 ?: ''
     """

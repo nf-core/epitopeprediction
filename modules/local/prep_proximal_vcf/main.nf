@@ -19,7 +19,7 @@ process PREP_PROXIMAL_VCF {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def tumor  = meta.tumor_sample ?: ''
+    def tumor = meta.tumor_sample ?: ''
     """
     # pvacseq only folds in proximal variants whose HP tag matches. Existing phasing is kept;
     # otherwise one HP for every record treats them as cis.

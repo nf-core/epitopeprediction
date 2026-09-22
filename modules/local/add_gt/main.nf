@@ -19,8 +19,8 @@ process ADD_GT {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def args   = task.ext.args ?: '-t a -n c:0/1'
-    def tumor  = meta.tumor_sample ?: ''
+    def args = task.ext.args ?: '-t a -n c:0/1'
+    def tumor = meta.tumor_sample ?: ''
     """
     # pvacseq refuses VCFs without GT and reads only the tumor sample, so 0/1 everywhere is enough.
     tumor="${tumor}"

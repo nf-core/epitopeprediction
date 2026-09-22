@@ -18,9 +18,9 @@ process PVACSEQ_GENERATE_FASTA {
     task.ext.when == null || task.ext.when
 
     script:
-    def prefix     = task.ext.prefix ?: "${meta.id}"
-    def args       = task.ext.args ?: ''
-    def flank      = params.mutation_flanking_aas
+    def prefix = task.ext.prefix ?: "${meta.id}"
+    def args = task.ext.args ?: ''
+    def flank = params.mutation_flanking_aas
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
     """
     # Each variant alone, then with its nearby variants folded in (assumed cis). Both sets are

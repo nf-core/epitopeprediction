@@ -3,22 +3,22 @@ process MERGE_PREDICTIONS {
     tag "${meta.id}"
 
     // conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
-        'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0'
+        : 'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0'}"
 
     input:
     tuple val(meta), path(prediction_files), path(source_file)
 
     output:
-    tuple val(meta), path("*.csv") , emit: merged
-    path "versions.yml"            , emit: versions, topic: versions
+    tuple val(meta), path("*.csv"), emit: merged
+    path "versions.yml", emit: versions, topic: versions
 
     script:
-    template "merge_predictions.py"
+    template("merge_predictions.py")
 
     stub:
-    def prefix     = task.ext.prefix ?: "${meta.id}"
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     touch ${prefix}_predictions.csv
 
