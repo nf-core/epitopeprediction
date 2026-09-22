@@ -3,13 +3,13 @@
         "content": [
             21,
             {
-                "ADD_GT": {
-                    "bcftools": "1.23.1"
-                },
                 "BCFTOOLS_ANNOTATE": {
                     "bcftools": "1.23.1"
                 },
                 "BCFTOOLS_NORM": {
+                    "bcftools": "1.23.1"
+                },
+                "BCFTOOLS_PLUGINSETGT": {
                     "bcftools": "1.23.1"
                 },
                 "BCFTOOLS_STATS": {
@@ -161,7 +161,7 @@
                 "sample1_length_9.tsv:md5,45b1022589fffd9c546fb07538c5b5dd"
             ]
         ],
-        "timestamp": "2026-09-22T11:27:14.723688235",
+        "timestamp": "2026-09-22T11:51:04.87754918",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

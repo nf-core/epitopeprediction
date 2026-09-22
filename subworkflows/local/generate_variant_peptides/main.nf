@@ -1,4 +1,3 @@
-include { ADD_GT                     } from '../../../modules/local/add_gt'
 include { DOWNLOAD_REF_FASTA         } from '../../../modules/local/download_ref_fasta'
 include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
 include { PREP_GERMLINE_CONTEXT      } from '../../../modules/local/prep_germline_context'
@@ -8,6 +7,7 @@ include { FASTA2PEPTIDES             } from '../../../modules/local/fasta2peptid
 
 include { BCFTOOLS_ANNOTATE          } from '../../../modules/nf-core/bcftools/annotate'
 include { BCFTOOLS_NORM              } from '../../../modules/nf-core/bcftools/norm'
+include { BCFTOOLS_PLUGINSETGT       } from '../../../modules/nf-core/bcftools/pluginsetgt'
 include { BCFTOOLS_STATS             } from '../../../modules/nf-core/bcftools/stats'
 include { BCFTOOLS_VIEW              } from '../../../modules/nf-core/bcftools/view'
 include { ENSEMBLVEP_DOWNLOAD        } from '../../../modules/nf-core/ensemblvep/download'
@@ -58,9 +58,10 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_ref_fasta = channel.value([ [:], [] ])
     }
 
-    // GT first, so an unknown tumor_sample fails before anything else runs.
-    ADD_GT( ch_vcf )
-    BCFTOOLS_VIEW( ADD_GT.out.vcf, [], [], [] )
+    // pvacseq refuses uncalled genotypes and Strelka writes no GT at all; setGT adds the field
+    // where it is missing and fills only missing calls, so VCFs that carry GT are left as they are.
+    BCFTOOLS_PLUGINSETGT( ch_vcf.map { meta, vcf -> [ meta, vcf, [] ] }, '.', 'c:0/1', [], [] )
+    BCFTOOLS_VIEW( BCFTOOLS_PLUGINSETGT.out.vcf.map { meta, vcf -> [ meta, vcf, [] ] }, [], [], [] )
 
     def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
     BCFTOOLS_ANNOTATE( BCFTOOLS_VIEW.out.vcf.map { meta, vcf -> [ meta, vcf, [], [], [], [], [], ch_chr_map ] } )
