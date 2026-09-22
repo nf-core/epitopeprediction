@@ -16,14 +16,14 @@ You will need to create a samplesheet with information about the samples you wou
 
 An [example samplesheet](../assets/samplesheet.tsv) has been provided with the pipeline.
 
-| Column         | Description                                                                                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `sample`       | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                                                        |
-| `alleles`      | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.                                      |
-| `mhc_class`    | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                                                                   |
-| `filename`     | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                                                                  |
-| `tumor_sample` | _Optional._ Name of the tumor sample as it appears in the VCF header (e.g. `TUMOR` for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs. |
-| `germline_vcf` | _Optional._ Path to the patient's germline VCF, used only as context so the windows carry their own variants. Never scanned for candidates.                                          |
+| Column         | Description                                                                                                                                                                           |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sample`       | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample.                                                                         |
+| `alleles`      | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row.                                       |
+| `mhc_class`    | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`.                                                                                    |
+| `filename`     | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv").                                                                                                   |
+| `tumor_sample` | _Optional._ Name of the tumour sample as it appears in the VCF header (e.g. `TUMOR` for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs. |
+| `germline_vcf` | _Optional._ Path to the patient's germline VCF, used only as context so the windows carry their own variants. Never scanned for candidates.                                           |
 
 The pipeline will auto-detect whether a sample is either in variant, protein or peptide file file format using the information provided in the samplesheet. If you provide peptide format (tsv), make sure your peptide list aligns with `--peptide_col_name` (default: "sequence").
 
@@ -37,13 +37,13 @@ An [example samplesheet](../assets/samplesheet.csv) has been provided with the p
 
 ### Genomic variants
 
-Input VCFs are **raw somatic calls** — VEP runs inside the pipeline, so do not pre-annotate them.
-Only `PASS` records are used, contigs are renamed to Ensembl style (`chr1`→`1`, `chrM`→`MT`), and
+Input VCFs are **raw somatic calls**; VEP runs inside the pipeline, so do not pre-annotate them.
+Only `PASS` records are used, contigs are renamed to Ensembl style (`chr1` to `1`, `chrM` to `MT`), and
 multiallelic sites are split.
 
-For VCFs with more than one sample column (matched tumor/normal from sarek's Mutect2 or Strelka, or
-DRAGEN), set the `tumor_sample` samplesheet column to the tumor sample's name as it appears in the
-VCF header — `bcftools query -l your.vcf` lists them, and Strelka names them `NORMAL` and `TUMOR`.
+For VCFs with more than one sample column (matched tumour/normal from sarek's Mutect2 or Strelka, or
+DRAGEN), set the `tumor_sample` samplesheet column to the tumour sample's name as it appears in the
+VCF header; `bcftools query -l your.vcf` lists them, and Strelka names them `NORMAL` and `TUMOR`.
 Leave it empty for single-sample VCFs. Callers that emit no `GT` field are handled automatically.
 
 Peptides come only from **coding-altering variants on complete protein-coding transcripts**:
@@ -79,7 +79,7 @@ plugins come from the pVACtools container, so you do not provide them.
 | `--vep_species`       | VEP species matching the cache, e.g. `homo_sapiens`, `mus_musculus`. |
 | `--vep_genome`        | VEP assembly matching the cache, e.g. `GRCh38`, `GRCm39`.            |
 | `--vep_cache_version` | VEP cache version matching the cache, e.g. `116`.                    |
-| `--vep_cache`         | VEP offline Ensembl cache — a directory, or a `.tar.gz` of it.       |
+| `--vep_cache`         | VEP offline Ensembl cache, either a directory or a `.tar.gz` of it.  |
 | `--ref_fasta`         | Ensembl genome FASTA for that build, plain or bgzipped.              |
 
 **Provide them.** Caches are published at [annotation-cache](https://annotation-cache.github.io/ensemblvep/),

@@ -55,7 +55,7 @@
                 "type": "string",
                 "pattern": "^\\S+$",
                 "errorMessage": "The tumor_sample (if provided) must be a sample name without spaces.",
-                "description": "Optional. Name of the tumor sample as it appears in the VCF header line (e.g. TUMOR for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs.",
+                "description": "Optional. Name of the tumour sample as it appears in the VCF header line (e.g. TUMOR for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs.",
                 "meta": ["tumor_sample"]
             }
         },

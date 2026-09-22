@@ -12,7 +12,7 @@ The directories listed below will be created in the results directory after the 
 
 ## Variant prediction
 
-Variant (VCF) input is processed with an offline `bcftools` → [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) → [pVACtools](https://pvactools.readthedocs.io/) chain (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
+Variant (VCF) input is processed with an offline chain of `bcftools`, [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/) (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
 **Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this (WT counterpart shown when `--wild_type` is set):
 
@@ -28,8 +28,8 @@ Tables are written per peptide length as a `tsv`, then passed to the MHC binding
 
 **Output directories:**
 
-- `variant_fasta/[sample].annotated.fasta` — pvacseq WT/MT protein windows with provenance-annotated headers (schema below), each variant alone and with nearby somatic missense variants folded in (see [usage](usage.md#genomic-variants)); a combined window keeps the header of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
-- `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance
+- `variant_fasta/[sample].annotated.fasta`: pvacseq WT/MT protein windows with provenance-annotated headers (schema below), each variant alone and with nearby somatic missense variants folded in (see [usage](usage.md#genomic-variants)); a combined window keeps the header of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
+- `variant_peptides/[sample]_length_[k].tsv`: mutation-overlapping peptides with provenance
 
 Each pvacseq defline is rewritten into a fixed, pipe-delimited schema (`NA` for any missing value). The values come from pVACtools' own variant table, joined to the FASTA records on its `index`:
 
@@ -49,7 +49,7 @@ Each pvacseq defline is rewritten into a fixed, pipe-delimited schema (`NA` for 
 
 Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
 
-One record is written per variant × transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
+One record is written per variant and transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
 
 ## Epitopeprediction
 

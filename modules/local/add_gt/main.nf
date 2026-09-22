@@ -22,7 +22,7 @@ process ADD_GT {
     def args = task.ext.args ?: '-t a -n c:0/1'
     def tumor = meta.tumor_sample ?: ''
     """
-    # pvacseq refuses VCFs without GT and reads only the tumor sample, so 0/1 everywhere is enough.
+    # pvacseq refuses VCFs without GT and reads only the tumour sample, so 0/1 everywhere is enough.
     tumor="${tumor}"
     if [ -n "\${tumor}" ] && ! bcftools query -l ${vcf} | grep -qx "\${tumor}"; then
         echo "ERROR: sample '\${tumor}' not found in ${vcf}." >&2

@@ -104,7 +104,7 @@ def load_variants(tsv_path):
 
 
 def split_record_id(record_id):
-    """'MT.3.GENE.ENST.….FS.…' -> ('MT', '3.GENE.ENST.….FS.…'); the id carries no other structure."""
+    """Splits 'MT.<index>' into its kind and index; the id carries no other structure."""
     kind, _, index = record_id.partition('.')
     return kind, index
 
