@@ -17,7 +17,7 @@ process MHCFLURRY {
 
     output:
     tuple val(meta), path("*.csv"), emit: predicted
-    tuple val("${task.process}"), val('mhcflurry'), eval("mhcflurry-predict --version | cut -d' ' -f2"), topic: versions
+    tuple val("${task.process}"), val('mhcflurry'), eval("mhcflurry-predict --version | cut -d' ' -f2"), topic: versions, emit: versions_mhcflurry
 
     script:
     if (meta.mhc_class == "II") {

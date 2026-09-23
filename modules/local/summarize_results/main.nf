@@ -13,7 +13,7 @@ process SUMMARIZE_RESULTS {
     output:
     tuple val(meta), path("*.tsv") , emit: tsv
     tuple val(meta), path("*.json"), emit: json
-    tuple val("${task.process}"), val('python'), eval("python --version | cut -d' ' -f2"), topic: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | cut -d' ' -f2"), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when

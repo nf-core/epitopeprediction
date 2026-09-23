@@ -12,7 +12,7 @@ process PREP_PROXIMAL_VCF {
 
     output:
     tuple val(meta), path("*.proximal.vcf.gz"), path("*.proximal.vcf.gz.tbi"), emit: vcf
-    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | head -n1 | sed 's/^bcftools //'"), topic: versions
+    tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | head -n1 | sed 's/^bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
     task.ext.when == null || task.ext.when

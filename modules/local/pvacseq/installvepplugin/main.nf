@@ -11,7 +11,7 @@ process PVACSEQ_INSTALLVEPPLUGIN {
 
     output:
     path "vep_plugins/*.pm", emit: plugins
-    tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions
+    tuple val("${task.process}"), val('pvactools'), eval("pip show pvactools | grep '^Version:' | cut -d' ' -f2"), topic: versions, emit: versions_pvactools
 
     when:
     task.ext.when == null || task.ext.when
