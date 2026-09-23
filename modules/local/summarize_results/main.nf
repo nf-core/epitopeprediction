@@ -2,7 +2,7 @@ process SUMMARIZE_RESULTS {
     label 'process_low'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"

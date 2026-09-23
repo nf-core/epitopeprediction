@@ -2,7 +2,7 @@ process DOWNLOAD_REF_FASTA {
     tag "${meta.id}"
     label 'process_low'
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine in ['singularity', 'apptainer'] && !task.ext.singularity_pull_docker_container
         ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/a0/a01624095a85540784ea12ef530a030c33a34a7c51cccc16477dfba3a466d9a5/data'
         : 'community.wave.seqera.io/library/wget_gzip:174d767f72b71070'}"

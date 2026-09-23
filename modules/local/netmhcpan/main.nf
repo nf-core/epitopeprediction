@@ -2,7 +2,7 @@ process NETMHCPAN {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
         ? 'https://community-cr-prod.seqera.io/docker/registry/v2/blobs/sha256/de/de9c5fbcc5583f3c096617ef2c8f84c5e69b479cc5a5944f10d0e1d226779662/data'
         : 'community.wave.seqera.io/library/bash_gawk_perl_tcsh:a941b4e9bd4b8805'}"

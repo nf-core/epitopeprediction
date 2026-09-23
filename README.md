@@ -73,9 +73,7 @@ nextflow run nf-core/epitopeprediction \
 ```
 
 > [!WARNING]
-> This version of the pipeline does not support conda environments, due to issues with upstream dependencies.
-> This means you cannot use the `conda` and `mamba` profiles. Please use `docker` or `singularity` instead.
-> We hope to add support for conda environments in the future.
+> The `conda` and `mamba` profiles are not covered by CI; `docker` and `singularity` are the tested routes.
 
 > [!WARNING]
 > Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
