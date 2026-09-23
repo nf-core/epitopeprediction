@@ -112,6 +112,9 @@ nextflow run nf-core/epitopeprediction -profile docker \
   --vep_download_cache
 ```
 
+VEP lists the available caches over FTP. On networks where passive FTP fails (the download then ends
+with "No matching species found"), use `--vep_cache` with a pre-downloaded or annotation-cache copy.
+
 ### Full samplesheet
 
 The `sample` identifiers are used to determine which sample belongs to the input file. Below is an example for the same sample with different input files that can be used:
