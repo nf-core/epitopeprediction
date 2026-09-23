@@ -11,7 +11,7 @@ process ADD_GT {
     tuple val(meta), path(vcf)
 
     output:
-    tuple val(meta), path("*.gt.vcf.gz"), path("*.gt.vcf.gz.tbi"), emit: vcf
+    tuple val(meta), path("*.gt.vcf.gz"), emit: vcf
     tuple val("${task.process}"), val('bcftools'), eval("bcftools --version | head -n1 | sed 's/^bcftools //'"), topic: versions, emit: versions_bcftools
 
     when:
@@ -19,32 +19,14 @@ process ADD_GT {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def args = task.ext.args ?: '-t a -n c:0/1'
-    def tumor = meta.tumor_sample ?: ''
+    def args = task.ext.args ?: ''
     """
-    # pvacseq refuses VCFs without GT and reads only the tumour sample, so 0/1 everywhere is enough.
-    tumor="${tumor}"
-    if [ -n "\${tumor}" ] && ! bcftools query -l ${vcf} | grep -qx "\${tumor}"; then
-        echo "ERROR: sample '\${tumor}' not found in ${vcf}." >&2
-        exit 1
-    fi
-    if [ -z "\${tumor}" ] && [ "\$(bcftools query -l ${vcf} | wc -l)" -gt 1 ]; then
-        echo "ERROR: ${vcf} has more than one sample; set tumor_sample in the samplesheet." >&2
-        exit 1
-    fi
-
-    if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=GT,'; then
-        bcftools view ${vcf} -Oz -o ${prefix}.gt.vcf.gz
-    else
-        bcftools +setGT ${vcf} -Oz -o ${prefix}.gt.vcf.gz -- ${args}
-    fi
-    bcftools index -t ${prefix}.gt.vcf.gz
+    bcftools +setGT ${vcf} -Oz -o ${prefix}.gt.vcf.gz -- ${args}
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     echo | gzip > ${prefix}.gt.vcf.gz
-    touch ${prefix}.gt.vcf.gz.tbi
     """
 }

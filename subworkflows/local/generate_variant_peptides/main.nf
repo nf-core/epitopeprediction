@@ -15,6 +15,27 @@ include { ENSEMBLVEP_VEP } from '../../../modules/nf-core/ensemblvep/vep'
 include { ENSEMBLVEP_VEP as ENSEMBLVEP_VEP_CONTEXT } from '../../../modules/nf-core/ensemblvep/vep'
 include { UNTAR } from '../../../modules/nf-core/untar'
 
+// Header lines of a plain or bgzipped VCF, up to and including the #CHROM line.
+def readVcfHeader(vcf) {
+    def stream = vcf.newInputStream()
+    if (vcf.name.endsWith('.gz')) {
+        stream = new java.util.zip.GZIPInputStream(stream)
+    }
+    return stream.withReader('UTF-8') { reader ->
+        reader.iterator().takeWhile { line -> line.startsWith('#') }.toList()
+    }
+}
+
+def checkTumorSample(meta, vcf, header) {
+    def samples = header.last().tokenize('\t').drop(9)
+    if (meta.tumor_sample && !(meta.tumor_sample in samples)) {
+        error("Sample '${meta.tumor_sample}' not found in ${vcf.name}; samples are ${samples}.")
+    }
+    if (!meta.tumor_sample && samples.size() > 1) {
+        error("${vcf.name} has more than one sample; set tumor_sample in the samplesheet.")
+    }
+}
+
 workflow GENERATE_VARIANT_PEPTIDES {
     take:
     ch_vcf // channel: [ val(meta), path(vcf) ]
@@ -58,9 +79,25 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_ref_fasta = channel.value([[:], []])
     }
 
-    // GT first, so an unknown tumor_sample fails before anything else runs.
-    ADD_GT(ch_vcf)
-    BCFTOOLS_VIEW(ADD_GT.out.vcf, [], [], [])
+    // pvacseq refuses VCFs without GT; only those go through +setGT.
+    ch_vcf_by_gt = ch_vcf
+        .map { meta, vcf ->
+            def header = readVcfHeader(vcf)
+            checkTumorSample(meta, vcf, header)
+            [meta, vcf, header.any { line -> line.startsWith('##FORMAT=<ID=GT,') }]
+        }
+        .branch { _meta, _vcf, has_gt ->
+            with_gt: has_gt
+            without_gt: true
+        }
+    ADD_GT(ch_vcf_by_gt.without_gt.map { meta, vcf, _has_gt -> [meta, vcf] })
+
+    BCFTOOLS_VIEW(
+        ch_vcf_by_gt.with_gt.map { meta, vcf, _has_gt -> [meta, vcf, []] }.mix(ADD_GT.out.vcf.map { meta, vcf -> [meta, vcf, []] }),
+        [],
+        [],
+        [],
+    )
 
     def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
     BCFTOOLS_ANNOTATE(BCFTOOLS_VIEW.out.vcf.map { meta, vcf -> [meta, vcf, [], [], [], [], [], ch_chr_map] })

@@ -25,7 +25,6 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { GUNZIP as GUNZIP_VCF } from '../modules/nf-core/gunzip'
 include { MULTIQC } from '../modules/nf-core/multiqc/main'
 include { paramsSummaryMap } from 'plugin/nf-schema'
 include { paramsSummaryMultiqc } from '../subworkflows/nf-core/utils_nfcore_pipeline'
@@ -59,9 +58,7 @@ workflow EPITOPEPREDICTION {
     samplesheet
         .branch { meta, file ->
             def filename = file.name
-            variant_compressed: filename.endsWith('.vcf.gz')
-            return [meta + [input_type: 'variant_compressed'], file]
-            variant_uncompressed: filename.endsWith('.vcf')
+            variant: filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')
             return [meta + [input_type: 'variant'], file]
             peptide: filename.endsWith('.tsv')
             return [meta + [input_type: 'peptide'], file]
@@ -70,24 +67,10 @@ workflow EPITOPEPREDICTION {
         }
         .set { ch_samplesheet }
 
-    // gunzip compressed VCF inputs
-    GUNZIP_VCF(ch_samplesheet.variant_compressed)
-    ch_variants_uncompressed = GUNZIP_VCF.out.gunzip.mix(ch_samplesheet.variant_uncompressed)
-
-    // (re)combine different input file types and branch by type
-    ch_samples_uncompressed = ch_samplesheet.protein
-        .mix(ch_samplesheet.peptide)
-        .mix(ch_variants_uncompressed)
-        .branch { meta_data, _input_file ->
-            variant: meta_data.input_type == 'variant' | meta_data.input_type == 'variant_compressed'
-            peptide: meta_data.input_type == 'peptide'
-            protein: meta_data.input_type == 'protein'
-        }
-
     //
     // SUBWORKFLOW: variant (VCF) input -> mutation-overlapping peptides
     //
-    GENERATE_VARIANT_PEPTIDES(ch_samples_uncompressed.variant)
+    GENERATE_VARIANT_PEPTIDES(ch_samplesheet.variant)
     ch_multiqc_files = ch_multiqc_files.mix(GENERATE_VARIANT_PEPTIDES.out.mqc)
     ch_peptides_from_variants = GENERATE_VARIANT_PEPTIDES.out.peptides
 
@@ -96,9 +79,9 @@ workflow EPITOPEPREDICTION {
         GENERATE PEPTIDES FROM PROTEIN SEQUENCES
     ========================================================================================
     */
-    FASTA2PEPTIDES(ch_samples_uncompressed.protein.map { meta, fasta -> [meta, fasta, []] }, [])
+    FASTA2PEPTIDES(ch_samplesheet.protein.map { meta, fasta -> [meta, fasta, []] }, [])
 
-    ch_to_predict = ch_samples_uncompressed.peptide
+    ch_to_predict = ch_samplesheet.peptide
         .mix(FASTA2PEPTIDES.out.tsv.transpose())
         .mix(ch_peptides_from_variants)
 
