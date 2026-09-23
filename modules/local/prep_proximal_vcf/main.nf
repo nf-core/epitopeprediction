@@ -25,7 +25,7 @@ process PREP_PROXIMAL_VCF {
     # otherwise one HP for every record treats them as cis.
     tumor="${tumor}"
     [ -n "\${tumor}" ] || tumor=\$(bcftools query -l ${vcf} | head -n 1)
-    if bcftools view -h ${vcf} | grep -q '^##FORMAT=<ID=HP,'; then
+    if bcftools view -h ${vcf} | grep '^##FORMAT=<ID=HP,' >/dev/null; then
         bcftools view -s "\${tumor}" ${vcf} -Oz -o ${prefix}.proximal.vcf.gz
     else
         bcftools view -s "\${tumor}" ${vcf} -Oz -o tumor.vcf.gz
