@@ -4,7 +4,7 @@ include { PVACSEQ_INSTALLVEPPLUGIN } from '../../../modules/local/pvacseq/instal
 include { PREP_GERMLINE_CONTEXT } from '../../../modules/local/prep_germline_context'
 include { PREP_PROXIMAL_VCF } from '../../../modules/local/prep_proximal_vcf'
 include { PVACSEQ_GENERATEPROTEINFASTA } from '../../../modules/local/pvacseq/generateproteinfasta'
-include { FASTA2PEPTIDES } from '../../../modules/local/fasta2peptides'
+include { FASTA2PEPTIDES as FASTA2PEPTIDES_FROM_VARIANTS } from '../../../modules/local/fasta2peptides'
 
 include { BCFTOOLS_ANNOTATE } from '../../../modules/nf-core/bcftools/annotate'
 include { BCFTOOLS_NORM } from '../../../modules/nf-core/bcftools/norm'
@@ -137,10 +137,6 @@ workflow GENERATE_VARIANT_PEPTIDES {
         somatic_only: true
     }
 
-    // .first() so every sample, and both VEP calls, can read these single-item channels
-    ch_vep_cache_val = ch_vep_cache.first()
-    ch_ref_fasta_val = ch_ref_fasta.first()
-
     PREP_GERMLINE_CONTEXT(ch_context.germline.map { meta, vcf -> [meta, vcf, meta.germline_vcf] }, ch_chr_map)
 
     ENSEMBLVEP_VEP_CONTEXT(
@@ -148,8 +144,8 @@ workflow GENERATE_VARIANT_PEPTIDES {
         vep_genome ?: '',
         vep_species ?: '',
         vep_cachever ?: '',
-        ch_vep_cache_val,
-        ch_ref_fasta_val,
+        ch_vep_cache,
+        ch_ref_fasta,
         ch_vep_plugin_files,
         [[], []],
     )
@@ -166,9 +162,9 @@ workflow GENERATE_VARIANT_PEPTIDES {
     ch_proteome_reference = params.proteome_reference
         ? channel.value(file(params.proteome_reference, checkIfExists: true))
         : channel.value([])
-    FASTA2PEPTIDES(PVACSEQ_GENERATEPROTEINFASTA.out.fasta, ch_proteome_reference)
+    FASTA2PEPTIDES_FROM_VARIANTS(PVACSEQ_GENERATEPROTEINFASTA.out.fasta, ch_proteome_reference)
 
     emit:
-    peptides = FASTA2PEPTIDES.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
+    peptides = FASTA2PEPTIDES_FROM_VARIANTS.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
     mqc = BCFTOOLS_STATS.out.stats.collect { _meta, stats -> stats }
 }

@@ -20,7 +20,7 @@ process PREP_GERMLINE_CONTEXT {
 
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
-    def args = task.ext.args ?: '-f PASS,.'
+    def args = task.ext.args ?: ''
     def tumor = meta.tumor_sample ?: ''
     // pvacseq reads proximal variants within (flank + 1) * 4 bases of each somatic site; keeping
     // only those spares the second VEP run a whole germline call set.
