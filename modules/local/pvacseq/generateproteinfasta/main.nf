@@ -1,4 +1,4 @@
-process PVACSEQ_GENERATE_FASTA {
+process PVACSEQ_GENERATEPROTEINFASTA {
     tag "${meta.id}"
     label 'process_low'
 
@@ -20,6 +20,7 @@ process PVACSEQ_GENERATE_FASTA {
     script:
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
+    def args2 = task.ext.args2 ?: ''
     def flank = params.mutation_flanking_aas
     def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
     """
@@ -27,7 +28,7 @@ process PVACSEQ_GENERATE_FASTA {
     # kept, and stay in separate files so each mutant window is compared with the wild-type
     # window from the same run.
     pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.1.windows.fasta ${sample_arg} ${args}
-    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.2.windows.fasta ${sample_arg} ${args} -p ${proximal_vcf}
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.2.windows.fasta ${sample_arg} ${args2} -p ${proximal_vcf}
 
     # pvacseq deletes the table its own FASTA ids are built from, so write it out here.
     pvacseq_variants_tsv.py \\

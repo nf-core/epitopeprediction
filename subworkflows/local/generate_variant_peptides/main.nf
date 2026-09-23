@@ -1,9 +1,9 @@
 include { ADD_GT } from '../../../modules/local/add_gt'
 include { DOWNLOAD_REF_FASTA } from '../../../modules/local/download_ref_fasta'
-include { PVACSEQ_INSTALL_VEP_PLUGIN } from '../../../modules/local/pvacseq_install_vep_plugin'
+include { PVACSEQ_INSTALLVEPPLUGIN } from '../../../modules/local/pvacseq/installvepplugin'
 include { PREP_GERMLINE_CONTEXT } from '../../../modules/local/prep_germline_context'
 include { PREP_PROXIMAL_VCF } from '../../../modules/local/prep_proximal_vcf'
-include { PVACSEQ_GENERATE_FASTA } from '../../../modules/local/pvacseq_generate_fasta'
+include { PVACSEQ_GENERATEPROTEINFASTA } from '../../../modules/local/pvacseq/generateproteinfasta'
 include { FASTA2PEPTIDES } from '../../../modules/local/fasta2peptides'
 
 include { BCFTOOLS_ANNOTATE } from '../../../modules/nf-core/bcftools/annotate'
@@ -48,8 +48,8 @@ workflow GENERATE_VARIANT_PEPTIDES {
     def cache_from_params = params.ref_fasta && params.vep_cache
 
     // Gated on a VCF so peptide/protein-only runs never pull the pvactools container.
-    PVACSEQ_INSTALL_VEP_PLUGIN(ch_vcf.map { _meta, _vcf -> 'plugins' }.first())
-    ch_vep_plugin_files = PVACSEQ_INSTALL_VEP_PLUGIN.out.plugins.first()
+    PVACSEQ_INSTALLVEPPLUGIN(ch_vcf.map { _meta, _vcf -> 'plugins' }.first())
+    ch_vep_plugin_files = PVACSEQ_INSTALLVEPPLUGIN.out.plugins.first()
 
     if (params.vep_download_cache) {
         ch_download_input = ch_vcf
@@ -160,13 +160,13 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
     PREP_PROXIMAL_VCF(ch_proximal_in)
 
-    PVACSEQ_GENERATE_FASTA(ch_vep_vcf.join(PREP_PROXIMAL_VCF.out.vcf))
+    PVACSEQ_GENERATEPROTEINFASTA(ch_vep_vcf.join(PREP_PROXIMAL_VCF.out.vcf))
 
     // Optional self/novelty filter: drop variant peptides found in a reference proteome.
     ch_proteome_reference = params.proteome_reference
         ? channel.value(file(params.proteome_reference, checkIfExists: true))
         : channel.value([])
-    FASTA2PEPTIDES(PVACSEQ_GENERATE_FASTA.out.fasta, ch_proteome_reference)
+    FASTA2PEPTIDES(PVACSEQ_GENERATEPROTEINFASTA.out.fasta, ch_proteome_reference)
 
     emit:
     peptides = FASTA2PEPTIDES.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }

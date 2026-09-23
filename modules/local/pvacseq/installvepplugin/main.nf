@@ -1,4 +1,4 @@
-process PVACSEQ_INSTALL_VEP_PLUGIN {
+process PVACSEQ_INSTALLVEPPLUGIN {
     label 'process_single'
 
     // conda "${moduleDir}/environment.yml"
