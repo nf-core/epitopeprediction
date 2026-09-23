@@ -4,8 +4,6 @@ channels:
   - conda-forge
   - bioconda
 dependencies:
-  # renovate: datasource=conda depName=bioconda/samtools
-  - bioconda::samtools=1.21
   # renovate: datasource=conda depName=conda-forge/wget
   - conda-forge::wget=1.25.0
   # renovate: datasource=conda depName=conda-forge/gzip
