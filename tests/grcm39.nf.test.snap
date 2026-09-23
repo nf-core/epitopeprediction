@@ -1,11 +1,8 @@
 {
     "-profile test_grcm39": {
         "content": [
-            21,
+            20,
             {
-                "ADD_GT": {
-                    "bcftools": "1.23.1"
-                },
                 "BCFTOOLS_ANNOTATE": {
                     "bcftools": "1.23.1"
                 },
@@ -23,7 +20,7 @@
                     "perl-math-cdf": 0.1,
                     "tabix": "1.23.1"
                 },
-                "FASTA2PEPTIDES": {
+                "FASTA2PEPTIDES_FROM_VARIANTS": {
                     "biopython": 1.85,
                     "python": "3.13.1"
                 },
@@ -45,10 +42,10 @@
                 "PREP_PROXIMAL_VCF": {
                     "bcftools": "1.23.1"
                 },
-                "PVACSEQ_GENERATE_FASTA": {
+                "PVACSEQ_GENERATEPROTEINFASTA": {
                     "pvactools": "7.0.1"
                 },
-                "PVACSEQ_INSTALL_VEP_PLUGIN": {
+                "PVACSEQ_INSTALLVEPPLUGIN": {
                     "pvactools": "7.0.1"
                 },
                 "SPLIT_PEPTIDES": {
@@ -164,7 +161,7 @@
                 "mouse01_length_9.tsv:md5,6f63c803365628cf5821e554d357712a"
             ]
         ],
-        "timestamp": "2026-09-22T09:36:57.827551992",
+        "timestamp": "2026-09-23T14:40:08.50338825",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
