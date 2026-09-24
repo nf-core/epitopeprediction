@@ -8,7 +8,7 @@ process PREP_GERMLINE_CONTEXT {
         : 'community.wave.seqera.io/library/bcftools_htslib:1.23.1--9f08ec665533d64a'}"
 
     input:
-    tuple val(meta), path(vcf), path(germline_vcf)
+    tuple val(meta), path(vcf), path(germline_vcf), val(max_flank)
     path chr_map
 
     output:
@@ -24,7 +24,7 @@ process PREP_GERMLINE_CONTEXT {
     def tumor = meta.tumor_sample ?: ''
     // pvacseq reads proximal variants within (flank + 1) * 4 bases of each somatic site; keeping
     // only those spares the second VEP run a whole germline call set.
-    def window = (params.mutation_flanking_aas.toInteger() + 1) * 4
+    def window = (max_flank.toInteger() + 1) * 4
     """
     tumor="${tumor}"
     [ -n "\${tumor}" ] || tumor=\$(bcftools query -l ${vcf} | head -n 1)

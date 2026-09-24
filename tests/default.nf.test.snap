@@ -1,7 +1,7 @@
 {
     "-profile test": {
         "content": [
-            20,
+            21,
             {
                 "BCFTOOLS_ANNOTATE": {
                     "bcftools": "1.23.1"
@@ -153,18 +153,18 @@
                 "bcftools_stats_vqc_Count_Transitions.txt:md5,fdfca6de376e1fcba182f48a0f77f20d",
                 "bcftools_stats_vqc_Count_Transversions.txt:md5,fdfca6de376e1fcba182f48a0f77f20d",
                 "multiqc_bcftools_stats.txt:md5,971b724417903475afc7bc4c32fb9f0b",
-                "multiqc_binder_length_distribution.txt:md5,d504b961afbe181b9ebc346f4640ed41",
-                "multiqc_binder_rank_distribution.txt:md5,486ea46593efc8305b1cc8dad6d46611",
-                "multiqc_binding_affinity_distribution.txt:md5,a4e54aed2adae20ae7f329ab68441390",
+                "multiqc_binder_length_distribution.txt:md5,7702d30951e6d74902fb38684aa7d63e",
+                "multiqc_binder_rank_distribution.txt:md5,672510823d05e28e42c20faf0b440276",
+                "multiqc_binding_affinity_distribution.txt:md5,93568fac0bc29ddd334e9eca4038c0ff",
                 "multiqc_citations.txt:md5,5cbab4ecbe14049d965fd97bd61d252b",
                 "multiqc_general_stats.txt:md5,a2b5475eaf18375d8c4a60d194921e28",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,0e2f935842191a847e9e6388de256cb0",
+                "multiqc_peptide_binding_prediction_stats.txt:md5,965e128568c6c6ebca7e22193e36fe9b",
                 "sample1.annotated.fasta:md5,1246a2dc698185378c5dbf3f5dd83597",
-                "sample1_length_10.tsv:md5,8a880a96a855621093789994a003cb40",
-                "sample1_length_9.tsv:md5,60cd9b5fb5c99e1e8ac8de054f50cfdd"
+                "sample1_length_10.tsv:md5,f525e94ed2bc49e040fdd4dff802f63f",
+                "sample1_length_9.tsv:md5,45b1022589fffd9c546fb07538c5b5dd"
             ]
         ],
-        "timestamp": "2026-09-23T14:33:14.484196708",
+        "timestamp": "2026-09-24T09:10:29.794419036",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

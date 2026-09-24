@@ -19,12 +19,13 @@ nextflow_pipeline {
             def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
             // stable_path: All files in ${params.outdir}/ with stable content
             def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            def annotated = path("${params.outdir}/variant_fasta/sample1.annotated.fasta")
+            def consequences = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").readLines().drop(1).collect { it.split('\t')[3] }
             assertAll(
                 { assert workflow.success },
-                { assert annotated.text.contains('|missense|') },
-                { assert annotated.text.contains('|inframe_del|') },
-                { assert annotated.text.contains('|FS|') },
+                { assert consequences.contains('missense') },
+                { assert consequences.contains('inframe_del') },
+                { assert consequences.contains('FS') },
+                { assert path("${params.outdir}/variant_fasta/sample1.annotated.fasta").text.contains('|missense|') },
                 { assert snapshot(
                     // Number of successful tasks
                     workflow.trace.succeeded().size(),
@@ -72,10 +73,10 @@ nextflow_pipeline {
         }
 
         then {
-            def annotated = path("${params.outdir}/variant_fasta/strelka.annotated.fasta").text
+            def consequences = path("${params.outdir}/variant_peptides/strelka_length_9.tsv").readLines().drop(1).collect { it.split('\t')[3] }
             assertAll(
                 { assert workflow.success },
-                { assert ['|missense|', '|inframe_del|', '|FS|'].every { annotated.contains(it) } }
+                { assert ['missense', 'inframe_del', 'FS'].every { consequences.contains(it) } }
             )
         }
     }

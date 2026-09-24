@@ -143,8 +143,8 @@
                 "mutation_flanking_aas": {
                     "type": "integer",
                     "default": 25,
-                    "description": "Number of amino acids flanking the mutation on each side of the generated variant peptide window (frameshifts kept full-length to the new stop).",
-                    "help_text": "Rule of thumb: set to (max peptide length - 1) so every mutation-overlapping k-mer up to the max length can be formed."
+                    "description": "Number of amino acids flanking the mutation on each side in the published variant protein FASTA (`variant_fasta/`); frameshifts run to the new stop.",
+                    "help_text": "Only affects the FASTA written for downstream use, e.g. as a search database. Peptides for prediction are cut per peptide length as in `pvacseq run` and do not depend on this value."
                 },
                 "wide_format_output": {
                     "type": "boolean",

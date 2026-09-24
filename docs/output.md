@@ -28,8 +28,8 @@ Tables are written per peptide length as a `tsv`, then passed to the MHC binding
 
 **Output directories:**
 
-- `variant_fasta/[sample].annotated.fasta`: pvacseq WT/MT protein windows with provenance-annotated headers (schema below), each variant alone and with nearby somatic missense variants folded in (see [usage](usage.md#genomic-variants)); a combined window keeps the header of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
-- `variant_peptides/[sample]_length_[k].tsv`: mutation-overlapping peptides with provenance
+- `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance. As in `pvacseq run`, windows are cut with `k - 1` residues on each side of the mutation for each peptide length `k`, so every k-mer covers the mutation; nearby somatic missense variants are folded in (see [usage](usage.md#genomic-variants)), and a combined window keeps the identity of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
+- `variant_fasta/[sample].annotated.fasta` — WT/MT protein windows with `--mutation_flanking_aas` residues on each side of the mutation (frameshifts to the new stop) and provenance-annotated headers (schema below), e.g. as a search database for [nf-core/mhcquant](https://github.com/nf-core/mhcquant)
 
 Each pvacseq defline is rewritten into a fixed, pipe-delimited schema (`NA` for any missing value). The values come from pVACtools' own variant table, joined to the FASTA records on its `index`:
 

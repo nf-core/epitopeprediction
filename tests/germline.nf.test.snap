@@ -8,6 +8,9 @@
                 "BCFTOOLS_NORM": {
                     "bcftools": "1.23.1"
                 },
+                "BCFTOOLS_PLUGINSETGT": {
+                    "bcftools": "1.23.1"
+                },
                 "BCFTOOLS_STATS": {
                     "bcftools": "1.23.1"
                 },
@@ -69,7 +72,7 @@
                 }
             }
         ],
-        "timestamp": "2026-09-23T14:38:49.687767959",
+        "timestamp": "2026-09-24T09:17:29.244757948",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -36,6 +36,14 @@ def checkTumorSample(meta, vcf, header) {
     }
 }
 
+def minLength(meta) {
+    return meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
+}
+
+def maxLength(meta) {
+    return meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
+}
+
 workflow GENERATE_VARIANT_PEPTIDES {
     take:
     ch_vcf // channel: [ val(meta), path(vcf) ]
@@ -46,6 +54,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
     def vep_genome = params.vep_genome
     def vep_cachever = params.vep_cache_version
     def cache_from_params = params.ref_fasta && params.vep_cache
+    def fasta_flank = params.mutation_flanking_aas
 
     // Gated on a VCF so peptide/protein-only runs never pull the pvactools container.
     PVACSEQ_INSTALLVEPPLUGIN(ch_vcf.map { _meta, _vcf -> 'plugins' }.first())
@@ -128,7 +137,7 @@ workflow GENERATE_VARIANT_PEPTIDES {
         somatic_only: true
     }
 
-    PREP_GERMLINE_CONTEXT(ch_context.germline.map { meta, vcf -> [meta, vcf, meta.germline_vcf] }, ch_chr_map)
+    PREP_GERMLINE_CONTEXT(ch_context.germline.map { meta, vcf -> [meta, vcf, meta.germline_vcf, Math.max(maxLength(meta) - 1, fasta_flank)] }, ch_chr_map)
 
     ENSEMBLVEP_VEP_CONTEXT(
         PREP_GERMLINE_CONTEXT.out.vcf.map { meta, vcf, _tbi -> [meta, vcf, []] },
@@ -147,7 +156,9 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
     PREP_PROXIMAL_VCF(ch_proximal_in)
 
-    PVACSEQ_GENERATEPROTEINFASTA(ch_vep_vcf.join(PREP_PROXIMAL_VCF.out.vcf))
+    PVACSEQ_GENERATEPROTEINFASTA(
+        ch_vep_vcf.join(PREP_PROXIMAL_VCF.out.vcf).map { meta, vcf, tbi, pvcf, ptbi -> [meta, vcf, tbi, pvcf, ptbi, minLength(meta), maxLength(meta), fasta_flank] }
+    )
 
     // Optional self/novelty filter: drop variant peptides found in a reference proteome.
     ch_proteome_reference = params.proteome_reference
