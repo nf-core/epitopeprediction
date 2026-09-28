@@ -28,19 +28,16 @@
                     "python": "3.13.1"
                 },
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "MHCNUGGETS": {
-                    "argparse": 1.1,
-                    "pandas": "1.1.5",
-                    "mhcnuggets": "2.4.0"
+                    "mhcnuggets": "2.4.0",
+                    "pandas": "1.1.5"
                 },
                 "PREPARE_PREDICTION_INPUT": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "PREP_PROXIMAL_VCF": {
                     "bcftools": "1.23.1"
@@ -66,8 +63,8 @@
             },
             [
                 "mhcnuggets",
-                "mhcnuggets/mouse01_mouse01_length_10_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/mouse01_mouse01_length_9_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/mouse01_length_10_c0_predicted_mhcnuggets.csv",
+                "mhcnuggets/mouse01_length_9_c0_predicted_mhcnuggets.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/bcftools-stats-subtypes.txt",
@@ -164,7 +161,7 @@
                 "mouse01_length_9.tsv:md5,6f63c803365628cf5821e554d357712a"
             ]
         ],
-        "timestamp": "2026-09-24T09:19:12.43640782",
+        "timestamp": "2026-09-28T10:41:50.947629451",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -13,7 +13,7 @@ process MHCFLURRY {
     }
 
     input:
-    tuple val(meta), path(csv)
+    tuple val(meta), path(csv), path(models)
 
     output:
     tuple val(meta), path("*.csv"), emit: predicted
@@ -25,17 +25,9 @@ process MHCFLURRY {
     }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-
     """
-    # Create MHCflurry data directory to avoid permission issues
-    mkdir -p mhcflurry-data
-    export MHCFLURRY_DATA_DIR=./mhcflurry-data
+    export MHCFLURRY_DATA_DIR=$models
     export MHCFLURRY_DOWNLOADS_CURRENT_RELEASE=2.2.0
-
-    # Check if models are already available
-    if ! mhcflurry-downloads info | grep -qE '\\bYES\\b'; then
-        mhcflurry-downloads fetch models_class1_presentation
-    fi
 
     mhcflurry-predict \\
         $csv \\

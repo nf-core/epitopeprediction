@@ -24,7 +24,7 @@
             "alleles": {
                 "type": "string",
                 "errorMessage": "Alleles must be provided as string or file with extension '.txt'. Please check the documentation for more information.",
-                "description": "A string that consists of the patient's alleles (separated by ';'), or a full path to a allele '.txt' file where each allele is saved on a row.",
+                "description": "A string that consists of the patient's alleles (separated by ';'), or a full path to a allele '.txt' file where each allele is saved on a row, or a species-prefixed sentinel '<species>-all' (e.g. 'HLA-all', 'human-all', 'BoLA-all', 'H-2-all', 'mouse-all') expands to every supported allele of that species per tool.",
                 "meta": ["alleles"]
             },
             "mhc_class": {

@@ -32,19 +32,16 @@
                     "python": "3.13.1"
                 },
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "MHCNUGGETS": {
-                    "argparse": 1.1,
-                    "pandas": "1.1.5",
-                    "mhcnuggets": "2.4.0"
+                    "mhcnuggets": "2.4.0",
+                    "pandas": "1.1.5"
                 },
                 "PREPARE_PREDICTION_INPUT": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "PREP_GERMLINE_CONTEXT": {
                     "bcftools": "1.23.1"
@@ -72,7 +69,7 @@
                 }
             }
         ],
-        "timestamp": "2026-09-24T09:17:29.244757948",
+        "timestamp": "2026-09-28T10:40:02.131433936",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -12,25 +12,25 @@ process SPLIT_PEPTIDES {
 
     output:
     tuple val(meta), path("*.tsv"), emit: splitted
-    tuple val("${task.process}"), val('python'), eval("python --version | cut -d' ' -f2"), topic: versions, emit: versions_python
+    tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     split_peptides.py \\
         --input $tsv \\
+        --prefix ${prefix} \\
         --min_size ${params.peptides_split_minchunksize} \\
-        --max_chunks ${params.peptides_split_maxchunks} \\
+        --max_chunks ${params.peptides_split_maxchunks}
     """
 
     stub:
-    def prefix = task.ext.suffix ?: "${tsv.getExtension()}"
-
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_1.tsv
-    touch ${prefix}_2.tsv
+    touch ${prefix}_c0.tsv
+    touch ${prefix}_c1.tsv
     """
 }

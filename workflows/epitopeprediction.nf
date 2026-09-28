@@ -81,9 +81,9 @@ workflow EPITOPEPREDICTION {
     */
     FASTA2PEPTIDES(ch_samplesheet.protein.map { meta, fasta -> [meta, fasta, [], []] }, [])
 
-    ch_to_predict = ch_samplesheet.peptide
-        .mix(FASTA2PEPTIDES.out.tsv.transpose())
-        .mix(ch_peptides_from_variants)
+    ch_to_predict = ch_samplesheet.peptide.mix(
+        FASTA2PEPTIDES.out.tsv.transpose().mix(ch_peptides_from_variants).map { meta, tsv -> [meta + [split_id: splitId(meta, tsv)], tsv] }
+    )
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
@@ -170,4 +170,15 @@ workflow EPITOPEPREDICTION {
 
     emit:
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// <id>_length_<k>.tsv -> length_<k>
+def splitId(meta, file) {
+    return file.baseName - "${meta.id}_"
 }

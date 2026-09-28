@@ -4,20 +4,18 @@
             12,
             {
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "NETMHCPAN": {
-                    "NetMHCpan": "4.2b"
+                    "netMHCpan": "4.2b"
                 },
                 "NETMHCPAN_IMPORT": {
                     "netmhcpan": "4.2bstatic"
                 },
                 "PREPARE_PREDICTION_INPUT": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
@@ -74,7 +72,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,9ae5d3bb44ec4905ce1ad78a4c114ea2"
             ]
         ],
-        "timestamp": "2026-09-21T11:29:01.040153562",
+        "timestamp": "2026-09-28T10:47:05.949394602",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

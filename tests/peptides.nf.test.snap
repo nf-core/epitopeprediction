@@ -4,19 +4,16 @@
             11,
             {
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "MHCNUGGETS": {
-                    "argparse": 1.1,
-                    "pandas": "1.1.5",
-                    "mhcnuggets": "2.4.0"
+                    "mhcnuggets": "2.4.0",
+                    "pandas": "1.1.5"
                 },
                 "PREPARE_PREDICTION_INPUT": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
@@ -30,8 +27,8 @@
             },
             [
                 "mhcnuggets",
-                "mhcnuggets/sample1_peptides_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_peptides_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_c0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_c0_predicted_mhcnuggets.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/llms-full.txt",
@@ -76,7 +73,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
             ]
         ],
-        "timestamp": "2026-09-18T13:28:36.724394256",
+        "timestamp": "2026-09-28T10:48:10.883303826",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
