@@ -15,44 +15,20 @@ include { ENSEMBLVEP_VEP } from '../../../modules/nf-core/ensemblvep/vep'
 include { ENSEMBLVEP_VEP as ENSEMBLVEP_VEP_CONTEXT } from '../../../modules/nf-core/ensemblvep/vep'
 include { UNTAR } from '../../../modules/nf-core/untar'
 
-// Header lines of a plain or bgzipped VCF, up to and including the #CHROM line.
-def readVcfHeader(vcf) {
-    def stream = vcf.newInputStream()
-    if (vcf.name.endsWith('.gz')) {
-        stream = new java.util.zip.GZIPInputStream(stream)
-    }
-    return stream.withReader('UTF-8') { reader ->
-        reader.iterator().takeWhile { line -> line.startsWith('#') }.toList()
-    }
-}
-
-def checkTumorSample(meta, vcf, header) {
-    def samples = header.last().tokenize('\t').drop(9)
-    if (meta.tumor_sample && !(meta.tumor_sample in samples)) {
-        error("Sample '${meta.tumor_sample}' not found in ${vcf.name}; samples are ${samples}.")
-    }
-    if (!meta.tumor_sample && samples.size() > 1) {
-        error("${vcf.name} has more than one sample; set tumor_sample in the samplesheet.")
-    }
-}
-
-def minLength(meta) {
-    return meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
-}
-
-def maxLength(meta) {
-    return meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
-}
-
 workflow GENERATE_VARIANT_PEPTIDES {
     take:
     ch_vcf // channel: [ val(meta), path(vcf) ]
 
     main:
 
-    def vep_species = params.vep_species
-    def vep_genome = params.vep_genome
-    def vep_cachever = params.vep_cache_version
+    // Peptide- and protein-only runs set no VEP params, but Nextflow still wires up the VEP calls below
+    // and rejects null inputs. These empty values never reach a task, because no VCF reaches VEP then.
+    def vep_species = params.vep_species ?: ''
+    def vep_genome = params.vep_genome ?: ''
+    def vep_cachever = params.vep_cache_version ?: ''
+    ch_vep_cache = channel.value([[:], []])
+    ch_ref_fasta = channel.value([[:], []])
+
     def cache_from_params = params.ref_fasta && params.vep_cache
     def fasta_flank = params.mutation_flanking_aas
 
@@ -83,10 +59,6 @@ workflow GENERATE_VARIANT_PEPTIDES {
         }
         ch_ref_fasta = channel.value([[id: 'ref'], file(params.ref_fasta, checkIfExists: true)])
     }
-    else {
-        ch_vep_cache = channel.value([[:], []])
-        ch_ref_fasta = channel.value([[:], []])
-    }
 
     // An unknown tumor_sample fails here, before any task runs.
     ch_vcf_checked = ch_vcf.map { meta, vcf ->
@@ -114,12 +86,11 @@ workflow GENERATE_VARIANT_PEPTIDES {
         [[:], []],
     )
 
-    // ?: '' keeps the DAG buildable on peptide-only runs, where these params are unset.
     ENSEMBLVEP_VEP(
         ch_vcf_prepared.map { meta, vcf -> [meta, vcf, []] },
-        vep_genome ?: '',
-        vep_species ?: '',
-        vep_cachever ?: '',
+        vep_genome,
+        vep_species,
+        vep_cachever,
         ch_vep_cache,
         ch_ref_fasta,
         ch_vep_plugin_files,
@@ -128,22 +99,21 @@ workflow GENERATE_VARIANT_PEPTIDES {
 
     ch_vep_vcf = ENSEMBLVEP_VEP.out.vcf.join(ENSEMBLVEP_VEP.out.tbi)
 
-    // With germline calls for the same patient, pvacseq builds the windows on the patient's own
-    // sequence rather than the reference: it applies germline context to the wild-type window as
-    // well as the mutant one. Germline records are context only and never become candidates,
-    // so they go into the proximal VCF and never into the input pvacseq scans.
     ch_context = ch_vcf_prepared.branch { meta, _vcf ->
         germline: meta.germline_vcf
         somatic_only: true
     }
 
+    // Germline calls are context only: pvacseq applies them to both the wild-type and the mutant window, so
+    // the windows carry the patient's own sequence. PREP_GERMLINE_CONTEXT keeps the germline records near a
+    // somatic site, renames their contigs and merges them into the somatic VCF used as proximal input.
     PREP_GERMLINE_CONTEXT(ch_context.germline.map { meta, vcf -> [meta, vcf, meta.germline_vcf, Math.max(maxLength(meta) - 1, fasta_flank)] }, ch_chr_map)
 
     ENSEMBLVEP_VEP_CONTEXT(
         PREP_GERMLINE_CONTEXT.out.vcf.map { meta, vcf, _tbi -> [meta, vcf, []] },
-        vep_genome ?: '',
-        vep_species ?: '',
-        vep_cachever ?: '',
+        vep_genome,
+        vep_species,
+        vep_cachever,
         ch_vep_cache,
         ch_ref_fasta,
         ch_vep_plugin_files,
@@ -154,6 +124,8 @@ workflow GENERATE_VARIANT_PEPTIDES {
         .join(ENSEMBLVEP_VEP_CONTEXT.out.tbi)
         .mix(ch_vep_vcf.filter { meta, _vcf, _tbi -> !meta.germline_vcf })
 
+    // pvacseq only folds in proximal variants whose FORMAT/HP matches the somatic one; unphased VCFs get a
+    // single HP for every record, i.e. nearby variants are assumed cis.
     PREP_PROXIMAL_VCF(ch_proximal_in)
 
     PVACSEQ_GENERATEPROTEINFASTA(
@@ -169,4 +141,39 @@ workflow GENERATE_VARIANT_PEPTIDES {
     emit:
     peptides = FASTA2PEPTIDES_FROM_VARIANTS.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
     mqc = BCFTOOLS_STATS.out.stats.collect { _meta, stats -> stats }
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+// Header lines of a plain or bgzipped VCF, up to and including the #CHROM line.
+def readVcfHeader(vcf) {
+    def stream = vcf.newInputStream()
+    if (vcf.name.endsWith('.gz')) {
+        stream = new java.util.zip.GZIPInputStream(stream)
+    }
+    return stream.withReader('UTF-8') { reader ->
+        reader.iterator().takeWhile { line -> line.startsWith('#') }.toList()
+    }
+}
+
+def checkTumorSample(meta, vcf, header) {
+    def samples = header.last().tokenize('\t').drop(9)
+    if (meta.tumor_sample && !(meta.tumor_sample in samples)) {
+        error("Sample '${meta.tumor_sample}' not found in ${vcf.name}; samples are ${samples}.")
+    }
+    if (!meta.tumor_sample && samples.size() > 1) {
+        error("${vcf.name} has more than one sample; set tumor_sample in the samplesheet.")
+    }
+}
+
+def minLength(meta) {
+    return meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
+}
+
+def maxLength(meta) {
+    return meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
 }
