@@ -46,7 +46,7 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 // this reference proteome is exactly the FGFR3 MT window of the fixture,
-                // so every FGFR3 peptide is "self" while other genes are untouched
+                // so every FGFR3 mutant peptide is "self" while other genes are untouched
                 proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
             }
         }
@@ -56,7 +56,9 @@ nextflow_pipeline {
                            path("${params.outdir}/variant_peptides/sample1_length_10.tsv").text
             assertAll(
                 { assert workflow.success },
-                { assert !peptides.contains('FGFR3') },
+                // WT rows are exempt from the self-filter, so FGFR3 only survives as those
+                { assert !peptides.readLines().any { it.contains('FGFR3') && it.split('\t')[7].contains('MT.') } },
+                { assert peptides.contains('WT.2.FGFR3') },
                 { assert peptides.contains('CEBPA') }
             )
         }

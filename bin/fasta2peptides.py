@@ -197,15 +197,28 @@ def valid_peptide(pep):
 
 
 def new_record():
-    return {**{field: set() for field in PROVENANCE}, 'protein_ids': set(), 'wildtype': set(), 'counts': 0}
+    return {**{field: set() for field in PROVENANCE}, 'protein_ids': set(), 'wildtype': set(),
+            'origin': set(), 'counts': 0}
 
 
-def generate_variant_peptides(fastas_by_length, variants, want_wildtype):
+def add_peptide(rec, ann, index, origin, wildtype=''):
+    rec['counts'] += 1
+    rec['origin'].add(origin)
+    rec['protein_ids'].add(f"{origin}.{index}")
+    for field in PROVENANCE:
+        rec[field].add(ann.get(field, 'NA'))
+    if wildtype:
+        rec['wildtype'].add(wildtype)
+
+
+def generate_variant_peptides(fastas_by_length, variants):
     """Every k-mer of every mutant window, as {k: {peptide: provenance sets}}.
 
     A window repeated between the runs of one length (a variant with nothing nearby) counts once,
-    and k-mers also present in the wild-type window are dropped. The wild-type k-mer column is only
-    defined where the windows align, i.e. for substitutions.
+    and k-mers also present in the wild-type window are dropped. Where the windows align
+    (substitutions), the aligned wild-type k-mer fills the `wildtype` column and is also added as
+    a `WT` row so it is predicted too. A sequence that is MT for one variant and WT for another is
+    labelled `MT;WT`.
     """
     by_length = {}
     for k, paths in sorted(fastas_by_length.items()):
@@ -227,13 +240,12 @@ def generate_variant_peptides(fastas_by_length, variants, want_wildtype):
                     # run, keep only k-mers that do not occur in the wild-type window.
                     if wt is not None and pep in wt:
                         continue
-                    rec = peptides[pep]
-                    rec['counts'] += 1
-                    rec['protein_ids'].add(f"MT.{index}")
-                    for field in PROVENANCE:
-                        rec[field].add(ann.get(field, 'NA'))
-                    if want_wildtype:
-                        rec['wildtype'].add(wt[start:start + k] if aligned else 'NA')
+                    wt_pep = wt[start:start + k] if aligned else ''
+                    if not valid_peptide(wt_pep):
+                        wt_pep = ''
+                    add_peptide(peptides[pep], ann, index, 'MT', wt_pep)
+                    if wt_pep:
+                        add_peptide(peptides[wt_pep], ann, index, 'WT')
         by_length[k] = peptides
         logging.info(f"Generated {len(peptides):,} peptides of length {k} from {len(seen)} window(s)")
     return by_length
@@ -243,21 +255,17 @@ def _join(values):
     return ';'.join(sorted(v for v in values if v)) or 'NA'
 
 
-def write_peptide_tsv(path, peptides, peptide_col, want_wildtype):
+def write_peptide_tsv(path, peptides, peptide_col):
     """Writes one peptide table, sorted by sequence, with multi-valued provenance joined by ';'."""
     cols = [peptide_col, 'gene', 'transcript', 'consequence', 'HGVSp',
-            'genomic_anchor', 'uniprot', 'protein_ids', 'counts']
-    if want_wildtype:
-        cols.append('wildtype')
+            'genomic_anchor', 'uniprot', 'protein_ids', 'counts', 'peptide_origin', 'wildtype']
     with open(path, 'w') as fh:
         fh.write('\t'.join(cols) + '\n')
         for pep in sorted(peptides):
             r = peptides[pep]
             row = [pep, _join(r['gene']), _join(r['transcript']), _join(r['consequence']),
                    _join(r['hgvsp']), _join(r['genomic_anchor']), _join(r['uniprot']),
-                   _join(r['protein_ids']), str(r['counts'])]
-            if want_wildtype:
-                row.append(_join(r['wildtype']))
+                   _join(r['protein_ids']), str(r['counts']), _join(r['origin']), _join(r['wildtype'])]
             fh.write('\t'.join(row) + '\n')
     return len(peptides)
 
@@ -268,8 +276,12 @@ def _iter_fasta_sequences(fasta_path):
 
 
 def filter_self_peptides(by_length, fasta_path):
-    """Drops variant peptides occurring in the reference proteome, in place."""
-    candidates = {k: set(by_length[k]) for k in by_length if by_length[k]}
+    """Drops purely mutant peptides occurring in the reference proteome, in place.
+
+    WT rows are exempt: they are reference sequence by construction.
+    """
+    candidates = {k: peps for k in by_length
+                  if (peps := {p for p, r in by_length[k].items() if r['origin'] == {'MT'}})}
     if not candidates:
         return 0
     lengths = sorted(candidates)
@@ -300,8 +312,6 @@ def parse_args() -> argparse.Namespace:
                         help="pVACtools variant table; switches to variant mode.")
     parser.add_argument("--annotated-fasta",
                         help="Variant mode: write the '*.flank.*' windows as one FASTA with provenance deflines.")
-    parser.add_argument("--wild-type", action="store_true",
-                        help="Variant mode: add the aligned WT k-mer (substitutions only).")
     parser.add_argument("--proteome-reference",
                         help="Variant mode: drop peptides occurring in this reference proteome.")
     return parser.parse_args()
@@ -334,7 +344,7 @@ def run_variant_mode(args):
     if missing:
         raise SystemExit(f"ERROR: no window FASTA for peptide length(s) {missing}.")
 
-    by_length = generate_variant_peptides(fastas_by_length, variants, args.wild_type)
+    by_length = generate_variant_peptides(fastas_by_length, variants)
     if args.proteome_reference:
         removed = filter_self_peptides(by_length, args.proteome_reference)
         logging.info(f"Filtered out {removed} peptide(s) found in {args.proteome_reference}")
@@ -342,7 +352,7 @@ def run_variant_mode(args):
     total = 0
     for k in range(args.min_length, args.max_length + 1):
         out = f"{args.output_prefix}_length_{k}.tsv"
-        n = write_peptide_tsv(out, by_length[k], args.peptide_col_name, args.wild_type)
+        n = write_peptide_tsv(out, by_length[k], args.peptide_col_name)
         total += n
         logging.info(f"Wrote {n:,.0f} peptides of length {k} to {out}")
     logging.info(f"Wrote {total:,.0f} deduplicated variant peptides")

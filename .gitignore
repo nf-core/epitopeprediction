@@ -9,3 +9,7 @@ testing*
 *.pyc
 null/
 .lineage/
+
+# Claude Code
+CLAUDE.md
+.claude/
