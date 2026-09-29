@@ -21,24 +21,24 @@ process PVACSEQ_GENERATEPROTEINFASTA {
     def prefix = task.ext.prefix ?: "${meta.id}"
     def args = task.ext.args ?: ''
     def args2 = task.ext.args2 ?: ''
-    def sample_arg = meta.tumor_sample ? "-s ${meta.tumor_sample}" : ''
+    def args3 = task.ext.args3 ?: ''
     """
     # As in `pvacseq run`: windows cut with k-1 flanking residues for peptide length k, so every
     # k-mer covers the mutation. Run 1 takes each variant alone, run 2 folds in nearby variants.
     for k in \$(seq ${min_length} ${max_length}); do
-        pvacseq generate_protein_fasta ${vcf} \$((k - 1)) ${prefix}.len\${k}.1.fasta ${sample_arg} ${args}
-        pvacseq generate_protein_fasta ${vcf} \$((k - 1)) ${prefix}.len\${k}.2.fasta ${sample_arg} ${args2} -p ${proximal_vcf}
+        pvacseq generate_protein_fasta ${vcf} \$((k - 1)) ${prefix}.len\${k}.1.fasta ${args}
+        pvacseq generate_protein_fasta ${vcf} \$((k - 1)) ${prefix}.len\${k}.2.fasta ${args2} -p ${proximal_vcf}
     done
 
     # Wider windows for the published variant protein FASTA (search database use).
-    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.flank.1.fasta ${sample_arg} ${args}
-    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.flank.2.fasta ${sample_arg} ${args2} -p ${proximal_vcf}
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.flank.1.fasta ${args}
+    pvacseq generate_protein_fasta ${vcf} ${flank} ${prefix}.flank.2.fasta ${args2} -p ${proximal_vcf}
 
     # pvacseq deletes the table its own FASTA ids are built from, so write it out here.
     pvacseq_variants_tsv.py \\
         --vep-vcf ${vcf} \\
         --output ${prefix}.variants.tsv \\
-        ${sample_arg.replace('-s ', '--sample-name ')}
+        ${args3}
     """
 
     stub:

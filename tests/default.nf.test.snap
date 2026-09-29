@@ -149,7 +149,7 @@
                 "bcftools_stats_vqc_Count_SNP.txt:md5,0f33d243f2608c50732c8c695dfcf31b",
                 "bcftools_stats_vqc_Count_Transitions.txt:md5,fdfca6de376e1fcba182f48a0f77f20d",
                 "bcftools_stats_vqc_Count_Transversions.txt:md5,fdfca6de376e1fcba182f48a0f77f20d",
-                "multiqc_bcftools_stats.txt:md5,971b724417903475afc7bc4c32fb9f0b",
+                "multiqc_bcftools_stats.txt:md5,e2854b6bf7a6b844266d94099109b56f",
                 "multiqc_binder_length_distribution.txt:md5,7702d30951e6d74902fb38684aa7d63e",
                 "multiqc_binder_rank_distribution.txt:md5,672510823d05e28e42c20faf0b440276",
                 "multiqc_binding_affinity_distribution.txt:md5,93568fac0bc29ddd334e9eca4038c0ff",
@@ -161,7 +161,7 @@
                 "sample1_length_9.tsv:md5,45b1022589fffd9c546fb07538c5b5dd"
             ]
         ],
-        "timestamp": "2026-09-28T10:32:02.658105446",
+        "timestamp": "2026-09-29T15:02:00.068616872",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -60,15 +60,9 @@ workflow GENERATE_VARIANT_PEPTIDES {
         ch_ref_fasta = channel.value([[id: 'ref'], file(params.ref_fasta, checkIfExists: true)])
     }
 
-    // An unknown tumor_sample fails here, before any task runs.
-    ch_vcf_checked = ch_vcf.map { meta, vcf ->
-        checkTumorSample(meta, vcf, readVcfHeader(vcf))
-        [meta, vcf, []]
-    }
-
     // pvacseq refuses uncalled genotypes and Strelka writes no GT at all; setGT adds the field
     // where it is missing and fills only missing calls, so VCFs that carry GT are left as they are.
-    BCFTOOLS_PLUGINSETGT(ch_vcf_checked, '.', 'c:0/1', [], [])
+    BCFTOOLS_PLUGINSETGT(ch_vcf.map { meta, vcf -> [meta, vcf, []] }, '.', 'c:0/1', [], [])
     BCFTOOLS_VIEW(BCFTOOLS_PLUGINSETGT.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
 
     def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
@@ -148,27 +142,6 @@ workflow GENERATE_VARIANT_PEPTIDES {
     FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
-// Header lines of a plain or bgzipped VCF, up to and including the #CHROM line.
-def readVcfHeader(vcf) {
-    def stream = vcf.newInputStream()
-    if (vcf.name.endsWith('.gz')) {
-        stream = new java.util.zip.GZIPInputStream(stream)
-    }
-    return stream.withReader('UTF-8') { reader ->
-        reader.iterator().takeWhile { line -> line.startsWith('#') }.toList()
-    }
-}
-
-def checkTumorSample(meta, vcf, header) {
-    def samples = header.last().tokenize('\t').drop(9)
-    if (meta.tumor_sample && !(meta.tumor_sample in samples)) {
-        error("Sample '${meta.tumor_sample}' not found in ${vcf.name}; samples are ${samples}.")
-    }
-    if (!meta.tumor_sample && samples.size() > 1) {
-        error("${vcf.name} has more than one sample; set tumor_sample in the samplesheet.")
-    }
-}
 
 def minLength(meta) {
     return meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
