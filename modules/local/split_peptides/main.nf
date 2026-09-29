@@ -2,7 +2,7 @@ process SPLIT_PEPTIDES {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/python:3.14' :
         'biocontainers/python:3.14' }"
@@ -12,7 +12,7 @@ process SPLIT_PEPTIDES {
 
     output:
     tuple val(meta), path("*.tsv"), emit: splitted
-    tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when

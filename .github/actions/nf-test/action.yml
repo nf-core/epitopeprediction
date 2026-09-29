@@ -26,6 +26,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Free runner disk space # the variant-path tests pull ~11 GB of images
+      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+      with:
+        tool-cache: false
+
     - name: Setup Nextflow
       uses: nf-core/setup-nextflow@893c28b667aedeba26e37f296d260ccc5bc4d914 # v3
       with:

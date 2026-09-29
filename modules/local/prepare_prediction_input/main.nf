@@ -2,7 +2,7 @@ process PREPARE_PREDICTION_INPUT {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
@@ -13,7 +13,7 @@ process PREPARE_PREDICTION_INPUT {
 
     output:
     tuple val(meta), path("*_allele_input.json"), path("*_input.{csv,tsv}", arity: '1..*'), emit: prepared // arity: a single file must still arrive as a list
-    path "versions.yml", topic: versions
+    path "versions.yml", emit: versions, topic: versions
 
     script:
     template "prepare_prediction_input.py"

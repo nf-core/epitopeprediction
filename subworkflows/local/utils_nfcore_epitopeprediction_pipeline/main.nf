@@ -98,15 +98,17 @@ workflow PIPELINE_INITIALISATION {
     )
 
     //
-    // Custom validation for pipeline parameters
-    //
-    //validateInputParameters()
-
-    //
     // Create channel from input file provided through params.input
     //
+    def samplesheet_rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+
+    //
+    // Custom validation for pipeline parameters
+    //
+    validateInputParameters(samplesheet_rows)
+
     channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
+        .fromList(samplesheet_rows)
         .map { meta, f -> [meta + [alleles: readAlleles(meta.alleles)], f]} // Parse alleles from file
         .set { ch_samplesheet }
 
@@ -166,8 +168,27 @@ workflow PIPELINE_COMPLETION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 //
-// Check and validate pipeline parameters
+// Check that variant (VCF) input has the VEP references it needs. Only enforced when the
+// samplesheet actually holds a VCF, so peptide/protein-only runs need none of these params.
 //
+def validateInputParameters(samplesheet_rows) {
+    def has_vcf = samplesheet_rows.any { entry ->
+        def filename = entry[1].toString().toLowerCase()
+        filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')
+    }
+    if (!has_vcf) {
+        return
+    }
+    if (!params.vep_species || !params.vep_genome || !params.vep_cache_version) {
+        error("Variant (VCF) input requires --vep_species, --vep_genome and --vep_cache_version " +
+              "(e.g. homo_sapiens GRCh38 110). See docs/usage.md.")
+    }
+    if (!params.vep_download_cache && !(params.ref_fasta && params.vep_cache)) {
+        error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
+              "or both --ref_fasta and --vep_cache. See docs/usage.md.")
+    }
+}
+
 // Function to read the alleles from a file or use given string
 def readAlleles(allele_input) {
     if (allele_input.endsWith(".txt")) {
@@ -200,7 +221,9 @@ def validateInputSamplesheet(input) {
 def toolCitationText() {
     def citation_text = [
             "Tools used in the workflow included:",
-            "Epytope (Schuber et al. 2016)",
+            "bcftools (Danecek et al. 2021)",
+            "Ensembl VEP (McLaren et al. 2016)",
+            "pVACtools (Hundal et al. 2020)",
             "SYFPEITHI (Schuler et al. 2007)",
             "NetMHC (Andreatta and Nielsen 2016)",
             "NetMHCpan (Reynisson et al. 2020)",
@@ -216,7 +239,9 @@ def toolCitationText() {
 
 def toolBibliographyText() {
     def reference_text = [
-            "<li>Schubert et al. (2016). FRED 2: an immunoinformatics framework for Python. Bioinformatics , 32(13), 2044–2046. doi: /10.1093/bioinformatics/btw113</li>",
+            "<li>Danecek et al. (2021). Twelve years of SAMtools and BCFtools. GigaScience, 10(2), giab008. doi: /10.1093/gigascience/giab008</li>",
+            "<li>McLaren et al. (2016). The Ensembl Variant Effect Predictor. Genome Biology, 17(1), 122. doi: /10.1186/s13059-016-0974-4</li>",
+            "<li>Hundal et al. (2020). pVACtools: A Computational Toolkit to Identify and Visualize Cancer Neoantigens. Cancer Immunology Research, 8(3), 409–420. doi: /10.1158/2326-6066.CIR-19-0401</li>",
             "<li>Schuler et al. (2007). SYFPEITHI: database for searching and T-cell epitope prediction. Immunoinformatics, 75–93. doi: /10.1007/978-1-60327-118-9_5</li>",
             "<li>Andreatta and Nielsen (2016). Gapped sequence alignment using artificial neural networks: application to the MHC class I system. Bioinformatics, 32(4), 511–517. doi: /10.1093/bioinformatics/btv639</li>",
             "<li>Reynisson et al. (2020). NetMHCpan-4.1 and NetMHCIIpan-4.0: Improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Research, Volume 48, Issue W1, Pages W449–W454. doi: /10.1093/nar/gkaa379</li>",

@@ -2,7 +2,7 @@ process MERGE_PREDICTIONS {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcgnomes:1.8.6--pyh7cba7a3_0' :
         'biocontainers/mhcgnomes:1.8.6--pyh7cba7a3_0' }"
@@ -12,7 +12,7 @@ process MERGE_PREDICTIONS {
 
     output:
     tuple val(meta), path("*.csv") , emit: merged
-    path "versions.yml", topic: versions
+    path "versions.yml", emit: versions, topic: versions
 
     script:
     template "merge_predictions.py"

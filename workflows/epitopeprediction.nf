@@ -6,15 +6,14 @@
 //
 // MODULE: Local to the pipeline
 //
-include { VARIANT_SPLIT               } from '../modules/local/variant_split'
-include { FASTA2PEPTIDES              } from '../modules/local/fasta2peptides'
-include { SPLIT_PEPTIDES              } from '../modules/local/split_peptides'
-include { EPYTOPE_VARIANT_PREDICTION  } from '../modules/local/epytope_variant_prediction'
-include { SUMMARIZE_RESULTS           } from '../modules/local/summarize_results'
+include { FASTA2PEPTIDES } from '../modules/local/fasta2peptides'
+include { SPLIT_PEPTIDES } from '../modules/local/split_peptides'
+include { SUMMARIZE_RESULTS } from '../modules/local/summarize_results'
 
 //
 // SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
 
+include { GENERATE_VARIANT_PEPTIDES } from '../subworkflows/local/generate_variant_peptides'
 include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_prediction'
 
 /*
@@ -26,17 +25,11 @@ include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_predi
 //
 // MODULE: Installed directly from nf-core/modules
 //
-include { GUNZIP as GUNZIP_VCF        } from '../modules/nf-core/gunzip'
-include { GUNZIP as GUNZIP_FASTA      } from '../modules/nf-core/gunzip'
-include { BCFTOOLS_STATS              } from '../modules/nf-core/bcftools/stats'
-include { BCFTOOLS_NORM               } from '../modules/nf-core/bcftools/norm'
-include { SNPSIFT_SPLIT               } from '../modules/nf-core/snpsift/split'
-include { FIND_CONCATENATE as CAT_FASTA } from '../modules/nf-core/find/concatenate/main'
-include { MULTIQC                     } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap            } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc        } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { softwareVersionsToYAML      } from '../subworkflows/nf-core/utils_nfcore_pipeline'
-include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
+include { MULTIQC } from '../modules/nf-core/multiqc/main'
+include { paramsSummaryMap } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -45,7 +38,6 @@ include { methodsDescriptionText      } from '../subworkflows/local/utils_nfcore
 */
 
 workflow EPITOPEPREDICTION {
-
     take:
     samplesheet // channel: samplesheet read in from --input
     multiqc_config
@@ -56,126 +48,42 @@ workflow EPITOPEPREDICTION {
     main:
 
     // Initialise needed channels
-    ch_versions      = channel.empty()
     ch_multiqc_files = channel.empty()
-    ch_biomart_dump  = params.biomart_dump_path ?
-                            channel.value(file(params.biomart_dump_path, checkIfExists: true)) :
-                            channel.value([])
 
     // Load supported alleles file
-    supported_alleles_json = file("$projectDir/assets/supported_alleles.json", checkIfExists: true)
-    netmhc_software_meta   = file("$projectDir/assets/netmhc_software_meta.json", checkIfExists: true)
+    supported_alleles_json = file("${projectDir}/assets/supported_alleles.json", checkIfExists: true)
+    netmhc_software_meta = file("${projectDir}/assets/netmhc_software_meta.json", checkIfExists: true)
 
     // Load samplesheet and branch channels based on input type
     samplesheet
         .branch { meta, file ->
             def filename = file.name
-            // TODO: Replace sample with id
-            variant_compressed : filename.endsWith('.vcf.gz')
-                return [meta + [input_type:'variant_compressed'], file ]
-            variant_uncompressed : filename.endsWith('.vcf')
-                return [meta + [input_type:'variant'], file ]
-            peptide : filename.endsWith('.tsv')
-                return [meta + [input_type:'peptide'], file ]
-            protein : filename.endsWith('.fasta') || filename.endsWith('.fa')
-                return [meta + [input_type:'protein'], file ]
+            variant: filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')
+            return [meta + [input_type: 'variant'], file]
+            peptide: filename.endsWith('.tsv')
+            return [meta + [input_type: 'peptide'], file]
+            protein: filename.endsWith('.fasta') || filename.endsWith('.fa')
+            return [meta + [input_type: 'protein'], file]
         }
         .set { ch_samplesheet }
 
-    // gunzip VCF files
-    GUNZIP_VCF ( ch_samplesheet.variant_compressed )
+    //
+    // SUBWORKFLOW: variant (VCF) input -> mutation-overlapping peptides
+    //
+    GENERATE_VARIANT_PEPTIDES(ch_samplesheet.variant)
+    ch_multiqc_files = ch_multiqc_files.mix(GENERATE_VARIANT_PEPTIDES.out.mqc)
+    ch_peptides_from_variants = GENERATE_VARIANT_PEPTIDES.out.peptides
 
-    ch_variants_uncompressed = GUNZIP_VCF.out.gunzip.mix( ch_samplesheet.variant_uncompressed )
-
-    // Normalize VCF files - only recommended with fasta reference
-    ch_fasta = channel.of([])
-    if (params.genome) {
-        // Uncompress FASTA if needed
-        if (params.genome.endsWith('.gz')) {
-            GUNZIP_FASTA ([ [:], file(params.genome, checkIfExists: true) ])
-            ch_fasta    =  GUNZIP_FASTA.out.gunzip
-        } else {
-            ch_fasta = channel.value(file(params.genome, checkIfExists: true))
-            ch_fasta = ch_fasta.map{fasta -> [[:], fasta]}
-        }
-        BCFTOOLS_NORM(
-            ch_variants_uncompressed.map{ meta, vcf -> [ meta, vcf, [] ] },
-            ch_fasta
-        )
-        ch_variants_uncompressed = BCFTOOLS_NORM.out.vcf
-
-    }
-
-    // Generate Variant Stats for QC report
-    BCFTOOLS_STATS(
-        ch_variants_uncompressed.map{ meta, vcf -> [ meta, vcf, [] ] },
-         [[:],[]],
-         [[:],[]],
-         [[:],[]],
-         [[:],[]],
-         [[:],[]],
-         )
-
-    ch_multiqc_files = ch_multiqc_files.mix(BCFTOOLS_STATS.out.stats.collect{ _meta, stats -> stats })
-
-    // (re)combine different input file types
-    ch_samples_uncompressed = ch_samplesheet.protein
-        .mix(ch_samplesheet.peptide)
-        .mix(ch_variants_uncompressed)
-        .branch {
-            meta_data, _input_file ->
-            variant :  meta_data.input_type == 'variant' | meta_data.input_type == 'variant_compressed'
-            peptide :  meta_data.input_type == 'peptide'
-            protein :  meta_data.input_type == 'protein'
-        }
-
-    /*
-    ========================================================================================
-        GENERATE MUTATED PEPTIDES FROM VCF
-    ========================================================================================
-    */
-
-    // decide between the split_by_variants and snpsift_split (by chromosome)
-    if (params.split_by_variants) {
-        VARIANT_SPLIT( ch_samples_uncompressed.variant )
-            .splitted
-            .transpose()
-            .map { meta, vcf -> [meta + [split_id: splitId(meta, vcf)], vcf] }
-            .set { ch_split_variants }
-    }
-    else {
-        SNPSIFT_SPLIT( ch_samples_uncompressed.variant
-            .map {meta, vcf -> [meta + [split: true], vcf]} ) // need to add split: true to meta to trigger splitting (nf-core module)
-            .out_vcfs
-            .transpose()
-            .map { meta, vcf -> [meta + [split_id: splitId(meta, vcf)], vcf] }
-            .set { ch_split_variants }
-    }
-
-    // Generate mutated peptides from VCF and filter out empty files
-    EPYTOPE_VARIANT_PREDICTION( ch_split_variants, ch_biomart_dump )
-        .tsv
-        .filter { _meta, file -> file.size() > 0 }
-        .set { ch_peptides_from_variants }
-
-    // Merge optional fasta output of EPYTOPE_VARIANT_PREDICTION (containing mutated protein sequences) since they are splited
-    if (params.fasta_output) {
-        ch_fasta_from_variants = EPYTOPE_VARIANT_PREDICTION.out.fasta
-                                    .map { meta, fasta -> [meta.subMap('id'), fasta] }
-                                    .groupTuple()
-        CAT_FASTA( ch_fasta_from_variants )
-        ch_peptides_from_variants = channel.empty()
-    }
     /*
     ========================================================================================
         GENERATE PEPTIDES FROM PROTEIN SEQUENCES
     ========================================================================================
     */
-    FASTA2PEPTIDES( ch_samples_uncompressed.protein )
+    FASTA2PEPTIDES(ch_samplesheet.protein.map { meta, fasta -> [meta, fasta, [], []] }, [])
 
-    ch_to_predict = ch_samples_uncompressed.peptide
-                        .mix(FASTA2PEPTIDES.out.tsv.transpose().map { meta, tsv -> [meta + [split_id: splitId(meta, tsv)], tsv] })
-                        .mix(ch_peptides_from_variants)
+    ch_to_predict = ch_samplesheet.peptide.mix(
+        FASTA2PEPTIDES.out.tsv.transpose().mix(ch_peptides_from_variants).map { meta, tsv -> [meta + [split_id: splitId(meta, tsv)], tsv] }
+    )
 
     // Split tsv if size exceeds params.peptides_split_minchunksize
     SPLIT_PEPTIDES(ch_to_predict)
@@ -186,21 +94,23 @@ workflow EPITOPEPREDICTION {
         PREDICT MHC BINDING OF PEPTIDES
     ========================================================================================
     */
-    MHC_BINDING_PREDICTION( SPLIT_PEPTIDES.out.splitted.transpose(),
-                            params.tools,
-                            supported_alleles_json,
-                            netmhc_software_meta)
+    MHC_BINDING_PREDICTION(
+        SPLIT_PEPTIDES.out.splitted.transpose(),
+        params.tools,
+        supported_alleles_json,
+        netmhc_software_meta,
+    )
 
-/*     // Concatenate splitted predictions on sample
+    /*     // Concatenate splitted predictions on sample
     CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
                     .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
                     .groupTuple(), "tsv", "tsv") */
 
     // Summarize prediction statistics for MultiQC report
-    SUMMARIZE_RESULTS(MHC_BINDING_PREDICTION.out.predicted
-                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
-                    .groupTuple())
-    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect{ _meta, json -> json })
+    SUMMARIZE_RESULTS(
+        MHC_BINDING_PREDICTION.out.predicted.map { meta, file -> [meta.subMap('id', 'alleles', 'mhc_class'), file] }.groupTuple()
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect { _meta, json -> json })
 
     //
     // Collate and save software versions
@@ -214,21 +124,21 @@ workflow EPITOPEPREDICTION {
 
     def topic_versions_string = topic_versions.versions_tuple
         .map { process, tool, version ->
-            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+            [process[process.lastIndexOf(':') + 1..-1], "  ${tool}: ${version}"]
         }
-        .groupTuple(by:0)
+        .groupTuple(by: 0)
         .map { process, tool_versions ->
             tool_versions.unique().sort()
             "${process}:\n${tool_versions.join('\n')}"
         }
 
-    def ch_collated_versions = softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
+    def ch_collated_versions = softwareVersionsToYAML(topic_versions.versions_file)
         .mix(topic_versions_string)
         .collectFile(
             storeDir: "${outdir}/pipeline_info",
-            name: 'nf_core_'  +  'epitopeprediction_software_'  + 'mqc_'  + 'versions.yml',
+            name: 'nf_core_' + 'epitopeprediction_software_' + 'mqc_' + 'versions.yml',
             sort: true,
-            newLine: true
+            newLine: true,
         )
 
     //
@@ -257,16 +167,10 @@ workflow EPITOPEPREDICTION {
             ]
         }
     )
+
     emit:
     multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
 }
-
-/*
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    THE END
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-*/
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -274,14 +178,7 @@ workflow EPITOPEPREDICTION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 
-// <stem>_v<n>.vcf -> v<n> | <stem>.<chr>.vcf -> <chr> | <id>_length_<k>.tsv -> length_<k>
+// <id>_length_<k>.tsv -> length_<k>
 def splitId(meta, file) {
-    def stem = file.baseName
-    if (stem ==~ /.*_v\d+/) {
-        return stem.tokenize('_').last()
-    }
-    if (stem.startsWith("${meta.id}_length_")) {
-        return stem - "${meta.id}_"
-    }
-    return stem.tokenize('.').last()
+    return file.baseName - "${meta.id}_"
 }

@@ -2,7 +2,7 @@ process MHCFLURRY {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcflurry:2.1.4--pyh7e72e81_1' :
         'quay.io/biocontainers/mhcflurry:2.1.4--pyh7e72e81_1' }"
@@ -17,7 +17,7 @@ process MHCFLURRY {
 
     output:
     tuple val(meta), path("*.csv"), emit: predicted
-    tuple val("${task.process}"), val('mhcflurry'), eval("mhcflurry-predict --version | cut -d' ' -f2"), topic: versions
+    tuple val("${task.process}"), val('mhcflurry'), eval("mhcflurry-predict --version | cut -d' ' -f2"), topic: versions, emit: versions_mhcflurry
 
     script:
     if (meta.mhc_class == "II") {

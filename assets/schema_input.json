@@ -41,6 +41,22 @@
                 "errorMessage": "Variants/proteins/peptides of a sample must be provided and have one of the following extensions: '.vcf', '.vcf.gz', '.tsv', '.fasta'",
                 "description": "Path to a variant, protein or peptide file ('.vcf', '.vcf.gz','.fasta', 'tsv')",
                 "exists": true
+            },
+            "germline_vcf": {
+                "type": "string",
+                "format": "file-path",
+                "pattern": "^\\S+\\.vcf(\\.gz)?$",
+                "exists": true,
+                "errorMessage": "The germline_vcf (if provided) must be a path to a '.vcf' or '.vcf.gz' file.",
+                "description": "Optional. Germline calls for the same patient, used only as context so that neoepitope windows carry the patient's own variants. Not scanned for candidates.",
+                "meta": ["germline_vcf"]
+            },
+            "tumor_sample": {
+                "type": "string",
+                "pattern": "^\\S+$",
+                "errorMessage": "The tumor_sample (if provided) must be a sample name without spaces.",
+                "description": "Optional. Name of the tumour sample as it appears in the VCF header line (e.g. TUMOR for Strelka). Needed when the VCF holds more than one sample; leave empty for single-sample VCFs.",
+                "meta": ["tumor_sample"]
             }
         },
         "required": ["sample", "alleles", "mhc_class", "filename"]

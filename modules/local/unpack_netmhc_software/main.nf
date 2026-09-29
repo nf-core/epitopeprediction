@@ -4,7 +4,7 @@
 process UNPACK_NETMHC_SOFTWARE {
     label 'process_single'
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
         'docker.io/biocontainers/biocontainers:v1.2.0_cv2' }"
@@ -14,7 +14,7 @@ process UNPACK_NETMHC_SOFTWARE {
 
     output:
     path "${toolname}", emit: nonfree_tools
-    tuple val("${task.process}"), val(toolname), val(toolversion), topic: versions
+    tuple val("${task.process}"), val(toolname), val(toolversion), topic: versions, emit: versions_netmhc
 
     when:
     task.ext.when == null || task.ext.when

@@ -1,0 +1,152 @@
+include { DOWNLOAD_REF_FASTA } from '../../../modules/local/download_ref_fasta'
+include { PVACSEQ_INSTALLVEPPLUGIN } from '../../../modules/local/pvacseq/installvepplugin'
+include { PREP_GERMLINE_CONTEXT } from '../../../modules/local/prep_germline_context'
+include { PREP_PROXIMAL_VCF } from '../../../modules/local/prep_proximal_vcf'
+include { PVACSEQ_GENERATEPROTEINFASTA } from '../../../modules/local/pvacseq/generateproteinfasta'
+include { FASTA2PEPTIDES as FASTA2PEPTIDES_FROM_VARIANTS } from '../../../modules/local/fasta2peptides'
+
+include { BCFTOOLS_ANNOTATE } from '../../../modules/nf-core/bcftools/annotate'
+include { BCFTOOLS_NORM } from '../../../modules/nf-core/bcftools/norm'
+include { BCFTOOLS_PLUGINSETGT } from '../../../modules/nf-core/bcftools/pluginsetgt'
+include { BCFTOOLS_STATS } from '../../../modules/nf-core/bcftools/stats'
+include { BCFTOOLS_VIEW } from '../../../modules/nf-core/bcftools/view'
+include { ENSEMBLVEP_DOWNLOAD } from '../../../modules/nf-core/ensemblvep/download'
+include { ENSEMBLVEP_VEP } from '../../../modules/nf-core/ensemblvep/vep'
+include { ENSEMBLVEP_VEP as ENSEMBLVEP_VEP_CONTEXT } from '../../../modules/nf-core/ensemblvep/vep'
+include { UNTAR } from '../../../modules/nf-core/untar'
+
+workflow GENERATE_VARIANT_PEPTIDES {
+    take:
+    ch_vcf // channel: [ val(meta), path(vcf) ]
+
+    main:
+
+    // Peptide- and protein-only runs set no VEP params, but Nextflow still wires up the VEP calls below
+    // and rejects null inputs. These empty values never reach a task, because no VCF reaches VEP then.
+    def vep_species = params.vep_species ?: ''
+    def vep_genome = params.vep_genome ?: ''
+    def vep_cachever = params.vep_cache_version ?: ''
+    ch_vep_cache = channel.value([[:], []])
+    ch_ref_fasta = channel.value([[:], []])
+
+    def cache_from_params = params.ref_fasta && params.vep_cache
+    def fasta_flank = params.mutation_flanking_aas
+
+    // Gated on a VCF so peptide/protein-only runs never pull the pvactools container.
+    PVACSEQ_INSTALLVEPPLUGIN(ch_vcf.map { _meta, _vcf -> 'plugins' }.first())
+    ch_vep_plugin_files = PVACSEQ_INSTALLVEPPLUGIN.out.plugins.first()
+
+    if (params.vep_download_cache) {
+        ch_download_input = ch_vcf
+            .map { _meta, _vcf -> [[id: 'vep'], vep_genome, vep_species, vep_cachever] }
+            .first()
+        ENSEMBLVEP_DOWNLOAD(ch_download_input, true)
+        DOWNLOAD_REF_FASTA(ch_download_input)
+
+        ch_vep_cache = ENSEMBLVEP_DOWNLOAD.out.cache.map { _meta, cache -> [[id: 'vep'], cache] }
+        ch_ref_fasta = DOWNLOAD_REF_FASTA.out.fasta.map { _meta, fa -> [[id: 'ref'], fa] }
+    }
+    else if (cache_from_params) {
+        // test-datasets ships the cache as a .tar.gz because CI cannot stage a directory.
+        def vep_cache_input = file(params.vep_cache, checkIfExists: true)
+        def vep_cache_lc = params.vep_cache.toString().toLowerCase()
+        if (vep_cache_lc.endsWith('.tar.gz') || vep_cache_lc.endsWith('.tgz')) {
+            UNTAR([[id: 'vep'], vep_cache_input])
+            ch_vep_cache = UNTAR.out.untar
+        }
+        else {
+            ch_vep_cache = channel.value([[id: 'vep'], vep_cache_input])
+        }
+        ch_ref_fasta = channel.value([[id: 'ref'], file(params.ref_fasta, checkIfExists: true)])
+    }
+
+    // pvacseq refuses uncalled genotypes and Strelka writes no GT at all; setGT adds the field
+    // where it is missing and fills only missing calls, so VCFs that carry GT are left as they are.
+    BCFTOOLS_PLUGINSETGT(ch_vcf.map { meta, vcf -> [meta, vcf, []] }, '.', 'c:0/1', [], [])
+    BCFTOOLS_VIEW(BCFTOOLS_PLUGINSETGT.out.vcf.map { meta, vcf -> [meta, vcf, []] }, [], [], [])
+
+    def ch_chr_map = file("${projectDir}/assets/chr_map.tsv", checkIfExists: true)
+    BCFTOOLS_ANNOTATE(BCFTOOLS_VIEW.out.vcf.map { meta, vcf -> [meta, vcf, [], [], [], [], [], ch_chr_map] })
+    BCFTOOLS_NORM(BCFTOOLS_ANNOTATE.out.vcf.map { meta, vcf -> [meta, vcf, []] }, ch_ref_fasta)
+
+    ch_vcf_prepared = BCFTOOLS_NORM.out.vcf
+
+    BCFTOOLS_STATS(
+        ch_vcf_prepared.map { meta, vcf -> [meta, vcf, []] },
+        [[:], []],
+        [[:], []],
+        [[:], []],
+        [[:], []],
+        [[:], []],
+    )
+
+    ENSEMBLVEP_VEP(
+        ch_vcf_prepared.map { meta, vcf -> [meta, vcf, []] },
+        vep_genome,
+        vep_species,
+        vep_cachever,
+        ch_vep_cache,
+        ch_ref_fasta,
+        ch_vep_plugin_files,
+        [[], []],
+    )
+
+    ch_vep_vcf = ENSEMBLVEP_VEP.out.vcf.join(ENSEMBLVEP_VEP.out.tbi)
+
+    ch_context = ch_vcf_prepared.branch { meta, _vcf ->
+        germline: meta.germline_vcf
+        somatic_only: true
+    }
+
+    // Germline calls are context only: pvacseq applies them to both the wild-type and the mutant window, so
+    // the windows carry the patient's own sequence. PREP_GERMLINE_CONTEXT keeps the germline records near a
+    // somatic site, renames their contigs and merges them into the somatic VCF used as proximal input.
+    PREP_GERMLINE_CONTEXT(ch_context.germline.map { meta, vcf -> [meta, vcf, meta.germline_vcf, Math.max(maxLength(meta) - 1, fasta_flank)] }, ch_chr_map)
+
+    ENSEMBLVEP_VEP_CONTEXT(
+        PREP_GERMLINE_CONTEXT.out.vcf.map { meta, vcf, _tbi -> [meta, vcf, []] },
+        vep_genome,
+        vep_species,
+        vep_cachever,
+        ch_vep_cache,
+        ch_ref_fasta,
+        ch_vep_plugin_files,
+        [[], []],
+    )
+
+    ch_proximal_in = ENSEMBLVEP_VEP_CONTEXT.out.vcf
+        .join(ENSEMBLVEP_VEP_CONTEXT.out.tbi)
+        .mix(ch_vep_vcf.filter { meta, _vcf, _tbi -> !meta.germline_vcf })
+
+    // pvacseq only folds in proximal variants whose FORMAT/HP matches the somatic one; unphased VCFs get a
+    // single HP for every record, i.e. nearby variants are assumed cis.
+    PREP_PROXIMAL_VCF(ch_proximal_in)
+
+    PVACSEQ_GENERATEPROTEINFASTA(
+        ch_vep_vcf.join(PREP_PROXIMAL_VCF.out.vcf).map { meta, vcf, tbi, pvcf, ptbi -> [meta, vcf, tbi, pvcf, ptbi, minLength(meta), maxLength(meta), fasta_flank] }
+    )
+
+    // Optional self/novelty filter: drop variant peptides found in a reference proteome.
+    ch_proteome_reference = params.proteome_reference
+        ? channel.value(file(params.proteome_reference, checkIfExists: true))
+        : channel.value([])
+    FASTA2PEPTIDES_FROM_VARIANTS(PVACSEQ_GENERATEPROTEINFASTA.out.fasta, ch_proteome_reference)
+
+    emit:
+    peptides = FASTA2PEPTIDES_FROM_VARIANTS.out.tsv.transpose().filter { _meta, file -> file.size() > 0 }
+    mqc = BCFTOOLS_STATS.out.stats.collect { _meta, stats -> stats }
+}
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    FUNCTIONS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+def minLength(meta) {
+    return meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
+}
+
+def maxLength(meta) {
+    return meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
+}

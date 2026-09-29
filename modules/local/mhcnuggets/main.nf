@@ -2,7 +2,7 @@ process MHCNUGGETS {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcnuggets:2.4.0--pyh7cba7a3_0' :
         'quay.io/biocontainers/mhcnuggets:2.4.0--pyh7cba7a3_0' }"
@@ -12,7 +12,7 @@ process MHCNUGGETS {
 
     output:
     tuple val(meta), path("*{_predicted_mhcnuggets.csv,_predicted_mhcnuggetsii.csv}"), emit: predicted
-    path "versions.yml", topic: versions
+    path "versions.yml", emit: versions, topic: versions
 
     script:
 
