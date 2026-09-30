@@ -14,7 +14,7 @@ The directories listed below will be created in the results directory after the 
 
 Variant (VCF) input is processed with an offline chain of `bcftools`, [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/) (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
-**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this:
+**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this with `--wild_type` (without it, only the `MT` rows are written):
 
 | sequence      | peptide_origin | wildtype  | gene | HGVSp       | genomic_anchor |
 | ------------- | -------------- | --------- | ---- | ----------- | -------------- |
@@ -26,14 +26,12 @@ Variant (VCF) input is processed with an offline chain of `bcftools`, [Ensembl V
 
 ### Wild-type peptides
 
-Each mutant row carries its aligned wild-type k-mer in `wildtype`, and that k-mer is also emitted as its own row so both are scored against the same alleles.
+Each mutant row always carries its aligned wild-type k-mer in `wildtype`. With `--wild_type`, that k-mer is also emitted as its own row so both are scored against the same alleles; otherwise only the putative neoepitopes are predicted.
 
 - `peptide_origin`: `MT`, `WT`, or `MT;WT` (mutant for one variant, wild-type for another). WT rows share the variant's provenance; `protein_ids` is `WT.<index>` vs `MT.<index>`.
 - A wild-type counterpart only exists where the mutant and wild-type windows have the same length, i.e. substitutions. Frameshifts and length-changing indels have no equal-length wild-type window, so `wildtype` stays `NA` and no wild-type row is added.
 - `--proteome_reference` self-filtering never drops wild-type rows: they are reference sequence by construction. Only rows with `peptide_origin == MT` are eligible for that filter.
 - Wild-type rows are excluded from the MultiQC binder statistics so they are not counted as candidate epitopes, but they remain in the published prediction table.
-
-`--wild_type` is deprecated and ignored; the behaviour above is always on.
 
 Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 

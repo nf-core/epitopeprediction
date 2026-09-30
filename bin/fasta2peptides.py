@@ -211,14 +211,14 @@ def add_peptide(rec, ann, index, origin, wildtype=''):
         rec['wildtype'].add(wildtype)
 
 
-def generate_variant_peptides(fastas_by_length, variants):
+def generate_variant_peptides(fastas_by_length, variants, add_wildtype):
     """Every k-mer of every mutant window, as {k: {peptide: provenance sets}}.
 
     A window repeated between the runs of one length (a variant with nothing nearby) counts once,
     and k-mers also present in the wild-type window are dropped. Where the windows align
-    (substitutions), the aligned wild-type k-mer fills the `wildtype` column and is also added as
-    a `WT` row so it is predicted too. A sequence that is MT for one variant and WT for another is
-    labelled `MT;WT`.
+    (substitutions), the aligned wild-type k-mer fills the `wildtype` column; with `add_wildtype`
+    it is also added as a `WT` row so it is predicted too. A sequence that is MT for one variant
+    and WT for another is labelled `MT;WT`.
     """
     by_length = {}
     for k, paths in sorted(fastas_by_length.items()):
@@ -244,7 +244,7 @@ def generate_variant_peptides(fastas_by_length, variants):
                     if not valid_peptide(wt_pep):
                         wt_pep = ''
                     add_peptide(peptides[pep], ann, index, 'MT', wt_pep)
-                    if wt_pep:
+                    if add_wildtype and wt_pep:
                         add_peptide(peptides[wt_pep], ann, index, 'WT')
         by_length[k] = peptides
         logging.info(f"Generated {len(peptides):,} peptides of length {k} from {len(seen)} window(s)")
@@ -312,6 +312,8 @@ def parse_args() -> argparse.Namespace:
                         help="pVACtools variant table; switches to variant mode.")
     parser.add_argument("--annotated-fasta",
                         help="Variant mode: write the '*.flank.*' windows as one FASTA with provenance deflines.")
+    parser.add_argument("--wild-type", action="store_true",
+                        help="Variant mode: also emit the aligned WT k-mers as their own rows (substitutions only).")
     parser.add_argument("--proteome-reference",
                         help="Variant mode: drop peptides occurring in this reference proteome.")
     return parser.parse_args()
@@ -344,7 +346,7 @@ def run_variant_mode(args):
     if missing:
         raise SystemExit(f"ERROR: no window FASTA for peptide length(s) {missing}.")
 
-    by_length = generate_variant_peptides(fastas_by_length, variants)
+    by_length = generate_variant_peptides(fastas_by_length, variants, args.wild_type)
     if args.proteome_reference:
         removed = filter_self_peptides(by_length, args.proteome_reference)
         logging.info(f"Filtered out {removed} peptide(s) found in {args.proteome_reference}")

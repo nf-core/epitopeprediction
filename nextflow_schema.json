@@ -129,9 +129,8 @@
                 },
                 "wild_type": {
                     "type": "boolean",
-                    "hidden": true,
-                    "help_text": "Deprecated and ignored; wild-type peptides are always emitted (see `peptide_origin` in docs/output.md).",
-                    "description": "Deprecated: wild-type sequences are always predicted."
+                    "help_text": "Variant input: also add the aligned wild-type counterpart of each mutant peptide as its own row, so it is predicted alongside the putative neoepitopes. The `wildtype` column is always written. See `peptide_origin` in docs/output.md.",
+                    "description": "Also predict the wild-type counterparts of variant peptides."
                 },
                 "proteome_reference": {
                     "type": "string",

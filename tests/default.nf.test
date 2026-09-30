@@ -19,9 +19,12 @@ nextflow_pipeline {
             def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
             // stable_path: All files in ${params.outdir}/ with stable content
             def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            def consequences = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").readLines().drop(1).collect { it.split('\t')[3] }
+            def rows = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").readLines().drop(1).collect { it.split('\t') }
+            def consequences = rows.collect { it[3] }
             assertAll(
                 { assert workflow.success },
+                // without --wild_type only putative neoepitopes are written
+                { assert rows.every { it[9] == 'MT' } },
                 { assert consequences.contains('missense') },
                 { assert consequences.contains('inframe_del') },
                 { assert consequences.contains('FS') },
@@ -48,6 +51,7 @@ nextflow_pipeline {
                 // this reference proteome is exactly the FGFR3 MT window of the fixture,
                 // so every FGFR3 mutant peptide is "self" while other genes are untouched
                 proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
+                wild_type          = true
             }
         }
 
