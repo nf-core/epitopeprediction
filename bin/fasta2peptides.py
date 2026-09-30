@@ -211,18 +211,19 @@ def add_peptide(rec, ann, index, origin, wildtype=''):
         rec['wildtype'].add(wildtype)
 
 
-def generate_variant_peptides(fastas_by_length, variants, add_wildtype):
+def generate_variant_peptides(fastas_by_length, variants):
     """Every k-mer of every mutant window, as {k: {peptide: provenance sets}}.
 
     A window repeated between the runs of one length (a variant with nothing nearby) counts once,
     and k-mers also present in the wild-type window are dropped. Where the windows align
-    (substitutions), the aligned wild-type k-mer fills the `wildtype` column; with `add_wildtype`
-    it is also added as a `WT` row so it is predicted too. A sequence that is MT for one variant
-    and WT for another is labelled `MT;WT`.
+    (substitutions), the aligned wild-type k-mer fills the `wildtype` column and is returned in
+    {k: [(peptide, wild-type k-mer, provenance, index)]} for add_wildtype_rows().
     """
     by_length = {}
+    wt_pairs = {}
     for k, paths in sorted(fastas_by_length.items()):
         peptides = defaultdict(new_record)
+        pairs = []
         seen = set()
         for path in paths:
             for index, wt, mt in read_windows(path):
@@ -230,7 +231,8 @@ def generate_variant_peptides(fastas_by_length, variants, add_wildtype):
                     continue
                 seen.add((index, wt, mt))
                 ann = variants.get(index, {field: 'NA' for field in PROVENANCE})
-                aligned = wt is not None and len(wt) == len(mt)
+                # a frameshift whose novel tail is k-1 residues long matches its WT window in length only
+                aligned = wt is not None and len(wt) == len(mt) and ann['consequence'] != 'FS'
                 for start in range(len(mt) - k + 1):
                     pep = mt[start:start + k]
                     if not valid_peptide(pep):
@@ -244,11 +246,23 @@ def generate_variant_peptides(fastas_by_length, variants, add_wildtype):
                     if not valid_peptide(wt_pep):
                         wt_pep = ''
                     add_peptide(peptides[pep], ann, index, 'MT', wt_pep)
-                    if add_wildtype and wt_pep:
-                        add_peptide(peptides[wt_pep], ann, index, 'WT')
+                    if wt_pep:
+                        pairs.append((pep, wt_pep, ann, index))
         by_length[k] = peptides
+        wt_pairs[k] = pairs
         logging.info(f"Generated {len(peptides):,} peptides of length {k} from {len(seen)} window(s)")
-    return by_length
+    return by_length, wt_pairs
+
+
+def add_wildtype_rows(by_length, wt_pairs):
+    """Adds the wild-type k-mer of every remaining mutant peptide as a `WT` row, in place.
+
+    A sequence that is MT for one variant and WT for another is labelled `MT;WT`.
+    """
+    for k, pairs in wt_pairs.items():
+        for pep, wt_pep, ann, index in pairs:
+            if pep in by_length[k]:
+                add_peptide(by_length[k].setdefault(wt_pep, new_record()), ann, index, 'WT')
 
 
 def _join(values):
@@ -276,12 +290,8 @@ def _iter_fasta_sequences(fasta_path):
 
 
 def filter_self_peptides(by_length, fasta_path):
-    """Drops purely mutant peptides occurring in the reference proteome, in place.
-
-    WT rows are exempt: they are reference sequence by construction.
-    """
-    candidates = {k: peps for k in by_length
-                  if (peps := {p for p, r in by_length[k].items() if r['origin'] == {'MT'}})}
+    """Drops variant peptides occurring in the reference proteome, in place."""
+    candidates = {k: set(by_length[k]) for k in by_length if by_length[k]}
     if not candidates:
         return 0
     lengths = sorted(candidates)
@@ -313,7 +323,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--annotated-fasta",
                         help="Variant mode: write the '*.flank.*' windows as one FASTA with provenance deflines.")
     parser.add_argument("--wild-type", action="store_true",
-                        help="Variant mode: also emit the aligned WT k-mers as their own rows (substitutions only).")
+                        help="Variant mode: add the aligned WT k-mers of the remaining peptides as their own rows.")
     parser.add_argument("--proteome-reference",
                         help="Variant mode: drop peptides occurring in this reference proteome.")
     return parser.parse_args()
@@ -346,10 +356,12 @@ def run_variant_mode(args):
     if missing:
         raise SystemExit(f"ERROR: no window FASTA for peptide length(s) {missing}.")
 
-    by_length = generate_variant_peptides(fastas_by_length, variants, args.wild_type)
+    by_length, wt_pairs = generate_variant_peptides(fastas_by_length, variants)
     if args.proteome_reference:
         removed = filter_self_peptides(by_length, args.proteome_reference)
         logging.info(f"Filtered out {removed} peptide(s) found in {args.proteome_reference}")
+    if args.wild_type:
+        add_wildtype_rows(by_length, wt_pairs)
 
     total = 0
     for k in range(args.min_length, args.max_length + 1):

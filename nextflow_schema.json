@@ -129,7 +129,8 @@
                 },
                 "wild_type": {
                     "type": "boolean",
-                    "help_text": "Variant input: also add the aligned wild-type counterpart of each mutant peptide as its own row, so it is predicted alongside the putative neoepitopes. The `wildtype` column is always written. See `peptide_origin` in docs/output.md.",
+                    "default": false,
+                    "help_text": "Variant input only. Adds the aligned wild-type k-mer of each substitution-derived mutant peptide as its own row (`peptide_origin` `WT`), so it is predicted against the same alleles. The `wildtype` column is written regardless of this flag.",
                     "description": "Also predict the wild-type counterparts of variant peptides."
                 },
                 "proteome_reference": {

@@ -49,7 +49,7 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 // this reference proteome is exactly the FGFR3 MT window of the fixture,
-                // so every FGFR3 mutant peptide is "self" while other genes are untouched
+                // so every FGFR3 peptide and its wild-type row are dropped
                 proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
                 wild_type          = true
             }
@@ -60,10 +60,41 @@ nextflow_pipeline {
                            path("${params.outdir}/variant_peptides/sample1_length_10.tsv").text
             assertAll(
                 { assert workflow.success },
-                // WT rows are exempt from the self-filter, so FGFR3 only survives as those
-                { assert !peptides.readLines().any { it.contains('FGFR3') && it.split('\t')[7].contains('MT.') } },
-                { assert peptides.contains('WT.2.FGFR3') },
+                { assert !peptides.contains('FGFR3') },
                 { assert peptides.contains('CEBPA') }
+            )
+        }
+    }
+
+    test("-profile test --wild_type --wide_format_output") {
+
+        when {
+            params {
+                outdir             = "$outputDir"
+                wild_type          = true
+                wide_format_output = true
+            }
+        }
+
+        then {
+            def lines  = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").readLines()
+            def header = lines[0].split('\t') as List
+            def rows   = lines.drop(1).collect { [header, it.split('\t') as List].transpose().collectEntries() }
+            def wt     = rows.findAll { it.peptide_origin.contains('WT') }
+            def wide   = path("${params.outdir}/predictions/sample1.tsv").readLines().collect { it.split('\t', -1) as List }
+            def ba     = wide[0].findIndexValues { it ==~ /mhcnuggets_.*_BA/ }
+            def origin = wide[0].indexOf('peptide_origin')
+            def stats  = path("${params.outdir}/multiqc/multiqc_data/multiqc_peptide_binding_prediction_stats.txt").readLines()[1].split('\t')
+            assertAll(
+                { assert workflow.success },
+                { assert wt },
+                // every WT row is the aligned wild type of a mutant substitution peptide
+                { assert wt.every { w -> rows.any { it.wildtype.split(';').contains(w.sequence) } } },
+                { assert wt.every { it.consequence == 'missense' } },
+                // rows with NA metadata (WT, frameshift) keep their per-allele scores in wide format
+                { assert ba && wide.drop(1).every { row -> ba.any { row[it as int] } } },
+                // MultiQC counts mutant peptides only
+                { assert (stats[1] as int) + (stats[2] as int) == wide.drop(1).count { it[origin].contains('MT') } }
             )
         }
     }

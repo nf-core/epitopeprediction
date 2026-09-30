@@ -46,7 +46,8 @@ class MultiQC:
             'section_name': 'Binding Prediction Statistics',
             'description': (
                 'The statistics table shows the number of binders, non-binders, and unsupported peptides for each predictor. '
-                'The unsupported peptides are those that were not predicted by any of the predictors.'),
+                'The unsupported peptides are those that were not predicted by any of the predictors. '
+                'Wild-type peptides added by `--wild_type` are not counted.'),
             'plot_type': 'table',
             'data': {
                 f'{input_basename}_{predictor}': {
@@ -240,6 +241,8 @@ class Utils:
                 return x
 
         df[meta_columns] = df[meta_columns].apply(lambda col: col.map(try_numeric))
+        # pivot_table drops rows with NaN in an index column, e.g. `wildtype` of frameshift peptides
+        df[meta_columns] = df[meta_columns].fillna('NA')
 
         # Pivot to wide format
         df_pivot = df.pivot_table(

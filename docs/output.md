@@ -14,7 +14,7 @@ The directories listed below will be created in the results directory after the 
 
 Variant (VCF) input is processed with an offline chain of `bcftools`, [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/) (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
-**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this with `--wild_type` (without it, only the `MT` rows are written):
+**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this with `--wild_type`. Without `--wild_type`, the `WT` rows are omitted.
 
 | sequence      | peptide_origin | wildtype  | gene | HGVSp       | genomic_anchor |
 | ------------- | -------------- | --------- | ---- | ----------- | -------------- |
@@ -23,15 +23,6 @@ Variant (VCF) input is processed with an offline chain of `bcftools`, [Ensembl V
 | KRQTVED**Y**P | MT             | KRQTVEDCP | ...  | p.Cys138Tyr | ...            |
 | KRQTVEDCP     | WT             | NA        | ...  | p.Cys138Tyr | ...            |
 | ...           | ...            | ...       | ...  | ...         | ...            |
-
-### Wild-type peptides
-
-Each mutant row always carries its aligned wild-type k-mer in `wildtype`. With `--wild_type`, that k-mer is also emitted as its own row so both are scored against the same alleles; otherwise only the putative neoepitopes are predicted.
-
-- `peptide_origin`: `MT`, `WT`, or `MT;WT` (mutant for one variant, wild-type for another). WT rows share the variant's provenance; `protein_ids` is `WT.<index>` vs `MT.<index>`.
-- A wild-type counterpart only exists where the mutant and wild-type windows have the same length, i.e. substitutions. Frameshifts and length-changing indels have no equal-length wild-type window, so `wildtype` stays `NA` and no wild-type row is added.
-- `--proteome_reference` self-filtering never drops wild-type rows: they are reference sequence by construction. Only rows with `peptide_origin == MT` are eligible for that filter.
-- Wild-type rows are excluded from the MultiQC binder statistics so they are not counted as candidate epitopes, but they remain in the published prediction table.
 
 Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 
@@ -59,6 +50,16 @@ Each pvacseq defline is rewritten into a fixed, pipe-delimited schema (`NA` for 
 Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
 
 One record is written per variant and transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
+
+### Wild-type peptides
+
+Mutant rows from substitutions carry their aligned wild-type k-mer in `wildtype`. With `--wild_type`, each of these k-mers is also written as its own row and predicted against the same alleles.
+
+- `peptide_origin` is `MT`, `WT` or `MT;WT`. `MT;WT` marks a sequence that is mutant for one variant and wild-type for another.
+- Wild-type rows carry the provenance of their variant and `protein_ids` of the form `WT.<index>`.
+- Frameshifts and length-changing indels have no aligned wild-type k-mer, so their `wildtype` is `NA` and they get no wild-type row.
+- `--proteome_reference` is applied before wild-type rows are added. A mutant peptide found in the reference proteome is dropped together with its wild-type row.
+- Wild-type rows are left out of the MultiQC binder statistics and kept in `predictions/[sample].tsv`.
 
 ## Epitopeprediction
 

@@ -45,7 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Changed`
 
-- [#372](https://github.com/nf-core/epitopeprediction/pull/372) `--wild_type` now adds the wild-type counterparts of variant peptides as their own rows (new `peptide_origin` column: `MT`/`WT`/`MT;WT`) so they are predicted in the same run; WT rows are exempt from `--proteome_reference` filtering and MultiQC statistics. It is off by default, and the `wildtype` column is always written ([@jonasscheid](https://github.com/jonasscheid/))
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump` in `epaa.py` ([@SusiJo](https://github.com/SusiJo/)).
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
@@ -55,6 +54,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#371](https://github.com/nf-core/epitopeprediction/pull/371) Merge nf-core template updates up to `4.1.0` ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) `--wild_type` now adds the wild-type counterparts of variant peptides as their own rows (new `peptide_origin` column: `MT`/`WT`/`MT;WT`) so they are predicted in the same run. It is off by default, wild-type rows are left out of the MultiQC statistics, and the `wildtype` column is always written ([@jonasscheid](https://github.com/jonasscheid/))
 
 ## 3.1.1 - Lustnau Hotfix - 2026-08-05
 
