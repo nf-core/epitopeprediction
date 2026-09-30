@@ -34,7 +34,7 @@ workflow MHC_BINDING_PREDICTION {
         ch_binding_predictors_out = channel.empty()
 
         validate_tools_param(tools)
-        validate_wave(tools)
+        validate_mixmhc(tools)
 
         ch_peptides
             .map { meta, file -> [meta + [file_id: file.baseName], file] }
@@ -132,11 +132,18 @@ def validate_tools_param(tools) {
     }
 }
 
-// MixMHCpred/MixMHC2pred licenses forbid a public container, so Wave builds one from the module Dockerfile
-def validate_wave(tools) {
-    def wave_tools = tools.tokenize(',').findAll { tool -> tool.trim() in ['mixmhcpred', 'mixmhciipred'] }
-    if (wave_tools && !workflow.wave?.enabled) {
-        log.warn("--tools ${wave_tools.join(',')} has no public container: add `-with-wave` to build it on the fly, or set your own container for the process.")
+// MixMHCpred/MixMHC2pred are licensed for academic non-commercial use only and forbid a public container
+def validate_mixmhc(tools) {
+    def mixmhc_tools = tools.tokenize(',').findAll { tool -> tool.trim() in ['mixmhcpred', 'mixmhciipred'] }
+    if (!mixmhc_tools) {
+        return
+    }
+    if (!params.accept_mixmhc_license) {
+        error("--tools ${mixmhc_tools.join(',')} is licensed for academic non-commercial research only. Read the licenses at " +
+              "https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf and https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE, then add `--accept_mixmhc_license` to confirm that you have read them and your use is academic and non-commercial.")
+    }
+    if (!workflow.wave?.enabled) {
+        log.warn("--tools ${mixmhc_tools.join(',')} has no public container: add `-with-wave` to build it on the fly, or set your own container for the process.")
     }
 }
 

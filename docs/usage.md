@@ -237,7 +237,12 @@ nextflow run nf-core/epitopeprediction \
 
 ### Running the pipeline with MixMHCpred / MixMHCIIpred
 
-The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred) for MHC class II binding prediction. Both tools are free for academic/non-profit use; commercial use requires a separate license from the Ludwig Institute for Cancer Research.
+The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred) for MHC class II binding prediction.
+
+> [!IMPORTANT]
+> **MixMHCpred and MixMHCIIpred are licensed for academic non-commercial research only.** Commercial use, including providing services with them, requires a separate license from the Ludwig Institute for Cancer Research. Read the [MixMHCpred license](https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf) and the [MixMHC2pred license](https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE) before use.
+>
+> The pipeline only runs these tools with `--accept_mixmhc_license`, which confirms that you have read the licenses and use the tools for academic non-commercial research only. It defaults to `false`.
 
 Their licenses do not allow a prebuilt container, so [Wave](https://seqera.io/wave/) builds one on the fly from the module Dockerfile when you add `-with-wave`. Do not use `-profile wave` for these tools: it enables Wave freeze mode, which fails without a private build repository. A typical command for MHC class I is:
 
@@ -248,6 +253,7 @@ nextflow run nf-core/epitopeprediction \
   --input ./samplesheet.csv \
   --outdir ./results \
   --tools 'mixmhcpred' \
+  --accept_mixmhc_license \
   --min_peptide_length_classI 8 \
   --max_peptide_length_classI 12
 ```
@@ -261,12 +267,10 @@ nextflow run nf-core/epitopeprediction \
   --input ./samplesheet.csv \
   --outdir ./results \
   --tools 'mixmhciipred' \
+  --accept_mixmhc_license \
   --min_peptide_length_classII 12 \
   --max_peptide_length_classII 21
 ```
-
-> [!WARNING]
-> By using MixMHCpred or MixMHCIIpred, you accept the license terms at [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred). These tools are free for academic use only. Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
 
 ### Updating the pipeline
 

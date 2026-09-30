@@ -124,7 +124,7 @@
                 "tools": {
                     "type": "string",
                     "default": "mhcnuggets",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`, `mixmhciipred`.\n\nNote: MixMHCpred and MixMHCIIpred are free for academic use only; commercial use requires a separate license from the Ludwig Institute for Cancer Research. Their containers are built on the fly by Wave, so run with `-with-wave`.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`, `mixmhciipred`.\n\nNote: MixMHCpred and MixMHCIIpred are licensed for academic non-commercial research only and require `--accept_mixmhc_license`. Their containers are built on the fly by Wave, so run with `-with-wave`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "wild_type": {
@@ -217,6 +217,13 @@
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
+                },
+                "accept_mixmhc_license": {
+                    "type": "boolean",
+                    "default": false,
+                    "fa_icon": "fas fa-file-contract",
+                    "description": "Confirm that you have read the MixMHCpred and MixMHC2pred licenses and use them for academic non-commercial research only.",
+                    "help_text": "Required to run `mixmhcpred` or `mixmhciipred`. Both tools are licensed by the Ludwig Institute for Cancer Research for academic non-commercial research only; commercial use needs a separate license. Read the [MixMHCpred license](https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf) and the [MixMHC2pred license](https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE) before setting this flag."
                 }
             }
         },

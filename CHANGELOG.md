@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
 - [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added `<species>-all` alleles (e.g. `HLA-all`) and allele chunking, fixed the NetMHCpan/NetMHCIIpan buffer overflow on long paths, download MHCflurry models once per run (fixes [#340](https://github.com/nf-core/epitopeprediction/issues/340)) ([@jonasscheid](https://github.com/jonasscheid/))
-- [#338](https://github.com/nf-core/epitopeprediction/pull/338) Added MixMHCpred (Class I) and MixMHCIIpred (Class II) binding predictors with on-the-fly Wave container builds ([@jonasscheid](https://github.com/jonasscheid/))
+- [#338](https://github.com/nf-core/epitopeprediction/pull/338) Added MixMHCpred (Class I) and MixMHCIIpred (Class II) binding predictors, built on the fly with Wave and gated by `--accept_mixmhc_license` ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
