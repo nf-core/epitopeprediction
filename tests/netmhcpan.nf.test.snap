@@ -4,15 +4,21 @@
             12,
             {
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "NETMHCPAN": {
-                    "NetMHCpan": "4.2b"
+                    "netMHCpan": "4.2b"
+                },
+                "NETMHCPAN_IMPORT": {
+                    "netmhcpan": "4.2bstatic"
+                },
+                "PREPARE_PREDICTION_INPUT": {
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "SPLIT_PEPTIDES": {
-                    "python": "3.11.10"
+                    "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"
@@ -63,13 +69,13 @@
                 "multiqc_binder_rank_distribution.txt:md5,ec90da915e1e675ba4783a1ef333f5d6",
                 "multiqc_binding_affinity_distribution.txt:md5,971dc7e590882902783bd650e38caf39",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,f21634746a48cc909875f026c8dc470d"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,9ae5d3bb44ec4905ce1ad78a4c114ea2"
             ]
         ],
+        "timestamp": "2026-09-28T10:47:05.949394602",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2026-01-08T20:49:54.397171295"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

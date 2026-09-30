@@ -12,30 +12,44 @@ The directories listed below will be created in the results directory after the 
 
 ## Variant prediction
 
-[Epytope](https://github.com/KohlbacherLab/epytope) is used to parse _annotated_ variants (by [SnpEff](http://pcingola.> github.io/SnpEff/) or [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)). Based on this information, epytope generates all possible mutated peptides within the length boundary set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Essentially the same peptide generation from proteins is applied when specifying `.fasta` files in the samplesheet.
+Variant (VCF) input is processed with an offline chain of `bcftools`, [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/) (see [usage](usage.md#genomic-variants)). Only peptides that **overlap the mutation** are kept, within the length bounds set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. That means the mutated residue for missense, the junction for in-frame indels, and the novel C-terminal tail for frameshifts. Each peptide carries provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt).
 
-**Example**: Suppose you have the missense mutation `p.Cys138Tyr` in `ENSP00000235347` and you set `min_peptide_length_class[I|II] = max_peptide_length_class[I|II] = 9`. A subset of the table epytope generates looks like this:
-| Mutated | Wildtype | Metadata
-| ------------- | ------------- | ------------- |
-| SKRQTVED**Y** | SKRQTVEDC | ...
-| KRQTVED**Y**P | KRQTVEDCP | ...
-| RQTVED**Y**PR | RQTVEDCPR | ...
-| QTVED**Y**PRM | QTVEDCPRM | ...
-| TVED**Y**PRMG | TVEDCPRMG | ...
-| VED**Y**PRMGE | VEDCPRMGE | ...
-| ED**Y**PRMGEH | EDCPRMGEH | ...
-| D**Y**PRMGEHQ | DCPRMGEHQ | ...
-| **Y**PRMGEHQP | CPRMGEHQP | ...
+**Example**: for the missense mutation `p.Cys138Tyr` with `min_peptide_length_classI = max_peptide_length_classI = 9`, the length-9 table looks like this (WT counterpart shown when `--wild_type` is set):
 
-Tables are written per chromosome in a `tsv`.
+| sequence      | wildtype  | gene | HGVSp       | genomic_anchor |
+| ------------- | --------- | ---- | ----------- | -------------- |
+| SKRQTVED**Y** | SKRQTVEDC | ...  | p.Cys138Tyr | ...            |
+| KRQTVED**Y**P | KRQTVEDCP | ...  | p.Cys138Tyr | ...            |
+| RQTVED**Y**PR | RQTVEDCPR | ...  | p.Cys138Tyr | ...            |
+| ...           | ...       | ...  | ...         | ...            |
+| **Y**PRMGEHQP | CPRMGEHQP | ...  | p.Cys138Tyr | ...            |
 
-**Output directory:** `epytope/[sample]_chr[1-22|X|Y].tsv`
+Tables are written per peptide length as a `tsv`, then passed to the MHC binding prediction subworkflow where they are scored against the sample's individual MHC alleles.
 
-These generated mutated peptides are then passed to the MHC binding prediction subworkflow, where they are scored against the sample's individual MHC alleles.
+**Output directories:**
 
-**Optionally** you can obtain a **FASTA** file containing the variant protein sequences by providing `--fasta_output`. This can be specifically useful as input database for mass spectrometry-based pipelines such as [nf-core/mhcquant](https://github.com/nf-core/mhcquant). Sequences will be provided in full length for the wildtype and spliced around the mutation site for variant sequences (`--fasta_peptide_flanking_region_size` parameter).
+- `variant_peptides/[sample]_length_[k].tsv` — mutation-overlapping peptides with provenance. As in `pvacseq run`, windows are cut with `k - 1` residues on each side of the mutation for each peptide length `k`, so every k-mer covers the mutation; nearby somatic missense variants are folded in (see [usage](usage.md#genomic-variants)), and a combined window keeps the identity of the variant it was built for, so its k-mers that also occur in the single-variant window are counted twice in `counts`
+- `variant_fasta/[sample].annotated.fasta` — WT/MT protein windows with `--mutation_flanking_aas` residues on each side of the mutation (frameshifts to the new stop) and provenance-annotated headers (schema below), e.g. as a search database for [nf-core/mhcquant](https://github.com/nf-core/mhcquant)
 
-**Output directory:** `epytope/[sample].fasta`
+Each pvacseq defline is rewritten into a fixed, pipe-delimited schema (`NA` for any missing value). The values come from pVACtools' own variant table, joined to the FASTA records on its `index`:
+
+`>{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`
+
+| field          | meaning                                                                    |
+| -------------- | -------------------------------------------------------------------------- |
+| kind           | `WT` or `MT` (wild-type / mutant window)                                   |
+| numbering      | pvacseq per-entry index; identical for a variant's paired WT and MT record |
+| genomic_anchor | `chr:pos:ref:alt`                                                          |
+| gene           | HGNC symbol                                                                |
+| transcript     | Ensembl transcript (versioned)                                             |
+| uniprot        | SWISSPROT else TREMBL accession                                            |
+| consequence    | `missense` / `inframe_ins` / `inframe_del` / `FS`                          |
+| aa_change      | pvacseq shorthand (e.g. `78Q/H`)                                           |
+| hgvs           | HGVSp, ENSP prefix stripped (e.g. `p.Gln78His`)                            |
+
+Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
+
+One record is written per variant and transcript, so identical windows can recur across isoforms; deduplicate by protein grouping downstream if you use this FASTA as a search database.
 
 ## Epitopeprediction
 
@@ -44,13 +58,19 @@ The chunksize is controlled by `--peptides_split_minchunksize` and `--peptides_s
 
 **Tools output directory:**
 
-- `mhcflurry/[sample]_chunk_[0-9]_predicted_mhcflurry.csv`
-- `mhcnuggets/[sample]_chunk_[0-9]_predicted_mhcnuggets.csv`
-- `mhcnuggetsii/[sample]_chunk_[0-9]_predicted_mhcnuggetsii.csv`
-- `netmhcpan/[sample]_chunk_[0-9]_predicted_netmhcpan.xls`
-- `netmhciipan/[sample]_chunk_[0-9]_predicted_netmhciipan.xls`
-- `mixmhcpred/[sample]_chunk_[0-9]_mixmhcpred.txt`
-- `mixmhciipred/[sample]_chunk_[0-9]_mixmhciipred.txt`
+- `mhcflurry/[sample]_[split]_c[0-9]_predicted_mhcflurry.csv`
+- `mhcnuggets/[sample]_[split]_c[0-9]_predicted_mhcnuggets.csv`
+- `mhcnuggetsii/[sample]_[split]_c[0-9]_predicted_mhcnuggetsii.csv`
+- `netmhcpan/[sample]_[split]_c[0-9]_predicted_netmhcpan.xls`
+- `netmhciipan/[sample]_[split]_c[0-9]_predicted_netmhciipan.xls`
+- `mixmhcpred/[sample]_[split]_c[0-9]_predicted_mixmhcpred.txt`
+- `mixmhciipred/[sample]_[split]_c[0-9]_predicted_mixmhciipred.txt`
+
+The name is built from the sample and its split coordinates, so it stays short no matter how many stages ran:
+
+- `[split]` is the peptide length for variant and protein input (`length_9`). It is omitted for peptide input.
+- `_c[0-9]` is the peptide chunk, controlled by `--peptides_split_minchunksize` and `--peptides_split_maxchunks`.
+- `_a[0-9]` is appended when a sample has more alleles than a predictor accepts per call and they have to be chunked too, e.g. `netmhcpan/[sample]_length_9_c0_a3_predicted_netmhcpan.xls`.
 
 These predictor-specific output files are harmonized and chunks are merged on the `sample` information of your samplesheet.
 
@@ -123,4 +143,4 @@ For more information about how to use MultiQC reports, see <http://multiqc.info>
 
 </details>
 
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
+[Nextflow](https://docs.seqera.io/platform-cloud/reports/overview) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.

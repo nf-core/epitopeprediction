@@ -4,17 +4,19 @@
             11,
             {
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "MHCNUGGETS": {
-                    "argparse": 1.1,
+                    "mhcnuggets": "2.4.0",
                     "pandas": "1.1.5"
                 },
-                "mhcnuggets": "2.4.0",
+                "PREPARE_PREDICTION_INPUT": {
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
+                },
                 "SPLIT_PEPTIDES": {
-                    "python": "3.11.10"
+                    "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"
@@ -25,8 +27,8 @@
             },
             [
                 "mhcnuggets",
-                "mhcnuggets/sample1_peptides_chunk_0_predicted_mhcnuggets.csv",
-                "mhcnuggets/sample2_peptides_chunk_0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample1_c0_predicted_mhcnuggets.csv",
+                "mhcnuggets/sample2_c0_predicted_mhcnuggets.csv",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/llms-full.txt",
@@ -68,13 +70,13 @@
                 "multiqc_binder_rank_distribution.txt:md5,666bbe007b239667ee5bff300b3419d2",
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,42808c04f5fba461be38c84cc6427b2a"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
             ]
         ],
+        "timestamp": "2026-09-28T10:50:20.778156987",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2025-10-17T12:45:10.95404248"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }

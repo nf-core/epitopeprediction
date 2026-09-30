@@ -4,7 +4,7 @@
 process UNPACK_NETMHC_SOFTWARE {
     label 'process_single'
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
         'docker.io/biocontainers/biocontainers:v1.2.0_cv2' }"
@@ -14,7 +14,7 @@ process UNPACK_NETMHC_SOFTWARE {
 
     output:
     path "${toolname}", emit: nonfree_tools
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val(toolname), val(toolversion), topic: versions, emit: versions_netmhc
 
     when:
     task.ext.when == null || task.ext.when
@@ -34,8 +34,10 @@ process UNPACK_NETMHC_SOFTWARE {
     #
     checksum="\$(md5sum "$tooltarball" | cut -f1 -d' ')"
     echo "\$checksum"
-    if [ "\$checksum" != "${toolchecksum}" ]; then
-        echo "Checksum error for $toolname. Please make sure to provide the original tarball for $toolname version $toolversion" >&2
+    # Any sub-release of the supported version is accepted, so match against the whole list
+    if ! echo "${toolchecksum}" | tr ' ' '\\n' | grep -qxF "\$checksum"; then
+        echo "Checksum error for $toolname. Please make sure to provide an original tarball for $toolname version $toolversion." >&2
+        echo "Provided tarball has md5 \$checksum, accepted are: ${toolchecksum}" >&2
         exit 2
     fi
 
@@ -59,19 +61,10 @@ process UNPACK_NETMHC_SOFTWARE {
     #
     # CREATE VERSION FILE
     #
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        ${toolname}: ${toolversion}
-    END_VERSIONS
     """
 
     stub:
     """
     mkdir "${toolname}"
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        ${toolname}: ${toolversion}
-    END_VERSIONS
     """
 }

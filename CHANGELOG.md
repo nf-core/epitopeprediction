@@ -7,23 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Added`
 
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Optional `germline_vcf` samplesheet column: the patient's germline calls are folded into the neoepitope windows as context, so wild-type and mutant sequences are the patient's own rather than the reference. Germline records are never scanned for candidates ([@axelwalter](https://github.com/axelwalter/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Replaced the epytope/BioMart variant path with an offline chain of `bcftools`, Ensembl VEP and pVACtools `generate_protein_fasta`. New params `--ref_fasta`, `--vep_cache`, `--vep_species`, `--vep_genome`, `--vep_cache_version`, `--mutation_flanking_aas` and `--vep_download_cache`, plus an optional `tumor_sample` samplesheet column. VCFs without a `GT` field (Strelka) are accepted, with the tumour genotype filled in by `bcftools +setGT`, following the approach proposed and tested in [#373](https://github.com/nf-core/epitopeprediction/pull/373) ([@axelwalter](https://github.com/axelwalter/), [@Ngarciar24](https://github.com/Ngarciar24/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Variant peptides are restricted to k-mers overlapping the mutation, cut per peptide length as in `pvacseq run`, and carry provenance (gene, transcript, consequence, HGVSp, genomic anchor, UniProt). Frameshifts now extend to the new stop codon instead of being truncated at the original protein length ([@axelwalter](https://github.com/axelwalter/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) `--vep_cache` also accepts a `.tar.gz`, which lets the `test` profile run the variant path on a 15 MB GRCh38 chr4+chr19 cache subset ([@axelwalter](https://github.com/axelwalter/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) `test_grcm39` profile: the variant path on a 4 MB mouse GRCm39 chr15/18/19 fixture ([@axelwalter](https://github.com/axelwalter/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Nearby somatic missense variants on the same transcript are also combined into one mutant sequence (assumed in cis unless the VCF carries `FORMAT/HP` phasing), so multi-variant peptides are generated alongside the single-variant ones ([@axelwalter](https://github.com/axelwalter/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Kept `--proteome_reference`: variant peptides found in the given reference proteome are dropped before prediction ([@axelwalter](https://github.com/axelwalter/))
+- [#333](https://github.com/nf-core/epitopeprediction/pull/333) Added metro map to README
 - [#315](https://github.com/nf-core/epitopeprediction/pull/315) Added module bcftools/norm and parameter `--genome` for reference.fasta input ([@SusiJo](https://github.com/SusiJo/))
 - [#316](https://github.com/nf-core/epitopeprediction/pull/316) Added parameter `--biomart_dump_path` for offline biomart usage that addresses issue[#248](https://github.com/nf-core/epitopeprediction/issues/248) ([@SusiJo](https://github.com/SusiJo/))
 - [#327](https://github.com/nf-core/epitopeprediction/pull/327) Added optional parameter `use_ba_rank` to prefer BA_Rank as rank metric in output of netmhc predictions ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
+- [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added `<species>-all` alleles (e.g. `HLA-all`) and allele chunking, fixed the NetMHCpan/NetMHCIIpan buffer overflow on long paths, download MHCflurry models once per run (fixes [#340](https://github.com/nf-core/epitopeprediction/issues/340)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#338](https://github.com/nf-core/epitopeprediction/pull/338) Added MixMHCpred (Class I) and MixMHCIIpred (Class II) binding predictors with on-the-fly Wave container builds ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
+- [#364](https://github.com/nf-core/epitopeprediction/pull/364) Fixed inverted `--proteome_reference` self-filtering that retained self-epitopes instead of removing them (fixes [#363](https://github.com/nf-core/epitopeprediction/issues/363)) ([@jonasscheid](https://github.com/jonasscheid/))
+- [#368](https://github.com/nf-core/epitopeprediction/pull/368) Fixed NetMHCpan crashing with a buffer overflow when run from a long working directory ([@jonasscheid](https://github.com/jonasscheid/))
+- [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCpan/NetMHCIIpan allele labels by reading allele names from the xls header (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))
+- [#352](https://github.com/nf-core/epitopeprediction/pull/352) Accept 3- and 4-field HLA typings by truncating to 2 fields via mhcgnomes (fixes [#350](https://github.com/nf-core/epitopeprediction/issues/350)) ([@jonasscheid](https://github.com/jonasscheid/))
+- Fixed NetMHCIIpan mouse class II allele conversion: `H2-AA*b/AB*b` now maps to `H-2-IAb` (and `H2-EA*d/EB*d` to `H-2-IEd`) instead of the invalid `H-2-AAb-ABb` ([@jonasscheid](https://github.com/jonasscheid/))
+- [#349](https://github.com/nf-core/epitopeprediction/pull/349) Fixed MultiQC stats mismatch: use per-peptide binder counts, fix unsupported count formula, fix netmhcpan multi-allele column parsing ([@jonasscheid](https://github.com/jonasscheid/))
 - [#331](https://github.com/nf-core/epitopeprediction/pull/331) Fixed Nextflow strict syntax lint errors ([@jonasscheid](https://github.com/jonasscheid/))
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mappings [@axelwalter](https://github.com/axelwalter)
+- [#348](https://github.com/nf-core/epitopeprediction/pull/348) Bumped Python container from 3.11 to 3.14 in SPLIT_PEPTIDES and VARIANT_SPLIT ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Dependencies`
 
-| Dependency | Old version | New version |
-| ---------- | ----------- | ----------- |
-| `bcftools` | 1.21        | 1.22        |
-| `nf-core`  | 3.4.1       | 3.5.2       |
+| Dependency    | Old version | New version |
+| ------------- | ----------- | ----------- |
+| `bcftools`    | 1.21        | 1.23.1      |
+| `multiqc`     | 1.32        | 1.35        |
+| `snpsift`     | 4.3         | 5.4c        |
+| `nf-core`     | 3.4.1       | 4.1.0       |
+| `NetMHCIIpan` | 4.3e        | 4.3b/e/i    |
 
 ### `Changed`
 
@@ -31,6 +50,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#320](https://github.com/nf-core/epitopeprediction/pull/320) Set default genome reference to GRCh38 ([@jonasscheid](https://github.com/jonasscheid/)).
 - Remove `--ensembl_dataset` parameter; Ensembl dataset is now auto-detected from `--genome_reference` (supports human and mouse genomes, or direct Ensembl URL).
 - [#336](https://github.com/nf-core/epitopeprediction/pull/336) Added NetMHCpan 4.2 mode config file instructions to the nf-core usage documentation. ([@Kabooni](https://github.com/Kabooni)).
+- [#346](https://github.com/nf-core/epitopeprediction/issues/346) Replace `CAT_CAT` with `FIND_CONCATENATE` to fix output filename collisions ([@jonasscheid](https://github.com/jonasscheid/)).
+- Bump nf-core modules and subworkflows to latest ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#371](https://github.com/nf-core/epitopeprediction/pull/371) Merge nf-core template updates up to `4.1.0` ([@jonasscheid](https://github.com/jonasscheid/)).
+
+## 3.1.1 - Lustnau Hotfix - 2026-08-05
+
+### `Fixed`
+
+- [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Fixed wrong allele annotations in `netmhcpan` and `netmhciipan` results by reading allele labels from the prediction output header ([#358](https://github.com/nf-core/epitopeprediction/issues/358)), and accept any known sub-release of a supported NetMHC version (`netmhciipan` now also takes 4.3b and 4.3i next to 4.3e).
+
+### `Removed`
+
+- Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--biomart_dump_path`, `--genome`, `--fasta_output`, `--fasta_peptide_flanking_region_size`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
 
 ## 3.1.0 - Lustnau - 2025-10-22
 

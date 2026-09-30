@@ -2,51 +2,33 @@ process MIXMHCPRED {
     label 'process_single'
     tag "${meta.id}"
 
-    // Container built on-the-fly via Wave from Dockerfile in this module directory.
-    // NOTE: Do NOT add a container directive here - Wave will automatically use
-    // the Dockerfile when wave.enabled = true.
-    // MixMHCpred is NOT distributed due to license restrictions.
-    // Requires: -profile wave (or wave.enabled = true in config)
+    // No container directive: the MixMHCpred license prohibits redistribution, so Wave builds the
+    // image on the fly from this module's Dockerfile (requires `-with-wave`).
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), val(alleles_input), path(tsv)
 
     output:
-    tuple val(meta), path("*_mixmhcpred.txt"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*_predicted_mixmhcpred.txt"), emit: predicted
+    tuple val("${task.process}"), val('mixmhcpred'), eval("MixMHCpred -h | head -1 | sed 's/MixMHCpred//'"), topic: versions, emit: versions_mixmhcpred
 
     script:
     if (meta.mhc_class != "I") {
-        error "MIXMHCPRED only supports MHC class I."
+        error "MIXMHCPRED only supports MHC class I. Use MIXMHCIIPRED for MHC class II."
     }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Convert alleles from mhcgnomes format (HLA-A*01:01) to MixMHCpred format (A0101)
-    def alleles = meta.alleles_supported.tokenize(';')
-        .collect { it.replace('HLA-','').replace('*','').replace(':','') }
-        .join(',')
     """
-    # MixMHCpred is pre-installed in container at /opt/MixMHCpred
-    /opt/MixMHCpred/MixMHCpred \\
+    MixMHCpred \\
         -i $tsv \\
-        -o ${prefix}_mixmhcpred.txt \\
-        -a $alleles \\
+        -o ${prefix}_predicted_mixmhcpred.txt \\
+        -a $alleles_input \\
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        mixmhcpred: \$(/opt/MixMHCpred/MixMHCpred -h 2>&1 | head -1 | grep -oE '[0-9]+\\.[0-9.]+')
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_mixmhcpred.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        mixmhcpred: "3.0"
-    END_VERSIONS
+    touch ${prefix}_predicted_mixmhcpred.txt
     """
 }

@@ -2,18 +2,15 @@ process MIXMHCIIPRED {
     label 'process_single'
     tag "${meta.id}"
 
-    // Container built on-the-fly via Wave from Dockerfile in this module directory.
-    // NOTE: Do NOT add a container directive here - Wave will automatically use
-    // the Dockerfile when wave.enabled = true.
-    // MixMHCIIpred is NOT distributed due to license restrictions.
-    // Requires: -profile wave (or wave.enabled = true in config)
+    // No container directive: the MixMHC2pred license prohibits redistribution, so Wave builds the
+    // image on the fly from this module's Dockerfile (requires `-with-wave`).
 
     input:
-    tuple val(meta), path(tsv)
+    tuple val(meta), val(alleles_input), path(tsv)
 
     output:
-    tuple val(meta), path("*_mixmhciipred.txt"), emit: predicted
-    path "versions.yml", emit: versions
+    tuple val(meta), path("*_predicted_mixmhciipred.txt"), emit: predicted
+    tuple val("${task.process}"), val('mixmhc2pred'), eval("sed -n 's/^# Output from MixMHC2pred (v\\(.*\\))/\\1/p' *_predicted_mixmhciipred.txt"), topic: versions, emit: versions_mixmhc2pred
 
     script:
     if (meta.mhc_class != "II") {
@@ -21,41 +18,18 @@ process MIXMHCIIPRED {
     }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
-    // Convert alleles from mhcgnomes format to MixMHCIIpred format:
-    // HLA-DRB1*03:01 -> DRB1_03_01
-    // HLA-DPA1*01:03-DPB1*04:01 -> DPA1_01_03__DPB1_04_01
-    def alleles = meta.alleles_supported.tokenize(';')
-        .collect { allele ->
-            allele.replace('HLA-','')
-                  .replace('*','_')
-                  .replace(':','_')
-                  .replace('-','__')
-        }
-        .join(' ')
     """
-    # MixMHCIIpred is pre-installed in container at /opt/MixMHC2pred
-    # Use MixMHC2pred_unix for Linux systems
-    /opt/MixMHC2pred/MixMHC2pred_unix \\
+    MixMHC2pred_unix \\
         -i $tsv \\
-        -o ${prefix}_mixmhciipred.txt \\
-        -a $alleles \\
+        -o ${prefix}_predicted_mixmhciipred.txt \\
+        -a $alleles_input \\
         --no_context \\
         $args
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        mixmhciipred: "2.0.2"
-    END_VERSIONS
     """
 
     stub:
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_mixmhciipred.txt
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        mixmhciipred: "2.0.2"
-    END_VERSIONS
+    echo '# Output from MixMHC2pred (v2.0.2)' > ${prefix}_predicted_mixmhciipred.txt
     """
 }
