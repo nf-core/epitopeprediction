@@ -57,15 +57,15 @@
 - [NetMHCIIpan-4.0](https://pubmed.ncbi.nlm.nih.gov/32406916/)
   > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
 
-- [MixMHCpred](https://pubmed.ncbi.nlm.nih.gov/39870084/)
+- [MixMHCpred-3.0](https://pubmed.ncbi.nlm.nih.gov/40114147/)
 
-  > Tadros DM, Eggenschwiler S, Alvarez-Ponce D, Gfeller D. MixMHCpred3.0: enhanced MHC-I ligand predictions from improved binding mode predictions and allele-specific data. Genome Med. 2025 Jan 27;17(1):6. doi: 10.1186/s13073-025-01429-x. PMID: 39870084; PMCID: PMC11773818.
+  > Tadros DM, Racle J, Gfeller D. Predicting MHC-I ligands across alleles and species: how far can we go? Genome Med. 2025 Mar 20;17(1):25. doi: 10.1186/s13073-025-01450-8. PMID: 40114147; PMCID: PMC11927126.
 
-- [MixMHCIIpred](https://pubmed.ncbi.nlm.nih.gov/31611695/)
+- [MixMHC2pred-2.0](https://pubmed.ncbi.nlm.nih.gov/37023751/)
 
-  > Racle J, Michaux J, Rockinger GA, Jeeger M, Michaux M, Stevanovicp S, Coukos G, Harari A, Gfeller D. Robust prediction of HLA class II epitopes by deep motif deconvolution of immunopeptidomes. Nat Biotechnol. 2019 Nov;37(11):1283-1286. doi: 10.1038/s41587-019-0289-6. Epub 2019 Oct 14. PMID: 31611695.
+  > Racle J, Guillaume P, Schmidt J, Michaux J, Larabi A, Lau K, Perez MAS, Croce G, Genolet R, Coukos G, Zoete V, Pojer F, Bassani-Sternberg M, Harari A, Gfeller D. Machine learning predictions of MHC-II specificities reveal alternative binding mode of class II epitopes. Immunity. 2023 Jun 13;56(6):1359-1375.e13. doi: 10.1016/j.immuni.2023.03.009. PMID: 37023751.
 
-  > Racle J, Guillaume P, Gfeller D. Improved predictions of MHC-peptide binding and T cell neo-epitopes with allele-specific motifs. Immunity. 2023 Feb 14;56(2):345-358.e6. doi: 10.1016/j.immuni.2023.01.011. PMID: 36792573.
+  > Racle J, Michaux J, Rockinger GA, Arnaud M, Bobisse S, Chong C, Guillaume P, Coukos G, Harari A, Jandus C, Bassani-Sternberg M, Gfeller D. Robust prediction of HLA class II epitopes by deep motif deconvolution of immunopeptidomes. Nat Biotechnol. 2019 Nov;37(11):1283-1286. doi: 10.1038/s41587-019-0289-6. PMID: 31611696.
 
 ## Software packaging/containerisation tools
 

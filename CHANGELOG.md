@@ -43,6 +43,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `snpsift`     | 4.3         | 5.4c        |
 | `nf-core`     | 3.4.1       | 4.1.0       |
 | `NetMHCIIpan` | 4.3e        | 4.3b/e/i    |
+| `MixMHCpred`  |             | 3.0         |
+| `MixMHC2pred` |             | 2.0.2       |
 
 ### `Changed`
 
