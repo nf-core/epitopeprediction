@@ -1,18 +1,21 @@
 {
     "-profile test_mixmhcpred": {
         "content": [
-            8,
+            11,
             {
                 "MERGE_PREDICTIONS": {
-                    "argparse": 1.1,
-                    "pandas": "2.1.0",
-                    "mhcgnomes": "1.8.6"
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
                 },
                 "MIXMHCPRED": {
                     "mixmhcpred": 3.0
                 },
+                "PREPARE_PREDICTION_INPUT": {
+                    "mhcgnomes": "1.8.6",
+                    "pandas": "2.1.0"
+                },
                 "SPLIT_PEPTIDES": {
-                    "python": "3.11.10"
+                    "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
                     "python": "3.11.5"
@@ -23,7 +26,8 @@
             },
             [
                 "mixmhcpred",
-                "mixmhcpred/sample1_peptides_chunk_0_mixmhcpred.txt",
+                "mixmhcpred/sample1_c0_predicted_mixmhcpred.txt",
+                "mixmhcpred/sample2_c0_predicted_mixmhcpred.txt",
                 "multiqc",
                 "multiqc/multiqc_data",
                 "multiqc/multiqc_data/llms-full.txt",
@@ -57,21 +61,23 @@
                 "pipeline_info",
                 "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
                 "predictions",
-                "predictions/sample1.tsv"
+                "predictions/sample1.tsv",
+                "predictions/sample2.tsv"
             ],
             [
-                "sample1_peptides_chunk_0_mixmhcpred.txt:md5,6ee21d89cb95d6880daef24b45ab19c6",
-                "multiqc_binder_length_distribution.txt:md5,ba6fb05cd3afdcbb88f97e3dce79b124",
-                "multiqc_binder_rank_distribution.txt:md5,5c1e2bb924bd94fc9f310c64ad5c97f6",
-                "multiqc_binding_affinity_distribution.txt:md5,7b5ec40d3614733435ccc477d726d443",
+                "sample1_c0_predicted_mixmhcpred.txt:md5,d02b1406c74ef6ec4a8bed4222c8853f",
+                "sample2_c0_predicted_mixmhcpred.txt:md5,093bed77dd09c735f47cfce91ceb9158",
+                "multiqc_binder_length_distribution.txt:md5,de696e8183c37f510c25d5a339844d7d",
+                "multiqc_binder_rank_distribution.txt:md5,a22263d9f68b53b95dcc57f814dd4e68",
+                "multiqc_binding_affinity_distribution.txt:md5,5ac4b5af54747eecb7e38f7c7dfb2506",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,212b78d7b7f09b7758c151f807a58ea6"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,3675c259cd171f85ac851daf04d1ff78"
             ]
         ],
+        "timestamp": "2026-09-30T09:46:55.128746064",
         "meta": {
-            "nf-test": "0.9.3",
-            "nextflow": "25.04.8"
-        },
-        "timestamp": "2026-02-06T06:06:01.225917212"
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
     }
 }
