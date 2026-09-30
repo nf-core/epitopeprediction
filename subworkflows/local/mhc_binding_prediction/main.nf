@@ -138,9 +138,9 @@ def validate_mixmhc(tools) {
     if (!mixmhc_tools) {
         return
     }
-    if (!params.accept_mixmhc_license) {
+    if (!params.accept_mixmhcpred_license) {
         error("--tools ${mixmhc_tools.join(',')} is licensed for academic non-commercial research only. Read the licenses at " +
-              "https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf and https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE, then add `--accept_mixmhc_license` to confirm that you have read them and your use is academic and non-commercial.")
+              "https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf and https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE, then add `--accept_mixmhcpred_license` to confirm that you have read them and your use is academic and non-commercial.")
     }
     if (!workflow.wave?.enabled) {
         log.warn("--tools ${mixmhc_tools.join(',')} has no public container: add `-with-wave` to build it on the fly, or set your own container for the process.")

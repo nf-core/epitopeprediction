@@ -124,7 +124,7 @@
                 "tools": {
                     "type": "string",
                     "default": "mhcnuggets",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`, `mixmhciipred`.\n\nNote: MixMHCpred and MixMHCIIpred are licensed for academic non-commercial research only and require `--accept_mixmhc_license`. Their containers are built on the fly by Wave, so run with `-with-wave`.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`, `mixmhciipred`.\n\nNote: MixMHCpred and MixMHCIIpred are licensed for academic non-commercial research only and require `--accept_mixmhcpred_license`. Their containers are built on the fly by Wave, so run with `-with-wave`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "wild_type": {
@@ -218,7 +218,7 @@
                     "pattern": "^\\S+\\.tar\\.gz$",
                     "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
                 },
-                "accept_mixmhc_license": {
+                "accept_mixmhcpred_license": {
                     "type": "boolean",
                     "default": false,
                     "fa_icon": "fas fa-file-contract",
