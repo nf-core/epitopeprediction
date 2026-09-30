@@ -153,6 +153,8 @@ sample1,HLA-all,I,peptides.tsv
 | `mhcnuggetsii` | II        | 5-30            |
 | `netmhcpan`    | I         | 8-14            |
 | `netmhciipan`  | II        | 9-50            |
+| `mixmhcpred`   | I         | 8-14            |
+| `mixmhciipred` | II        | 12-21           |
 
 ## Running the pipeline
 
@@ -237,11 +239,12 @@ nextflow run nf-core/epitopeprediction \
 
 The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred) for MHC class II binding prediction. Both tools are free for academic/non-profit use; commercial use requires a separate license from the Ludwig Institute for Cancer Research.
 
-These tools require the Wave profile because the containers are built on-the-fly via Nextflow Wave (not distributed due to license restrictions). A typical command for MHC class I is:
+Their licenses do not allow a prebuilt container, so [Wave](https://seqera.io/wave/) builds one on the fly from the module Dockerfile when you add `-with-wave`. Do not use `-profile wave` for these tools: it enables Wave freeze mode, which fails without a private build repository. A typical command for MHC class I is:
 
 ```bash
 nextflow run nf-core/epitopeprediction \
-  -profile docker,wave \
+  -profile docker \
+  -with-wave \
   --input ./samplesheet.csv \
   --outdir ./results \
   --tools 'mixmhcpred' \
@@ -253,7 +256,8 @@ For MHC class II:
 
 ```bash
 nextflow run nf-core/epitopeprediction \
-  -profile docker,wave \
+  -profile docker \
+  -with-wave \
   --input ./samplesheet.csv \
   --outdir ./results \
   --tools 'mixmhciipred' \

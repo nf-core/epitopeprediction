@@ -37,7 +37,7 @@ Supported prediction tools:
 > [!WARNING]
 > **MixMHCpred / MixMHCIIpred License**: These tools are free for academic/non-profit use only.
 > Commercial use requires a separate license from the Ludwig Institute for Cancer Research.
-> To use these tools, add `-profile wave` and `--tools mixmhcpred` or `--tools mixmhciipred`.
+> To use these tools, add `-with-wave` and `--tools mixmhcpred` or `--tools mixmhciipred`.
 > The containers will be built on-the-fly via Nextflow Wave (not distributed due to license).
 > By using these tools, you accept the license terms at [MixMHCpred](https://github.com/GfellerLab/MixMHCpred)
 > and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred).

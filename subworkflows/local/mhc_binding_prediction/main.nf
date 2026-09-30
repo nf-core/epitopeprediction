@@ -34,6 +34,7 @@ workflow MHC_BINDING_PREDICTION {
         ch_binding_predictors_out = channel.empty()
 
         validate_tools_param(tools)
+        validate_wave(tools)
 
         ch_peptides
             .map { meta, file -> [meta + [file_id: file.baseName], file] }
@@ -128,6 +129,14 @@ def validate_tools_param(tools) {
     def invalid_tools = tool_list.findAll { tool -> tool.trim() !in valid_tools }
     if (invalid_tools) {
         throw new IllegalArgumentException("Invalid tools found: ${invalid_tools.join(',')}.\nValid tools: ${valid_tools.join(',')}")
+    }
+}
+
+// MixMHCpred/MixMHC2pred licenses forbid a public container, so Wave builds one from the module Dockerfile
+def validate_wave(tools) {
+    def wave_tools = tools.tokenize(',').findAll { tool -> tool.trim() in ['mixmhcpred', 'mixmhciipred'] }
+    if (wave_tools && !workflow.wave?.enabled) {
+        log.warn("--tools ${wave_tools.join(',')} has no public container: add `-with-wave` to build it on the fly, or set your own container for the process.")
     }
 }
 
