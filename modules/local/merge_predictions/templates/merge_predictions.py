@@ -208,7 +208,7 @@ class PredictionResult:
         df_long['BA'] = np.nan
         df_long['binder'] = df_long['rank'] <= threshold
         df_long['predictor'] = self.predictor
-        return df_long
+        return df_long[[self.peptide_col_name, 'allele', 'BA', 'rank', 'binder', 'predictor']]
 
     def _format_mixmhcpred_prediction(self) -> pd.DataFrame:
         # Native names (A0101, H2-Db, BoLA-102301) are parsed by mhcgnomes in main()
