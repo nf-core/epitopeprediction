@@ -21,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#330](https://github.com/nf-core/epitopeprediction/pull/330) Extract protein IDs from VCF annotations and add genome reference mapping ([@axelwalter](https://github.com/axelwalter/))
 - [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added `<species>-all` alleles (e.g. `HLA-all`) and allele chunking, fixed the NetMHCpan/NetMHCIIpan buffer overflow on long paths, download MHCflurry models once per run (fixes [#340](https://github.com/nf-core/epitopeprediction/issues/340)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#338](https://github.com/nf-core/epitopeprediction/pull/338) Added MixMHCpred (Class I) and MixMHCIIpred (Class II) binding predictors, built on the fly with Wave and gated by `--accept_mixmhcpred_license` ([@jonasscheid](https://github.com/jonasscheid/))
+- [#377](https://github.com/nf-core/epitopeprediction/pull/377) Added `AGENTS.md` from the nf-core pipeline template ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
