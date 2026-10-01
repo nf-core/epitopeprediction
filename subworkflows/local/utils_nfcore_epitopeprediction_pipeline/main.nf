@@ -106,6 +106,7 @@ workflow PIPELINE_INITIALISATION {
     // Custom validation for pipeline parameters
     //
     validateInputParameters(samplesheet_rows)
+    validateMixmhcpredLicense(params.tools)
 
     channel
         .fromList(samplesheet_rows)
@@ -186,6 +187,18 @@ def validateInputParameters(samplesheet_rows) {
     if (!params.vep_download_cache && !(params.ref_fasta && params.vep_cache)) {
         error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
               "or both --ref_fasta and --vep_cache. See docs/usage.md.")
+    }
+}
+
+//
+// MixMHCpred and MixMHC2pred are licensed for academic non-commercial research only
+//
+def validateMixmhcpredLicense(tools) {
+    def mixmhc_tools = tools.tokenize(',').findAll { tool -> tool.trim() in ['mixmhcpred', 'mixmhciipred'] }
+    if (mixmhc_tools && !params.accept_mixmhcpred_license) {
+        error("--tools ${mixmhc_tools.join(',')} is licensed for academic non-commercial research only. Read the licenses at " +
+              "https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf and https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE, " +
+              "then add `--accept_mixmhcpred_license` to confirm that you have read them and your use is academic and non-commercial.")
     }
 }
 

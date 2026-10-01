@@ -16,6 +16,9 @@ process MIXMHCPRED {
     if (meta.mhc_class != "I") {
         error "MIXMHCPRED only supports MHC class I. Use MIXMHCIIPRED for MHC class II."
     }
+    if (!task.container && !workflow.wave?.enabled) {
+        log.warn1("MIXMHCPRED has no public container: add `-with-wave` to build it on the fly, or set your own container for the process.")
+    }
     def args   = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
