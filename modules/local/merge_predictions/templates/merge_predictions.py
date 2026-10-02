@@ -13,7 +13,6 @@ import shlex
 import sys
 import typing
 from pathlib import Path
-from enum import Enum
 
 import numpy as np
 import pandas as pd
@@ -28,13 +27,16 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-class PredictorBindingThreshold(Enum):
-    MHCFLURRY    = 2
-    MHCNUGGETS   = 0.425
-    NETMHCPAN    = 2
-    NETMHCIIPAN  = 5
-    MIXMHCPRED   = 2
-    MIXMHCIIPRED = 2
+# Binder cutoff per predictor: maximum rank, except mhcnuggets which uses minimum BA (IC50 < 500 nM)
+BINDING_THRESHOLDS = {
+    'mhcflurry':    2,
+    'mhcnuggets':   0.425,
+    'mhcnuggetsii': 0.425,
+    'netmhcpan':    2,
+    'netmhciipan':  5,
+    'mixmhcpred':   2,
+    'mixmhciipred': 2,
+}
 
 class Arguments:
     """
@@ -141,7 +143,7 @@ class PredictionResult:
         # Harmonize df to desired output structure
         df.rename(columns={'peptide': self.peptide_col_name, 'mhcflurry_presentation_percentile': 'rank'}, inplace=True)
         df = df[[self.peptide_col_name, 'allele', 'rank', 'BA']]
-        df['binder'] = df['rank'] <= PredictorBindingThreshold.MHCFLURRY.value
+        df['binder'] = df['rank'] <= BINDING_THRESHOLDS[self.predictor]
         df['predictor'] = self.predictor
 
         return df
@@ -157,12 +159,12 @@ class PredictionResult:
         # In rare cases mhcnuggets puts NaN in the rank column, eventhough binding affinity is available
         df['rank'] = df['rank'].replace({np.nan: np.inf})
         # Use IC50 < 500 as threshold since mhcnuggets provides a different ranking compared to other predictors
-        df['binder'] = df['BA'] >= PredictorBindingThreshold.MHCNUGGETS.value
+        df['binder'] = df['BA'] >= BINDING_THRESHOLDS[self.predictor]
         df['predictor'] = self.predictor
 
         return df
 
-    def _parse_netmhc_xls(self, rank_column: str, ba_score_column: str, threshold: float) -> pd.DataFrame:
+    def _parse_netmhc_xls(self, rank_column: str, ba_score_column: str) -> pd.DataFrame:
         """Parse a NetMHCpan/NetMHCIIpan multi-allele XLS to long format; alleles come from XLS row 1, since NetMHCIIpan re-sorts and -a order is unreliable."""
         with open(self.file_path) as fh:
             header_alleles = [a.strip() for a in next(fh).split('\t') if a.strip()]
@@ -183,21 +185,21 @@ class PredictionResult:
         if 'BA' not in df_pivot.columns:
             df_pivot['BA'] = np.nan
         df_pivot['allele'] = [alleles_dict[int(idx.strip('.'))] for idx in df_pivot['allele']]
-        df_pivot['binder'] = df_pivot['rank'] <= threshold
+        df_pivot['binder'] = df_pivot['rank'] <= BINDING_THRESHOLDS[self.predictor]
         df_pivot['predictor'] = self.predictor
         df_pivot.index.name = ''
         return df_pivot
 
     def _format_netmhcpan_prediction(self) -> pd.DataFrame:
         rank_column = 'BA_Rank' if self.use_ba_rank else 'Rank'
-        return self._parse_netmhc_xls(rank_column, 'BA_score', PredictorBindingThreshold.NETMHCPAN.value)
+        return self._parse_netmhc_xls(rank_column, 'BA_score')
 
     def _format_netmhciipan_prediction(self) -> pd.DataFrame:
         # EL percentile is `Rank`, BA percentile `Rank_BA`, BA score `Score_BA`
         rank_column = 'Rank_BA' if self.use_ba_rank else 'Rank'
-        return self._parse_netmhc_xls(rank_column, 'Score_BA', PredictorBindingThreshold.NETMHCIIPAN.value)
+        return self._parse_netmhc_xls(rank_column, 'Score_BA')
 
-    def _parse_mixmhc(self, best_rank_column: str, threshold: float) -> pd.DataFrame:
+    def _parse_mixmhc(self, best_rank_column: str) -> pd.DataFrame:
         """Parse MixMHCpred/MixMHC2pred output (one `%Rank_<allele>` column per allele) to long format with native allele names."""
         df = pd.read_csv(self.file_path, sep='\t', comment='#')
         rank_columns = [c for c in df.columns if c.startswith('%Rank_') and c != best_rank_column]
@@ -206,17 +208,25 @@ class PredictionResult:
         df_long['allele'] = df_long['allele'].str.removeprefix('%Rank_')
         # Both tools output a presentation %Rank but no binding affinity
         df_long['BA'] = np.nan
-        df_long['binder'] = df_long['rank'] <= threshold
+        df_long['binder'] = df_long['rank'] <= BINDING_THRESHOLDS[self.predictor]
         df_long['predictor'] = self.predictor
         return df_long[[self.peptide_col_name, 'allele', 'BA', 'rank', 'binder', 'predictor']]
 
     def _format_mixmhcpred_prediction(self) -> pd.DataFrame:
-        # Native names (A0101, H2-Db, BoLA-102301) are parsed by mhcgnomes in main()
-        return self._parse_mixmhc('%Rank_bestAllele', PredictorBindingThreshold.MIXMHCPRED.value)
+        """
+        Read in MixMHCpred output comprising the columns `Peptide,Score_bestAllele,BestAllele,%Rank_bestAllele`
+        plus `Score_<allele>,%Rank_<allele>` per allele. Native allele names (`A0101`, `H2-Db`, `BoLA-102301`)
+        are kept here and normalized by mhcgnomes in main().
+        """
+        return self._parse_mixmhc('%Rank_bestAllele')
 
     def _format_mixmhciipred_prediction(self) -> pd.DataFrame:
-        df = self._parse_mixmhc('%Rank_best', PredictorBindingThreshold.MIXMHCIIPRED.value)
-        # DRB1_15_01 -> HLA-DRB1*15:01, DPA1_01_03__DPB1_104_01 -> HLA-DPA1*01:03/DPB1*104:01
+        """
+        Read in MixMHC2pred output comprising the columns `Peptide,Context,BestAllele,%Rank_best,...` plus
+        `%Rank_<allele>,CoreP1_<allele>,SubSpec_<allele>` per allele. Native allele names are converted to
+        mhcgnomes-parsable names, e.g. `DRB1_15_01` -> `HLA-DRB1*15:01`, `DPA1_01_03__DPB1_104_01` -> `HLA-DPA1*01:03/DPB1*104:01`.
+        """
+        df = self._parse_mixmhc('%Rank_best')
         df['allele'] = df['allele'].map(lambda a: 'HLA-' + '/'.join('{}*{}:{}'.format(*chain.split('_')) for chain in a.split('__')))
         return df
 
