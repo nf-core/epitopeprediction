@@ -25,6 +25,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Fixed`
 
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) Fixed `--wide_format_output` dropping the per-allele scores of peptides with missing metadata, such as the `wildtype` of frameshift peptides ([@jonasscheid](https://github.com/jonasscheid/))
 - [#364](https://github.com/nf-core/epitopeprediction/pull/364) Fixed inverted `--proteome_reference` self-filtering that retained self-epitopes instead of removing them (fixes [#363](https://github.com/nf-core/epitopeprediction/issues/363)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#368](https://github.com/nf-core/epitopeprediction/pull/368) Fixed NetMHCpan crashing with a buffer overflow when run from a long working directory ([@jonasscheid](https://github.com/jonasscheid/))
 - [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCpan/NetMHCIIpan allele labels by reading allele names from the xls header (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))
@@ -58,6 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#371](https://github.com/nf-core/epitopeprediction/pull/371) Merge nf-core template updates up to `4.1.0` ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) `--wild_type` now adds the wild-type counterparts of variant peptides as their own rows (new `peptide_origin` column: `MT`/`WT`/`MT;WT`) so they are predicted in the same run. It is off by default, wild-type rows are left out of the MultiQC statistics, and the `wildtype` column is always written ([@jonasscheid](https://github.com/jonasscheid/))
 
 ## 3.1.1 - Lustnau Hotfix - 2026-08-05
 

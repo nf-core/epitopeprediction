@@ -16,6 +16,14 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+
+def candidate_epitopes(df):
+    """Drop pure wild-type rows (variant route); they are not candidate epitopes."""
+    if 'peptide_origin' not in df.columns:
+        return df
+    return df[df['peptide_origin'].fillna('MT').str.contains('MT')]
+
+
 # -------------------------------------------
 #           MultiQC Statistics
 # -------------------------------------------
@@ -38,7 +46,8 @@ class MultiQC:
             'section_name': 'Binding Prediction Statistics',
             'description': (
                 'The statistics table shows the number of binders, non-binders, and unsupported peptides for each predictor. '
-                'The unsupported peptides are those that were not predicted by any of the predictors.'),
+                'The unsupported peptides are those that were not predicted by any of the predictors. '
+                'Wild-type peptides added by `--wild_type` are not counted.'),
             'plot_type': 'table',
             'data': {
                 f'{input_basename}_{predictor}': {
@@ -233,6 +242,8 @@ class Utils:
                 return x
 
         df[meta_columns] = df[meta_columns].apply(lambda col: col.map(try_numeric))
+        # pivot_table drops rows with NaN in an index column, e.g. `wildtype` of frameshift peptides
+        df[meta_columns] = df[meta_columns].fillna('NA')
 
         # Pivot to wide format
         df_pivot = df.pivot_table(
@@ -271,10 +282,11 @@ def main():
     df = pd.concat([pd.read_csv(csv) for csv in glob.glob(f'{args.input}/*.csv')])
 
     # MultiQC statistics
-    MultiQC.write_mqc_stats_json(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_length_distribution(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_rank_distribution(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)
+    df_mqc = candidate_epitopes(df)
+    MultiQC.write_mqc_stats_json(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_length_distribution(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_rank_distribution(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_ba_distribution(df_mqc, args.prefix, args.peptide_col_name)
 
     df.to_pickle(f'{args.prefix}_raw.pkl')
 
