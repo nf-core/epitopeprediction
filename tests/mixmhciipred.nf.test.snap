@@ -1,4 +1,49 @@
 {
+    "-profile test_mixmhciipred - stub": {
+        "content": [
+            9,
+            {
+                "MERGE_PREDICTIONS": {
+                    "python": "3.11.5"
+                },
+                "MIXMHCIIPRED": {
+                    "mixmhc2pred": "2.0.2"
+                },
+                "PREPARE_PREDICTION_INPUT": {
+                    "python": "3.11.5"
+                },
+                "SPLIT_PEPTIDES": {
+                    "python": "3.14.3"
+                },
+                "SUMMARIZE_RESULTS": {
+                    "python": "3.11.5"
+                },
+                "Workflow": {
+                    "nf-core/epitopeprediction": "v3.2.0dev"
+                }
+            },
+            [
+                "mixmhciipred",
+                "mixmhciipred/sample1_c0_predicted_mixmhciipred.txt",
+                "mixmhciipred/sample1_c1_predicted_mixmhciipred.txt",
+                "multiqc",
+                "multiqc/multiqc_data",
+                "multiqc/multiqc_data/.stub",
+                "multiqc/multiqc_plots",
+                "multiqc/multiqc_plots/.stub",
+                "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
+                "predictions",
+                "predictions/sample1.tsv"
+            ]
+        ],
+        "timestamp": "2026-10-02T07:49:52.331957846",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
     "-profile test_mixmhciipred": {
         "content": [
             6,

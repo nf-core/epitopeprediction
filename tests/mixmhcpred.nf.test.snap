@@ -1,4 +1,52 @@
 {
+    "-profile test_mixmhcpred - stub": {
+        "content": [
+            17,
+            {
+                "MERGE_PREDICTIONS": {
+                    "python": "3.11.5"
+                },
+                "MIXMHCPRED": {
+                    "mixmhcpred": 3.0
+                },
+                "PREPARE_PREDICTION_INPUT": {
+                    "python": "3.11.5"
+                },
+                "SPLIT_PEPTIDES": {
+                    "python": "3.14.3"
+                },
+                "SUMMARIZE_RESULTS": {
+                    "python": "3.11.5"
+                },
+                "Workflow": {
+                    "nf-core/epitopeprediction": "v3.2.0dev"
+                }
+            },
+            [
+                "mixmhcpred",
+                "mixmhcpred/sample1_c0_predicted_mixmhcpred.txt",
+                "mixmhcpred/sample1_c1_predicted_mixmhcpred.txt",
+                "mixmhcpred/sample2_c0_predicted_mixmhcpred.txt",
+                "mixmhcpred/sample2_c1_predicted_mixmhcpred.txt",
+                "multiqc",
+                "multiqc/multiqc_data",
+                "multiqc/multiqc_data/.stub",
+                "multiqc/multiqc_plots",
+                "multiqc/multiqc_plots/.stub",
+                "multiqc/multiqc_report.html",
+                "pipeline_info",
+                "pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml",
+                "predictions",
+                "predictions/sample1.tsv",
+                "predictions/sample2.tsv"
+            ]
+        ],
+        "timestamp": "2026-10-02T07:52:57.500649633",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
     "-profile test_mixmhcpred": {
         "content": [
             11,
