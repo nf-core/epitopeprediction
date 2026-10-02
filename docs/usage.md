@@ -153,6 +153,8 @@ sample1,HLA-all,I,peptides.tsv
 | `mhcnuggetsii` | II        | 5-30            |
 | `netmhcpan`    | I         | 8-14            |
 | `netmhciipan`  | II        | 9-50            |
+| `mixmhcpred`   | I         | 8-14            |
+| `mixmhciipred` | II        | 12-21           |
 
 ## Running the pipeline
 
@@ -231,6 +233,58 @@ nextflow run nf-core/epitopeprediction \
   --max_peptide_length_classII 25 \
   --netmhcpan_path /path/to/netMHCpan-4.2bstatic.Linux.tar.gz \
   --netmhciipan_path /path/to/netMHCIIpan-4.3i.Linux.tar.gz \
+```
+
+### Running the pipeline with MixMHCpred / MixMHCIIpred
+
+The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) for MHC class I binding prediction and [MixMHCIIpred](https://github.com/GfellerLab/MixMHC2pred) for MHC class II binding prediction.
+
+> [!IMPORTANT]
+> **MixMHCpred and MixMHCIIpred are licensed for academic non-commercial research only.** Commercial use, including providing services with them, requires a separate license from the Ludwig Institute for Cancer Research. Read the [MixMHCpred license](https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf) and the [MixMHC2pred license](https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE) before use.
+>
+> The pipeline only runs these tools with `--accept_mixmhcpred_license`, which confirms that you have read the licenses and use the tools for academic non-commercial research only.
+
+Their licenses do not allow a prebuilt container, so [Wave](https://seqera.io/wave/) builds one on the fly from the module Dockerfile when you add `-with-wave`. Do not use `-profile wave` for these tools: it enables Wave freeze mode, which fails without a private build repository.
+
+If you cannot or do not want to use Wave, supply your own containers instead. Build them from `modules/local/mixmhcpred/Dockerfile` and `modules/local/mixmhciipred/Dockerfile`, keep them private (the licenses forbid redistribution), and point the processes at them in a custom config passed with `-c`. Use fully qualified image names, since the pipeline prefixes bare names with `quay.io/`:
+
+```groovy
+process {
+    withName: 'MIXMHCPRED' {
+        container = 'registry.example.org/mixmhcpred:3.0'
+    }
+    withName: 'MIXMHCIIPRED' {
+        container = 'registry.example.org/mixmhc2pred:2.0.2'
+    }
+}
+```
+
+A typical command for MHC class I is:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker \
+  -with-wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhcpred' \
+  --accept_mixmhcpred_license \
+  --min_peptide_length_classI 8 \
+  --max_peptide_length_classI 12
+```
+
+For MHC class II:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker \
+  -with-wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhciipred' \
+  --accept_mixmhcpred_license \
+  --min_peptide_length_classII 12 \
+  --max_peptide_length_classII 21
 ```
 
 ### Updating the pipeline

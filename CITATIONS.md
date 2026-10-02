@@ -55,7 +55,18 @@
   > Jensen KK, Andreatta M, Marcatili P, Buus S, Greenbaum JA, Yan Z, Sette A, Peters B, Nielsen M. Improved methods for predicting peptide binding affinity to MHC class II molecules. Immunology. 2018 Jul;154(3):394-406. doi: 10.1111/imm.12889. Epub 2018 Feb 6. PMID: 29315598; PMCID: PMC6002223.
 
 - [NetMHCIIpan-4.0](https://pubmed.ncbi.nlm.nih.gov/32406916/)
+
   > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
+
+- [MixMHCpred-3.0](https://pubmed.ncbi.nlm.nih.gov/40114147/)
+
+  > Tadros DM, Racle J, Gfeller D. Predicting MHC-I ligands across alleles and species: how far can we go? Genome Med. 2025 Mar 20;17(1):25. doi: 10.1186/s13073-025-01450-8. PMID: 40114147; PMCID: PMC11927126.
+
+- [MixMHC2pred-2.0](https://pubmed.ncbi.nlm.nih.gov/37023751/)
+
+  > Racle J, Guillaume P, Schmidt J, Michaux J, Larabi A, Lau K, Perez MAS, Croce G, Genolet R, Coukos G, Zoete V, Pojer F, Bassani-Sternberg M, Harari A, Gfeller D. Machine learning predictions of MHC-II specificities reveal alternative binding mode of class II epitopes. Immunity. 2023 Jun 13;56(6):1359-1375.e13. doi: 10.1016/j.immuni.2023.03.009. PMID: 37023751.
+
+  > Racle J, Michaux J, Rockinger GA, Arnaud M, Bobisse S, Chong C, Guillaume P, Coukos G, Harari A, Jandus C, Bassani-Sternberg M, Gfeller D. Robust prediction of HLA class II epitopes by deep motif deconvolution of immunopeptidomes. Nat Biotechnol. 2019 Nov;37(11):1283-1286. doi: 10.1038/s41587-019-0289-6. PMID: 31611696.
 
 ## Software packaging/containerisation tools
 

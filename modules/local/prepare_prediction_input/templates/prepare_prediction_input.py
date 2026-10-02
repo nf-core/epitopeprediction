@@ -18,11 +18,13 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
 )
 
-# max_alleles per invocation (0 = unlimited): NetMHC*pan reject -a lists over 1024 chars, MHCflurry's cap only parallelizes pan-species runs
+# max_alleles per invocation (0 = unlimited): NetMHC*pan reject -a lists over 1024 chars, MHCflurry's and MixMHC2pred's caps only parallelize pan-species runs
 TOOL_CONFIGS = {
     "mhcflurry":    {"min": 5, "max": 15, "ext": "csv", "mhc_class": "I",  "sep": ";", "max_alleles": 500},
     "mhcnuggets":   {"min": 5, "max": 15, "ext": "tsv", "mhc_class": "I",  "sep": ";", "max_alleles": 0},
     "mhcnuggetsii": {"min": 5, "max": 30, "ext": "tsv", "mhc_class": "II", "sep": ";", "max_alleles": 0},
+    "mixmhcpred":   {"min": 8, "max": 14, "ext": "tsv", "mhc_class": "I",  "sep": ",", "max_alleles": 0},
+    "mixmhciipred": {"min": 12, "max": 21, "ext": "tsv", "mhc_class": "II", "sep": " ", "max_alleles": 500},
     "netmhcpan":    {"min": 8, "max": 14, "ext": "tsv", "mhc_class": "I",  "sep": ",", "max_alleles": 45},
     "netmhciipan":  {"min": 9, "max": 50, "ext": "tsv", "mhc_class": "II", "sep": ",", "max_alleles": 35},
 }

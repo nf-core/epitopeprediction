@@ -106,6 +106,7 @@ workflow PIPELINE_INITIALISATION {
     // Custom validation for pipeline parameters
     //
     validateInputParameters(samplesheet_rows)
+    validateMixmhcpredLicense(params.tools)
 
     channel
         .fromList(samplesheet_rows)
@@ -189,6 +190,18 @@ def validateInputParameters(samplesheet_rows) {
     }
 }
 
+//
+// MixMHCpred and MixMHC2pred are licensed for academic non-commercial research only
+//
+def validateMixmhcpredLicense(tools) {
+    def mixmhc_tools = tools.tokenize(',').findAll { tool -> tool.trim() in ['mixmhcpred', 'mixmhciipred'] }
+    if (mixmhc_tools && !params.accept_mixmhcpred_license) {
+        error("--tools ${mixmhc_tools.join(',')} is licensed for academic non-commercial research only. Read the licenses at " +
+              "https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf and https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE, " +
+              "then add `--accept_mixmhcpred_license` to confirm that you have read them and your use is academic and non-commercial.")
+    }
+}
+
 // Function to read the alleles from a file or use given string
 def readAlleles(allele_input) {
     if (allele_input.endsWith(".txt")) {
@@ -230,6 +243,8 @@ def toolCitationText() {
             "NetMHCIIpan (Nilsson et al. 2023)",
             "MHCnuggets (Shao et al. 2020)",
             "MHCflurry (O'Donnell et al. 2020)",
+            "MixMHCpred (Tadros et al. 2025)",
+            "MixMHC2pred (Racle et al. 2023)",
             "MultiQC (Ewels et al. 2016)",
             "."
         ].join(' ').trim()
@@ -248,6 +263,8 @@ def toolBibliographyText() {
             "<li>Nilsson et al. (2023). Accurate prediction of HLA class II antigen presentation across all loci using tailored data acquisition and refined machine learning. Science Advances, Vol 9, Issue 47. doi: /10.1126/sciadv.adj6367</li>",
             "<li>Shao et al. (2020). High-throughput prediction of MHC class I and II neoantigens with MHCnuggets. Cancer Immunology Research, 8(3), 396–408. doi: /10.1158/2326-6066.CIR-19-0464</li>",
             "<li>O'Donnell et al. (2020). MHCflurry 2.0: improved pan-allele prediction of MHC class I-presented peptides by incorporating antigen processing. Cell Systems, 11, 42–48. doi: /10.1016/j.cels.2020.06.010</li>",
+            "<li>Tadros et al. (2025). Predicting MHC-I ligands across alleles and species: how far can we go? Genome Medicine, 17(1), 25. doi: /10.1186/s13073-025-01450-8</li>",
+            "<li>Racle et al. (2023). Machine learning predictions of MHC-II specificities reveal alternative binding mode of class II epitopes. Immunity, 56(6), 1359–1375. doi: /10.1016/j.immuni.2023.03.009</li>",
             "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Science Advances , Vol 9, Issue 47. doi: /10.1126/sciadv.adj6367</li>"
         ].join(' ').trim()
 

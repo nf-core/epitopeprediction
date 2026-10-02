@@ -9,6 +9,8 @@ include { MHCNUGGETS;
         MHCNUGGETS as MHCNUGGETSII                   } from '../../../modules/local/mhcnuggets'
 include { NETMHCPAN                                  } from '../../../modules/local/netmhcpan'
 include { NETMHCIIPAN                                } from '../../../modules/local/netmhciipan'
+include { MIXMHCPRED                                 } from '../../../modules/local/mixmhcpred'
+include { MIXMHCIIPRED                               } from '../../../modules/local/mixmhciipred'
 include { UNPACK_NETMHC_SOFTWARE as NETMHCPAN_IMPORT;
         UNPACK_NETMHC_SOFTWARE as NETMHCIIPAN_IMPORT } from '../../../modules/local/unpack_netmhc_software'
 include { MERGE_PREDICTIONS                          } from '../../../modules/local/merge_predictions'
@@ -58,6 +60,8 @@ workflow MHC_BINDING_PREDICTION {
                 mhcnuggetsii : meta.tool == 'mhcnuggetsii'
                 netmhcpan    : meta.tool == 'netmhcpan'
                 netmhciipan  : meta.tool == 'netmhciipan'
+                mixmhcpred   : meta.tool == 'mixmhcpred'
+                mixmhciipred : meta.tool == 'mixmhciipred'
             }
             .set{ ch_prediction_input }
 
@@ -88,6 +92,12 @@ workflow MHC_BINDING_PREDICTION {
             ch_binding_predictors_out = ch_binding_predictors_out.mix(NETMHCIIPAN.out.predicted)
         }
 
+        MIXMHCPRED ( ch_prediction_input.mixmhcpred )
+        ch_binding_predictors_out = ch_binding_predictors_out.mix(MIXMHCPRED.out.predicted)
+
+        MIXMHCIIPRED ( ch_prediction_input.mixmhciipred )
+        ch_binding_predictors_out = ch_binding_predictors_out.mix(MIXMHCIIPRED.out.predicted)
+
         // Regroup predictions per source file
         ch_binding_predictors_out
             .map { meta, file ->
@@ -112,7 +122,7 @@ workflow MHC_BINDING_PREDICTION {
 
 // Check if supported tools are specified
 def validate_tools_param(tools) {
-    def valid_tools = [ 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan' ]
+    def valid_tools = [ 'mhcnuggets', 'mhcnuggetsii', 'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred' ]
     def tool_list = tools.tokenize(',')
     // Validate each tool in tools if it's in valid_tools
     def invalid_tools = tool_list.findAll { tool -> tool.trim() !in valid_tools }
