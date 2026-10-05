@@ -91,7 +91,11 @@ nextflow_pipeline {
                 // rows with NA metadata (WT, frameshift) keep their per-allele scores in wide format
                 { assert ba && wide.rows.every { row -> ba.any { row[it] != null } } },
                 // MultiQC counts mutant peptides only
-                { assert stats['Binders'] + stats['Non-binders'] == wide.columns['peptide_origin'].count { it.contains('MT') } }
+                { assert stats['Binders'] + stats['Non-binders'] == wide.columns['peptide_origin'].count { it.contains('MT') } },
+                { assert snapshot(
+                    path("${params.outdir}/variant_peptides/sample1_length_9.tsv"),
+                    path("${params.outdir}/variant_peptides/sample1_length_10.tsv")
+                ).match() }
             )
         }
     }
