@@ -29,14 +29,14 @@ process FASTA2PEPTIDES {
     def proteome = variants_tsv && proteome_reference ? "--proteome-reference ${proteome_reference}" : ''
     """
     fasta2peptides.py \\
+        ${args} \\
         -i ${fastas} ${protein_fastas} \\
         -o ${prefix} \\
         -minl ${min_length} \\
         -maxl ${max_length} \\
         -pepcol ${params.peptide_col_name} \\
         ${variant} \\
-        ${proteome} \\
-        ${args}
+        ${proteome}
     """
 
     stub:
