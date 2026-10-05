@@ -231,8 +231,7 @@ def generate_variant_peptides(fastas_by_length, variants):
                     continue
                 seen.add((index, wt, mt))
                 ann = variants.get(index, {field: 'NA' for field in PROVENANCE})
-                # a frameshift whose novel tail is k-1 residues long matches its WT window in length only
-                aligned = wt is not None and len(wt) == len(mt) and ann['consequence'] != 'FS'
+                aligned = wt is not None and ann['consequence'] == 'missense' and len(wt) == len(mt)
                 for start in range(len(mt) - k + 1):
                     pep = mt[start:start + k]
                     if not valid_peptide(pep):
