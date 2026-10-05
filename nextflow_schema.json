@@ -157,7 +157,7 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Filter out non-binders from the final results.",
-                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file."
+                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file. With `--wild_type`, the wild-type rows of mutant binders are kept as well."
                 },
                 "use_ba_rank": {
                     "type": "boolean",

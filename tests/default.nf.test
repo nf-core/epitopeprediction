@@ -100,6 +100,37 @@ nextflow_pipeline {
         }
     }
 
+    test("-profile test --wild_type --binder_only") {
+
+        when {
+            params {
+                outdir      = "$outputDir"
+                // the fixture has no A*01:01 binders; C*03:04 binds mutants whose wild type does not
+                def samplesheet = new File("$outputDir/samplesheet_binders.csv")
+                samplesheet.parentFile.mkdirs()
+                samplesheet.text = [
+                    "sample,alleles,mhc_class,filename,tumor_sample",
+                    "sample1,A*01:01;C*03:04,I,https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants_chr4_chr19.vcf,TUMOR"
+                ].join('\n') + '\n'
+                input       = samplesheet.toString()
+                wild_type   = true
+                binder_only = true
+            }
+        }
+
+        then {
+            def predictions = path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t').rows
+            def mt_binders  = predictions.findAll { it.peptide_origin.contains('MT') && it.binder }
+            def non_binders = predictions.findAll { !it.binder }
+            assertAll(
+                { assert workflow.success },
+                // a non-binder is only kept as the wild type of a mutant binder at the same allele
+                { assert non_binders },
+                { assert non_binders.every { w -> mt_binders.any { it.predictor == w.predictor && it.allele == w.allele && w.sequence in it.wildtype.split(';') } } }
+            )
+        }
+    }
+
     test("-profile test Strelka-style VCF without FORMAT/GT") {
 
         when {

@@ -24,6 +24,19 @@ def candidate_epitopes(df):
     return df[df['peptide_origin'].fillna('MT').str.contains('MT')]
 
 
+def filter_binders(df, peptide_col_name):
+    """Keeps binders and the wild-type rows of mutant binders, matched per predictor and allele in long format."""
+    is_binder = df['binder'].eq(True).to_numpy()
+    if 'peptide_origin' not in df.columns:
+        return df[is_binder]
+    keys = [peptide_col_name] + [col for col in ('predictor', 'allele') if col in df.columns]
+    partners = candidate_epitopes(df[is_binder])
+    partners = (partners.assign(**{peptide_col_name: partners['wildtype'].str.split(';')})
+                .explode(peptide_col_name)[keys].drop_duplicates())
+    is_partner = df[keys].merge(partners, how='left', indicator=True)['_merge'].eq('both').to_numpy()
+    return df[is_binder | is_partner]
+
+
 # -------------------------------------------
 #           MultiQC Statistics
 # -------------------------------------------
@@ -295,7 +308,7 @@ def main():
 
     # Filter out non-binders if requested
     if args.binder_only:
-        df = df[df['binder']]
+        df = filter_binders(df, args.peptide_col_name)
 
     # Write output file
     df.to_csv(f'{args.prefix}.tsv', sep='\t', index=False)

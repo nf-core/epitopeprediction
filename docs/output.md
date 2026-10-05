@@ -60,6 +60,7 @@ Mutant rows from substitutions carry their aligned wild-type k-mer in `wildtype`
 - Frameshifts and length-changing indels have no aligned wild-type k-mer, so their `wildtype` is `NA` and they get no wild-type row.
 - `--proteome_reference` is applied before wild-type rows are added. A mutant peptide found in the reference proteome is dropped together with its wild-type row.
 - Wild-type rows are left out of the MultiQC binder statistics and kept in `predictions/[sample].tsv`.
+- With `--binder_only`, the wild-type rows of mutant binders are kept even if they do not bind. In long format they are matched per predictor and allele.
 
 ## Epitopeprediction
 
