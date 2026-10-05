@@ -41,7 +41,7 @@ def filter_binders(df, peptide_col_name):
 #           MultiQC Statistics
 # -------------------------------------------
 class MultiQC:
-    def write_mqc_stats_json(df, input_basename, peptide_col_name):
+    def write_mqc_stats_json(df, input_basename, peptide_col_name, wildtype_excluded=False):
         df_valid = df.dropna(subset=['predictor'])
         # Per-peptide stats: a peptide is a binder if ANY allele reports binder=True
         df_valid = df_valid.groupby(['predictor', peptide_col_name])['binder'].any().reset_index()
@@ -59,8 +59,8 @@ class MultiQC:
             'section_name': 'Binding Prediction Statistics',
             'description': (
                 'The statistics table shows the number of binders, non-binders, and unsupported peptides for each predictor. '
-                'The unsupported peptides are those that were not predicted by any of the predictors. '
-                'Wild-type peptides added by `--wild_type` are not counted.'),
+                'The unsupported peptides are those that were not predicted by any of the predictors.'
+                + (' Wild-type peptides added by `--wild_type` are not counted.' if wildtype_excluded else '')),
             'plot_type': 'table',
             'data': {
                 f'{input_basename}_{predictor}': {
@@ -296,7 +296,7 @@ def main():
 
     # MultiQC statistics
     df_mqc = candidate_epitopes(df)
-    MultiQC.write_mqc_stats_json(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_stats_json(df_mqc, args.prefix, args.peptide_col_name, wildtype_excluded=len(df_mqc) < len(df))
     MultiQC.write_mqc_length_distribution(df_mqc, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_rank_distribution(df_mqc, args.prefix, args.peptide_col_name)
     MultiQC.write_mqc_ba_distribution(df_mqc, args.prefix, args.peptide_col_name)
