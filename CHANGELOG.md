@@ -43,7 +43,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `multiqc`     | 1.32        | 1.35        |
 | `snpsift`     | 4.3         | 5.4c        |
 | `nf-core`     | 3.4.1       | 4.1.0       |
-| `NetMHCIIpan` | 4.3e        | 4.3b/e/i    |
+| `NetMHCIIpan` | 4.3e        | 4.3         |
 | `MixMHCpred`  |             | 3.0         |
 | `MixMHC2pred` |             | 2.0.2       |
 
@@ -58,6 +58,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#371](https://github.com/nf-core/epitopeprediction/pull/371) Merge nf-core template updates up to `4.1.0` ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#379](https://github.com/nf-core/epitopeprediction/pull/379) Validate NetMHCpan and NetMHCIIpan tarballs by tool, version and platform instead of md5 checksums, so any sub-release of NetMHCpan 4.2 and NetMHCIIpan 4.3 is accepted (fixes [#378](https://github.com/nf-core/epitopeprediction/issues/378)) ([@jonasscheid](https://github.com/jonasscheid/)).
+
+### `Removed`
+
+- [#379](https://github.com/nf-core/epitopeprediction/pull/379) Removed `--netmhc_system` and support for the macOS NetMHCpan and NetMHCIIpan tarballs, only the Linux tarballs are supported ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.1 - Lustnau Hotfix - 2026-08-05
 
