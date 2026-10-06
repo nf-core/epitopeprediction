@@ -198,25 +198,19 @@
                     "description": "Specifies the path to the JSON file with meta information on external prediction tools.",
                     "hidden": true
                 },
-                "netmhc_system": {
-                    "type": "string",
-                    "default": "linux",
-                    "enum": ["linux", "darwin"],
-                    "description": "Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used."
-                },
                 "netmhcpan_path": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
+                    "description": "To use the 'netmhcpan' tool, specify the path to the original Linux software tarball for NetMHCpan 4.2 here."
                 },
                 "netmhciipan_path": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
+                    "description": "To use the 'netmhciipan' tool, specify the path to the original Linux software tarball for NetMHCIIpan 4.3 here."
                 },
                 "accept_mixmhcpred_license": {
                     "type": "boolean",

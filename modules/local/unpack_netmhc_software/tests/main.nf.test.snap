@@ -1,0 +1,50 @@
+{
+    "netmhcpan - stub": {
+        "content": [
+            [
+                [
+                    "UNPACK_NETMHC_SOFTWARE",
+                    "netmhcpan",
+                    "4.2"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-06T12:59:23.226412489",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
+    "netmhcpan - sub-release is accepted": {
+        "content": [
+            [
+                [
+                    "UNPACK_NETMHC_SOFTWARE",
+                    "netmhcpan",
+                    "4.2b"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-06T12:57:46.096445496",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    },
+    "netmhciipan - unknown sub-release is accepted": {
+        "content": [
+            [
+                [
+                    "UNPACK_NETMHC_SOFTWARE",
+                    "netmhciipan",
+                    "4.3z"
+                ]
+            ]
+        ],
+        "timestamp": "2026-10-06T12:57:29.969873098",
+        "meta": {
+            "nf-test": "0.9.5",
+            "nextflow": "25.10.4"
+        }
+    }
+}

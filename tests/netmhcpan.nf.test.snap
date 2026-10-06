@@ -11,7 +11,7 @@
                     "netMHCpan": "4.2b"
                 },
                 "NETMHCPAN_IMPORT": {
-                    "netmhcpan": "4.2bstatic"
+                    "netmhcpan": "4.2b"
                 },
                 "PREPARE_PREDICTION_INPUT": {
                     "mhcgnomes": "1.8.6",
@@ -72,7 +72,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,9ae5d3bb44ec4905ce1ad78a4c114ea2"
             ]
         ],
-        "timestamp": "2026-09-28T10:47:05.949394602",
+        "timestamp": "2026-10-06T13:07:58.604497115",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

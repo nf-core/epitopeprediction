@@ -200,9 +200,7 @@ You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-c
 
 ### Running the pipeline with NetMHC
 
-The pipeline supports NetMHCpan 4.2b and NetMHCIIpan 4.3 (sub-releases b, e and i). If one of the external tools is specified, the path to the corresponding tarball has to be specified. See the download sections for [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/).
-
-When using `conda`, the parameter `--netmhc_system` must also be specified if the default value `linux` is not applicable.
+The pipeline supports NetMHCpan 4.2 and NetMHCIIpan 4.3, including any of their sub-releases (e.g. 4.2b or 4.3i). If one of the external tools is specified, the path to the corresponding Linux tarball has to be specified. See the download sections for [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/).
 
 NetMHCpan 4.2 supports different prediction modes. We strongly recommend using the default mode, but if necessary, the other modes can be selected with a custom config file.
 
@@ -217,7 +215,7 @@ process {
 ```
 
 > [!IMPORTANT]
-> Only the specific versions `netMHCpan-4.2bstatic.Linux.tar.gz` and `netMHCIIpan-4.3{b,e,i}.Linux.tar.gz` are supported, as the pipeline validates these tarballs via checksum to ensure integrity.
+> Only the Linux tarballs are supported, also on macOS where the pipeline runs inside Linux containers. The pipeline checks that the tarball contains the expected tool and version and reports the exact sub-release in the software versions.
 
 A typical command is as follows:
 
