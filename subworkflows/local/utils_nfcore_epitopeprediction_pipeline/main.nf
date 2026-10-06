@@ -107,6 +107,7 @@ workflow PIPELINE_INITIALISATION {
     //
     validateInputParameters(samplesheet_rows)
     validateMixmhcpredLicense(params.tools)
+    validateNetmhcVersions(params.tools)
 
     channel
         .fromList(samplesheet_rows)
@@ -187,6 +188,51 @@ def validateInputParameters(samplesheet_rows) {
     if (!params.vep_download_cache && !(params.ref_fasta && params.vep_cache)) {
         error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
               "or both --ref_fasta and --vep_cache. See docs/usage.md.")
+    }
+}
+
+//
+// NetMHCpan and NetMHCIIpan tarballs carry their exact version in data/version, any sub-release is accepted
+//
+def validateNetmhcVersions(tools) {
+    def netmhc_meta = new groovy.json.JsonSlurper().parseText(file("${projectDir}/assets/netmhc_software_meta.json").text)
+    def netmhc_tools = tools.tokenize(',')*.trim().findAll { tool -> tool in netmhc_meta.keySet() && params["${tool}_path"] }
+    netmhc_tools.each { tool ->
+        def expected = netmhc_meta[tool]
+        def version = readNetmhcVersion(file(params["${tool}_path"], checkIfExists: true))
+        def version_pattern = "(?i)${expected.binary_name} version ${java.util.regex.Pattern.quote(expected.version)}[a-z]*"
+        if (!version?.matches(version_pattern)) {
+            error("--${tool}_path must point to an original ${expected.binary_name} ${expected.version} Linux tarball (any sub-release), found: " +
+                  "${version ?: 'no data/version (an older version, another file or not a readable .tar.gz)'}")
+        }
+    }
+}
+
+//
+// Stream through the gzipped tar until the top-level data/version entry, without unpacking the archive
+//
+def readNetmhcVersion(tarball) {
+    try {
+        return tarball.withInputStream { raw ->
+            def stream = new java.util.zip.GZIPInputStream(raw)
+            // Strict syntax has no while loops; findResult walks the 512-byte tar headers until it returns non-null
+            def version = (1..Integer.MAX_VALUE).findResult { _i ->
+                def header = stream.readNBytes(512)
+                if (header.length < 512 || header[0] == 0) {
+                    return ''
+                }
+                def name = new String(header, 0, 100, 'US-ASCII').takeWhile { c -> c != '\u0000' }
+                def size = Long.parseLong(new String(header, 124, 12, 'US-ASCII').replaceAll('[^0-7]', '') ?: '0', 8)
+                if (name.matches('[^/]+/data/version')) {
+                    return new String(stream.readNBytes(size as int), 'US-ASCII').trim()
+                }
+                stream.skipNBytes((size + 511).intdiv(512) * 512)
+                return null
+            }
+            return version ?: null
+        }
+    } catch (Exception _e) {
+        return null
     }
 }
 

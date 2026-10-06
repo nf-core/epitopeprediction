@@ -58,7 +58,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#361](https://github.com/nf-core/epitopeprediction/pull/361) Bump `nf-schema` plugin to 2.7.2 ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#365](https://github.com/nf-core/epitopeprediction/pull/365) Merge nf-core template updates up to `4.0.3` ([@jonasscheid](https://github.com/jonasscheid/)).
 - [#371](https://github.com/nf-core/epitopeprediction/pull/371) Merge nf-core template updates up to `4.1.0` ([@jonasscheid](https://github.com/jonasscheid/)).
-- [#379](https://github.com/nf-core/epitopeprediction/pull/379) Validate NetMHCpan and NetMHCIIpan tarballs by tool, version and platform instead of md5 checksums, so any sub-release of NetMHCpan 4.2 and NetMHCIIpan 4.3 is accepted (fixes [#378](https://github.com/nf-core/epitopeprediction/issues/378)) ([@jonasscheid](https://github.com/jonasscheid/)).
+- [#379](https://github.com/nf-core/epitopeprediction/pull/379) Check the NetMHCpan and NetMHCIIpan version from the tarball's `data/version` during pipeline initialisation instead of md5 checksums, so any sub-release of NetMHCpan 4.2 and NetMHCIIpan 4.3 is accepted (fixes [#378](https://github.com/nf-core/epitopeprediction/issues/378)) ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ### `Removed`
 
