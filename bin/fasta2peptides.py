@@ -259,8 +259,9 @@ def add_wildtype_rows(by_length, wt_pairs):
     A sequence that is MT for one variant and WT for another is labelled `MT;WT`.
     """
     for k, pairs in wt_pairs.items():
+        retained = set(by_length[k])
         for pep, wt_pep, ann, index in pairs:
-            if pep in by_length[k]:
+            if pep in retained:
                 add_peptide(by_length[k].setdefault(wt_pep, new_record()), ann, index, 'WT')
 
 

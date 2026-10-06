@@ -131,6 +131,31 @@ nextflow_pipeline {
         }
     }
 
+    test("-profile test --binder_only indel-only VCF") {
+
+        when {
+            params {
+                outdir      = "$outputDir"
+                // no peptide has an aligned wild-type k-mer, so `wildtype` is all NA
+                def vcf = new File("$outputDir/indels.vcf")
+                vcf.parentFile.mkdirs()
+                vcf.text = new URL("https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants_chr4_chr19.vcf").text
+                    .readLines().findAll { it.startsWith('#') || it.split('\t')[3].size() != it.split('\t')[4].size() }.join('\n') + '\n'
+                def samplesheet = new File("$outputDir/samplesheet_indels.csv")
+                samplesheet.text = "sample,alleles,mhc_class,filename,tumor_sample\nsample1,A*01:01;C*03:04,I,${vcf},TUMOR\n"
+                input       = samplesheet.toString()
+                binder_only = true
+            }
+        }
+
+        then {
+            assertAll(
+                { assert workflow.success },
+                { assert path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t').rows.every { it.binder } }
+            )
+        }
+    }
+
     test("-profile test Strelka-style VCF without FORMAT/GT") {
 
         when {

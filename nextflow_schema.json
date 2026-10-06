@@ -130,7 +130,7 @@
                 "wild_type": {
                     "type": "boolean",
                     "default": false,
-                    "help_text": "Variant input only. Adds the aligned wild-type k-mer of each substitution-derived mutant peptide as its own row (`peptide_origin` `WT`), so it is predicted against the same alleles. The `wildtype` column is written regardless of this flag.",
+                    "help_text": "Variant input only. Adds the aligned wild-type k-mer of each missense mutant peptide as its own row (`peptide_origin` `WT`), so it is predicted against the same alleles. The `wildtype` column is written regardless of this flag.",
                     "description": "Also predict the wild-type counterparts of variant peptides."
                 },
                 "proteome_reference": {

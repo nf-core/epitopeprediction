@@ -27,7 +27,7 @@ def candidate_epitopes(df):
 def filter_binders(df, peptide_col_name):
     """Keeps binders and the wild-type rows of mutant binders, matched per predictor and allele in long format."""
     is_binder = df['binder'].eq(True).to_numpy()
-    if 'peptide_origin' not in df.columns:
+    if not df.get('peptide_origin', pd.Series(dtype=str)).str.contains('WT', na=False).any():
         return df[is_binder]
     keys = [peptide_col_name] + [col for col in ('predictor', 'allele') if col in df.columns]
     partners = candidate_epitopes(df[is_binder])

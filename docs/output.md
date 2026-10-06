@@ -53,11 +53,11 @@ One record is written per variant and transcript, so identical windows can recur
 
 ### Wild-type peptides
 
-Mutant rows from substitutions carry their aligned wild-type k-mer in `wildtype`. With `--wild_type`, each of these k-mers is also written as its own row and predicted against the same alleles.
+Missense mutant rows carry their aligned wild-type k-mer in `wildtype`. With `--wild_type`, each of these k-mers is also written as its own row and predicted against the same alleles.
 
 - `peptide_origin` is `MT`, `WT` or `MT;WT`. `MT;WT` marks a sequence that is mutant for one variant and wild-type for another.
 - Wild-type rows carry the provenance of their variant and `protein_ids` of the form `WT.<index>`.
-- Frameshifts and length-changing indels have no aligned wild-type k-mer, so their `wildtype` is `NA` and they get no wild-type row.
+- Other consequences (indels, frameshifts, peptides without a variant table match) and wild-type k-mers with non-standard residues have `wildtype` `NA` and get no wild-type row.
 - `--proteome_reference` is applied before wild-type rows are added. A mutant peptide found in the reference proteome is dropped together with its wild-type row.
 - Wild-type rows are left out of the MultiQC binder statistics and kept in `predictions/[sample].tsv`.
 - With `--binder_only`, the wild-type rows of mutant binders are kept even if they do not bind. In long format they are matched per predictor and allele.
