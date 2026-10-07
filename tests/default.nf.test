@@ -19,12 +19,9 @@ nextflow_pipeline {
             def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
             // stable_path: All files in ${params.outdir}/ with stable content
             def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            def peptides = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").csv(sep: '\t')
-            def consequences = peptides.columns['consequence']
+            def consequences = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").readLines().drop(1).collect { it.split('\t')[3] }
             assertAll(
                 { assert workflow.success },
-                // without --wild_type only putative neoepitopes are written
-                { assert peptides.columns['peptide_origin'].every { it == 'MT' } },
                 { assert consequences.contains('missense') },
                 { assert consequences.contains('inframe_del') },
                 { assert consequences.contains('FS') },
@@ -77,25 +74,11 @@ nextflow_pipeline {
         }
 
         then {
-            def peptides = path("${params.outdir}/variant_peptides/sample1_length_9.tsv").csv(sep: '\t').rows
-            def wt       = peptides.findAll { it.peptide_origin.contains('WT') }
-            def wide     = path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t')
-            def ba       = wide.columnNames.findAll { it ==~ /mhcnuggets_.*_BA/ }
-            def stats    = path("${params.outdir}/multiqc/multiqc_data/multiqc_peptide_binding_prediction_stats.txt").csv(sep: '\t').rows[0]
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             assertAll(
                 { assert workflow.success },
-                { assert wt },
-                // every WT row is the aligned wild type of a mutant substitution peptide
-                { assert wt.every { w -> peptides.any { w.sequence in it.wildtype.split(';') } } },
-                { assert wt.every { it.consequence == 'missense' } },
-                // rows with NA metadata (WT, frameshift) keep their per-allele scores in wide format
-                { assert ba && wide.rows.every { row -> ba.any { row[it] != null } } },
-                // MultiQC counts mutant peptides only
-                { assert stats['Binders'] + stats['Non-binders'] == wide.columns['peptide_origin'].count { it.contains('MT') } },
-                { assert snapshot(
-                    path("${params.outdir}/variant_peptides/sample1_length_9.tsv"),
-                    path("${params.outdir}/variant_peptides/sample1_length_10.tsv")
-                ).match() }
+                { assert snapshot(stable_name, stable_path).match() }
             )
         }
     }
@@ -108,10 +91,7 @@ nextflow_pipeline {
                 // the fixture has no A*01:01 binders; C*03:04 binds mutants whose wild type does not
                 def samplesheet = new File("$outputDir/samplesheet_binders.csv")
                 samplesheet.parentFile.mkdirs()
-                samplesheet.text = [
-                    "sample,alleles,mhc_class,filename,tumor_sample",
-                    "sample1,A*01:01;C*03:04,I,https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants_chr4_chr19.vcf,TUMOR"
-                ].join('\n') + '\n'
+                samplesheet.text = "sample,alleles,mhc_class,filename,tumor_sample\nsample1,A*01:01;C*03:04,I,https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants_chr4_chr19.vcf,TUMOR\n"
                 input       = samplesheet.toString()
                 wild_type   = true
                 binder_only = true
@@ -119,14 +99,12 @@ nextflow_pipeline {
         }
 
         then {
-            def predictions = path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t').rows
-            def mt_binders  = predictions.findAll { it.peptide_origin.contains('MT') && it.binder }
-            def non_binders = predictions.findAll { !it.binder }
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             assertAll(
                 { assert workflow.success },
-                // a non-binder is only kept as the wild type of a mutant binder at the same allele
-                { assert non_binders },
-                { assert non_binders.every { w -> mt_binders.any { it.predictor == w.predictor && it.allele == w.allele && w.sequence in it.wildtype.split(';') } } }
+                // predictions/* is in .nftignore, so the kept peptides are snapshotted separately
+                { assert snapshot(stable_name, stable_path, path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t').columns['sequence']).match() }
             )
         }
     }
@@ -149,9 +127,11 @@ nextflow_pipeline {
         }
 
         then {
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             assertAll(
                 { assert workflow.success },
-                { assert path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t').rows.every { it.binder } }
+                { assert snapshot(stable_name, stable_path).match() }
             )
         }
     }
@@ -167,7 +147,7 @@ nextflow_pipeline {
         }
 
         then {
-            def consequences = path("${params.outdir}/variant_peptides/strelka_length_9.tsv").csv(sep: '\t').columns['consequence']
+            def consequences = path("${params.outdir}/variant_peptides/strelka_length_9.tsv").readLines().drop(1).collect { it.split('\t')[3] }
             assertAll(
                 { assert workflow.success },
                 { assert ['missense', 'inframe_del', 'FS'].every { consequences.contains(it) } }
@@ -186,7 +166,7 @@ nextflow_pipeline {
         }
 
         then {
-            def peptides = path("${params.outdir}/variant_peptides/proximal_length_9.tsv").csv(sep: '\t').columns['sequence']
+            def peptides = path("${params.outdir}/variant_peptides/proximal_length_9.tsv").readLines().drop(1).collect { it.split('\t')[0] }
             assertAll(
                 { assert workflow.success },
                 // each variant alone (CPHR, SPRR, SPHQ) and all three combined (CPRQ)

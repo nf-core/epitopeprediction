@@ -15,9 +15,9 @@ nextflow_pipeline {
         }
 
         then {
-            def peptides  = path("${params.outdir}/variant_peptides/germline_length_9.tsv").csv(sep: '\t').rows
-            def sequences = peptides.collect { it.sequence }
-            def wildtypes = peptides.collectEntries { [(it.sequence): it.wildtype] }
+            def peptides = path("${params.outdir}/variant_peptides/germline_length_9.tsv").readLines()
+            def sequences = peptides.drop(1).collect { it.split('\t')[0] }
+            def wildtypes = peptides.drop(1).collectEntries { def f = it.split('\t'); [(f[0]): f[-1]] }
             assertAll(
                 { assert workflow.success },
                 { assert snapshot(
@@ -31,7 +31,7 @@ nextflow_pipeline {
                 { assert wildtypes['DVLERCPHR'] == 'DVLERSPHR' },
                 { assert wildtypes['DVLERCRHR'] == 'DVLERSRHR' },
                 // germline variants are context only, so neither is ever a candidate of its own
-                { assert !peptides.any { it.genomic_anchor.contains('4:1801844') || it.genomic_anchor.contains('19:35878587') } },
+                { assert !peptides.any { it.contains('4:1801844') || it.contains('19:35878587') } },
                 // a window compared with the wrong run's wild type emits k-mers carrying no
                 // somatic change at all; this is the first one that would appear
                 { assert !sequences.any { it == 'PHRPILQAG' } }
