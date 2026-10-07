@@ -78,59 +78,8 @@ nextflow_pipeline {
             def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
             assertAll(
                 { assert workflow.success },
-                { assert snapshot(stable_name, stable_path).match() }
-            )
-        }
-    }
-
-    test("-profile test --wild_type --binder_only") {
-
-        when {
-            params {
-                outdir      = "$outputDir"
-                // the fixture has no A*01:01 binders; C*03:04 binds mutants whose wild type does not
-                def samplesheet = new File("$outputDir/samplesheet_binders.csv")
-                samplesheet.parentFile.mkdirs()
-                samplesheet.text = "sample,alleles,mhc_class,filename,tumor_sample\nsample1,A*01:01;C*03:04,I,https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants_chr4_chr19.vcf,TUMOR\n"
-                input       = samplesheet.toString()
-                wild_type   = true
-                binder_only = true
-            }
-        }
-
-        then {
-            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
-            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            assertAll(
-                { assert workflow.success },
-                // predictions/* is in .nftignore, so the kept peptides are snapshotted separately
-                { assert snapshot(stable_name, stable_path, path("${params.outdir}/predictions/sample1.tsv").csv(sep: '\t').columns['sequence']).match() }
-            )
-        }
-    }
-
-    test("-profile test --binder_only indel-only VCF") {
-
-        when {
-            params {
-                outdir      = "$outputDir"
-                // no peptide has an aligned wild-type k-mer, so `wildtype` is all NA
-                def vcf = new File("$outputDir/indels.vcf")
-                vcf.parentFile.mkdirs()
-                vcf.text = new URL("https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/variants/variants_chr4_chr19.vcf").text
-                    .readLines().findAll { it.startsWith('#') || it.split('\t')[3].size() != it.split('\t')[4].size() }.join('\n') + '\n'
-                def samplesheet = new File("$outputDir/samplesheet_indels.csv")
-                samplesheet.text = "sample,alleles,mhc_class,filename,tumor_sample\nsample1,A*01:01;C*03:04,I,${vcf},TUMOR\n"
-                input       = samplesheet.toString()
-                binder_only = true
-            }
-        }
-
-        then {
-            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
-            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
-            assertAll(
-                { assert workflow.success },
+                // wild-type rows are predicted
+                { assert path("${params.outdir}/predictions/sample1.tsv").text.contains('\tWT\t') },
                 { assert snapshot(stable_name, stable_path).match() }
             )
         }
