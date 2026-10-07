@@ -107,6 +107,7 @@ workflow PIPELINE_INITIALISATION {
     //
     validateInputParameters(samplesheet_rows)
     validateMixmhcpredLicense(params.tools)
+    validateNetmhcVersions(params.tools)
 
     channel
         .fromList(samplesheet_rows)
@@ -187,6 +188,29 @@ def validateInputParameters(samplesheet_rows) {
     if (!params.vep_download_cache && !(params.ref_fasta && params.vep_cache)) {
         error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
               "or both --ref_fasta and --vep_cache. See docs/usage.md.")
+    }
+}
+
+//
+// NetMHC tarballs carry their exact version in data/version, so any sub-release of the supported version is accepted
+//
+def validateNetmhcVersions(tools) {
+    def netmhc_meta = new groovy.json.JsonSlurper().parse(file("${projectDir}/assets/netmhc_software_meta.json").toFile())
+    tools.tokenize(',')*.trim().findAll { tool -> netmhc_meta[tool] && params["${tool}_path"] }.each { tool ->
+        def meta = netmhc_meta[tool]
+        def version_file = "${meta.binary_name}-${meta.version}/data/version"
+        // Streamed through stdin so remote paths (s3://, https://) work too
+        def tar = ['tar', '-xzOf', '-', version_file].execute()
+        try {
+            file(params["${tool}_path"]).withInputStream { tarball -> tar.outputStream.withStream { stdin -> stdin << tarball } }
+        } catch (Exception _e) {
+            // tar stops reading non-gzip input early, the version check below reports it
+        }
+        def version = tar.text.trim()
+        if (!version.matches("(?i)${meta.binary_name} version ${meta.version}[a-z]*")) {
+            error("--${tool}_path must be an original ${meta.binary_name} ${meta.version} Linux tarball (any sub-release), but ${version_file} " +
+                  (version ? "reports '${version}'" : "was not found in it"))
+        }
     }
 }
 

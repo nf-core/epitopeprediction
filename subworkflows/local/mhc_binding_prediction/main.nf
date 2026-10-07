@@ -142,19 +142,12 @@ def parse_netmhc_params(tool_name, netmhc_software_meta) {
     def jsonSlurper = new groovy.json.JsonSlurper()
     def netmhc_software_meta_map = jsonSlurper.parse(netmhc_software_meta)
     def entry = netmhc_software_meta_map[tool_name]
-    // Take OS into account. NetMHC provides different binaries for Mac and Linux
-    if (params["netmhc_system"] == 'darwin') {
-        entry = netmhc_software_meta_map["${tool_name}_darwin"]
-    }
     // If so, add the tool name and user installation path to the external tools import channel
     def ch_netmhc_exe = channel.empty()
     ch_netmhc_exe.bind([
         tool_name,
         entry.version,
-        entry.software_md5.join(' '),
         file(params["${tool_name}_path"], checkIfExists:true),
-        entry.data_url ? file(entry.data_url, checkIfExists:true) : [],
-        entry.data_md5 ? entry.data_md5 : "",
         entry.binary_name
     ])
     return ch_netmhc_exe

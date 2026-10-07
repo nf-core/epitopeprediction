@@ -10,7 +10,7 @@ process UNPACK_NETMHC_SOFTWARE {
         'docker.io/biocontainers/biocontainers:v1.2.0_cv2' }"
 
     input:
-    tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname)
+    tuple val(toolname), val(toolversion), path(tooltarball), val(toolbinaryname)
 
     output:
     path "${toolname}", emit: nonfree_tools
@@ -21,26 +21,6 @@ process UNPACK_NETMHC_SOFTWARE {
 
     script:
     """
-    #
-    # CHECK IF THE PROVIDED SOFTWARE TARBALL IS A REGULAR FILE
-    #
-    if [ ! -f "$tooltarball" ]; then
-        echo "Path specified for ${toolname} does not point to a regular file. Please specify a path to the original tool tarball." >&2
-        exit 1
-    fi
-
-    #
-    # VALIDATE THE CHECKSUM OF THE PROVIDED SOFTWARE TARBALL
-    #
-    checksum="\$(md5sum "$tooltarball" | cut -f1 -d' ')"
-    echo "\$checksum"
-    # Any sub-release of the supported version is accepted, so match against the whole list
-    if ! echo "${toolchecksum}" | tr ' ' '\\n' | grep -qxF "\$checksum"; then
-        echo "Checksum error for $toolname. Please make sure to provide an original tarball for $toolname version $toolversion." >&2
-        echo "Provided tarball has md5 \$checksum, accepted are: ${toolchecksum}" >&2
-        exit 2
-    fi
-
     #
     # UNPACK THE PROVIDED SOFTWARE TARBALL
     #
@@ -57,10 +37,6 @@ process UNPACK_NETMHC_SOFTWARE {
         -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
         -e "s_/scratch_/tmp_" \
         -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_ " "${toolname}/${toolbinaryname}"
-
-    #
-    # CREATE VERSION FILE
-    #
     """
 
     stub:
