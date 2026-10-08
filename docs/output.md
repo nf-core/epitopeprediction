@@ -10,7 +10,7 @@ The directories listed below will be created in the results directory after the 
 
 ## Variant peptides
 
-For variant (VCF) input, the pipeline makes peptides with `bcftools`, [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/). See [Variant input](usage.md#variant-input) for the variants that the pipeline uses.
+For variant (VCF) input, the pipeline makes peptides with [bcftools](https://samtools.github.io/bcftools/), [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/). See [Variant input](usage.md#variant-input) for the variants that the pipeline uses.
 
 The pipeline keeps only peptides that overlap the mutation:
 
@@ -25,7 +25,7 @@ The peptide lengths are set by `--min_peptide_length_classI`, `--max_peptide_len
 **Output directories:**
 
 - `variant_peptides/[sample]_length_[k].tsv`: the peptides of length `k` with their variant information.
-- `variant_fasta/[sample].annotated.fasta`: the wild-type and mutant protein sequence around each variant. You can use this file as a search database, for example in [nf-core/mhcquant](https://github.com/nf-core/mhcquant).
+- `variant_fasta/[sample].annotated.fasta`: the wild-type and mutant protein sequence around each variant. See [Variant FASTA](#variant-fasta).
 - `references/`: the VEP cache and the genome FASTA. The pipeline writes this directory only with `--vep_download_cache`.
 
 ### Peptide tables
@@ -65,6 +65,8 @@ The pipeline also makes sequences that combine nearby somatic missense variants 
 Without `--wild_type`, the table has no `WT` rows.
 
 ### Variant FASTA
+
+You can use this file as a search database in proteogenomics approaches, for example in [nf-core/mhcquant](https://nf-co.re/mhcquant). The search can then identify mutant peptides in immunopeptidomics data.
 
 Each sequence in `variant_fasta/` contains `--mutation_flanking_aas` residues on each side of the mutation (default: 25). For frameshifts, the sequence continues to the new stop codon. This parameter changes only the FASTA file. It does not change the predicted peptides.
 
