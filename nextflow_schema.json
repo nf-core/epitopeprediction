@@ -19,7 +19,7 @@
                     "mimetype": "text/csv",
                     "schema": "assets/schema_input.json",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
+                    "help_text": "Comma-separated file with a header row and one row for each input file. It has the columns `sample`, `alleles`, `mhc_class` and `filename`, and the optional columns `tumor_sample` and `germline_vcf`. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -66,7 +66,7 @@
                 },
                 "vep_cache_version": {
                     "type": "integer",
-                    "description": "VEP cache version, matching the downloaded cache (e.g. 110). Required for variant input."
+                    "description": "VEP cache version, matching the downloaded cache (e.g. 116). Required for variant input."
                 },
                 "vep_species": {
                     "type": "string",
@@ -102,14 +102,14 @@
                 "min_peptide_length_classI": {
                     "type": "integer",
                     "default": 8,
-                    "description": "Specifies the minimum peptide length.",
-                    "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
+                    "description": "Specifies the minimum peptide length for MHC class I peptides.",
+                    "help_text": "Applies to variant and protein input, and filters peptide input. Each tool also has its own length range, see [usage docs](https://nf-co.re/epitopeprediction/usage#peptide-lengths)."
                 },
                 "max_peptide_length_classI": {
                     "type": "integer",
                     "default": 12,
-                    "description": "Specifies the maximum peptide length.",
-                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
+                    "description": "Specifies the maximum peptide length for MHC class I peptides.",
+                    "help_text": "Applies to variant and protein input, and filters peptide input. Each tool also has its own length range, see [usage docs](https://nf-co.re/epitopeprediction/usage#peptide-lengths)."
                 },
                 "min_peptide_length_classII": {
                     "type": "integer",
@@ -151,7 +151,7 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Specifies that the output file will be in wide format.",
-                    "help_text": "Transforms output file such that for each predictor and allele a column `predictor_allele_predictionMetric` is created."
+                    "help_text": "Writes one row for each peptide, with the columns `<tool>_<allele>_<BA|binder|rank>` and the best value and allele of each tool. See [output docs](https://nf-co.re/epitopeprediction/output#wide-format)."
                 },
                 "binder_only": {
                     "type": "boolean",
@@ -177,13 +177,13 @@
                 "peptides_split_maxchunks": {
                     "type": "integer",
                     "default": 100,
-                    "help_text": "Used in combination with `--peptides` or `--proteins`. Maximum number of peptide chunks that will be created for parallelisation.",
+                    "help_text": "Maximum number of peptide chunks that the pipeline creates to run the predictions in parallel.",
                     "description": "Specifies the maximum number of peptide chunks."
                 },
                 "peptides_split_minchunksize": {
                     "type": "integer",
                     "default": 5000,
-                    "help_text": "Used in combination with `--peptides` or `--proteins`: minimum number of peptides that should be written into one chunk.",
+                    "help_text": "Minimum number of peptides that the pipeline writes into one chunk.",
                     "description": "Specifies the minimum number of peptides that should be written into one chunk."
                 }
             }

@@ -15,16 +15,16 @@
 graph LR
     subgraph input_processing [Input Processing]
         VCF_IN[ ]
-        gunzip_vcf([Gunzip VCF])
-        snpsift_split([SnpSift Split])
-        variant_pred([Variant Pred])
+        bcftools([bcftools])
+        vep([Ensembl VEP])
+        pvacseq([pVACseq])
         FASTA_IN[ ]
         fasta2peptides([Fasta2Peptides])
         TSV_IN[ ]
 
-        VCF_IN -->|vcf| gunzip_vcf
-        gunzip_vcf -->|vcf| snpsift_split
-        snpsift_split -->|vcf| variant_pred
+        VCF_IN -->|vcf| bcftools
+        bcftools -->|vcf| vep
+        vep -->|vcf| pvacseq
         FASTA_IN -->|protein| fasta2peptides
     end
 
@@ -36,6 +36,8 @@ graph LR
         mhcnuggetsii([MHCnuggetsII])
         netmhcpan([NetMHCpan])
         netmhciipan([NetMHCIIpan])
+        mixmhcpred([MixMHCpred])
+        mixmhc2pred([MixMHC2pred])
         merge_pred([Merge Pred])
 
         split_peptides -->|vcf,protein,peptide| prepare_input
@@ -44,11 +46,15 @@ graph LR
         prepare_input -->|vcf,protein,peptide| mhcnuggetsii
         prepare_input -->|vcf,protein,peptide| netmhcpan
         prepare_input -->|vcf,protein,peptide| netmhciipan
+        prepare_input -->|vcf,protein,peptide| mixmhcpred
+        prepare_input -->|vcf,protein,peptide| mixmhc2pred
         mhcflurry -->|vcf,protein,peptide| merge_pred
         mhcnuggets -->|vcf,protein,peptide| merge_pred
         mhcnuggetsii -->|vcf,protein,peptide| merge_pred
         netmhcpan -->|vcf,protein,peptide| merge_pred
         netmhciipan -->|vcf,protein,peptide| merge_pred
+        mixmhcpred -->|vcf,protein,peptide| merge_pred
+        mixmhc2pred -->|vcf,protein,peptide| merge_pred
     end
 
     subgraph reporting [Reporting]
@@ -65,7 +71,7 @@ graph LR
     end
 
     %% Inter-section edges
-    variant_pred -->|vcf| split_peptides
+    pvacseq -->|vcf| split_peptides
     fasta2peptides -->|protein| split_peptides
     TSV_IN -->|peptide| split_peptides
     merge_pred -->|vcf,protein,peptide| summarize
