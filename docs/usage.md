@@ -28,7 +28,7 @@ The pipeline supports three input types:
 | Input type | Extension         | Content                                                                                                  |
 | ---------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
 | Variants   | `.vcf`, `.vcf.gz` | Somatic variant calls. See [Variant input](#variant-input).                                              |
-| Proteins   | `.fasta`          | Protein sequences. The pipeline cuts them into peptides.                                                 |
+| Proteins   | `.fasta`, `.fa`   | Protein sequences. The pipeline cuts them into peptides.                                                 |
 | Peptides   | `.tsv`            | A table with one peptide per row. The column name must match `--peptide_col_name` (default: `sequence`). |
 
 ### Example samplesheet
@@ -283,7 +283,7 @@ process {
 }
 ```
 
-Keep `-BA` in the arguments. The pipeline needs it to report binding affinities.
+Keep `-BA` in the arguments. The pipeline needs it to report binding affinities. In modes 1 and 2, NetMHCpan does not report a binding affinity score, so the `BA` column is empty.
 
 ### MixMHCpred and MixMHC2pred
 

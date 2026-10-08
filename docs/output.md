@@ -131,8 +131,8 @@ Each file contains these columns:
 | ----------- | ------------------------------------------------------------------------------ |
 | `sequence`  | Peptide sequence. The column name follows `--peptide_col_name`.                |
 | `allele`    | MHC allele                                                                     |
-| `rank`      | Percentile rank. A lower value means stronger binding.                         |
 | `BA`        | Binding affinity score between 0 and 1. A higher value means stronger binding. |
+| `rank`      | Percentile rank. A lower value means stronger binding.                         |
 | `binder`    | `True` if the peptide binds the allele                                         |
 | `predictor` | Prediction tool                                                                |
 
@@ -140,13 +140,13 @@ The file also contains all other columns of the input file.
 
 An example prediction result looks like this:
 
-| id       | sequence    | allele       | rank   | BA     | binder | predictor  |
+| id       | sequence    | allele       | BA     | rank   | binder | predictor  |
 | -------- | ----------- | ------------ | ------ | ------ | ------ | ---------- |
-| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.1215 | 0.416  | True   | netmhcpan  |
-| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.0007 | 0.3873 | False  | mhcnuggets |
-| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.0465 | 0.6072 | True   | mhcflurry  |
-| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.7457 | 0.3189 | True   | netmhcpan  |
-| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 2.5875 | 0.3455 | False  | mhcflurry  |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.416  | 0.1215 | True   | netmhcpan  |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.3873 | 0.0007 | False  | mhcnuggets |
+| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.6072 | 0.0465 | True   | mhcflurry  |
+| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3189 | 0.7457 | True   | netmhcpan  |
+| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3455 | 2.5875 | False  | mhcflurry  |
 | peptide3 | VTAVIRSRRYY |              |        |        |        |            |
 
 ### Binding affinity
@@ -157,7 +157,7 @@ $BA = 1 - \frac{\log_{10}(\text{aff})}{\log_{10}(50000)}$
 
 A low IC50 value means strong binding. Peptides with an IC50 below 500 nM are usually considered binders, and peptides below 50 nM strong binders.
 
-MixMHCpred and MixMHC2pred do not predict an IC50 value. For these tools, `BA` is `na`.
+MixMHCpred and MixMHC2pred do not predict an IC50 value. For these tools, `BA` is empty.
 
 ### Percentile rank
 
@@ -201,12 +201,12 @@ With `--wide_format_output`, the pipeline writes one row for each peptide ([wide
 | `best_allele`            | Best alleles of all tools, separated by `,`                                             |
 | `binder`                 | `True` if at least one tool predicts a binder                                           |
 
-An example with NetMHCpan, MHCflurry and one allele looks like this:
+An example with MHCflurry, NetMHCpan and one allele looks like this:
 
-| id       | sequence    | netmhcpan_HLA-A\*01:01_BA | netmhcpan_HLA-A\*01:01_binder | netmhcpan_HLA-A\*01:01_rank | mhcflurry_HLA-A\*01:01_BA | mhcflurry_HLA-A\*01:01_binder | mhcflurry_HLA-A\*01:01_rank | best_value_netmhcpan | best_allele_netmhcpan | best_value_mhcflurry | best_allele_mhcflurry | best_allele  | binder |
-| -------- | ----------- | ------------------------- | ----------------------------- | --------------------------- | ------------------------- | ----------------------------- | --------------------------- | -------------------- | --------------------- | -------------------- | --------------------- | ------------ | ------ |
-| peptide1 | RLDSHLHTHVY | 0.416                     | True                          | 0.1215                      | 0.6072                    | True                          | 0.0465                      | 0.1215               | HLA-A\*01:01          | 0.0465               | HLA-A\*01:01          | HLA-A\*01:01 | True   |
-| peptide3 | VTAVIRSRRYY |                           |                               |                             |                           |                               |                             |                      |                       |                      |                       |              |        |
+| id       | sequence    | mhcflurry_HLA-A\*01:01_BA | netmhcpan_HLA-A\*01:01_BA | mhcflurry_HLA-A\*01:01_binder | netmhcpan_HLA-A\*01:01_binder | mhcflurry_HLA-A\*01:01_rank | netmhcpan_HLA-A\*01:01_rank | best_value_mhcflurry | best_allele_mhcflurry | best_value_netmhcpan | best_allele_netmhcpan | best_allele  | binder |
+| -------- | ----------- | ------------------------- | ------------------------- | ----------------------------- | ----------------------------- | --------------------------- | --------------------------- | -------------------- | --------------------- | -------------------- | --------------------- | ------------ | ------ |
+| peptide1 | RLDSHLHTHVY | 0.6072                    | 0.416                     | True                          | True                          | 0.0465                      | 0.1215                      | 0.0465               | HLA-A\*01:01          | 0.1215               | HLA-A\*01:01          | HLA-A\*01:01 | True   |
+| peptide3 | VTAVIRSRRYY |                           |                           |                               |                               |                             |                             |                      |                       |                      |                       |              |        |
 
 ## MultiQC
 
