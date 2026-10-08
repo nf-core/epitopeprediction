@@ -129,8 +129,9 @@
                 },
                 "wild_type": {
                     "type": "boolean",
-                    "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
-                    "description": "Specifies whether wild-type sequences should be predicted."
+                    "default": false,
+                    "help_text": "Variant input only. Adds the aligned wild-type k-mer of each missense mutant peptide as its own row (`peptide_origin` `WT`), so it is predicted against the same alleles. The `wildtype` column is written regardless of this flag.",
+                    "description": "Also predict the wild-type counterparts of variant peptides."
                 },
                 "proteome_reference": {
                     "type": "string",
@@ -156,7 +157,7 @@
                     "type": "boolean",
                     "default": false,
                     "description": "Filter out non-binders from the final results.",
-                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file."
+                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file. With `--wild_type`, the wild-type rows of mutant binders are kept as well."
                 },
                 "use_ba_rank": {
                     "type": "boolean",

@@ -16,11 +16,32 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+
+def candidate_epitopes(df):
+    """Drop pure wild-type rows (variant route); they are not candidate epitopes."""
+    if 'peptide_origin' not in df.columns:
+        return df
+    return df[df['peptide_origin'].fillna('MT').str.contains('MT')]
+
+
+def filter_binders(df, peptide_col_name):
+    """Keeps binders and the wild-type rows of mutant binders, matched per predictor and allele in long format."""
+    is_binder = df['binder'].eq(True).to_numpy()
+    if not df.get('peptide_origin', pd.Series(dtype=str)).str.contains('WT', na=False).any():
+        return df[is_binder]
+    keys = [peptide_col_name] + [col for col in ('predictor', 'allele') if col in df.columns]
+    partners = candidate_epitopes(df[is_binder])
+    partners = (partners.assign(**{peptide_col_name: partners['wildtype'].str.split(';')})
+                .explode(peptide_col_name)[keys].drop_duplicates())
+    is_partner = df[keys].merge(partners, how='left', indicator=True)['_merge'].eq('both').to_numpy()
+    return df[is_binder | is_partner]
+
+
 # -------------------------------------------
 #           MultiQC Statistics
 # -------------------------------------------
 class MultiQC:
-    def write_mqc_stats_json(df, input_basename, peptide_col_name):
+    def write_mqc_stats_json(df, input_basename, peptide_col_name, wildtype_excluded=False):
         df_valid = df.dropna(subset=['predictor'])
         # Per-peptide stats: a peptide is a binder if ANY allele reports binder=True
         df_valid = df_valid.groupby(['predictor', peptide_col_name])['binder'].any().reset_index()
@@ -38,7 +59,8 @@ class MultiQC:
             'section_name': 'Binding Prediction Statistics',
             'description': (
                 'The statistics table shows the number of binders, non-binders, and unsupported peptides for each predictor. '
-                'The unsupported peptides are those that were not predicted by any of the predictors.'),
+                'The unsupported peptides are those that were not predicted by any of the predictors.'
+                + (' Wild-type peptides added by `--wild_type` are not counted.' if wildtype_excluded else '')),
             'plot_type': 'table',
             'data': {
                 f'{input_basename}_{predictor}': {
@@ -233,6 +255,8 @@ class Utils:
                 return x
 
         df[meta_columns] = df[meta_columns].apply(lambda col: col.map(try_numeric))
+        # pivot_table drops rows with NaN in an index column, e.g. `wildtype` of frameshift peptides
+        df[meta_columns] = df[meta_columns].fillna('NA')
 
         # Pivot to wide format
         df_pivot = df.pivot_table(
@@ -271,10 +295,11 @@ def main():
     df = pd.concat([pd.read_csv(csv) for csv in glob.glob(f'{args.input}/*.csv')])
 
     # MultiQC statistics
-    MultiQC.write_mqc_stats_json(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_length_distribution(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_rank_distribution(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)
+    df_mqc = candidate_epitopes(df)
+    MultiQC.write_mqc_stats_json(df_mqc, args.prefix, args.peptide_col_name, wildtype_excluded=len(df_mqc) < len(df))
+    MultiQC.write_mqc_length_distribution(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_rank_distribution(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_ba_distribution(df_mqc, args.prefix, args.peptide_col_name)
 
     df.to_pickle(f'{args.prefix}_raw.pkl')
 
@@ -283,7 +308,7 @@ def main():
 
     # Filter out non-binders if requested
     if args.binder_only:
-        df = df[df['binder']]
+        df = filter_binders(df, args.peptide_col_name)
 
     # Write output file
     df.to_csv(f'{args.prefix}.tsv', sep='\t', index=False)

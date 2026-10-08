@@ -46,8 +46,9 @@ nextflow_pipeline {
             params {
                 outdir = "$outputDir"
                 // this reference proteome is exactly the FGFR3 MT window of the fixture,
-                // so every FGFR3 peptide is "self" while other genes are untouched
+                // so every FGFR3 peptide and its wild-type row are dropped
                 proteome_reference = "https://raw.githubusercontent.com/nf-core/test-datasets/epitopeprediction/testdata/proteins/proteome_ref.fasta"
+                wild_type          = true
             }
         }
 
@@ -58,6 +59,28 @@ nextflow_pipeline {
                 { assert workflow.success },
                 { assert !peptides.contains('FGFR3') },
                 { assert peptides.contains('CEBPA') }
+            )
+        }
+    }
+
+    test("-profile test --wild_type --wide_format_output") {
+
+        when {
+            params {
+                outdir             = "$outputDir"
+                wild_type          = true
+                wide_format_output = true
+            }
+        }
+
+        then {
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            assertAll(
+                { assert workflow.success },
+                // wild-type rows are predicted
+                { assert path("${params.outdir}/predictions/sample1.tsv").text.contains('\tWT\t') },
+                { assert snapshot(stable_name, stable_path).match() }
             )
         }
     }

@@ -22,9 +22,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - [#341](https://github.com/nf-core/epitopeprediction/pull/341) Added `<species>-all` alleles (e.g. `HLA-all`) and allele chunking, fixed the NetMHCpan/NetMHCIIpan buffer overflow on long paths, download MHCflurry models once per run (fixes [#340](https://github.com/nf-core/epitopeprediction/issues/340)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#338](https://github.com/nf-core/epitopeprediction/pull/338) Added MixMHCpred (Class I) and MixMHCIIpred (Class II) binding predictors, built on the fly with Wave and gated by `--accept_mixmhcpred_license` ([@jonasscheid](https://github.com/jonasscheid/))
 - [#377](https://github.com/nf-core/epitopeprediction/pull/377) Added `AGENTS.md` from the nf-core pipeline template ([@jonasscheid](https://github.com/jonasscheid/))
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) `--wild_type` predicts the wild-type counterparts of variant peptides ([@jonasscheid](https://github.com/jonasscheid/))
 
 ### `Fixed`
 
+- [#372](https://github.com/nf-core/epitopeprediction/pull/372) Fixed `--wide_format_output` dropping scores of peptides with missing metadata ([@jonasscheid](https://github.com/jonasscheid/))
 - [#364](https://github.com/nf-core/epitopeprediction/pull/364) Fixed inverted `--proteome_reference` self-filtering that retained self-epitopes instead of removing them (fixes [#363](https://github.com/nf-core/epitopeprediction/issues/363)) ([@jonasscheid](https://github.com/jonasscheid/))
 - [#368](https://github.com/nf-core/epitopeprediction/pull/368) Fixed NetMHCpan crashing with a buffer overflow when run from a long working directory ([@jonasscheid](https://github.com/jonasscheid/))
 - [#359](https://github.com/nf-core/epitopeprediction/pull/359) Fixed shuffled NetMHCpan/NetMHCIIpan allele labels by reading allele names from the xls header (fixes [#358](https://github.com/nf-core/epitopeprediction/issues/358)) ([@jonasscheid](https://github.com/jonasscheid/))

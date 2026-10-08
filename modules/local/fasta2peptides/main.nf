@@ -21,21 +21,21 @@ process FASTA2PEPTIDES {
     task.ext.when == null || task.ext.when
 
     script:
+    def args = task.ext.args ?: ''
     def prefix = task.ext.prefix ?: "${meta.id}"
     def min_length = meta.mhc_class == "I" ? params.min_peptide_length_classI : params.min_peptide_length_classII
     def max_length = meta.mhc_class == "I" ? params.max_peptide_length_classI : params.max_peptide_length_classII
     def variant = variants_tsv ? "--variants-tsv ${variants_tsv} --annotated-fasta ${prefix}.annotated.fasta" : ''
-    def wild_type = variants_tsv && params.wild_type ? '--wild-type' : ''
     def proteome = variants_tsv && proteome_reference ? "--proteome-reference ${proteome_reference}" : ''
     """
     fasta2peptides.py \\
+        ${args} \\
         -i ${fastas} ${protein_fastas} \\
         -o ${prefix} \\
         -minl ${min_length} \\
         -maxl ${max_length} \\
         -pepcol ${params.peptide_col_name} \\
         ${variant} \\
-        ${wild_type} \\
         ${proteome}
     """
 
