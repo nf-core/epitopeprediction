@@ -58,7 +58,7 @@
                     "untar": 1.34
                 },
                 "Workflow": {
-                    "nf-core/epitopeprediction": "v3.2.0dev"
+                    "nf-core/epitopeprediction": "v3.2.0"
                 }
             },
             [
@@ -161,7 +161,7 @@
                 "sample1_length_9.tsv:md5,2e346ecf983046271019a0ee55a75556"
             ]
         ],
-        "timestamp": "2026-09-30T04:59:47.317792736",
+        "timestamp": "2026-10-08T12:22:00.051710491",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
