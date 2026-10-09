@@ -3,9 +3,9 @@ process SPLIT_PEPTIDES {
     tag "${meta.id}"
 
     conda "${moduleDir}/environment.yml"
-    container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/python:3.14' :
-        'biocontainers/python:3.14' }"
+    container "${workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container
+        ? 'https://depot.galaxyproject.org/singularity/python:3.14'
+        : 'quay.io/biocontainers/python:3.14'}"
 
     input:
     tuple val(meta), path(tsv)
@@ -21,7 +21,7 @@ process SPLIT_PEPTIDES {
     def prefix = task.ext.prefix ?: "${meta.id}"
     """
     split_peptides.py \\
-        --input $tsv \\
+        --input ${tsv} \\
         --prefix ${prefix} \\
         --min_size ${params.peptides_split_minchunksize} \\
         --max_chunks ${params.peptides_split_maxchunks}
