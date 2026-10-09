@@ -19,7 +19,7 @@
                     "python": "3.11.5"
                 },
                 "Workflow": {
-                    "nf-core/epitopeprediction": "v3.2.0dev"
+                    "nf-core/epitopeprediction": "v3.2.0"
                 }
             },
             [
@@ -41,7 +41,7 @@
                 "predictions/sample2.tsv"
             ]
         ],
-        "timestamp": "2026-10-02T07:52:57.500649633",
+        "timestamp": "2026-10-08T12:51:30.481458229",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
@@ -69,7 +69,7 @@
                     "python": "3.11.5"
                 },
                 "Workflow": {
-                    "nf-core/epitopeprediction": "v3.2.0dev"
+                    "nf-core/epitopeprediction": "v3.2.0"
                 }
             },
             [
@@ -122,7 +122,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,3675c259cd171f85ac851daf04d1ff78"
             ]
         ],
-        "timestamp": "2026-09-30T09:46:55.128746064",
+        "timestamp": "2026-10-08T12:50:05.775961076",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

@@ -3,7 +3,7 @@
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## v3.2.0dev
+## 3.2.0 - Bebenhausen - 2026-10-12
 
 ### `Added`
 
@@ -42,12 +42,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | Dependency    | Old version | New version |
 | ------------- | ----------- | ----------- |
 | `bcftools`    | 1.21        | 1.23.1      |
-| `multiqc`     | 1.32        | 1.35        |
-| `snpsift`     | 4.3         | 5.4c        |
+| `multiqc`     | 1.31        | 1.35        |
+| `python`      | 3.11.0      | 3.14.3      |
 | `nf-core`     | 3.4.1       | 4.1.0       |
 | `NetMHCIIpan` | 4.3e        | 4.3         |
 | `MixMHCpred`  |             | 3.0         |
 | `MixMHC2pred` |             | 2.0.2       |
+| `ensembl-vep` |             | 116.1       |
+| `pvactools`   |             | 7.0.1       |
+| `epytope`     | 3.3.1       |             |
+| `snpsift`     | 4.3.1t      |             |
 
 ### `Changed`
 
@@ -64,6 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Removed`
 
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--biomart_dump_path`, `--genome`, `--fasta_output`, `--fasta_peptide_flanking_region_size`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
 - [#379](https://github.com/nf-core/epitopeprediction/pull/379) Removed `--netmhc_system` and support for the macOS NetMHCpan and NetMHCIIpan tarballs, only the Linux tarballs are supported ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.1 - Lustnau Hotfix - 2026-08-05
@@ -71,10 +76,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### `Fixed`
 
 - [#369](https://github.com/nf-core/epitopeprediction/pull/369) - Fixed wrong allele annotations in `netmhcpan` and `netmhciipan` results by reading allele labels from the prediction output header ([#358](https://github.com/nf-core/epitopeprediction/issues/358)), and accept any known sub-release of a supported NetMHC version (`netmhciipan` now also takes 4.3b and 4.3i next to 4.3e).
-
-### `Removed`
-
-- Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--biomart_dump_path`, `--genome`, `--fasta_output`, `--fasta_peptide_flanking_region_size`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
 
 ## 3.1.0 - Lustnau - 2025-10-22
 

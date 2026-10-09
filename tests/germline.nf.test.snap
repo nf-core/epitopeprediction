@@ -65,11 +65,11 @@
                     "untar": 1.34
                 },
                 "Workflow": {
-                    "nf-core/epitopeprediction": "v3.2.0dev"
+                    "nf-core/epitopeprediction": "v3.2.0"
                 }
             }
         ],
-        "timestamp": "2026-09-28T10:40:02.131433936",
+        "timestamp": "2026-10-08T12:39:07.916071066",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
