@@ -4,11 +4,10 @@ lint:
     - docs/images/nf-core-epitopeprediction_logo_light.png
     - docs/images/nf-core-epitopeprediction_logo_dark.png
     - .vscode/settings.json
-    - .github/workflows/branch.yml
-    - .github/workflows/linting.yml
-  files_exist:
-    - .github/workflows/linting_comment.yml
-nf_core_version: 3.4.1
+    - .gitignore
+    # the template links to a main branch; this repository's default branch is master
+    - .github/PULL_REQUEST_TEMPLATE.md
+nf_core_version: 4.1.0
 repository_type: pipeline
 template:
   author: Christopher Mohr, Jonas Scheid
@@ -18,7 +17,7 @@ template:
   name: epitopeprediction
   org: nf-core
   outdir: .
-  version: 3.1.1
   skip_features:
     - fastqc
     - igenomes
+  version: 3.2.0

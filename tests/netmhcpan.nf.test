@@ -1,0 +1,39 @@
+nextflow_pipeline {
+
+    name "Test pipeline with NetMHCpan"
+    script "../main.nf"
+    tag "netmhcpan"
+    profile "test_netmhcpan"
+
+    test("-profile test_netmhcpan") {
+
+        when {
+            params {
+                outdir = "$outputDir"
+            }
+        }
+
+        then {
+            // stable_name: All files + folders in ${params.outdir}/ with a stable name
+            def stable_name = getAllFilesFromDir(params.outdir, relative: true, includeDir: true, ignore: ['pipeline_info/*.{html,json,txt}'])
+            stable_name = stable_name.findAll { !it.startsWith('netmhcpan') }
+            // stable_path: All files in ${params.outdir}/ with stable content
+            def stable_path = getAllFilesFromDir(params.outdir, ignoreFile: 'tests/.nftignore')
+            // remove all files from stable_path that start with 'netmhcpan' since ignore does not work in this case
+            stable_path = stable_path.findAll { !it.toString().contains('/netmhcpan/') }
+            assertAll(
+                { assert workflow.success},
+                { assert snapshot(
+                    // Number of successful tasks
+                    workflow.trace.succeeded().size(),
+                    // pipeline versions.yml file for multiqc from which Nextflow version is removed because we test pipelines on multiple Nextflow versions
+                    removeNextflowVersion("$outputDir/pipeline_info/nf_core_epitopeprediction_software_mqc_versions.yml"),
+                    // All stable path name, with a relative path
+                    stable_name,
+                    // All files with stable contents
+                    stable_path
+                ).match() }
+            )
+        }
+    }
+}

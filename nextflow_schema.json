@@ -16,9 +16,10 @@
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
+                    "mimetype": "text/csv",
                     "schema": "assets/schema_input.json",
                     "description": "Path to comma-separated file containing information about the samples in the experiment.",
-                    "help_text": "You will need to create a design file with information about the samples in your experiment before running the pipeline. Use this parameter to specify its location. It has to be a comma-separated file with 3 columns, and a header row. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
+                    "help_text": "Comma-separated file with a header row and one row for each input file. It has the columns `sample`, `alleles`, `mhc_class` and `filename`, and the optional columns `tumor_sample` and `germline_vcf`. See [usage docs](https://nf-co.re/epitopeprediction/usage#samplesheet-input).",
                     "fa_icon": "fas fa-file-csv"
                 },
                 "outdir": {
@@ -44,21 +45,47 @@
         "reference_options": {
             "title": "Reference options",
             "type": "object",
-            "description": "Options for the genome and proteome reference.",
+            "description": "Options for the reference genome and VEP offline cache used for variant annotation.",
             "fa_icon": "fas fa-stream",
             "properties": {
-                "genome_reference": {
-                    "type": "string",
-                    "default": "grch37",
-                    "help_text": "This defines against which human Ensembl genome reference the pipeline performs the analysis including the incorporation of genetic variants. If `grch37` or `grch38` are specified, the most recent Ensembl Biomart version for genome versions will be used. Alternatively, an Ensembl Biomart (archive) version can be specified, e.g. http://jan2020.archive.ensembl.org/.",
-                    "description": "Specifies the Ensembl genome reference version that will be used."
-                },
-                "proteome_reference": {
+                "ref_fasta": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
-                    "description": "Specifies the reference proteome fasta file that is used for self-filtering peptides derived from provided genomic variants."
+                    "fa_icon": "fas fa-book",
+                    "description": "Reference genome FASTA matching the build (Ensembl primary assembly, contigs 1..MT), plain or bgzipped, with a .fai (and .gzi) index alongside. Required for variant (VCF) input unless --vep_download_cache is set.",
+                    "help_text": "Used for VCF normalization (bcftools norm -m- -f) and to give VEP HGVS/protein context. Input VCF contigs are renamed to Ensembl style (chr1->1, chrM->MT) before annotation."
+                },
+                "vep_cache": {
+                    "type": "string",
+                    "format": "path",
+                    "exists": true,
+                    "fa_icon": "fas fa-folder",
+                    "description": "Path to the VEP offline Ensembl cache. Either the cache directory or a `.tar.gz` of it. Required for variant input unless --vep_download_cache is set.",
+                    "help_text": "Download once with the reference helper script, or set --vep_download_cache to fetch it in-pipeline. A `.tar.gz` archive is unpacked automatically (used by the test profile). Must match the build and --vep_cache_version."
+                },
+                "vep_cache_version": {
+                    "type": "integer",
+                    "description": "VEP cache version, matching the downloaded cache (e.g. 116). Required for variant input."
+                },
+                "vep_species": {
+                    "type": "string",
+                    "description": "VEP species, matching the cache (e.g. homo_sapiens, mus_musculus). Required for variant input."
+                },
+                "vep_genome": {
+                    "type": "string",
+                    "description": "VEP assembly, matching the cache (e.g. GRCh38, GRCm39). Required for variant input."
+                },
+                "vep_download_cache": {
+                    "type": "boolean",
+                    "fa_icon": "fas fa-download",
+                    "description": "Download the VEP cache and reference FASTA in-pipeline instead of providing --vep_cache/--ref_fasta.",
+                    "help_text": "Opt-in convenience for internet-connected compute nodes. Fetches the indexed Ensembl VEP cache + build-matched FASTA straight from the Ensembl FTP site over HTTPS for the given --vep_species/--vep_genome/--vep_cache_version, publishing them under <outdir>/references for reuse. A ~20 GB download; run once, then reuse via --vep_cache/--ref_fasta."
                 }
+            },
+            "dependentRequired": {
+                "vep_cache": ["ref_fasta"],
+                "ref_fasta": ["vep_cache"]
             }
         },
         "peptide_prediction_options": {
@@ -75,14 +102,14 @@
                 "min_peptide_length_classI": {
                     "type": "integer",
                     "default": 8,
-                    "description": "Specifies the minimum peptide length.",
-                    "help_text": "Specifies the minimum peptide length (not applied when `--peptides` is specified). Default: MCH class I: 8 aa, MHC class II: 15 aa"
+                    "description": "Specifies the minimum peptide length for MHC class I peptides.",
+                    "help_text": "Applies to variant and protein input, and filters peptide input. Each tool also has its own length range, see [usage docs](https://nf-co.re/epitopeprediction/usage#peptide-lengths)."
                 },
                 "max_peptide_length_classI": {
                     "type": "integer",
                     "default": 12,
-                    "description": "Specifies the maximum peptide length.",
-                    "help_text": "Specifies the maximum peptide length (not applied when `--peptides` is specified). Default: MHC class I: 11 aa, MHC class II: 16 aa"
+                    "description": "Specifies the maximum peptide length for MHC class I peptides.",
+                    "help_text": "Applies to variant and protein input, and filters peptide input. Each tool also has its own length range, see [usage docs](https://nf-co.re/epitopeprediction/usage#peptide-lengths)."
                 },
                 "min_peptide_length_classII": {
                     "type": "integer",
@@ -97,37 +124,47 @@
                 "tools": {
                     "type": "string",
                     "default": "mhcnuggets",
-                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`,`netmhcpan`,`netmhciipan`.",
+                    "help_text": "Specifies the tool(s) to use. Multiple tools can be combined in a list separated by comma.\nAvailable are: `mhcflurry`, `mhcnuggets`, `mhcnuggetsii`, `netmhcpan`, `netmhciipan`, `mixmhcpred`, `mixmhciipred`.\n\nNote: MixMHCpred and MixMHCIIpred are licensed for academic non-commercial research only and require `--accept_mixmhcpred_license`. Their containers are built on the fly by Wave, so run with `-with-wave`.",
                     "description": "Specifies the prediction tool(s) to use."
                 },
                 "wild_type": {
                     "type": "boolean",
-                    "help_text": "Specifies whether wild-type sequences of mutated peptides should be predicted as well.",
-                    "description": "Specifies whether wild-type sequences should be predicted."
-                },
-                "fasta_output": {
-                    "type": "boolean",
                     "default": false,
-                    "description": "Specifies that sequences of proteins, affected by provided variants, will be written to a FASTA file.",
-                    "help_text": "Specifies that sequences of proteins that are affected by the provided genomic variants are written to a `FASTA` file. The resulting `FASTA` file will contain the wild-type and mutated protein sequences. Setting this flag will skip the MHC binding prediction entirely. One can provide arbitrary values for `alleles` and `mhc_class` in the samplesheet. Currently supports vcf files annotated with Ensembl VEP (recommended settings: `--pick --protein --uniprot --hgvs --vcf`)."
+                    "help_text": "Variant input only. Adds the aligned wild-type k-mer of each missense mutant peptide as its own row (`peptide_origin` `WT`), so it is predicted against the same alleles. The `wildtype` column is written regardless of this flag.",
+                    "description": "Also predict the wild-type counterparts of variant peptides."
                 },
-                "fasta_peptide_flanking_region_size": {
+                "proteome_reference": {
+                    "type": "string",
+                    "format": "file-path",
+                    "exists": true,
+                    "fa_icon": "fas fa-filter",
+                    "description": "Optional reference proteome FASTA for self-filtering variant peptides.",
+                    "help_text": "When set, variant-derived peptides that occur as a substring of any protein in this reference proteome (e.g. a UniProt or Ensembl `pep.all.fa`) are dropped before prediction, removing self peptides that are not truly variant-specific. Only affects the variant (VCF) path; unset means no filtering."
+                },
+                "mutation_flanking_aas": {
                     "type": "integer",
                     "default": 25,
-                    "hidden": true,
-                    "description": "Specifies the size of the flanking regions around a mutation in a peptide in the FASTA file (if `fasta_output` is set to `true`)."
+                    "description": "Number of amino acids flanking the mutation on each side in the published variant protein FASTA (`variant_fasta/`); frameshifts run to the new stop.",
+                    "help_text": "Only affects the FASTA written for downstream use, e.g. as a search database. Peptides for prediction are cut per peptide length as in `pvacseq run` and do not depend on this value."
                 },
                 "wide_format_output": {
                     "type": "boolean",
                     "default": false,
                     "description": "Specifies that the output file will be in wide format.",
-                    "help_text": "Transforms output file such that for each predictor and allele a column `predictor_allele_predictionMetric` is created."
+                    "help_text": "Writes one row for each peptide, with the columns `<tool>_<allele>_<BA|binder|rank>` and the best value and allele of each tool. See [output docs](https://nf-co.re/epitopeprediction/output#wide-format)."
                 },
                 "binder_only": {
                     "type": "boolean",
                     "default": false,
                     "description": "Filter out non-binders from the final results.",
-                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file."
+                    "help_text": "When enabled, only peptides predicted as binders by at least one predictor will be included in the final output file. With `--wild_type`, the wild-type rows of mutant binders are kept as well."
+                },
+                "use_ba_rank": {
+                    "type": "boolean",
+                    "default": false,
+                    "hidden": true,
+                    "description": "Use BA_Rank instead of EL_Rank for netMHCpan and netMHCIIpan predictions.",
+                    "help_text": "By default, netMHCpan and netMHCIIpan predictions use EL_Rank (Eluted Ligand Rank) as the rank metric, which is the recommended metric by the developers. When this flag is enabled, BA_Rank (Binding Affinity Rank) will be used instead. Note that EL_Rank and BA_Rank can differ significantly as they are computed against different reference sets."
                 }
             }
         },
@@ -137,33 +174,16 @@
             "description": "Options for optimising the pipeline run execution.",
             "fa_icon": "fas fa-history",
             "properties": {
-                "split_by_variants": {
-                    "type": "boolean",
-                    "description": "Split VCF file into multiple files by number of variants."
-                },
-                "split_by_variants_size": {
-                    "type": "integer",
-                    "default": 0,
-                    "description": "Number of variants that should be written into one file. Default: number of variants divided by ten",
-                    "hidden": true
-                },
-                "split_by_variants_distance": {
-                    "type": "integer",
-                    "default": 110000,
-                    "description": "Number of nucleotides between previous and current variant across split.",
-                    "help_text": "This can be used to avoid that variants end up in separate splits that fall onto the same transcript and therefore potentially contribute to the same mutated protein. ",
-                    "hidden": true
-                },
                 "peptides_split_maxchunks": {
                     "type": "integer",
                     "default": 100,
-                    "help_text": "Used in combination with `--peptides` or `--proteins`. Maximum number of peptide chunks that will be created for parallelisation.",
+                    "help_text": "Maximum number of peptide chunks that the pipeline creates to run the predictions in parallel.",
                     "description": "Specifies the maximum number of peptide chunks."
                 },
                 "peptides_split_minchunksize": {
                     "type": "integer",
                     "default": 5000,
-                    "help_text": "Used in combination with `--peptides` or `--proteins`: minimum number of peptides that should be written into one chunk.",
+                    "help_text": "Minimum number of peptides that the pipeline writes into one chunk.",
                     "description": "Specifies the minimum number of peptides that should be written into one chunk."
                 }
             }
@@ -179,25 +199,26 @@
                     "description": "Specifies the path to the JSON file with meta information on external prediction tools.",
                     "hidden": true
                 },
-                "netmhc_system": {
-                    "type": "string",
-                    "default": "linux",
-                    "enum": ["linux", "darwin"],
-                    "description": "Specifies the operating system in use (Linux or Darwin). This is only necessary if conda is used."
-                },
                 "netmhcpan_path": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhcpan' tool, specify the path to the original software tarball for NetMHCpan 4.0 here."
+                    "description": "To use the 'netmhcpan' tool, specify the path to the original Linux software tarball for NetMHCpan 4.2 here."
                 },
                 "netmhciipan_path": {
                     "type": "string",
                     "format": "file-path",
                     "exists": true,
                     "pattern": "^\\S+\\.tar\\.gz$",
-                    "description": "To use the 'netmhciipan' tool, specify the path to the original software tarball for NetMHCIIpan 3.1 here."
+                    "description": "To use the 'netmhciipan' tool, specify the path to the original Linux software tarball for NetMHCIIpan 4.3 here."
+                },
+                "accept_mixmhcpred_license": {
+                    "type": "boolean",
+                    "default": false,
+                    "fa_icon": "fas fa-file-contract",
+                    "description": "Confirm that you have read the MixMHCpred and MixMHC2pred licenses and use them for academic non-commercial research only.",
+                    "help_text": "Required to run `mixmhcpred` or `mixmhciipred`. Both tools are licensed by the Ludwig Institute for Cancer Research for academic non-commercial research only; commercial use needs a separate license. Read the [MixMHCpred license](https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf) and the [MixMHC2pred license](https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE) before setting this flag."
                 }
             }
         },
@@ -298,13 +319,6 @@
                     "type": "boolean",
                     "description": "Do not use coloured log outputs.",
                     "fa_icon": "fas fa-palette",
-                    "hidden": true
-                },
-                "hook_url": {
-                    "type": "string",
-                    "description": "Incoming hook URL for messaging service",
-                    "fa_icon": "fas fa-people-group",
-                    "help_text": "Incoming hook URL for messaging service. Currently, MS Teams and Slack are supported.",
                     "hidden": true
                 },
                 "multiqc_config": {

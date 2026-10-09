@@ -6,6 +6,7 @@ Author: Jonas Scheid
 License: MIT
 """
 import argparse
+import pkg_resources
 import shlex
 import logging
 from pathlib import Path
@@ -30,6 +31,7 @@ class Arguments:
         self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
         self.mhc_class = "$meta.mhc_class"
         self.alleles = "$meta.alleles_supported".split(";")
+        self.alleles_input = "$alleles_input".split(";")
         self.parse_ext_args("$task.ext.args")
 
     def parse_ext_args(self, args_string: str) -> None:
@@ -51,55 +53,22 @@ class Arguments:
             setattr(self, attr, getattr(args, attr))
 
 
-class Version:
-    """
-    Parse the versions of the modules used in the script.
-    """
-
-    @staticmethod
-    def get_versions(modules: list) -> dict:
-        """
-        This function takes a list of modules and returns a dictionary with the
-        versions of each module.
-        """
-        return {module.__name__: module.__version__ for module in modules}
-
-    @staticmethod
-    def format_yaml_like(data: dict, indent: int = 0) -> str:
-        """
-        Formats a dictionary to a YAML-like string.
-
-        Args:
-            data (dict): The dictionary to format.
-            indent (int): The current indentation level.
-
-        Returns:
-            yaml_str: A string formatted as YAML.
-        """
-        yaml_str = ""
-        for key, value in data.items():
-            spaces = "  " * indent
-            if isinstance(value, dict):
-                yaml_str += f"{spaces}{key}:\\n{Version.format_yaml_like(value, indent + 1)}"
-            else:
-                yaml_str += f"{spaces}{key}: {value}\\n"
-        return yaml_str
 
 def main():
     args = Arguments()
 
     # Predict and load written tsv file
     predicted_df = []
-    for allele in args.alleles:
-        mhcnuggets_allele = allele.replace('*','').replace('H2','H-2')
+    for allele, mhcnuggets_allele in zip(args.alleles, args.alleles_input):
+        safe_allele = allele.replace('/', '_').replace('*', '')
         # MHCnuggets cannot compute ranks for mouse alleles
         compute_rank = 'H-2' not in mhcnuggets_allele
         predict(class_=args.mhc_class, peptides_path = args.input, mhc=mhcnuggets_allele,
-                output=f'{args.prefix}_{allele}.csv', rank_output=compute_rank)
+                output=f'{args.prefix}_{safe_allele}.csv', rank_output=compute_rank)
         if compute_rank:
-            tmp_df = pd.read_csv(f'{args.prefix}_{allele}_ranks.csv')
+            tmp_df = pd.read_csv(f'{args.prefix}_{safe_allele}_ranks.csv')
         else:
-            tmp_df = pd.read_csv(f'{args.prefix}_{allele}.csv')
+            tmp_df = pd.read_csv(f'{args.prefix}_{safe_allele}.csv')
             # Mock rank column
             tmp_df['rank'] = np.nan
         tmp_df['allele'] = allele
@@ -109,15 +78,8 @@ def main():
     predicted_df = pd.concat(predicted_df)
     filename_out = f'{args.prefix}_predicted_mhcnuggets.csv' if args.mhc_class == 'I' else f'{args.prefix}_predicted_mhcnuggetsii.csv'
     predicted_df.to_csv(filename_out, index=False)
-
-    # Parse versions
-    versions_this_module = {}
-    versions_this_module["${task.process}"] = Version.get_versions([argparse, pd])
     with open("versions.yml", "w") as f:
-        f.write(Version.format_yaml_like(versions_this_module))
-        # No __version__ dunder or similar available, need to hardcode version
-        f.write('mhcnuggets: 2.4.0')
-
+        f.write(f'"${task.process}":\\n    mhcnuggets: {pkg_resources.get_distribution("mhcnuggets").version}\\n    pandas: {pd.__version__}\\n')
 
 if __name__ == "__main__":
     main()

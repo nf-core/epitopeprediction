@@ -18,7 +18,7 @@ concurrency:
 
 env:
   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  NFT_VER: "0.9.3"
+  NFT_VER: "0.9.4"
   NFT_WORKDIR: "~"
   NXF_ANSI_LOG: false
   NXF_SINGULARITY_CACHEDIR: ${{ github.workspace }}/.singularity
@@ -40,7 +40,7 @@ jobs:
           rm -rf ./* || true
           rm -rf ./.??* || true
           ls -la ./
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -79,14 +79,14 @@ jobs:
           - isMain: false
             profile: "singularity"
         NXF_VER:
-          - "25.04.0"
+          - "25.10.4"
           - "latest-everything"
     env:
       NXF_ANSI_LOG: false
       TOTAL_SHARDS: ${{ needs.nf-test-changes.outputs.total_shards }}
 
     steps:
-      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -101,6 +101,7 @@ jobs:
           profile: ${{ matrix.profile }}
           shard: ${{ matrix.shard }}
           total_shards: ${{ env.TOTAL_SHARDS }}
+          tags: "pipeline"
 
       - name: Report test status
         if: ${{ always() }}
@@ -132,9 +133,44 @@ jobs:
         with:
           name: pr-comment-fragment-${{ strategy.job-index }}
           path: pr-comment-fragment/
+  netmhcpan:
+    name: Run NetMHCpan tests
+    if: ${{ ( github.event_name == 'push' && github.repository == 'nf-core/epitopeprediction' ) || github.event.pull_request.head.repo.full_name == 'nf-core/epitopeprediction' }}
+    runs-on:
+      - runs-on=${{ github.run_id }}-netmhcpan
+      - runner=4cpu-linux-x64
+    strategy:
+      fail-fast: false
+      matrix:
+        NXF_VER:
+          - "25.10.4"
+          - "latest-everything"
+    steps:
+      - name: Check out pipeline code
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Install non-free NetMHCpan software
+        env:
+          DECRYPT_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+        run: |
+          aws s3 cp --no-sign-request s3://nf-core-awsmegatests/epitopeprediction/netMHCpan/netMHCpan-4.2bstatic.Linux.tar.gz.gpg netMHCpan-4.2bstatic.Linux.tar.gz.gpg
+          gpg --batch --yes --pinentry-mode=loopback --passphrase "${{ secrets.GPG_PASSPHRASE }}" --output ${{ github.workspace }}/netMHCpan-4.2bstatic.Linux.tar.gz --decrypt netMHCpan-4.2bstatic.Linux.tar.gz.gpg
+
+      - name: Run nf-test
+        uses: ./.github/actions/nf-test
+        continue-on-error: ${{ matrix.NXF_VER == 'latest-everything' }}
+        env:
+          NFT_WORKDIR: ${{ env.NFT_WORKDIR }}
+          NXF_VERSION: ${{ matrix.NXF_VER }}
+        with:
+          profile: docker
+          tags: netmhcpan
+          changed_since: ""
 
   confirm-pass:
-    needs: [nf-test]
+    needs: [nf-test, netmhcpan]
     if: always()
     runs-on: # use self-hosted runners
       - runs-on=${{ github.run_id }}-confirm-pass

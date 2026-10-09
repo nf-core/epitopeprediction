@@ -16,18 +16,41 @@ from pathlib import Path
 import pandas as pd
 import numpy as np
 
+
+def candidate_epitopes(df):
+    """Drop pure wild-type rows (variant route); they are not candidate epitopes."""
+    if 'peptide_origin' not in df.columns:
+        return df
+    return df[df['peptide_origin'].fillna('MT').str.contains('MT')]
+
+
+def filter_binders(df, peptide_col_name):
+    """Keeps binders and the wild-type rows of mutant binders, matched per predictor and allele in long format."""
+    is_binder = df['binder'].eq(True).to_numpy()
+    if not df.get('peptide_origin', pd.Series(dtype=str)).str.contains('WT', na=False).any():
+        return df[is_binder]
+    keys = [peptide_col_name] + [col for col in ('predictor', 'allele') if col in df.columns]
+    partners = candidate_epitopes(df[is_binder])
+    partners = (partners.assign(**{peptide_col_name: partners['wildtype'].str.split(';')})
+                .explode(peptide_col_name)[keys].drop_duplicates())
+    is_partner = df[keys].merge(partners, how='left', indicator=True)['_merge'].eq('both').to_numpy()
+    return df[is_binder | is_partner]
+
+
 # -------------------------------------------
 #           MultiQC Statistics
 # -------------------------------------------
 class MultiQC:
-    def write_mqc_stats_json(df, input_basename):
+    def write_mqc_stats_json(df, input_basename, peptide_col_name, wildtype_excluded=False):
         df_valid = df.dropna(subset=['predictor'])
+        # Per-peptide stats: a peptide is a binder if ANY allele reports binder=True
+        df_valid = df_valid.groupby(['predictor', peptide_col_name])['binder'].any().reset_index()
         result = df_valid.groupby('predictor').agg(
             binder=('binder', lambda x: x.sum()),
             total=('binder', 'count')
         )
         result['non_binder'] = result['total'] - result['binder']
-        result['unsupported'] = df['predictor'].isna().sum() + df['predictor'].value_counts().max() - df['predictor'].value_counts()
+        result['unsupported'] = df['predictor'].isna().sum()
         for col in ['binder', 'non_binder']:
             result[f'{col}_percent'] = (result[col] / result['total']) * 100
         summary_counts_dict = result.to_dict('index')
@@ -36,15 +59,16 @@ class MultiQC:
             'section_name': 'Binding Prediction Statistics',
             'description': (
                 'The statistics table shows the number of binders, non-binders, and unsupported peptides for each predictor. '
-                'The unsupported peptides are those that were not predicted by any of the predictors.'),
+                'The unsupported peptides are those that were not predicted by any of the predictors.'
+                + (' Wild-type peptides added by `--wild_type` are not counted.' if wildtype_excluded else '')),
             'plot_type': 'table',
             'data': {
                 f'{input_basename}_{predictor}': {
                     'Binders': int(counts['binder']),
                     'Non-binders': int(counts['non_binder']),
                     'Unsupported': int(counts['unsupported']),
-                    'Binders (%)': f"{counts['binder_percent']:.2f}",
-                    'Non-binders (%)': f"{counts['non_binder_percent']:.2f}",
+                    'Binders (%)': round(counts['binder_percent'], 2),
+                    'Non-binders (%)': round(counts['non_binder_percent'], 2),
                 } for predictor, counts in summary_counts_dict.items()
             }
         }
@@ -73,10 +97,11 @@ class MultiQC:
     def write_mqc_rank_distribution(df, input_basename, peptide_col_name):
         df_valid = df.dropna(subset=['predictor'])
         best_predictor = df_valid.groupby(['binder', 'predictor']).size().idxmax(skipna=True)[1]
+        # NetMHCIIpan can emit NaN ranks; drop them so idxmin never returns NaN
         best_rank = (
-            df_valid[df_valid['predictor'] == best_predictor]
+            df_valid[(df_valid['predictor'] == best_predictor) & df_valid['rank'].notna()]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['rank'].idxmin(skipna=True)])
+                .apply(lambda x: x.loc[x['rank'].idxmin()])
         )
         bins = np.linspace(0, 10, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -106,7 +131,7 @@ class MultiQC:
         best_ba = (
             df_valid[df_valid['predictor'] == best_predictor]
                 .groupby([peptide_col_name, 'allele'], group_keys=False)
-                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)])
+                .apply(lambda x: x.loc[x['BA'].idxmax(skipna=True)] if x['BA'].notna().any() else x.iloc[0])
         )
         bins = np.linspace(0, 1, 21)
         bin_centers = (bins[:-1] + bins[1:]) / 2
@@ -139,7 +164,7 @@ class Utils:
         Summarize per-peptide best binding predictions from multiple predictors.
 
         For each predictor present in `df['predictor']`:
-          - If predictor ∈ {'mhcflurry', 'netmhcpan', 'netmhciipan'}, select the allele with the lowest 'rank'.
+          - If predictor ∈ {'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred'}, select the allele with the lowest 'rank'.
           - If predictor ∈ {'mhcnuggets', 'mhcnuggetsii'}, select the allele with the highest 'BA'.
 
         The returned DataFrame is indexed by peptide (column `peptide_col`) and contains:
@@ -162,7 +187,8 @@ class Utils:
             Wide-format summary indexed by peptide with best_value_*, best_allele_*,
             aggregated 'best_allele' and global 'binder' columns.
         """
-        rank_metric_best = {'mhcflurry', 'netmhcpan', 'netmhciipan'}
+        # MixMHC* set BA to NaN, so rank is the only usable metric
+        rank_metric_best = {'mhcflurry', 'netmhcpan', 'netmhciipan', 'mixmhcpred', 'mixmhciipred'}
         ba_metric_best   = {'mhcnuggets', 'mhcnuggetsii'} # here for clarity
 
         def _pick_best(group):
@@ -229,6 +255,8 @@ class Utils:
                 return x
 
         df[meta_columns] = df[meta_columns].apply(lambda col: col.map(try_numeric))
+        # pivot_table drops rows with NaN in an index column, e.g. `wildtype` of frameshift peptides
+        df[meta_columns] = df[meta_columns].fillna('NA')
 
         # Pivot to wide format
         df_pivot = df.pivot_table(
@@ -267,10 +295,11 @@ def main():
     df = pd.concat([pd.read_csv(csv) for csv in glob.glob(f'{args.input}/*.csv')])
 
     # MultiQC statistics
-    MultiQC.write_mqc_stats_json(df, args.prefix)
-    MultiQC.write_mqc_length_distribution(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_rank_distribution(df, args.prefix, args.peptide_col_name)
-    MultiQC.write_mqc_ba_distribution(df, args.prefix, args.peptide_col_name)
+    df_mqc = candidate_epitopes(df)
+    MultiQC.write_mqc_stats_json(df_mqc, args.prefix, args.peptide_col_name, wildtype_excluded=len(df_mqc) < len(df))
+    MultiQC.write_mqc_length_distribution(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_rank_distribution(df_mqc, args.prefix, args.peptide_col_name)
+    MultiQC.write_mqc_ba_distribution(df_mqc, args.prefix, args.peptide_col_name)
 
     df.to_pickle(f'{args.prefix}_raw.pkl')
 
@@ -279,7 +308,7 @@ def main():
 
     # Filter out non-binders if requested
     if args.binder_only:
-        df = df[df['binder']]
+        df = filter_binders(df, args.peptide_col_name)
 
     # Write output file
     df.to_csv(f'{args.prefix}.tsv', sep='\t', index=False)

@@ -4,43 +4,23 @@
 process UNPACK_NETMHC_SOFTWARE {
     label 'process_single'
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://containers.biocontainers.pro/s3/SingImgsRepo/biocontainers/v1.2.0_cv1/biocontainers_v1.2.0_cv1.img' :
         'docker.io/biocontainers/biocontainers:v1.2.0_cv2' }"
 
     input:
-    tuple val(toolname), val(toolversion), val(toolchecksum), path(tooltarball), file(datatarball), val(datachecksum), val(toolbinaryname)
+    tuple val(toolname), val(toolversion), path(tooltarball), val(toolbinaryname)
 
     output:
     path "${toolname}", emit: nonfree_tools
-    path "versions.yml", emit: versions
+    tuple val("${task.process}"), val(toolname), val(toolversion), topic: versions, emit: versions_netmhc
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
     """
-    #
-    # CHECK IF THE PROVIDED SOFTWARE TARBALL IS A REGULAR FILE
-    #
-    if [ ! -f "$tooltarball" ]; then
-        echo "Path specified for ${toolname} does not point to a regular file. Please specify a path to the original tool tarball." >&2
-        exit 1
-    fi
-
-    #
-    # VALIDATE THE CHECKSUM OF THE PROVIDED SOFTWARE TARBALL
-    #
-    checksum="\$(md5sum "$tooltarball" | cut -f1 -d' ')"
-    echo "\$checksum"
-    # Any sub-release of the supported version is accepted, so match against the whole list
-    if ! echo "${toolchecksum}" | tr ' ' '\\n' | grep -qxF "\$checksum"; then
-        echo "Checksum error for $toolname. Please make sure to provide an original tarball for $toolname version $toolversion." >&2
-        echo "Provided tarball has md5 \$checksum, accepted are: ${toolchecksum}" >&2
-        exit 2
-    fi
-
     #
     # UNPACK THE PROVIDED SOFTWARE TARBALL
     #
@@ -57,39 +37,10 @@ process UNPACK_NETMHC_SOFTWARE {
         -e 's_bin/tcsh.*\$_usr/bin/env tcsh_' \
         -e "s_/scratch_/tmp_" \
         -e "s_setenv[[:space:]]NMHOME.*_setenv NMHOME \\`realpath -s \\\$0 | sed -r 's/[^/]+\$//'\\`_ " "${toolname}/${toolbinaryname}"
-
-    #
-    # VALIDATE THE CHECKSUM OF THE DOWNLOADED MODEL DATA
-    #
-    if [ "$toolname" == "netmhcpan" ]; then
-        checksum="\$(md5sum "$datatarball" | cut -f1 -d' ')"
-        if [ "\$checksum" != "${datachecksum}" ]; then
-            echo "A checksum mismatch occurred when checking the data file for ${toolname}." >&2
-            exit 3
-        fi
-
-        #
-        # UNPACK THE DOWNLOADED MODEL DATA
-        #
-        tar -C "${toolname}" -v -x -f "$datatarball"
-    fi
-
-    #
-    # CREATE VERSION FILE
-    #
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        ${toolname}: ${toolversion}
-    END_VERSIONS
     """
 
     stub:
     """
     mkdir "${toolname}"
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        ${toolname}: ${toolversion}
-    END_VERSIONS
     """
 }
