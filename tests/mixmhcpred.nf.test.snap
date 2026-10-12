@@ -119,10 +119,10 @@
                 "multiqc_binder_rank_distribution.txt:md5,a22263d9f68b53b95dcc57f814dd4e68",
                 "multiqc_binding_affinity_distribution.txt:md5,5ac4b5af54747eecb7e38f7c7dfb2506",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,3675c259cd171f85ac851daf04d1ff78"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,5317047dc27e79ee74e18ed5389d8d1f"
             ]
         ],
-        "timestamp": "2026-10-12T09:48:31.162377091",
+        "timestamp": "2026-10-12T14:02:05.084622761",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

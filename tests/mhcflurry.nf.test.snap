@@ -10,6 +10,9 @@
                 "MHCFLURRY": {
                     "mhcflurry": "2.1.4"
                 },
+                "MHCFLURRY_DOWNLOAD_MODELS": {
+                    "mhcflurry": "2.1.4"
+                },
                 "PREPARE_PREDICTION_INPUT": {
                     "mhcgnomes": "1.8.6",
                     "pandas": "2.1.0"
@@ -69,10 +72,10 @@
                 "multiqc_binder_rank_distribution.txt:md5,beb8d337d0b194fc817643c29338c7fe",
                 "multiqc_binding_affinity_distribution.txt:md5,cb41d45498b355e2a963bcca0029d985",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,ecd0edbf3142c1477178fb91b8a9740c"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,d39d7b01d8f5294d2da434d545edb72c"
             ]
         ],
-        "timestamp": "2026-10-08T12:44:05.693795661",
+        "timestamp": "2026-10-12T13:19:50.312853185",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"

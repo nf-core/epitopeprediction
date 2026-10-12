@@ -101,11 +101,6 @@ workflow EPITOPEPREDICTION {
         netmhc_software_meta,
     )
 
-    /*     // Concatenate splitted predictions on sample
-    CSVTK_CONCAT(MHC_BINDING_PREDICTION.out.predicted
-                    .map { meta, file -> [meta.subMap('id','alleles','mhc_class'), file] }
-                    .groupTuple(), "tsv", "tsv") */
-
     // Summarize prediction statistics for MultiQC report
     SUMMARIZE_RESULTS(
         MHC_BINDING_PREDICTION.out.predicted.map { meta, file -> [meta.subMap('id', 'alleles', 'mhc_class'), file] }.groupTuple()
