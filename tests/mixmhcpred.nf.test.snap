@@ -4,19 +4,19 @@
             17,
             {
                 "MERGE_PREDICTIONS": {
-                    "python": "3.11.5"
+                    "python": "3.14.8"
                 },
                 "MIXMHCPRED": {
                     "mixmhcpred": 3.0
                 },
                 "PREPARE_PREDICTION_INPUT": {
-                    "python": "3.11.5"
+                    "python": "3.14.8"
                 },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
-                    "python": "3.11.5"
+                    "python": "3.14.8"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0"
@@ -41,7 +41,7 @@
                 "predictions/sample2.tsv"
             ]
         ],
-        "timestamp": "2026-10-08T12:51:30.481458229",
+        "timestamp": "2026-10-12T09:51:04.317260658",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
@@ -53,20 +53,20 @@
             {
                 "MERGE_PREDICTIONS": {
                     "mhcgnomes": "1.8.6",
-                    "pandas": "2.1.0"
+                    "pandas": "2.3.3"
                 },
                 "MIXMHCPRED": {
                     "mixmhcpred": 3.0
                 },
                 "PREPARE_PREDICTION_INPUT": {
                     "mhcgnomes": "1.8.6",
-                    "pandas": "2.1.0"
+                    "pandas": "2.3.3"
                 },
                 "SPLIT_PEPTIDES": {
                     "python": "3.14.3"
                 },
                 "SUMMARIZE_RESULTS": {
-                    "python": "3.11.5"
+                    "python": "3.14.8"
                 },
                 "Workflow": {
                     "nf-core/epitopeprediction": "v3.2.0"
@@ -122,7 +122,7 @@
                 "multiqc_peptide_binding_prediction_stats.txt:md5,3675c259cd171f85ac851daf04d1ff78"
             ]
         ],
-        "timestamp": "2026-10-08T12:50:05.775961076",
+        "timestamp": "2026-10-12T09:48:31.162377091",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
