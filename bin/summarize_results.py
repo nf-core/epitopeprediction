@@ -50,7 +50,7 @@ class MultiQC:
             total=('binder', 'count')
         )
         result['non_binder'] = result['total'] - result['binder']
-        result['unsupported'] = df['predictor'].isna().sum()
+        result['unsupported'] = df[peptide_col_name].nunique() - result['total']
         for col in ['binder', 'non_binder']:
             result[f'{col}_percent'] = (result[col] / result['total']) * 100
         summary_counts_dict = result.to_dict('index')
@@ -59,7 +59,7 @@ class MultiQC:
             'section_name': 'Binding Prediction Statistics',
             'description': (
                 'The statistics table shows the number of binders, non-binders, and unsupported peptides for each predictor. '
-                'The unsupported peptides are those that were not predicted by any of the predictors.'
+                'The unsupported peptides are those that the predictor did not score for any allele.'
                 + (' Wild-type peptides added by `--wild_type` are not counted.' if wildtype_excluded else '')),
             'plot_type': 'table',
             'data': {

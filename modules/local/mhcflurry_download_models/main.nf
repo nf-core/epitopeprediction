@@ -1,12 +1,14 @@
 process MHCFLURRY_DOWNLOAD_MODELS {
     label 'process_single'
 
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
         'https://depot.galaxyproject.org/singularity/mhcflurry:2.1.4--pyh7e72e81_1' :
         'quay.io/biocontainers/mhcflurry:2.1.4--pyh7e72e81_1' }"
 
     output:
     path "mhcflurry-data", emit: models
+    tuple val("${task.process}"), val('mhcflurry'), eval("mhcflurry-predict --version | cut -d' ' -f2"), topic: versions, emit: versions_mhcflurry
 
     script:
     """

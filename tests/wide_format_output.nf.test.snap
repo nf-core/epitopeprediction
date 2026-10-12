@@ -70,10 +70,10 @@
                 "multiqc_binder_rank_distribution.txt:md5,666bbe007b239667ee5bff300b3419d2",
                 "multiqc_binding_affinity_distribution.txt:md5,951ded5c15b81071949385794340bee2",
                 "multiqc_citations.txt:md5,4c806e63a283ec1b7e78cdae3a923d4f",
-                "multiqc_peptide_binding_prediction_stats.txt:md5,a02757f713610c61724751ac08c58f95"
+                "multiqc_peptide_binding_prediction_stats.txt:md5,c7b46a93e7d8904283e1f90c699361ec"
             ]
         ],
-        "timestamp": "2026-10-08T12:58:50.862166486",
+        "timestamp": "2026-10-12T14:14:47.122504311",
         "meta": {
             "nf-test": "0.9.5",
             "nextflow": "25.10.4"
