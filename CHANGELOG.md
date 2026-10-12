@@ -51,27 +51,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Parameters`
 
-| Old parameter                          | New parameter                       |
-| -------------------------------------- | ----------------------------------- |
-|                                        | `--accept_mixmhcpred_license`       |
-|                                        | `--mutation_flanking_aas`           |
-|                                        | `--ref_fasta`                       |
-|                                        | `--use_ba_rank`                     |
-|                                        | `--vep_cache`                       |
-|                                        | `--vep_cache_version`               |
-|                                        | `--vep_download_cache`              |
-|                                        | `--vep_genome`                      |
-|                                        | `--vep_species`                     |
-|                                        | `germline_vcf` (samplesheet column) |
-|                                        | `tumor_sample` (samplesheet column) |
-| `--fasta_output`                       |                                     |
-| `--fasta_peptide_flanking_region_size` |                                     |
-| `--genome_reference`                   |                                     |
-| `--hook_url`                           |                                     |
-| `--netmhc_system`                      |                                     |
-| `--split_by_variants`                  |                                     |
-| `--split_by_variants_distance`         |                                     |
-| `--split_by_variants_size`             |                                     |
+| Old parameter                          | New parameter                 |
+| -------------------------------------- | ----------------------------- |
+|                                        | `--accept_mixmhcpred_license` |
+| `--fasta_peptide_flanking_region_size` | `--mutation_flanking_aas`     |
+|                                        | `--ref_fasta`                 |
+|                                        | `--use_ba_rank`               |
+|                                        | `--vep_cache`                 |
+|                                        | `--vep_cache_version`         |
+|                                        | `--vep_download_cache`        |
+|                                        | `--vep_genome`                |
+|                                        | `--vep_species`               |
+| `--fasta_output`                       |                               |
+| `--genome_reference`                   |                               |
+| `--hook_url`                           |                               |
+| `--netmhc_system`                      |                               |
+| `--split_by_variants`                  |                               |
+| `--split_by_variants_distance`         |                               |
+| `--split_by_variants_size`             |                               |
 
 ### `Changed`
 
@@ -85,7 +82,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### `Removed`
 
-- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--genome_reference`, `--fasta_output`, `--fasta_peptide_flanking_region_size`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
+- [#362](https://github.com/nf-core/epitopeprediction/pull/362) Removed epytope/BioMart variant annotation (`epaa.py`, `EPYTOPE_VARIANT_PREDICTION`, `VARIANT_SPLIT`) and params `--genome_reference`, `--fasta_output`, `--split_by_variants*`. Variant input is now raw somatic VCF (VEP is run in-pipeline) ([@axelwalter](https://github.com/axelwalter/))
 - [#379](https://github.com/nf-core/epitopeprediction/pull/379) Removed `--netmhc_system` and support for the macOS NetMHCpan and NetMHCIIpan tarballs, only the Linux tarballs are supported ([@jonasscheid](https://github.com/jonasscheid/)).
 
 ## 3.1.1 - Lustnau Hotfix - 2026-08-05
