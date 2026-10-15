@@ -5,13 +5,13 @@
   </picture>
 </h1>
 
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://github.com/codespaces/new/nf-core/epitopeprediction)
+[![Open in GitHub Codespaces](https://img.shields.io/badge/Open_In_GitHub_Codespaces-black?labelColor=grey&logo=github)](https://github.com/codespaces/new/nf-core/epitopeprediction)
 [![GitHub Actions CI Status](https://github.com/nf-core/epitopeprediction/actions/workflows/nf-test.yml/badge.svg)](https://github.com/nf-core/epitopeprediction/actions/workflows/nf-test.yml)
 [![GitHub Actions Linting Status](https://github.com/nf-core/epitopeprediction/actions/workflows/linting.yml/badge.svg)](https://github.com/nf-core/epitopeprediction/actions/workflows/linting.yml)[![AWS CI](https://img.shields.io/badge/CI%20tests-full%20size-FF9900?labelColor=000000&logo=Amazon%20AWS)](https://nf-co.re/epitopeprediction/results)[![Cite with Zenodo](http://img.shields.io/badge/DOI-10.5281/zenodo.3564666-1073c8?labelColor=000000)](https://doi.org/10.5281/zenodo.3564666)
 [![nf-test](https://img.shields.io/badge/unit_tests-nf--test-337ab7.svg)](https://www.nf-test.com)
 
-[![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.04.0-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
-[![nf-core template version](https://img.shields.io/badge/nf--core_template-3.4.1-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/3.4.1)
+[![Nextflow](https://img.shields.io/badge/version-%E2%89%A525.10.4-green?style=flat&logo=nextflow&logoColor=white&color=%230DC09D&link=https%3A%2F%2Fnextflow.io)](https://www.nextflow.io/)
+[![nf-core template version](https://img.shields.io/badge/nf--core_template-4.1.0-green?style=flat&logo=nfcore&logoColor=white&color=%2324B064&link=https%3A%2F%2Fnf-co.re)](https://github.com/nf-core/tools/releases/tag/4.1.0)
 [![run with conda](http://img.shields.io/badge/run%20with-conda-3EB049?labelColor=000000&logo=anaconda)](https://docs.conda.io/en/latest/)
 [![run with docker](https://img.shields.io/badge/run%20with-docker-0db7ed?labelColor=000000&logo=docker)](https://www.docker.com/)
 [![run with singularity](https://img.shields.io/badge/run%20with-singularity-1d355c.svg?labelColor=000000)](https://sylabs.io/docs/)
@@ -21,29 +21,45 @@
 
 ## Introduction
 
-**nf-core/epitopeprediction** is a bioinformatics best-practice analysis pipeline for epitope prediction and annotation.
-The pipeline performs epitope predictions for a given set of variants, proteins, or peptides directly using state of the art prediction tools. The pipeline can be used to generate putative neo-epitopes with variant input, scan one or more proteins for binding hotspots or darkspots analysis, and perform binding predictions on immunopeptidomics data with peptide input.
+**nf-core/epitopeprediction** is a bioinformatics pipeline that predicts which peptides bind to MHC molecules.
+It accepts three types of input:
 
-Supported prediction tools:
+- Somatic variants (VCF). The pipeline generates the mutant peptides and predicts candidate neoepitopes.
+- Proteins (FASTA). The pipeline cuts each protein into peptides and finds the regions that bind.
+- Peptides (TSV), for example from immunopeptidomics. The pipeline predicts binding for each peptide.
 
-- `mhcflurry`
-- `mhcnuggets`
-- `mhcnuggetsii`
-- `netmhcpan`
-- `netmhciipan`
+The pipeline supports these prediction tools:
+
+- [MHCflurry](https://github.com/openvax/mhcflurry) (`mhcflurry`)
+- [MHCnuggets](https://github.com/KarchinLab/mhcnuggets) (`mhcnuggets`, `mhcnuggetsii`)
+- [NetMHCpan](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/) (`netmhcpan`, `netmhciipan`)
+- [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) and [MixMHC2pred](https://github.com/GfellerLab/MixMHC2pred) (`mixmhcpred`, `mixmhciipred`)
+
+The default tool is `mhcnuggets`. NetMHCpan, NetMHCIIpan, MixMHCpred and MixMHC2pred have their own licenses. The [usage documentation](https://nf-co.re/epitopeprediction/usage#prediction-tools) tells you how to use them.
 
 The pipeline is built using [Nextflow](https://www.nextflow.io), a workflow tool to run tasks across multiple compute infrastructures in a very portable manner. It uses Docker/Singularity containers making installation trivial and results highly reproducible. The [Nextflow DSL2](https://www.nextflow.io/docs/latest/dsl2.html) implementation of this pipeline uses one container per process which makes it easier to maintain and update software dependencies. Where possible, these processes have been submitted to and installed from [nf-core/modules](https://github.com/nf-core/modules) in order to make them available to all nf-core pipelines, and to everyone within the Nextflow community!
 
-On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline runs on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to benchmark between pipeline releases and other analysis sources.The results obtained from the full-sized test can be viewed on the [nf-core website](https://nf-co.re/epitopeprediction/results).
+On release, automated continuous integration tests run the pipeline on a full-sized dataset on the AWS cloud infrastructure. This ensures that the pipeline runs on AWS, has sensible resource allocation defaults set to run on real-world datasets, and permits the persistent storage of results to benchmark between pipeline releases and other analysis sources. The results obtained from the full-sized test can be viewed on the [nf-core website](https://nf-co.re/epitopeprediction/results).
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/images/metro_map_dark.svg">
+  <img alt="nf-core/epitopeprediction metro map" src="docs/images/metro_map_light.svg">
+</picture>
 
 ## Pipeline summary
 
-1. Read variants, proteins, or peptides and HLA alleles
-2. Generate peptides from variants or proteins or use peptides directly
-3. Predict HLA-binding peptides for the given set of HLA alleles
+1. Generate peptides from the input:
+   - Variants: filter and normalize the VCF ([`bcftools`](https://samtools.github.io/bcftools/)), annotate it ([Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)) and build mutant protein sequences ([pVACtools](https://pvactools.readthedocs.io/)).
+   - Proteins: cut each protein into peptides of the requested lengths.
+   - Peptides: use the peptides as given.
+2. Predict MHC binding of each peptide for the alleles of the sample.
+3. Combine the results of all prediction tools into one table per sample.
+4. Summarize the binding statistics in a [MultiQC](http://multiqc.info/) report.
+
+## Usage
 
 > [!NOTE]
-> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/usage/installation) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/usage/introduction#how-to-run-a-pipeline) with `-profile test` before running the workflow on actual data.
+> If you are new to Nextflow and nf-core, please refer to [this page](https://nf-co.re/docs/get_started/environment_setup/overview) on how to set-up Nextflow. Make sure to [test your setup](https://nf-co.re/docs/get_started/run-your-first-pipeline) with `-profile test` before running the workflow on actual data.
 
 First, prepare a samplesheet with your input data that looks as follows:
 
@@ -52,11 +68,11 @@ First, prepare a samplesheet with your input data that looks as follows:
 ```csv
 sample,alleles,mhc_class,filename
 GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf
-GBM_2,A*01:01;A*24:02;B*07:02;B*68:01;C*07:02;C*15:01,I,gbm_1_proteins.fasta
+GBM_2,A*01:01;A*24:02;B*07:02;B*68:01;C*07:02;C*15:01,I,gbm_2_proteins.fasta
 GBM_3,A*02:01;A*24:01;B*07:02;B*08:01;C*04:01;C*07:01,I,gbm_3_peptides.tsv
 ```
 
-Each row represents a sample with associated HLA alleles and input data (variants/peptides/proteins). Alleles do not necessarily need to be in this format. We rely on [MHCgnomes](https://github.com/pirl-unc/mhcgnomes) to parse variations of nomenclatures into a uniform format.
+Each row gives one input file, the sample it belongs to, its alleles and the MHC class to predict.
 
 Now, you can run the pipeline using:
 
@@ -67,13 +83,10 @@ nextflow run nf-core/epitopeprediction \
    --outdir <OUTDIR>
 ```
 
-> [!WARNING]
-> This version of the pipeline does not support conda environments, due to issues with upstream dependencies.
-> This means you cannot use the `conda` and `mamba` profiles. Please use `docker` or `singularity` instead.
-> We hope to add support for conda environments in the future.
+Variant input also needs a VEP cache and a genome FASTA. See [Reference data](https://nf-co.re/epitopeprediction/usage#reference-data).
 
 > [!WARNING]
-> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/usage/getting_started/configuration#custom-configuration-files).
+> Please provide pipeline parameters via the CLI or Nextflow `-params-file` option. Custom config files including those provided by the `-c` Nextflow option can be used to provide any configuration _**except for parameters**_; see [docs](https://nf-co.re/docs/running/run-pipelines#using-parameter-files).
 
 For more details and further functionality, please refer to the [usage documentation](https://nf-co.re/epitopeprediction/usage) and the [parameter documentation](https://nf-co.re/epitopeprediction/parameters).
 
@@ -91,7 +104,7 @@ The pipeline was converted to Nextflow DSL2 by [Christopher Mohr](https://github
 
 ## Contributions and Support
 
-If you would like to contribute to this pipeline, please see the [contributing guidelines](.github/CONTRIBUTING.md).
+If you would like to contribute to this pipeline, please see the [contributing guidelines](docs/CONTRIBUTING.md).
 
 For further information or help, don't hesitate to get in touch on the [Slack `#epitopeprediction` channel](https://nfcore.slack.com/channels/epitopeprediction) (you can join with [this invite](https://nf-co.re/join/slack)).
 

@@ -14,13 +14,17 @@
 
   > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
 
-- [SnpSift](https://dx.doi.org/10.3389/fgene.2012.00035)
+- [BCFtools](https://dx.doi.org/10.1093/gigascience/giab008)
 
-  > Pablo Cingolani, Viral M. Patel, Melissa Coon, Tung Nguyen, Susan J. Land, Douglas M. Ruden and Xiangyi Lu. Using Drosophila melanogaster as a model for genotoxic chemical mutational studies with a new program, SnpSift. _Frontiers in Genetics_ 3, 35 (2012). doi: 10.3389/fgene.2012.00035.
+  > Petr Danecek, James K Bonfield, Jennifer Liddle, John Marshall, Valeriu Ohan, Martin O Pollard, Andrew Whitwham, Thomas Keane, Shane A McCarthy, Robert M Davies, Heng Li. Twelve years of SAMtools and BCFtools. _GigaScience_ 10(2), giab008 (2021). doi: 10.1093/gigascience/giab008.
 
-- [Epytope (FRED2)](https://dx.doi.org/10.1093/bioinformatics/btw113)
+- [Ensembl VEP](https://dx.doi.org/10.1186/s13059-016-0974-4)
 
-  > Benjamin Schubert, Mathias Walzer, Hans-Philipp Brachvogel, András Szolek, Christopher Mohr, Oliver Kohlbacher. FRED 2: an immunoinformatics framework for Pythonö Bioinformatics 32(13), 2044-2046 (2016). doi: 10.1093/bioinformatics/btw113.
+  > William McLaren, Laurent Gil, Sarah E. Hunt, Harpreet Singh Riat, Graham R. S. Ritchie, Anja Thormann, Paul Flicek, Fiona Cunningham. The Ensembl Variant Effect Predictor. _Genome Biology_ 17(1), 122 (2016). doi: 10.1186/s13059-016-0974-4.
+
+- [pVACtools](https://dx.doi.org/10.1158/2326-6066.CIR-19-0401)
+
+  > Jasreet Hundal, Susanna Kiwala, Joshua McMichael, Christopher A. Miller, et al. pVACtools: A Computational Toolkit to Identify and Visualize Cancer Neoantigens. _Cancer Immunology Research_ 8(3), 409-420 (2020). doi: 10.1158/2326-6066.CIR-19-0401.
 
 - [MHCflurry](https://dx.doi.org/10.1016/j.cels.2018.05.014)
 
@@ -51,7 +55,18 @@
   > Jensen KK, Andreatta M, Marcatili P, Buus S, Greenbaum JA, Yan Z, Sette A, Peters B, Nielsen M. Improved methods for predicting peptide binding affinity to MHC class II molecules. Immunology. 2018 Jul;154(3):394-406. doi: 10.1111/imm.12889. Epub 2018 Feb 6. PMID: 29315598; PMCID: PMC6002223.
 
 - [NetMHCIIpan-4.0](https://pubmed.ncbi.nlm.nih.gov/32406916/)
+
   > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
+
+- [MixMHCpred-3.0](https://pubmed.ncbi.nlm.nih.gov/40114147/)
+
+  > Tadros DM, Racle J, Gfeller D. Predicting MHC-I ligands across alleles and species: how far can we go? Genome Med. 2025 Mar 20;17(1):25. doi: 10.1186/s13073-025-01450-8. PMID: 40114147; PMCID: PMC11927126.
+
+- [MixMHC2pred-2.0](https://pubmed.ncbi.nlm.nih.gov/37023751/)
+
+  > Racle J, Guillaume P, Schmidt J, Michaux J, Larabi A, Lau K, Perez MAS, Croce G, Genolet R, Coukos G, Zoete V, Pojer F, Bassani-Sternberg M, Harari A, Gfeller D. Machine learning predictions of MHC-II specificities reveal alternative binding mode of class II epitopes. Immunity. 2023 Jun 13;56(6):1359-1375.e13. doi: 10.1016/j.immuni.2023.03.009. PMID: 37023751.
+
+  > Racle J, Michaux J, Rockinger GA, Arnaud M, Bobisse S, Chong C, Guillaume P, Coukos G, Harari A, Jandus C, Bassani-Sternberg M, Gfeller D. Robust prediction of HLA class II epitopes by deep motif deconvolution of immunopeptidomes. Nat Biotechnol. 2019 Nov;37(11):1283-1286. doi: 10.1038/s41587-019-0289-6. PMID: 31611696.
 
 ## Software packaging/containerisation tools
 

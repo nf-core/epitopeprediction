@@ -14,7 +14,6 @@ include { samplesheetToList         } from 'plugin/nf-schema'
 include { paramsHelp                } from 'plugin/nf-schema'
 include { completionEmail           } from '../../nf-core/utils_nfcore_pipeline'
 include { completionSummary         } from '../../nf-core/utils_nfcore_pipeline'
-include { imNotification            } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NFCORE_PIPELINE     } from '../../nf-core/utils_nfcore_pipeline'
 include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipeline'
 
@@ -27,19 +26,19 @@ include { UTILS_NEXTFLOW_PIPELINE   } from '../../nf-core/utils_nextflow_pipelin
 workflow PIPELINE_INITIALISATION {
 
     take:
-    version           // boolean: Display version and exit
-    validate_params   // boolean: Boolean whether to validate parameters against the schema at runtime
-    monochrome_logs   // boolean: Do not use coloured log outputs
-    nextflow_cli_args //   array: List of positional nextflow CLI args
-    outdir            //  string: The output directory where the results will be saved
-    input             //  string: Path to input samplesheet
-    help              // boolean: Display help message and exit
-    help_full         // boolean: Show the full help message
-    show_hidden       // boolean: Show hidden parameters in the help message
+    version            // boolean: Display version and exit
+    validate_params    // boolean: Boolean whether to validate parameters against the schema at runtime
+    _monochrome_logs   // boolean: Do not use coloured log outputs
+    nextflow_cli_args  //   array: List of positional nextflow CLI args
+    outdir             //  string: The output directory where the results will be saved
+    _input             //  string: Path to input samplesheet
+    help               // boolean: Display help message and exit
+    help_full          // boolean: Show the full help message
+    show_hidden        // boolean: Show hidden parameters in the help message
 
     main:
 
-    ch_versions = Channel.empty()
+    ch_versions = channel.empty()
 
     //
     // Print version and exit if required and dump pipeline parameters to JSON file
@@ -54,7 +53,8 @@ workflow PIPELINE_INITIALISATION {
     //
     // Validate parameters and generate parameter summary to stdout
     //
-    before_text = """
+
+    def before_text = """
 -\033[2m----------------------------------------------------\033[0m-
                                         \033[0;32m,--.\033[0;30m/\033[0;32m,-.\033[0m
 \033[0;34m        ___     __   __   __   ___     \033[0;32m/,-._.--~\'\033[0m
@@ -64,13 +64,17 @@ workflow PIPELINE_INITIALISATION {
 \033[0;35m  nf-core/epitopeprediction ${workflow.manifest.version}\033[0m
 -\033[2m----------------------------------------------------\033[0m-
 """
-    after_text = """${workflow.manifest.doi ? "\n* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { "    https://doi.org/${it.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
+    def after_text = """${workflow.manifest.doi ? "\n* The pipeline\n" : ""}${workflow.manifest.doi.tokenize(",").collect { doi -> "    https://doi.org/${doi.trim().replace('https://doi.org/','')}"}.join("\n")}${workflow.manifest.doi ? "\n" : ""}
 * The nf-core framework
     https://doi.org/10.1038/s41587-020-0439-x
 
 * Software dependencies
     https://github.com/nf-core/epitopeprediction/blob/master/CITATIONS.md
 """
+    if (params.monochrome_logs) {
+        before_text = before_text.replaceAll(/\033\[[0-9;]*m/, '')
+    }
+
     command = "nextflow run ${workflow.manifest.name} -profile <docker/singularity/.../institute> --input samplesheet.csv --outdir <OUTDIR>"
 
     UTILS_NFSCHEMA_PLUGIN (
@@ -82,7 +86,8 @@ workflow PIPELINE_INITIALISATION {
         show_hidden,
         before_text,
         after_text,
-        command
+        command,
+        false
     )
 
     //
@@ -93,27 +98,20 @@ workflow PIPELINE_INITIALISATION {
     )
 
     //
-    // Custom validation for pipeline parameters
-    //
-    //validateInputParameters()
-
-    // Function to read the alleles from a file or use given string
-    def readAlleles = { allele_input ->
-        if (allele_input.endsWith(".txt")) {
-            def file = file(allele_input)
-            // Read all lines, strip whitespace, and join them with semicolons
-            return file.readLines()*.trim().join(";")
-        } else {
-            // Not a file path, return the original string
-            return allele_input
-        }
-}
-    //
     // Create channel from input file provided through params.input
     //
-    Channel
-        .fromList(samplesheetToList(params.input, "${projectDir}/assets/schema_input.json"))
-        .map { meta, file -> [meta + [alleles: readAlleles(meta.alleles)], file]} // Parse alleles from file
+    def samplesheet_rows = samplesheetToList(params.input, "${projectDir}/assets/schema_input.json")
+
+    //
+    // Custom validation for pipeline parameters
+    //
+    validateInputParameters(samplesheet_rows)
+    validateMixmhcpredLicense(params.tools)
+    validateNetmhcVersions(params.tools)
+
+    channel
+        .fromList(samplesheet_rows)
+        .map { meta, f -> [meta + [alleles: readAlleles(meta.alleles)], f]} // Parse alleles from file
         .set { ch_samplesheet }
 
     emit:
@@ -135,7 +133,6 @@ workflow PIPELINE_COMPLETION {
     plaintext_email // boolean: Send plain-text email instead of HTML
     outdir          //    path: Path to output directory where results will be published
     monochrome_logs // boolean: Disable ANSI colour codes in log output
-    hook_url        //  string: hook URL for notifications
     multiqc_report  //  string: Path to MultiQC report
 
     main:
@@ -159,13 +156,11 @@ workflow PIPELINE_COMPLETION {
         }
 
         completionSummary(monochrome_logs)
-        if (hook_url) {
-            imNotification(summary_params, hook_url)
-        }
+
     }
 
     workflow.onError {
-        log.error "Pipeline failed. Please refer to troubleshooting docs: https://nf-co.re/docs/usage/troubleshooting"
+        log.error "Pipeline failed. Please refer to troubleshooting docs for common issues: https://nf-co.re/docs/running/troubleshooting"
     }
 }
 
@@ -175,11 +170,73 @@ workflow PIPELINE_COMPLETION {
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 //
-// Check and validate pipeline parameters
+// Check that variant (VCF) input has the VEP references it needs. Only enforced when the
+// samplesheet actually holds a VCF, so peptide/protein-only runs need none of these params.
 //
-//def validateInputParameters() {
-//    pass
-//}
+def validateInputParameters(samplesheet_rows) {
+    def has_vcf = samplesheet_rows.any { entry ->
+        def filename = entry[1].toString().toLowerCase()
+        filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')
+    }
+    if (!has_vcf) {
+        return
+    }
+    if (!params.vep_species || !params.vep_genome || !params.vep_cache_version) {
+        error("Variant (VCF) input requires --vep_species, --vep_genome and --vep_cache_version " +
+              "(e.g. homo_sapiens GRCh38 110). See docs/usage.md.")
+    }
+    if (!params.vep_download_cache && !(params.ref_fasta && params.vep_cache)) {
+        error("Variant (VCF) input requires a VEP reference source: either --vep_download_cache, " +
+              "or both --ref_fasta and --vep_cache. See docs/usage.md.")
+    }
+}
+
+//
+// NetMHC tarballs carry their exact version in data/version, so any sub-release of the supported version is accepted
+//
+def validateNetmhcVersions(tools) {
+    def netmhc_meta = new groovy.json.JsonSlurper().parse(file("${projectDir}/assets/netmhc_software_meta.json").toFile())
+    tools.tokenize(',')*.trim().findAll { tool -> netmhc_meta[tool] && params["${tool}_path"] }.each { tool ->
+        def meta = netmhc_meta[tool]
+        def version_file = "${meta.binary_name}-${meta.version}/data/version"
+        // Streamed through stdin so remote paths (s3://, https://) work too
+        def tar = ['tar', '-xzOf', '-', version_file].execute()
+        try {
+            file(params["${tool}_path"]).withInputStream { tarball -> tar.outputStream.withStream { stdin -> stdin << tarball } }
+        } catch (Exception _e) {
+            // tar stops reading non-gzip input early, the version check below reports it
+        }
+        def version = tar.text.trim()
+        if (!version.matches("(?i)${meta.binary_name} version ${meta.version}[a-z]*")) {
+            error("--${tool}_path must be an original ${meta.binary_name} ${meta.version} Linux tarball (any sub-release), but ${version_file} " +
+                  (version ? "reports '${version}'" : "was not found in it"))
+        }
+    }
+}
+
+//
+// MixMHCpred and MixMHC2pred are licensed for academic non-commercial research only
+//
+def validateMixmhcpredLicense(tools) {
+    def mixmhc_tools = tools.tokenize(',').findAll { tool -> tool.trim() in ['mixmhcpred', 'mixmhciipred'] }
+    if (mixmhc_tools && !params.accept_mixmhcpred_license) {
+        error("--tools ${mixmhc_tools.join(',')} is licensed for academic non-commercial research only. Read the licenses at " +
+              "https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf and https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE, " +
+              "then add `--accept_mixmhcpred_license` to confirm that you have read them and your use is academic and non-commercial.")
+    }
+}
+
+// Function to read the alleles from a file or use given string
+def readAlleles(allele_input) {
+    if (allele_input.endsWith(".txt")) {
+        def f = file(allele_input)
+        // Read all lines, strip whitespace, and join them with semicolons
+        return f.readLines()*.trim().join(";")
+    } else {
+        // Not a file path, return the original string
+        return allele_input
+    }
+}
 
 //
 // Validate channels from input samplesheet
@@ -196,43 +253,22 @@ def validateInputSamplesheet(input) {
     return [ metas[0], fastqs ]
 }
 //
-// Get attribute from genome config file e.g. fasta
-//
-def getGenomeAttribute(attribute) {
-    if (params.genomes && params.genome && params.genomes.containsKey(params.genome)) {
-        if (params.genomes[ params.genome ].containsKey(attribute)) {
-            return params.genomes[ params.genome ][ attribute ]
-        }
-    }
-    return null
-}
-
-//
-// Exit pipeline if incorrect --genome key provided
-//
-def genomeExistsError() {
-    if (params.genomes && params.genome && !params.genomes.containsKey(params.genome)) {
-        def error_string = "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n" +
-            "  Genome '${params.genome}' not found in any config files provided to the pipeline.\n" +
-            "  Currently, the available genome keys are:\n" +
-            "  ${params.genomes.keySet().join(", ")}\n" +
-            "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
-        error(error_string)
-    }
-}
-//
 // Generate methods description for MultiQC
 //
 def toolCitationText() {
     def citation_text = [
             "Tools used in the workflow included:",
-            "Epytope (Schuber et al. 2016)",
+            "bcftools (Danecek et al. 2021)",
+            "Ensembl VEP (McLaren et al. 2016)",
+            "pVACtools (Hundal et al. 2020)",
             "SYFPEITHI (Schuler et al. 2007)",
             "NetMHC (Andreatta and Nielsen 2016)",
             "NetMHCpan (Reynisson et al. 2020)",
             "NetMHCIIpan (Nilsson et al. 2023)",
             "MHCnuggets (Shao et al. 2020)",
             "MHCflurry (O'Donnell et al. 2020)",
+            "MixMHCpred (Tadros et al. 2025)",
+            "MixMHC2pred (Racle et al. 2023)",
             "MultiQC (Ewels et al. 2016)",
             "."
         ].join(' ').trim()
@@ -242,13 +278,17 @@ def toolCitationText() {
 
 def toolBibliographyText() {
     def reference_text = [
-            "<li>Schubert et al. (2016). FRED 2: an immunoinformatics framework for Python. Bioinformatics , 32(13), 2044–2046. doi: /10.1093/bioinformatics/btw113</li>",
+            "<li>Danecek et al. (2021). Twelve years of SAMtools and BCFtools. GigaScience, 10(2), giab008. doi: /10.1093/gigascience/giab008</li>",
+            "<li>McLaren et al. (2016). The Ensembl Variant Effect Predictor. Genome Biology, 17(1), 122. doi: /10.1186/s13059-016-0974-4</li>",
+            "<li>Hundal et al. (2020). pVACtools: A Computational Toolkit to Identify and Visualize Cancer Neoantigens. Cancer Immunology Research, 8(3), 409–420. doi: /10.1158/2326-6066.CIR-19-0401</li>",
             "<li>Schuler et al. (2007). SYFPEITHI: database for searching and T-cell epitope prediction. Immunoinformatics, 75–93. doi: /10.1007/978-1-60327-118-9_5</li>",
             "<li>Andreatta and Nielsen (2016). Gapped sequence alignment using artificial neural networks: application to the MHC class I system. Bioinformatics, 32(4), 511–517. doi: /10.1093/bioinformatics/btv639</li>",
             "<li>Reynisson et al. (2020). NetMHCpan-4.1 and NetMHCIIpan-4.0: Improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Research, Volume 48, Issue W1, Pages W449–W454. doi: /10.1093/nar/gkaa379</li>",
             "<li>Nilsson et al. (2023). Accurate prediction of HLA class II antigen presentation across all loci using tailored data acquisition and refined machine learning. Science Advances, Vol 9, Issue 47. doi: /10.1126/sciadv.adj6367</li>",
             "<li>Shao et al. (2020). High-throughput prediction of MHC class I and II neoantigens with MHCnuggets. Cancer Immunology Research, 8(3), 396–408. doi: /10.1158/2326-6066.CIR-19-0464</li>",
             "<li>O'Donnell et al. (2020). MHCflurry 2.0: improved pan-allele prediction of MHC class I-presented peptides by incorporating antigen processing. Cell Systems, 11, 42–48. doi: /10.1016/j.cels.2020.06.010</li>",
+            "<li>Tadros et al. (2025). Predicting MHC-I ligands across alleles and species: how far can we go? Genome Medicine, 17(1), 25. doi: /10.1186/s13073-025-01450-8</li>",
+            "<li>Racle et al. (2023). Machine learning predictions of MHC-II specificities reveal alternative binding mode of class II epitopes. Immunity, 56(6), 1359–1375. doi: /10.1016/j.immuni.2023.03.009</li>",
             "<li>Ewels, P., Magnusson, M., Lundin, S., & Käller, M. (2016). MultiQC: summarize analysis results for multiple tools and samples in a single report. Science Advances , Vol 9, Issue 47. doi: /10.1126/sciadv.adj6367</li>"
         ].join(' ').trim()
 

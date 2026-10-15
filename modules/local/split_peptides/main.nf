@@ -2,45 +2,35 @@ process SPLIT_PEPTIDES {
     label 'process_single'
     tag "${meta.id}"
 
-    // conda "${moduleDir}/environment.yml"
+    conda "${moduleDir}/environment.yml"
     container "${ workflow.containerEngine == 'singularity' && !task.ext.singularity_pull_docker_container ?
-        'https://depot.galaxyproject.org/singularity/python:3.11' :
-        'biocontainers/python:3.11' }"
+        'https://depot.galaxyproject.org/singularity/python:3.14' :
+        'biocontainers/python:3.14' }"
 
     input:
     tuple val(meta), path(tsv)
 
     output:
     tuple val(meta), path("*.tsv"), emit: splitted
-    path "versions.yml"           , emit: versions
+    tuple val("${task.process}"), val('python'), eval("python --version | sed 's/Python //'"), topic: versions, emit: versions_python
 
     when:
     task.ext.when == null || task.ext.when
 
     script:
-
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
     split_peptides.py \\
         --input $tsv \\
+        --prefix ${prefix} \\
         --min_size ${params.peptides_split_minchunksize} \\
-        --max_chunks ${params.peptides_split_maxchunks} \\
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
+        --max_chunks ${params.peptides_split_maxchunks}
     """
 
     stub:
-    def prefix = task.ext.suffix ?: "${tsv.getExtension()}"
-
+    def prefix = task.ext.prefix ?: "${meta.id}"
     """
-    touch ${prefix}_1.tsv
-    touch ${prefix}_2.tsv
-
-    cat <<-END_VERSIONS > versions.yml
-    "${task.process}":
-        python: \$(python --version | sed 's/Python //g')
-    END_VERSIONS
+    touch ${prefix}_c0.tsv
+    touch ${prefix}_c1.tsv
     """
 }

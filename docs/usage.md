@@ -6,7 +6,7 @@
 
 ## Samplesheet input
 
-You will need to create a samplesheet with information about the samples you would like to analyse before running the pipeline. Use the `--input` parameter to specify its location of a comma-separated file that consists of 3 columns and a header row as shown in the examples below.
+Create a samplesheet before you run the pipeline. The samplesheet is a comma-separated file with a header row and one row for each input file. Use the `--input` parameter to specify its location:
 
 ```bash
 --input '[path to samplesheet file]'
@@ -14,46 +14,71 @@ You will need to create a samplesheet with information about the samples you wou
 
 ### Samplesheet columns
 
-An [example samplesheet](../assets/samplesheet.tsv) has been provided with the pipeline.
-| Column | Description |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| `sample` | Custom sample name. This entry will be identical for multiple sequencing libraries/runs from the same sample. |
-| `alleles` | A string that consists of the patient's alleles (separated by ";"), or a full path to a allele ".txt" file where each allele is saved on a row. |
-| `mhc_class` | Specifies the MHC class for which the prediction should be performed. Valid values are: `I`, `II`. |
-| `filename` | Full path to a variant, protein or peptide file (".vcf", ".vcf.gz","fasta", "tsv"). |
+| Column         | Description                                                                                                    |
+| -------------- | -------------------------------------------------------------------------------------------------------------- |
+| `sample`       | Sample name. Use the same name for all rows of one sample.                                                     |
+| `alleles`      | Alleles of the sample, separated by `;`. You can also give the path to a `.txt` file with one allele per line. |
+| `mhc_class`    | MHC class to predict. Valid values are `I` and `II`.                                                           |
+| `filename`     | Path to the input file. The extension sets the input type (see below).                                         |
+| `tumor_sample` | _Optional._ Name of the tumor sample in a multi-sample VCF. See [Multi-sample VCFs](#multi-sample-vcfs).       |
+| `germline_vcf` | _Optional._ Path to the germline VCF of the patient. See [Germline context](#germline-context).                |
 
-The pipeline will auto-detect whether a sample is either in variant, protein or peptide file file format using the information provided in the samplesheet. If you provide peptide format (tsv), make sure your peptide list aligns with `--peptide_col_name` (default: "sequence").
+The pipeline supports three input types:
 
-Input Formats:
+| Input type | Extension         | Content                                                                                                  |
+| ---------- | ----------------- | -------------------------------------------------------------------------------------------------------- |
+| Variants   | `.vcf`, `.vcf.gz` | Somatic variant calls. See [Variant input](#variant-input).                                              |
+| Proteins   | `.fasta`, `.fa`   | Protein sequences. The pipeline cuts them into peptides.                                                 |
+| Peptides   | `.tsv`            | A table with one peptide per row. The column name must match `--peptide_col_name` (default: `sequence`). |
 
-- variant: `.vcf`,`.vcf.gz`
-- protein: `.fasta`
-- peptide: `.tsv` (with peptide column aligning with `--peptide_col_name`, default: "sequence")
+### Example samplesheet
 
-An [example samplesheet](../assets/samplesheet.csv) has been provided with the pipeline.
+One sample can have several rows, for example with different input files or MHC classes:
 
-### Genomic variants
-
-> [!IMPORTANT]
-> Please note that genomic variants have to be annotated. Currently, we support variants that have been annotated using [SnpEff](http://pcingola.> github.io/SnpEff/) and [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html).
-
-For genomic variants, reference information from `Ensembl BioMart` is used. The default database version is the most recent `GRCh37` version. If you want to do the predictions based on `GRCh38` as the reference genome, please specify `--genome_reference grch38` in your pipeline call. You can also specify valid `Ensembl BioMart` archive version urls as `--genome_reference` value, e.g. [the archive version of December 2021](http://dec2021.archive.ensembl.org/).
-
-> [!IMPORTANT]
-> Please note that old archive versions are regularly retired, therefore it might be possible that a used version is not available anymore at a later point.
-
-### Full samplesheet
-
-The `sample` identifiers are used to determine which sample belongs to the input file. Below is an example for the same sample with different input files that can be used:
-
-```console
+```csv
 sample,alleles,mhc_class,filename
-GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf(.gz)
-GBM_1,gbm1_alleles.txt,I,gbm_1_proteins.fasta
+GBM_1,A*01:01;A*02:01;B*07:02;B*24:02;C*03:01;C*04:01,I,gbm_1_variants.vcf.gz
+GBM_1,gbm_1_alleles.txt,I,gbm_1_proteins.fasta
 GBM_1,DRB1*01:01,II,gbm_1_peptides.tsv
 ```
 
-You can also perform predictions for MHC class `I` and `II` in the same run by specifying the value in the corresponding column (one value per row). Please make sure to select the alleles accordingly. You can also provide your alleles in a `.txt` file containing one allele per row.
+An [example samplesheet](../assets/samplesheet.csv) is included with the pipeline.
+
+### Alleles
+
+You can write alleles in different nomenclatures, for example `A*01:01` or `HLA-A*01:01`. The pipeline uses [mhcgnomes](https://github.com/pirl-unc/mhcgnomes) to convert them to one format. It truncates 3- and 4-field typings to 2 fields.
+
+Make sure that the alleles match the MHC class of the row.
+
+### Pan-species prediction
+
+To predict against all supported alleles of a species, write `<species>-all` in the `alleles` column. The pipeline then uses all alleles that each prediction tool supports for that species and MHC class.
+
+| Value                            | Species                                           |
+| -------------------------------- | ------------------------------------------------- |
+| `HLA-all`, `human-all`           | Human                                             |
+| `H-2-all`, `H2-all`, `mouse-all` | Mouse                                             |
+| `BoLA-all`, `cattle-all`         | Cattle                                            |
+| `Mamu-all`, `SLA-all`, `DLA-all` | Other species that mhcgnomes and the tool support |
+
+```csv
+sample,alleles,mhc_class,filename
+sample1,HLA-all,I,peptides.tsv
+```
+
+### Peptide lengths
+
+`--min_peptide_length_classI`, `--max_peptide_length_classI`, `--min_peptide_length_classII` and `--max_peptide_length_classII` set the peptide lengths to predict. Each prediction tool also has a fixed length range. A tool gets a peptide only if the length is in both ranges.
+
+| Tool           | MHC class | Peptide lengths |
+| -------------- | --------- | --------------- |
+| `mhcflurry`    | I         | 5-15            |
+| `mhcnuggets`   | I         | 5-15            |
+| `mhcnuggetsii` | II        | 5-30            |
+| `netmhcpan`    | I         | 8-14            |
+| `netmhciipan`  | II        | 9-50            |
+| `mixmhcpred`   | I         | 8-14            |
+| `mixmhciipred` | II        | 12-21           |
 
 ## Running the pipeline
 
@@ -63,14 +88,14 @@ The typical command for running the pipeline is as follows:
 nextflow run nf-core/epitopeprediction --input ./samplesheet.csv --outdir ./results -profile docker
 ```
 
-This will launch the pipeline with the `docker` configuration profile and default options (`mhcflurry` by default). See below for more information about profiles.
+This command uses the `docker` profile and the default prediction tool, `mhcnuggets`. Use `--tools` to select other tools, for example `--tools mhcflurry,mhcnuggets`. See below for more information about profiles.
 
 Note that the pipeline will create the following files in your working directory:
 
 ```bash
 work                # Directory containing the nextflow working files
 <OUTDIR>            # Finished results in specified location (defined with --outdir)
-.nextflow_log       # Log file from Nextflow
+.nextflow.log       # Log file from Nextflow
 # Other nextflow hidden files, eg. history of pipeline runs and old logs.
 ```
 
@@ -79,7 +104,7 @@ If you wish to repeatedly use the same parameters for multiple runs, rather than
 Pipeline settings can be provided in a `yaml` or `json` file via `-params-file <file>`.
 
 > [!WARNING]
-> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources), other infrastructural tweaks (such as output directories), or module arguments (args).
+> Do not use `-c <file>` to specify parameters as this will result in errors. Custom config files specified with `-c` must only be used for [tuning process resource specifications](https://nf-co.re/docs/running/run-pipelines#configuring-pipelines), other infrastructural tweaks (such as output directories), or module arguments (args).
 
 The above pipeline run specified with a params file in yaml format:
 
@@ -96,26 +121,6 @@ outdir: './results/'
 ```
 
 You can also generate such `YAML`/`JSON` files via [nf-core/launch](https://nf-co.re/launch).
-
-### Running the pipeline with NetMHC
-
-The pipeline also aims to support the most recent NetMHCpan and NetMHCIIpan versions. If one of the external tools is specified, the path to the corresponding tarball has to be specified. See the [Download section](https://services.healthtech.dtu.dk/services/NetMHCpan-4.1/) of NetMHCpan. When using `conda`, the parameter `--netmhc_system` (if the default value `linux` is not applicable) must also be specified.
-
-A typical command is as follows:
-
-```bash
-nextflow run nf-core/epitopeprediction \
-  -profile docker \
-  --input ./samplesheet.csv \
-  --outdir ./results \
-  --tools 'netmhcpan,netmhciipan' \
-  --min_peptide_length_classI 8 \
-  --max_peptide_length_classI 12 \
-  --min_peptide_length_classII 12 \
-  --max_peptide_length_classII 25 \
-  --netmhcpan_path /path/to/netMHCpan-4.1b.Linux.tar.gz \
-  --netmhciipan_path /path/to/netMHCIIpan-4.3e.Linux.tar.gz \
-```
 
 ### Updating the pipeline
 
@@ -138,6 +143,192 @@ To further assist in reproducibility, you can use share and reuse [parameter fil
 > [!TIP]
 > If you wish to share such profile (such as upload as supplementary material for academic publications), make sure to NOT include cluster specific paths to files, nor institutional specific profiles.
 
+## Variant input
+
+Give raw somatic variant calls. Do not annotate the VCF in advance, because the pipeline runs VEP itself.
+
+The pipeline prepares each VCF as follows:
+
+1. It keeps only records with `FILTER` `PASS`.
+2. It renames contigs to Ensembl style, for example `chr1` to `1` and `chrM` to `MT`.
+3. It splits multiallelic sites into one record per allele.
+
+The pipeline also accepts VCFs without a `GT` field, for example from Strelka.
+
+### Multi-sample VCFs
+
+Some VCFs have more than one sample column, for example tumor/normal calls from Mutect2, Strelka or DRAGEN. For these VCFs, write the name of the tumor sample in the `tumor_sample` column. To show the sample names, run `bcftools query -l your.vcf`. Strelka names the samples `NORMAL` and `TUMOR`.
+
+Leave `tumor_sample` empty for single-sample VCFs.
+
+### Which variants give peptides
+
+The pipeline makes peptides from these variant types:
+
+- Missense variants
+- In-frame insertions and deletions
+- Frameshifts
+
+Other variant types do not give peptides, for example synonymous, stop-gain, stop-loss, splice and non-coding variants.
+
+The pipeline uses only protein-coding transcripts with a complete coding sequence. If a variant is on complete and incomplete transcripts, the pipeline uses only the complete transcripts.
+
+### Nearby somatic variants
+
+Two somatic missense variants can be close enough to occur in the same peptide. The pipeline assumes that such variants are on the same chromosome copy. It then makes peptides with both variants, in addition to the peptides with each variant alone. If the VCF contains read-based phasing (`FORMAT/HP`), the pipeline uses this phasing instead.
+
+### Germline context
+
+The pipeline takes the sequence around a variant from the reference genome. If the patient has a germline variant near the somatic variant, the reference sequence is not the sequence of the patient.
+
+To correct this, give the germline VCF of the patient in the `germline_vcf` column. nf-core/sarek and comparable pipelines write one germline VCF for each normal sample. The pipeline then applies the germline variants to the wild-type and the mutant sequence.
+
+Germline variants give no peptides of their own. The pipeline uses only germline missense variants near a somatic variant, because pVACseq supports only these.
+
+The pipeline reports each peptide with and without the germline variant. You therefore keep all peptides if the two variants are on different chromosome copies.
+
+### Self-filtering
+
+Some mutant peptides also occur in other normal proteins. To remove these peptides, give a reference proteome with `--proteome_reference`, for example a UniProt or Ensembl `pep.all.fa` file.
+
+### Reference data
+
+Variant input needs a VEP cache and a genome FASTA of the same assembly. You do not need to give VEP plugins. The pipeline takes the `Wildtype` and `Frameshift` plugins from the pVACtools container.
+
+| Parameter             | Description                                                             |
+| --------------------- | ----------------------------------------------------------------------- |
+| `--vep_species`       | VEP species of the cache, for example `homo_sapiens` or `mus_musculus`. |
+| `--vep_genome`        | VEP assembly of the cache, for example `GRCh38` or `GRCm39`.            |
+| `--vep_cache_version` | VEP cache version, for example `116`.                                   |
+| `--vep_cache`         | VEP offline cache. Give a directory or a `.tar.gz` file.                |
+| `--ref_fasta`         | Ensembl genome FASTA of the same assembly. Plain or bgzipped.           |
+
+You can get the reference data in three ways.
+
+#### Option 1: annotation-cache
+
+The [annotation-cache](https://annotation-cache.github.io/ensemblvep/) bucket contains VEP caches for many species. You do not need to download them:
+
+```bash
+nextflow run nf-core/epitopeprediction -profile docker \
+  --input samplesheet.csv --outdir results \
+  --vep_species mus_musculus --vep_genome GRCm39 --vep_cache_version 116 \
+  --vep_cache s3://annotation-cache/vep_cache/116_GRCm39/ \
+  --ref_fasta <genome.fa>
+```
+
+To read the bucket without AWS credentials, add `aws.client.anonymous = true` to your config.
+
+#### Option 2: helper script
+
+If annotation-cache does not have your species or release, `assets/download_vep_references.sh` downloads the cache and the FASTA from Ensembl:
+
+```bash
+SPECIES=mus_musculus ASSEMBLY=GRCm39 RELEASE=116 assets/download_vep_references.sh
+```
+
+#### Option 3: download in the pipeline
+
+With `--vep_download_cache`, the pipeline downloads the cache and the FASTA itself. It writes both to `<outdir>/references`. The download is approximately 20 GB. Do it once and then give the files with `--vep_cache` and `--ref_fasta`.
+
+```bash
+nextflow run nf-core/epitopeprediction -profile docker \
+  --input samplesheet.csv --outdir results \
+  --vep_species homo_sapiens --vep_genome GRCh38 --vep_cache_version 116 \
+  --vep_download_cache
+```
+
+VEP uses FTP to find the available caches. If passive FTP does not work on your network, the download stops with "No matching species found". In this case, use option 1 or 2.
+
+## Prediction tools
+
+### NetMHCpan and NetMHCIIpan
+
+The pipeline supports NetMHCpan 4.2 and NetMHCIIpan 4.3, including their sub-releases (for example 4.2b or 4.3i). DTU distributes these tools under its own license, so the pipeline does not include them. Download the Linux tarballs from [NetMHCpan-4.2](https://services.healthtech.dtu.dk/services/NetMHCpan-4.2/) and [NetMHCIIpan-4.3](https://services.healthtech.dtu.dk/services/NetMHCIIpan-4.3/). Then give their paths with `--netmhcpan_path` and `--netmhciipan_path`.
+
+> [!IMPORTANT]
+> Use the Linux tarballs, also on macOS. The pipeline runs the tools inside Linux containers.
+
+The pipeline checks that each tarball contains the expected tool and version. It writes the exact sub-release to the software versions.
+
+A typical command is as follows:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'netmhcpan,netmhciipan' \
+  --min_peptide_length_classI 8 \
+  --max_peptide_length_classI 12 \
+  --min_peptide_length_classII 12 \
+  --max_peptide_length_classII 25 \
+  --netmhcpan_path /path/to/netMHCpan-4.2bstatic.Linux.tar.gz \
+  --netmhciipan_path /path/to/netMHCIIpan-4.3i.Linux.tar.gz
+```
+
+NetMHCpan 4.2 has three prediction modes. We recommend the default mode. To select a different mode, add `-mode` to the tool arguments in a custom config file:
+
+| Mode                           | Argument  |
+| ------------------------------ | --------- |
+| Antigen presentation (default) | `-mode 0` |
+| Pathogen                       | `-mode 1` |
+| Neoepitope                     | `-mode 2` |
+
+```groovy
+process {
+    withName: NETMHCPAN {
+        ext.args = '-BA -mode 2'
+    }
+}
+```
+
+Keep `-BA` in the arguments. The pipeline needs it to report binding affinities. In modes 1 and 2, NetMHCpan does not report a binding affinity score, so the `BA` column is empty.
+
+### MixMHCpred and MixMHC2pred
+
+The pipeline supports [MixMHCpred](https://github.com/GfellerLab/MixMHCpred) (`mixmhcpred`) for MHC class I and [MixMHC2pred](https://github.com/GfellerLab/MixMHC2pred) (`mixmhciipred`) for MHC class II.
+
+> [!IMPORTANT]
+> MixMHCpred and MixMHC2pred are licensed for academic non-commercial research only. Commercial use, including services with these tools, requires a separate license from the Ludwig Institute for Cancer Research. Read the [MixMHCpred license](https://github.com/GfellerLab/MixMHCpred/blob/v3.0/MixMHCpred_license.pdf) and the [MixMHC2pred license](https://github.com/GfellerLab/MixMHC2pred/blob/v2.0.2.2/LICENSE) before use.
+>
+> The pipeline runs these tools only with `--accept_mixmhcpred_license`. With this parameter, you confirm that you read the licenses and use the tools for academic non-commercial research only.
+
+The licenses do not allow a prebuilt container. Add `-with-wave` to the command, and [Wave](https://seqera.io/wave/) builds the container from the module Dockerfile. Do not use `-profile wave` for these tools. This profile enables Wave freeze mode, which fails without a private build repository.
+
+You can also build the containers yourself:
+
+1. Build the images from `modules/local/mixmhcpred/Dockerfile` and `modules/local/mixmhciipred/Dockerfile`.
+2. Keep the images private. The licenses do not allow redistribution.
+3. Give the images in a custom config file with `-c`. Use fully qualified image names, because the pipeline adds `quay.io/` to names without a registry.
+
+```groovy
+process {
+    withName: 'MIXMHCPRED' {
+        container = 'registry.example.org/mixmhcpred:3.0'
+    }
+    withName: 'MIXMHCIIPRED' {
+        container = 'registry.example.org/mixmhc2pred:2.0.2'
+    }
+}
+```
+
+A typical command for MHC class I is:
+
+```bash
+nextflow run nf-core/epitopeprediction \
+  -profile docker \
+  -with-wave \
+  --input ./samplesheet.csv \
+  --outdir ./results \
+  --tools 'mixmhcpred' \
+  --accept_mixmhcpred_license \
+  --min_peptide_length_classI 8 \
+  --max_peptide_length_classI 12
+```
+
+For MHC class II, use `--tools 'mixmhciipred'` and set `--min_peptide_length_classII` and `--max_peptide_length_classII` to values between 12 and 21.
+
 ## Core Nextflow arguments
 
 > [!NOTE]
@@ -150,7 +341,7 @@ Use this parameter to choose a configuration profile. Profiles can give configur
 Several generic profiles are bundled with the pipeline which instruct the pipeline to use software packaged using different methods (Docker, Singularity, Podman, Shifter, Charliecloud, Apptainer, Conda) - see below.
 
 > [!IMPORTANT]
-> We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however when this is not possible, Conda is also supported.
+> We highly recommend the use of Docker or Singularity containers for full pipeline reproducibility, however when this is not possible, Conda is also supported. The CI tests only the `docker` and `singularity` profiles.
 
 The pipeline also dynamically loads configurations from [https://github.com/nf-core/configs](https://github.com/nf-core/configs) when it runs, making multiple config profiles for various institutional clusters available at run time. For more information and to check if your system is supported, please see the [nf-core/configs documentation](https://github.com/nf-core/configs#documentation).
 
@@ -175,7 +366,7 @@ If `-profile` is not specified, the pipeline will run locally and expect all sof
 - `apptainer`
   - A generic configuration profile to be used with [Apptainer](https://apptainer.org/)
 - `wave`
-  - A generic configuration profile to enable [Wave](https://seqera.io/wave/) containers. Use together with one of the above (requires Nextflow ` 24.03.0-edge` or later).
+  - A generic configuration profile to enable [Wave](https://seqera.io/wave/) containers. Use together with one of the above (requires Nextflow `24.03.0-edge` or later).
 - `conda`
   - A generic configuration profile to be used with [Conda](https://conda.io/docs/). Please only use Conda as a last resort i.e. when it's not possible to run the pipeline with Docker, Singularity, Podman, Shifter, Charliecloud, or Apptainer.
 
@@ -195,19 +386,19 @@ Specify the path to a specific config file (this is a core Nextflow command). Se
 
 Whilst the default requirements set within the pipeline will hopefully work for most people and with most input data, you may find that you want to customise the compute resources that the pipeline requests. Each step in the pipeline has a default set of requirements for number of CPUs, memory and time. For most of the pipeline steps, if the job exits with any of the error codes specified [here](https://github.com/nf-core/rnaseq/blob/4c27ef5610c87db00c3c5a3eed10b1d161abf575/conf/base.config#L18) it will automatically be resubmitted with higher resources request (2 x original, then 3 x original). If it still fails after the third attempt then the pipeline execution is stopped.
 
-To change the resource requests, please see the [max resources](https://nf-co.re/docs/usage/configuration#max-resources) and [tuning workflow resources](https://nf-co.re/docs/usage/configuration#tuning-workflow-resources) section of the nf-core website.
+To change the resource requests, please see the [max resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#set-max-resources) and [customise process resources](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#customize-process-resources) section of the nf-core website.
 
 ### Custom Containers
 
 In some cases, you may wish to change the container or conda environment used by a pipeline steps for a particular tool. By default, nf-core pipelines use containers and software from the [biocontainers](https://biocontainers.pro/) or [bioconda](https://bioconda.github.io/) projects. However, in some cases the pipeline specified version maybe out of date.
 
-To use a different container from the default container or conda environment specified in a pipeline, please see the [updating tool versions](https://nf-co.re/docs/usage/configuration#updating-tool-versions) section of the nf-core website.
+To use a different container from the default container or conda environment specified in a pipeline, please see the [updating tool versions](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#update-tool-versions) section of the nf-core website.
 
 ### Custom Tool Arguments
 
 A pipeline might not always support every possible argument or option of a particular tool used in pipeline. Fortunately, nf-core pipelines provide some freedom to users to insert additional parameters that the pipeline does not include by default.
 
-To learn how to provide additional arguments to a particular tool of the pipeline, please see the [customising tool arguments](https://nf-co.re/docs/usage/configuration#customising-tool-arguments) section of the nf-core website.
+To learn how to provide additional arguments to a particular tool of the pipeline, please see the [customising tool arguments](https://nf-co.re/docs/running/configuration/nextflow-for-your-system#modifying-tool-arguments) section of the nf-core website.
 
 ### nf-core/configs
 
@@ -229,7 +420,7 @@ Some HPC setups also allow you to run nextflow within a cluster job submitted yo
 ## Nextflow memory requirements
 
 In some cases, the Nextflow Java virtual machines can start to request a large amount of memory.
-We recommend adding the following line to your environment to limit this (typically in `~/.bashrc` or `~./bash_profile`):
+We recommend adding the following line to your environment to limit this (typically in `~/.bashrc` or `~/.bash_profile`):
 
 ```bash
 NXF_OPTS='-Xms1g -Xmx4g'

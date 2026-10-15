@@ -2,96 +2,215 @@
 
 ## Please read this documentation on the nf-core website: [https://nf-co.re/epitopeprediction/output](https://nf-co.re/epitopeprediction/output)
 
-> _Documentation of pipeline parameters is generated automatically from the pipeline schema and can no longer be found in markdown files._
-
 ## Introduction
 
 This document describes the output produced by the pipeline. The version of all tools used in the pipeline are summarized in a MultiQC report which is generated at the end of the pipeline.
 
 The directories listed below will be created in the results directory after the pipeline has finished. All paths are relative to the top-level results directory.
 
-## Variant prediction
+## Variant peptides
 
-[Epytope](https://github.com/KohlbacherLab/epytope) is used to parse _annotated_ variants (by [SnpEff](http://pcingola.> github.io/SnpEff/) or [VEP](https://www.ensembl.org/info/docs/tools/vep/index.html)). Based on this information, epytope generates all possible mutated peptides within the length boundary set by `--min_peptide_length_class[I|II]` and `--max_peptide_length_class[I|II]`. Essentially the same peptide generation from proteins is applied when specifying `.fasta` files in the samplesheet.
+For variant (VCF) input, the pipeline makes peptides with [bcftools](https://samtools.github.io/bcftools/), [Ensembl VEP](https://www.ensembl.org/info/docs/tools/vep/index.html) and [pVACtools](https://pvactools.readthedocs.io/). See [Variant input](usage.md#variant-input) for the variants that the pipeline uses.
 
-**Example**: Suppose you have the missense mutation `p.Cys138Tyr` in `ENSP00000235347` and you set `min_peptide_length_class[I|II] = max_peptide_length_class[I|II] = 9`. A subset of the table epytope generates looks like this:
-| Mutated | Wildtype | Metadata
-| ------------- | ------------- | ------------- |
-| SKRQTVED**Y** | SKRQTVEDC | ...
-| KRQTVED**Y**P | KRQTVEDCP | ...
-| RQTVED**Y**PR | RQTVEDCPR | ...
-| QTVED**Y**PRM | QTVEDCPRM | ...
-| TVED**Y**PRMG | TVEDCPRMG | ...
-| VED**Y**PRMGE | VEDCPRMGE | ...
-| ED**Y**PRMGEH | EDCPRMGEH | ...
-| D**Y**PRMGEHQ | DCPRMGEHQ | ...
-| **Y**PRMGEHQP | CPRMGEHQP | ...
+The pipeline keeps only peptides that overlap the mutation:
 
-Tables are written per chromosome in a `tsv`.
+| Variant type   | The peptide contains                |
+| -------------- | ----------------------------------- |
+| Missense       | The mutated residue                 |
+| In-frame indel | The junction of the indel           |
+| Frameshift     | Part of the new C-terminal sequence |
 
-**Output directory:** `epytope/[sample]_chr[1-22|X|Y].tsv`
+The peptide lengths are set by `--min_peptide_length_classI`, `--max_peptide_length_classI` and the class II equivalents.
 
-These generated mutated peptides are then passed to the MHC binding prediction subworkflow, where they are scored against the sample's individual MHC alleles.
+**Output directories:**
 
-**Optionally** you can obtain a **FASTA** file containing the variant protein sequences by providing `--fasta_output`. This can be specifically useful as input database for mass spectrometry-based pipelines such as [nf-core/mhcquant](https://github.com/nf-core/mhcquant). Sequences will be provided in full length for the wildtype and spliced around the mutation site for variant sequences (`--fasta_peptide_flanking_region_size` parameter).
+- `variant_peptides/[sample]_length_[k].tsv`: the peptides of length `k` with their variant information.
+- `variant_fasta/[sample].annotated.fasta`: the wild-type and mutant protein sequence around each variant. See [Variant FASTA](#variant-fasta).
+- `references/`: the VEP cache and the genome FASTA. The pipeline writes this directory only with `--vep_download_cache`.
 
-**Output directory:** `epytope/[sample].fasta`
+### Peptide tables
 
-## Epitopeprediction
+Each peptide table has these columns:
 
-Depending on the specified predictor(s) in `--tools`, the tools individual binding prediction files are written in the respective directories. The number of input peptides for the MHC binding subworkflow is splitted into **chunks** to enable scalability.
-The chunksize is controlled by `--peptides_split_minchunksize` and `--peptides_split_maxchunks`.
+| Column           | Description                                                                                |
+| ---------------- | ------------------------------------------------------------------------------------------ |
+| `sequence`       | Peptide sequence. The column name follows `--peptide_col_name`.                            |
+| `gene`           | HGNC gene symbol                                                                           |
+| `transcript`     | Ensembl transcript ID with version                                                         |
+| `consequence`    | `missense`, `inframe_ins`, `inframe_del` or `FS` (frameshift)                              |
+| `HGVSp`          | Protein change in HGVS notation, for example `p.Gln78His`                                  |
+| `genomic_anchor` | Variant position as `chr:pos:ref:alt`                                                      |
+| `uniprot`        | UniProt accession (Swiss-Prot if available, else TrEMBL)                                   |
+| `protein_ids`    | Sequence records that contain the peptide, as `MT.<index>` or `WT.<index>`                 |
+| `counts`         | Number of sequence records that contain the peptide                                        |
+| `peptide_origin` | `MT` (mutant), `WT` (wild type) or `MT;WT`. See [Wild-type peptides](#wild-type-peptides). |
+| `wildtype`       | Wild-type peptide at the same position. `NA` if there is none.                             |
 
-**Tools output directory:**
+A column contains values separated by `;` if a peptide comes from more than one variant or transcript.
 
-- `mhcflurry/[sample]_chunk_[0-9]_predicted_mhcflurry.csv`
-- `mhcnuggets/[sample]_chunk_[0-9]_predicted_mhcnuggets.csv`
-- `mhcnuggetsii/[sample]_chunk_[0-9]_predicted_mhcnuggetsii.csv`
-- `netmhcpan/[sample]_chunk_[0-9]_predicted_netmhcpan.xls`
-- `netmhciipan/[sample]_chunk_[0-9]_predicted_netmhciipan.xls`
+For each peptide length `k`, the pipeline takes `k - 1` residues on each side of the mutation, as `pvacseq run` does. Thus each peptide of length `k` contains the mutation.
 
-These predictor-specific output files are harmonized and chunks are merged on the `sample` information of your samplesheet.
+The pipeline also makes sequences that combine nearby somatic missense variants (see [Nearby somatic variants](usage.md#nearby-somatic-variants)). A combined sequence belongs to one of its variants. A peptide that occurs in the combined sequence and in the single-variant sequence therefore gets a `counts` value of 2.
 
-**Output directory:** `predictions/[sample].tsv`.
+**Example:** the missense mutation `p.Cys138Tyr` with `--min_peptide_length_classI 9 --max_peptide_length_classI 9` and `--wild_type` gives this table (some columns are left out):
 
-Output files _always_ contain the columns `--peptide_col_name` (default:'sequence'), `allele`, `BA`, `rank`, `binder`, `predictor`. All further metadata columns are parsed into the output files.
+| sequence      | peptide_origin | wildtype  | gene | HGVSp       | genomic_anchor |
+| ------------- | -------------- | --------- | ---- | ----------- | -------------- |
+| SKRQTVED**Y** | MT             | SKRQTVEDC | ...  | p.Cys138Tyr | ...            |
+| SKRQTVEDC     | WT             | NA        | ...  | p.Cys138Tyr | ...            |
+| KRQTVED**Y**P | MT             | KRQTVEDCP | ...  | p.Cys138Tyr | ...            |
+| KRQTVEDCP     | WT             | NA        | ...  | p.Cys138Tyr | ...            |
+| ...           | ...            | ...       | ...  | ...         | ...            |
 
-An example prediction result looks like this in TSV format:
+Without `--wild_type`, the table has no `WT` rows.
 
-| metadata | sequence    | allele       | BA     | rank   | binder | predictor  |
+### Variant FASTA
+
+You can use this file as a search database in proteogenomics approaches, for example in [nf-core/mhcquant](https://nf-co.re/mhcquant). The search can then identify mutant peptides in immunopeptidomics data.
+
+Each sequence in `variant_fasta/` contains `--mutation_flanking_aas` residues on each side of the mutation (default: 25). For frameshifts, the sequence continues to the new stop codon. This parameter changes only the FASTA file. It does not change the predicted peptides.
+
+The header of each sequence has this format. `NA` replaces missing values.
+
+`>{kind}|{numbering}|{genomic_anchor}|{gene}|{transcript}|{uniprot}|{consequence}|{aa_change}|{hgvs}`
+
+| Field          | Description                                                                   |
+| -------------- | ----------------------------------------------------------------------------- |
+| kind           | `WT` (wild type) or `MT` (mutant)                                             |
+| numbering      | pVACseq index. The `WT` and `MT` sequence of one variant have the same index. |
+| genomic_anchor | `chr:pos:ref:alt`                                                             |
+| gene           | HGNC gene symbol                                                              |
+| transcript     | Ensembl transcript ID with version                                            |
+| uniprot        | Swiss-Prot accession, else TrEMBL accession                                   |
+| consequence    | `missense`, `inframe_ins`, `inframe_del` or `FS`                              |
+| aa_change      | pVACseq notation, for example `78Q/H`                                         |
+| hgvs           | HGVSp without the ENSP prefix, for example `p.Gln78His`                       |
+
+Example: `>MT|170|3:126730598:G:C|CHCHD6|ENST00000290913.8|Q9BRQ6|missense|78Q/H|p.Gln78His`
+
+The file contains one record for each variant and transcript. Thus the same sequence can occur several times for different isoforms. If you use the file as a search database, group the proteins in your downstream analysis.
+
+### Wild-type peptides
+
+The `wildtype` column contains the wild-type peptide of each missense mutant peptide. With `--wild_type`, the pipeline also predicts these wild-type peptides. It adds each one as a separate row with the same alleles.
+
+- `peptide_origin` is `MT;WT` if a sequence is mutant for one variant and wild type for another.
+- Wild-type rows have the variant information of their mutant peptide. Their `protein_ids` have the format `WT.<index>`.
+- Indels, frameshifts and peptides without variant information have `wildtype` `NA`. They get no wild-type row. The same applies to wild-type peptides with non-standard residues.
+- The pipeline applies `--proteome_reference` before it adds the wild-type rows. If a mutant peptide occurs in the reference proteome, the pipeline removes it and its wild-type row.
+- The MultiQC binder statistics do not include wild-type rows. `predictions/[sample].tsv` includes them.
+- With `--binder_only`, the pipeline keeps the wild-type row of each mutant binder, also if the wild-type peptide does not bind. In long format, the pipeline matches the rows for each tool and allele.
+
+## Binding predictions
+
+Each prediction tool in `--tools` writes its results to its own directory. To run in parallel, the pipeline splits the peptides into chunks. `--peptides_split_minchunksize` and `--peptides_split_maxchunks` control the chunk size.
+
+**Output directories:**
+
+- `mhcflurry/[sample]_[split]_c[0-9]_predicted_mhcflurry.csv`
+- `mhcnuggets/[sample]_[split]_c[0-9]_predicted_mhcnuggets.csv`
+- `mhcnuggetsii/[sample]_[split]_c[0-9]_predicted_mhcnuggetsii.csv`
+- `netmhcpan/[sample]_[split]_c[0-9]_predicted_netmhcpan.xls`
+- `netmhciipan/[sample]_[split]_c[0-9]_predicted_netmhciipan.xls`
+- `mixmhcpred/[sample]_[split]_c[0-9]_predicted_mixmhcpred.txt`
+- `mixmhciipred/[sample]_[split]_c[0-9]_predicted_mixmhciipred.txt`
+
+The parts of the file name are:
+
+- `[split]`: the peptide length for variant and protein input, for example `length_9`. Peptide input has no `[split]`.
+- `_c[0-9]`: the peptide chunk.
+- `_a[0-9]`: the allele chunk. The pipeline adds it if a sample has more alleles than a tool accepts in one call, for example `netmhcpan/[sample]_length_9_c0_a3_predicted_netmhcpan.xls`.
+
+The pipeline converts the results of all tools to one format. It then merges the chunks into one file for each sample.
+
+**Output directory:** `predictions/[sample].tsv`
+
+Each file contains these columns:
+
+| Column      | Description                                                                    |
+| ----------- | ------------------------------------------------------------------------------ |
+| `sequence`  | Peptide sequence. The column name follows `--peptide_col_name`.                |
+| `allele`    | MHC allele                                                                     |
+| `BA`        | Binding affinity score between 0 and 1. A higher value means stronger binding. |
+| `rank`      | Percentile rank. A lower value means stronger binding.                         |
+| `binder`    | `True` if the peptide binds the allele                                         |
+| `predictor` | Prediction tool                                                                |
+
+The file also contains all other columns of the input file.
+
+An example prediction result looks like this:
+
+| id       | sequence    | allele       | BA     | rank   | binder | predictor  |
 | -------- | ----------- | ------------ | ------ | ------ | ------ | ---------- |
 | peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.416  | 0.1215 | True   | netmhcpan  |
 | peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.3873 | 0.0007 | False  | mhcnuggets |
 | peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.6072 | 0.0465 | True   | mhcflurry  |
-| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.6072 | 0.0465 | True   | mhcflurry  |
 | peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3189 | 0.7457 | True   | netmhcpan  |
-| peptide2 | VTAVIRSRRY  |              |        |        |        |            |
 | peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3455 | 2.5875 | False  | mhcflurry  |
+| peptide3 | VTAVIRSRRYY |              |        |        |        |            |
 
-The prediction results are given as allele-specific **Binding Affinity (BA)** and **percentile ranks (rank)** per peptide. The computation of these values depends on the applied prediction method.
-Binding Affinity represents the predicted strength of the interaction between a peptide and an MHC molecule. It is derived from the predicted IC50 value (in nanomolar, nM) and normalized to a scale between 0 and 1 using the formula:
+### Binding affinity
+
+The `BA` column is calculated from the predicted IC50 value in nM (`aff`):
 
 $BA = 1 - \frac{\log_{10}(\text{aff})}{\log_{10}(50000)}$
 
-where aff is the predicted IC50 binding affinity. Lower IC50 values indicate stronger binding, with peptides having IC50 values below 500 nM typically considered strong binders.
+A low IC50 value means strong binding. Peptides with an IC50 below 500 nM are usually considered binders, and peptides below 50 nM strong binders.
 
-Percentile rank (rank) indicates the relative binding strength of a peptide compared to a large set of random natural peptides. This measure is not affected by inherent biases of certain MHC molecules towards higher or lower mean predicted affinities. Strong binders are defined as having rank < 0.5, and weak binders with rank < 2. For example, a peptide with a rank of 0.1 is among the top 0.1% of best binders. This approach ensures a more consistent selection across different MHC alleles, as it accounts for variability in binding thresholds. **It is advised to select candidate binders based on rank rather than binding affinities**. Consequently, the `binder` column is defined based on the rank. An exception to this is the percentile rank computation of MHCnuggets, which is considered experimental and therefore it is implemented and advised to use the `BA` column for the binder definition.
+MixMHCpred and MixMHC2pred do not predict an IC50 value. For these tools, `BA` is empty.
 
-> [!NOTE]
-> Output files can contain empty spaces, which indicate that one of the provided predictors does not support the provided allele and/or peptide length. A curated list of supported alleles can be found under `assets/supported_alleles.json`. The number of peptides that could not be predicted due to unsupported alleles or peptide lengths is documented in the MultiQC report. See [Usage](./usage.md) for predictor boundaries.
+### Percentile rank
 
-**Optionally** you can provide `--wide_format_output` to obtain your results in [wide format](https://data.europa.eu/apps/data-visualisation-guide/wide-versus-long-data).
+The percentile rank compares the score of a peptide with the scores of a large set of random natural peptides. A rank of 0.1 means that the peptide is in the best 0.1%. The rank is not affected by alleles that have higher or lower mean affinities. Thus you can compare ranks between alleles.
 
-An example of the wide format looks like this:
+We recommend that you select binders by rank, not by `BA`.
 
-| metadata | sequence    | allele       | netmhcpan_BA | netmhcpan_rank | netmhcpan_binder | mhcnuggets_BA | mhcnuggets_rank | mhcnuggets_binder | mhcflurry_BA | mhcflurry_rank | mhcflurry_binder |
-| -------- | ----------- | ------------ | ------------ | -------------- | ---------------- | ------------- | --------------- | ----------------- | ------------ | -------------- | ---------------- |
-| peptide1 | RLDSHLHTHVY | HLA-A\*01:01 | 0.416        | 0.1215         | True             | 0.3873        | 0.0007          | False             | 0.6072       | 0.0465         | True             |
-| peptide2 | VTAVIRSRRY  | HLA-A\*68:01 | 0.3189       | 0.7457         | True             |               |                 |                   | 0.3455       | 2.5875         | False            |
+For NetMHCpan and NetMHCIIpan, `rank` is the eluted ligand rank (`EL_Rank`), which the tool developers recommend. The hidden parameter `--use_ba_rank` selects the binding affinity rank (`BA_Rank`) instead. The two ranks can be very different.
+
+For MixMHCpred and MixMHC2pred, `rank` is the `%Rank` output of the tool.
+
+### Binder definition
+
+The `binder` column uses these thresholds:
+
+| Tool                      | A peptide is a binder if     |
+| ------------------------- | ---------------------------- |
+| MHCflurry                 | `rank` ≤ 2                   |
+| NetMHCpan                 | `rank` ≤ 2                   |
+| NetMHCIIpan               | `rank` ≤ 5                   |
+| MixMHCpred, MixMHC2pred   | `rank` ≤ 2                   |
+| MHCnuggets, MHCnuggets II | `BA` ≥ 0.425 (IC50 ≤ 500 nM) |
+
+MHCnuggets uses `BA`, because its percentile rank is experimental.
+
+### Missing values
+
+A row without prediction values (`peptide3` in the example) is a peptide that no tool could predict. The tools do not support the allele or the peptide length. `assets/supported_alleles.json` lists the supported alleles. [Peptide lengths](usage.md#peptide-lengths) lists the supported lengths. The MultiQC report shows the number of peptides that the pipeline could not predict.
+
+### Wide format
+
+With `--wide_format_output`, the pipeline writes one row for each peptide ([wide format](https://data.europa.eu/apps/data-visualisation-guide/wide-versus-long-data)). The file has these columns in addition to the input columns:
+
+| Column                   | Description                                                                             |
+| ------------------------ | --------------------------------------------------------------------------------------- |
+| `<tool>_<allele>_BA`     | `BA` for this tool and allele                                                           |
+| `<tool>_<allele>_binder` | `binder` for this tool and allele                                                       |
+| `<tool>_<allele>_rank`   | `rank` for this tool and allele                                                         |
+| `best_value_<tool>`      | Best value of this tool over all alleles: lowest `rank`, or highest `BA` for MHCnuggets |
+| `best_allele_<tool>`     | Allele with the best value of this tool                                                 |
+| `best_allele`            | Best alleles of all tools, separated by `,`                                             |
+| `binder`                 | `True` if at least one tool predicts a binder                                           |
+
+An example with MHCflurry, NetMHCpan and one allele looks like this:
+
+| id       | sequence    | mhcflurry_HLA-A\*01:01_BA | netmhcpan_HLA-A\*01:01_BA | mhcflurry_HLA-A\*01:01_binder | netmhcpan_HLA-A\*01:01_binder | mhcflurry_HLA-A\*01:01_rank | netmhcpan_HLA-A\*01:01_rank | best_value_mhcflurry | best_allele_mhcflurry | best_value_netmhcpan | best_allele_netmhcpan | best_allele  | binder |
+| -------- | ----------- | ------------------------- | ------------------------- | ----------------------------- | ----------------------------- | --------------------------- | --------------------------- | -------------------- | --------------------- | -------------------- | --------------------- | ------------ | ------ |
+| peptide1 | RLDSHLHTHVY | 0.6072                    | 0.416                     | True                          | True                          | 0.0465                      | 0.1215                      | 0.0465               | HLA-A\*01:01          | 0.1215               | HLA-A\*01:01          | HLA-A\*01:01 | True   |
+| peptide3 | VTAVIRSRRYY |                           |                           |                               |                               |                             |                             |                      |                       |                      |                       |              |        |
 
 ## MultiQC
 
-Binding prediction results are summarized into tables, such as the number of binders/non-binders. Binding prediction score distributions are also highlighted to give the user an appropriate overview of the binding prediction results.
+The MultiQC report shows the number of binders and non-binders for each sample, allele and tool. It also shows the distributions of the prediction scores.
 
 **Output directory:** `multiqc/`
 
@@ -100,11 +219,11 @@ Binding prediction results are summarized into tables, such as the number of bin
 - `multiqc_plots/`
   - Plots in `pdf`, `png`, and `svg` format that are part of the MultiQC report
 - `multiqc_report.html`
-  - The main multiQC report comprising statistics and distributions of the binding prediction results.
+  - The MultiQC report with binding statistics and score distributions.
 
 For more information about how to use MultiQC reports, see <http://multiqc.info>.
 
-### Pipeline information
+## Pipeline information
 
 <details markdown="1">
 <summary>Output files</summary>
@@ -117,4 +236,4 @@ For more information about how to use MultiQC reports, see <http://multiqc.info>
 
 </details>
 
-[Nextflow](https://www.nextflow.io/docs/latest/tracing.html) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
+[Nextflow](https://docs.seqera.io/platform-cloud/reports/overview) provides excellent functionality for generating various reports relevant to the running and execution of the pipeline. This will allow you to troubleshoot errors with the running of the pipeline, and also provide you with other information such as launch commands, run times and resource usage.
