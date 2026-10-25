@@ -11,16 +11,22 @@ import argparse
 import math
 from pathlib import Path
 
+
 def split_peptides(input_file, prefix, min_size, max_chunks):
-    """Splits the peptide input file into smaller chunks in a single pass."""
+    """Split a peptide input file into smaller chunks with bounded memory use."""
     input_path = Path(input_file)
     prefix = prefix.replace(".", "_")  # chunk name becomes the file_id downstream, so no extension-like dots
 
-    with input_path.open("r") as infile:
-        lines = infile.readlines()  # Read all lines into memory
+    if min_size <= 0:
+        raise ValueError("Minimum chunk size must be greater than zero.")
+    if max_chunks <= 0:
+        raise ValueError("Maximum number of chunks must be greater than zero.")
 
-    header, data_lines = lines[0], lines[1:]  # Separate header
-    total_size = len(data_lines)  # Number of peptides (excluding header)
+    with input_path.open("r") as infile:
+        header = infile.readline()
+        if not header:
+            raise ValueError("Input file is empty.")
+        total_size = sum(1 for _ in infile)
 
     if total_size == 0:
         raise ValueError("Input file contains no peptides.")
@@ -29,16 +35,27 @@ def split_peptides(input_file, prefix, min_size, max_chunks):
     num_chunks = min(math.ceil(total_size / min_size), max_chunks)
     chunk_size = max(min_size, math.ceil(total_size / num_chunks))
 
-    for chunk_idx in range(num_chunks):
-        start = chunk_idx * chunk_size
-        end = start + chunk_size
-        outfile_name = f"{prefix}_c{chunk_idx}.tsv"
-        with open(outfile_name, "w") as outfile:
-            outfile.write(header)
-            outfile.writelines(data_lines[start:end])
+    with input_path.open("r") as infile:
+        infile.readline()
+        chunk_idx = 0
+        rows_in_chunk = 0
+        outfile = None
+        try:
+            for line in infile:
+                if rows_in_chunk == 0:
+                    outfile = open(f"{prefix}_c{chunk_idx}.tsv", "w")
+                    outfile.write(header)
+                outfile.write(line)
+                rows_in_chunk += 1
+                if rows_in_chunk == chunk_size:
+                    outfile.close()
+                    outfile = None
+                    chunk_idx += 1
+                    rows_in_chunk = 0
+        finally:
+            if outfile is not None:
+                outfile.close()
 
-        if end >= total_size:
-            break  # Stop if we've written all data
 
 def parse_args() -> argparse.Namespace:
     """Parse CLI args"""
@@ -49,6 +66,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max_chunks", type=int, required=True, help="Maximum number of chunks.")
     args = parser.parse_args()
     return args
+
 
 def main():
     args = parse_args()
