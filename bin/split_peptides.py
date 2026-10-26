@@ -9,6 +9,7 @@ License: MIT
 
 import argparse
 import math
+from itertools import count, islice
 from pathlib import Path
 
 
@@ -37,24 +38,13 @@ def split_peptides(input_file, prefix, min_size, max_chunks):
 
     with input_path.open("r") as infile:
         infile.readline()
-        chunk_idx = 0
-        rows_in_chunk = 0
-        outfile = None
-        try:
-            for line in infile:
-                if rows_in_chunk == 0:
-                    outfile = open(f"{prefix}_c{chunk_idx}.tsv", "w")
-                    outfile.write(header)
-                outfile.write(line)
-                rows_in_chunk += 1
-                if rows_in_chunk == chunk_size:
-                    outfile.close()
-                    outfile = None
-                    chunk_idx += 1
-                    rows_in_chunk = 0
-        finally:
-            if outfile is not None:
-                outfile.close()
+        for chunk_idx in count():
+            data_lines = list(islice(infile, chunk_size))
+            if not data_lines:
+                break
+            with open(f"{prefix}_c{chunk_idx}.tsv", "w") as outfile:
+                outfile.write(header)
+                outfile.writelines(data_lines)
 
 
 def parse_args() -> argparse.Namespace:
