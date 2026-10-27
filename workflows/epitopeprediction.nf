@@ -1,11 +1,33 @@
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    IMPORT MODULES / SUBWORKFLOWS / FUNCTIONS
+    IMPORT LOCAL MODULES/SUBWORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-include { MULTIQC                } from '../modules/nf-core/multiqc/main'
-include { paramsSummaryMap       } from 'plugin/nf-schema'
-include { paramsSummaryMultiqc   } from '../subworkflows/nf-core/utils_nfcore_pipeline'
+//
+// MODULE: Local to the pipeline
+//
+include { FASTA2PEPTIDES } from '../modules/local/fasta2peptides'
+include { SPLIT_PEPTIDES } from '../modules/local/split_peptides'
+include { SUMMARIZE_RESULTS } from '../modules/local/summarize_results'
+
+//
+// SUBWORKFLOW: Consisting of a mix of local and nf-core/modules
+
+include { GENERATE_VARIANT_PEPTIDES } from '../subworkflows/local/generate_variant_peptides'
+include { MHC_BINDING_PREDICTION } from '../subworkflows/local/mhc_binding_prediction'
+
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    IMPORT NF-CORE MODULES/SUBWORKFLOWS
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
+//
+// MODULE: Installed directly from nf-core/modules
+//
+include { MULTIQC } from '../modules/nf-core/multiqc/main'
+include { paramsSummaryMap } from 'plugin/nf-schema'
+include { paramsSummaryMultiqc } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { softwareVersionsToYAML } from '../subworkflows/nf-core/utils_nfcore_pipeline'
 include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_epitopeprediction_pipeline'
 
@@ -16,9 +38,8 @@ include { methodsDescriptionText } from '../subworkflows/local/utils_nfcore_epit
 */
 
 workflow EPITOPEPREDICTION {
-
     take:
-    ch_samplesheet // channel: samplesheet read in from --input
+    samplesheet // channel: samplesheet read in from --input
     multiqc_config
     multiqc_logo
     multiqc_methods_description
@@ -26,8 +47,65 @@ workflow EPITOPEPREDICTION {
 
     main:
 
-    def ch_versions = channel.empty()
-    def ch_multiqc_files = channel.empty()
+    // Initialise needed channels
+    ch_multiqc_files = channel.empty()
+
+    // Load supported alleles file
+    supported_alleles_json = file("${projectDir}/assets/supported_alleles.json", checkIfExists: true)
+    netmhc_software_meta = file("${projectDir}/assets/netmhc_software_meta.json", checkIfExists: true)
+
+    // Load samplesheet and branch channels based on input type
+    samplesheet
+        .branch { meta, file ->
+            def filename = file.name
+            variant: filename.endsWith('.vcf') || filename.endsWith('.vcf.gz')
+            return [meta + [input_type: 'variant'], file]
+            peptide: filename.endsWith('.tsv')
+            return [meta + [input_type: 'peptide'], file]
+            protein: filename.endsWith('.fasta') || filename.endsWith('.fa')
+            return [meta + [input_type: 'protein'], file]
+        }
+        .set { ch_samplesheet }
+
+    //
+    // SUBWORKFLOW: variant (VCF) input -> mutation-overlapping peptides
+    //
+    GENERATE_VARIANT_PEPTIDES(ch_samplesheet.variant)
+    ch_multiqc_files = ch_multiqc_files.mix(GENERATE_VARIANT_PEPTIDES.out.mqc)
+    ch_peptides_from_variants = GENERATE_VARIANT_PEPTIDES.out.peptides
+
+    /*
+    ========================================================================================
+        GENERATE PEPTIDES FROM PROTEIN SEQUENCES
+    ========================================================================================
+    */
+    FASTA2PEPTIDES(ch_samplesheet.protein.map { meta, fasta -> [meta, fasta, [], []] }, [])
+
+    ch_to_predict = ch_samplesheet.peptide.mix(
+        FASTA2PEPTIDES.out.tsv.transpose().mix(ch_peptides_from_variants).map { meta, tsv -> [meta + [split_id: splitId(meta, tsv)], tsv] }
+    )
+
+    // Split tsv if size exceeds params.peptides_split_minchunksize
+    SPLIT_PEPTIDES(ch_to_predict)
+
+
+    /*
+    ========================================================================================
+        PREDICT MHC BINDING OF PEPTIDES
+    ========================================================================================
+    */
+    MHC_BINDING_PREDICTION(
+        SPLIT_PEPTIDES.out.splitted.transpose(),
+        params.tools,
+        supported_alleles_json,
+        netmhc_software_meta,
+    )
+
+    // Summarize prediction statistics for MultiQC report
+    SUMMARIZE_RESULTS(
+        MHC_BINDING_PREDICTION.out.predicted.map { meta, file -> [meta.subMap('id', 'alleles', 'mhc_class'), file] }.groupTuple()
+    )
+    ch_multiqc_files = ch_multiqc_files.mix(SUMMARIZE_RESULTS.out.json.collect { _meta, json -> json })
 
     //
     // Collate and save software versions
@@ -41,21 +119,21 @@ workflow EPITOPEPREDICTION {
 
     def topic_versions_string = topic_versions.versions_tuple
         .map { process, tool, version ->
-            [ process[process.lastIndexOf(':')+1..-1], "  ${tool}: ${version}" ]
+            [process[process.lastIndexOf(':') + 1..-1], "  ${tool}: ${version}"]
         }
-        .groupTuple(by:0)
+        .groupTuple(by: 0)
         .map { process, tool_versions ->
             tool_versions.unique().sort()
             "${process}:\n${tool_versions.join('\n')}"
         }
 
-    def ch_collated_versions = softwareVersionsToYAML(ch_versions.mix(topic_versions.versions_file))
+    def ch_collated_versions = softwareVersionsToYAML(topic_versions.versions_file)
         .mix(topic_versions_string)
         .collectFile(
             storeDir: "${outdir}/pipeline_info",
-            name: 'nf_core_'  +  'epitopeprediction_software_'  + 'mqc_'  + 'versions.yml',
+            name: 'nf_core_' + 'epitopeprediction_software_' + 'mqc_' + 'versions.yml',
             sort: true,
-            newLine: true
+            newLine: true,
         )
 
     //
@@ -84,12 +162,18 @@ workflow EPITOPEPREDICTION {
             ]
         }
     )
-    emit:multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
-    versions       = ch_versions                 // channel: [ path(versions.yml) ]
+
+    emit:
+    multiqc_report = MULTIQC.out.report.map { _meta, report -> [report] }.toList() // channel: /path/to/multiqc_report.html
 }
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    THE END
+    FUNCTIONS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
+
+// <id>_length_<k>.tsv -> length_<k>
+def splitId(meta, file) {
+    return file.baseName - "${meta.id}_"
+}

@@ -1,0 +1,260 @@
+#!/usr/bin/env python
+"""
+Parses and harmonizes MHC prediction outputs from multiple binding predictors,
+merges with source metadata, and writes unified results to CSV.
+
+Author: Jonas Scheid
+License: MIT
+"""
+import argparse
+import math
+import re
+import shlex
+import sys
+import typing
+from pathlib import Path
+from enum import Enum
+
+import numpy as np
+import pandas as pd
+import mhcgnomes
+
+# Create logger object with date and time
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+class PredictorBindingThreshold(Enum):
+    MHCFLURRY    = 2
+    MHCNUGGETS   = 0.425
+    NETMHCPAN    = 2
+    NETMHCIIPAN  = 5
+    MIXMHCPRED   = 2
+    MIXMHCIIPRED = 2
+
+class Arguments:
+    """
+    Parses the argments, including the ones coming from $task.ext.args.
+    """
+
+    def __init__(self) -> None:
+        self.input = "$prediction_files".split(" ")
+        self.source_file = "$source_file"
+        self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
+        self.use_ba_rank = False  # Default value, will be overridden if --use_ba_rank is passed
+        self.parse_ext_args("$task.ext.args")
+
+    def parse_ext_args(self, args_string: str) -> None:
+        """
+        Parse the extended arguments.
+        """
+        # skip when there are no extended arguments
+        if args_string == "null":
+            args_string = ""
+
+        # Parse the extended arguments
+        args_list = shlex.split(args_string)  # Split the string into a list of arguments
+        parser = argparse.ArgumentParser()
+
+        # Add both positional and optional arguments
+        i = 0
+        while i < len(args_list):
+            if args_list[i].startswith('--'):
+                has_value = i + 1 < len(args_list) and not args_list[i + 1].startswith('--')
+                if has_value:
+                    parser.add_argument(args_list[i], type=str)
+                else:
+                    parser.add_argument(args_list[i], action='store_true')
+                i += 2 if has_value else 1
+            else:
+                i += 1
+
+        args = parser.parse_args(args_list)
+        vars(self).update(vars(args))
+
+
+
+# -------------------------------------------
+#           Utility Functions
+# -------------------------------------------
+class Utils:
+    @staticmethod
+    def ic50toBA(ic50: float) -> float:
+        """Scale IC50 to binding affinity (BA) ranging between 0-1."""
+        ic50 = min(ic50, 50000)  # Cap IC50 at 50000
+        return 1 - (math.log10(ic50)/math.log10(50000))
+
+    @staticmethod
+    def BAtoic50(BA: float) -> float:
+        """Convert binding affinity (BA) to IC50."""
+        return 10 ** ((1 - BA) * math.log10(50000))
+
+# -------------------------------------------
+#           Parse Predictions
+# -------------------------------------------
+class PredictionResult:
+    def __init__(self, file_path, peptide_col_name, use_ba_rank=False):
+        self.file_path = file_path
+        self.peptide_col_name = peptide_col_name
+        self.use_ba_rank = use_ba_rank
+        self.predictor = None
+        self.prediction_df = self._format_prediction_result()
+
+    def _format_prediction_result(self):
+        """
+        Returns a harmonized DataFrame with the prediction results. Output format:
+        +----------+---------+-------+-------+--------+-----------+
+        | sequence | allele  | BA    | rank  | binder | predictor |
+        +----------+---------+-------+-------+--------+-----------+
+        |    ...   |   ...   |  ...  |  ...  |  ...   |     ...   |
+        +----------+---------+-------+-------+--------+-----------+
+        """
+        # Output files are named <file_id>_predicted_<tool>.<ext>
+        self.predictor = Path(self.file_path).stem.rsplit('_predicted_', 1)[-1]
+        formatters = {
+            'mhcflurry': self._format_mhcflurry_prediction,
+            'mhcnuggets': self._format_mhcnuggets_prediction,
+            'mhcnuggetsii': self._format_mhcnuggets_prediction,
+            'netmhcpan': self._format_netmhcpan_prediction,
+            'netmhciipan': self._format_netmhciipan_prediction,
+            'mixmhcpred': self._format_mixmhcpred_prediction,
+            'mixmhciipred': self._format_mixmhciipred_prediction,
+        }
+        if self.predictor not in formatters:
+            logging.error(f'Unsupported predictor type in file: {self.file_path}.')
+            sys.exit(1)
+        return formatters[self.predictor]()
+
+    def _format_mhcflurry_prediction(self) -> pd.DataFrame:
+        """
+        Read in mhcflurry prediction output comprising the columns
+        `peptide,allele,mhcflurry_affinity,mhcflurry_affinity_percentile,mhcflurry_processing_score,
+        mhcflurry_presentation_score,mhcflurry_presentation_percentile`
+        """
+        df = pd.read_csv(self.file_path)
+        # Convert IC50 to BA
+        df['BA'] = df['mhcflurry_affinity'].apply(Utils.ic50toBA)
+        # Harmonize df to desired output structure
+        df.rename(columns={'peptide': self.peptide_col_name, 'mhcflurry_presentation_percentile': 'rank'}, inplace=True)
+        df = df[[self.peptide_col_name, 'allele', 'rank', 'BA']]
+        df['binder'] = df['rank'] <= PredictorBindingThreshold.MHCFLURRY.value
+        df['predictor'] = self.predictor
+
+        return df
+
+    def _format_mhcnuggets_prediction(self) -> pd.DataFrame:
+        """Read in mhcnuggets prediction output comprising the columns `peptide,ic50,human_proteome_rank,allele`"""
+        df = pd.read_csv(self.file_path)
+        # Convert IC50 to BA
+        df['BA'] = df['ic50'].apply(Utils.ic50toBA)
+        # Harmonize df to desired output structure
+        df.rename(columns={'peptide': self.peptide_col_name, 'human_proteome_rank': 'rank'}, inplace=True)
+        df = df[[self.peptide_col_name, 'allele', 'rank', 'BA']]
+        # In rare cases mhcnuggets puts NaN in the rank column, eventhough binding affinity is available
+        df['rank'] = df['rank'].replace({np.nan: np.inf})
+        # Use IC50 < 500 as threshold since mhcnuggets provides a different ranking compared to other predictors
+        df['binder'] = df['BA'] >= PredictorBindingThreshold.MHCNUGGETS.value
+        df['predictor'] = self.predictor
+
+        return df
+
+    def _parse_netmhc_xls(self, rank_column: str, ba_score_column: str, threshold: float) -> pd.DataFrame:
+        """Parse a NetMHCpan/NetMHCIIpan multi-allele XLS to long format; alleles come from XLS row 1, since NetMHCIIpan re-sorts and -a order is unreliable."""
+        with open(self.file_path) as fh:
+            header_alleles = [a.strip() for a in next(fh).split('\t') if a.strip()]
+        alleles_dict = {i: allele for i, allele in enumerate(header_alleles)}
+        df = pd.read_csv(self.file_path, sep='\t', skiprows=1)
+        keep = re.compile(rf'Peptide|(?:{re.escape(rank_column)}|{re.escape(ba_score_column)})(?:[.][0-9]+)?')
+        df = df[[c for c in df.columns if keep.fullmatch(c)]]
+        df = df.rename(columns={'Peptide': self.peptide_col_name,
+                                rank_column: f'{rank_column}.0',
+                                ba_score_column: f'{ba_score_column}.0'})
+        df_long = pd.melt(df, id_vars=[self.peptide_col_name],
+                          value_vars=[c for c in df.columns if c != self.peptide_col_name],
+                          var_name='metric', value_name='value')
+        df_long['allele'] = df_long['metric'].str.split('.').str[1]
+        df_long['metric'] = df_long['metric'].apply(lambda x: x.split('.')[0].replace(rank_column, 'rank').replace(ba_score_column, 'BA'))
+        df_pivot = df_long.pivot_table(index=[self.peptide_col_name, 'allele'], columns='metric', values='value').reset_index()
+        # -mode 1/2 omits BA score
+        if 'BA' not in df_pivot.columns:
+            df_pivot['BA'] = np.nan
+        df_pivot['allele'] = [alleles_dict[int(idx.strip('.'))] for idx in df_pivot['allele']]
+        df_pivot['binder'] = df_pivot['rank'] <= threshold
+        df_pivot['predictor'] = self.predictor
+        df_pivot.index.name = ''
+        return df_pivot
+
+    def _format_netmhcpan_prediction(self) -> pd.DataFrame:
+        rank_column = 'BA_Rank' if self.use_ba_rank else 'Rank'
+        return self._parse_netmhc_xls(rank_column, 'BA_score', PredictorBindingThreshold.NETMHCPAN.value)
+
+    def _format_netmhciipan_prediction(self) -> pd.DataFrame:
+        # EL percentile is `Rank`, BA percentile `Rank_BA`, BA score `Score_BA`
+        rank_column = 'Rank_BA' if self.use_ba_rank else 'Rank'
+        return self._parse_netmhc_xls(rank_column, 'Score_BA', PredictorBindingThreshold.NETMHCIIPAN.value)
+
+    def _parse_mixmhc(self, best_rank_column: str, threshold: float) -> pd.DataFrame:
+        """Parse MixMHCpred/MixMHC2pred output (one `%Rank_<allele>` column per allele) to long format with native allele names."""
+        df = pd.read_csv(self.file_path, sep='\t', comment='#')
+        rank_columns = [c for c in df.columns if c.startswith('%Rank_') and c != best_rank_column]
+        df_long = df.melt(id_vars=['Peptide'], value_vars=rank_columns, var_name='allele', value_name='rank')
+        df_long = df_long.rename(columns={'Peptide': self.peptide_col_name})
+        df_long['allele'] = df_long['allele'].str.removeprefix('%Rank_')
+        # Both tools output a presentation %Rank but no binding affinity
+        df_long['BA'] = np.nan
+        df_long['binder'] = df_long['rank'] <= threshold
+        df_long['predictor'] = self.predictor
+        return df_long[[self.peptide_col_name, 'allele', 'BA', 'rank', 'binder', 'predictor']]
+
+    def _format_mixmhcpred_prediction(self) -> pd.DataFrame:
+        """
+        Read in MixMHCpred output comprising the columns `Peptide,Score_bestAllele,BestAllele,%Rank_bestAllele`
+        plus `Score_<allele>,%Rank_<allele>` per allele. Native allele names (`A0101`, `H2-Db`, `BoLA-102301`)
+        are kept here and normalized by mhcgnomes in main().
+        """
+        return self._parse_mixmhc('%Rank_bestAllele', PredictorBindingThreshold.MIXMHCPRED.value)
+
+    def _format_mixmhciipred_prediction(self) -> pd.DataFrame:
+        """
+        Read in MixMHC2pred output comprising the columns `Peptide,Context,BestAllele,%Rank_best,...` plus
+        `%Rank_<allele>,CoreP1_<allele>,SubSpec_<allele>` per allele. Native allele names are converted to
+        mhcgnomes-parsable names, e.g. `DRB1_15_01` -> `HLA-DRB1*15:01`, `DPA1_01_03__DPB1_104_01` -> `HLA-DPA1*01:03/DPB1*104:01`.
+        """
+        df = self._parse_mixmhc('%Rank_best', PredictorBindingThreshold.MIXMHCIIPRED.value)
+        df['allele'] = df['allele'].map(lambda a: 'HLA-' + '/'.join('{}*{}:{}'.format(*chain.split('_')) for chain in a.split('__')))
+        return df
+
+def main():
+    args = Arguments()
+
+    # Iterate over each file predicted by multiple predictors, harmonize and merge output
+    output_df = []
+    for file in args.input:
+        result = PredictionResult(file, args.peptide_col_name, args.use_ba_rank)
+
+        logging.info(f"Writing {len(result.prediction_df)} {result.predictor} predictions to file..")
+        output_df.append(result.prediction_df)
+
+    output_df = pd.concat(output_df)
+    # Normalize allele names
+    output_df['allele'] = output_df['allele'].apply(lambda x : mhcgnomes.parse(x).to_string())
+
+    # Read in source file to annotate source metadata
+    source_df = pd.read_csv(args.source_file, sep='\t')
+    # In the rare occurence that the source file has exactly the same col than output file, rename the source file column
+    source_df = source_df.rename(columns={col: col+'_metadata' for col in source_df.columns if col != args.peptide_col_name and col in output_df.columns})
+    # Merge the prediction results with the source file
+    output_df = pd.merge(source_df, output_df, on=args.peptide_col_name, how='left')
+
+    # Write output file
+    output_df.to_csv(f'{args.prefix}_predictions.csv', index=False)
+    with open("versions.yml", "w") as f:
+        f.write(f'"${task.process}":\\n    mhcgnomes: {mhcgnomes.__version__}\\n    pandas: {pd.__version__}\\n')
+
+
+if __name__ == "__main__":
+    main()

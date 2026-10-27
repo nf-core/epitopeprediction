@@ -1,4 +1,5 @@
 .nextflow*
+.nf-test*
 work/
 data/
 results/
@@ -10,3 +11,5 @@ null/
 .lineage/
 .nf-test/
 .nf-test.log
+CLAUDE.md
+.claude/

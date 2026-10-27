@@ -1,0 +1,6 @@
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - bioconda::mhcgnomes=1.8.6
+  - conda-forge::pandas=2.3.3

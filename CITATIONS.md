@@ -12,7 +12,61 @@
 
 - [MultiQC](https://pubmed.ncbi.nlm.nih.gov/27312411/)
 
-> Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+  > Ewels P, Magnusson M, Lundin S, Käller M. MultiQC: summarize analysis results for multiple tools and samples in a single report. Bioinformatics. 2016 Oct 1;32(19):3047-8. doi: 10.1093/bioinformatics/btw354. Epub 2016 Jun 16. PubMed PMID: 27312411; PubMed Central PMCID: PMC5039924.
+
+- [BCFtools](https://dx.doi.org/10.1093/gigascience/giab008)
+
+  > Petr Danecek, James K Bonfield, Jennifer Liddle, John Marshall, Valeriu Ohan, Martin O Pollard, Andrew Whitwham, Thomas Keane, Shane A McCarthy, Robert M Davies, Heng Li. Twelve years of SAMtools and BCFtools. _GigaScience_ 10(2), giab008 (2021). doi: 10.1093/gigascience/giab008.
+
+- [Ensembl VEP](https://dx.doi.org/10.1186/s13059-016-0974-4)
+
+  > William McLaren, Laurent Gil, Sarah E. Hunt, Harpreet Singh Riat, Graham R. S. Ritchie, Anja Thormann, Paul Flicek, Fiona Cunningham. The Ensembl Variant Effect Predictor. _Genome Biology_ 17(1), 122 (2016). doi: 10.1186/s13059-016-0974-4.
+
+- [pVACtools](https://dx.doi.org/10.1158/2326-6066.CIR-19-0401)
+
+  > Jasreet Hundal, Susanna Kiwala, Joshua McMichael, Christopher A. Miller, et al. pVACtools: A Computational Toolkit to Identify and Visualize Cancer Neoantigens. _Cancer Immunology Research_ 8(3), 409-420 (2020). doi: 10.1158/2326-6066.CIR-19-0401.
+
+- [MHCflurry](https://dx.doi.org/10.1016/j.cels.2018.05.014)
+
+  > Timothy J. O’Donnell, Alex Rubinsteyn, Maria Bonsack, Angelika B. Riemer, Uri Laserson, Jeff Hammerbacher. MHC flurry: open-source class I MHC binding affinity prediction. Cell systems 7(1), 129-132 (2018). doi: 10.1016/j.cels.2018.05.014.
+
+- [MHCnuggets](https://dx.doi.org/10.1158/2326-6066.CIR-19-0464)
+
+  > Xiaoshan M. Shao, Rohit Bhattacharya, Justin Huang, I.K. Ashok Sivakumar, Collin Tokheim, Lily Zheng, Dylan Hirsch, Benjamin Kaminow, Ashton Omdahl, Maria Bonsack, Angelika B. Riemer, Victor E. Velculescu, Valsamo Anagnostou, Kymberleigh A. Pagel and Rachel Karchin. High-throughput prediction of MHC class i and ii neoantigens with MHCnuggets. Cancer Immunology Research 8(3), 396-408 (2020). doi: 10.1158/2326-6066.CIR-19-0464.
+
+- [NetMHC-4.0](https://pubmed.ncbi.nlm.nih.gov/26515819/)
+
+  > Andreatta M, Nielsen M. Gapped sequence alignment using artificial neural networks: application to the MHC class I system. Bioinformatics. 2016 Feb 15;32(4):511-7. doi: 10.1093/bioinformatics/btv639. Epub 2015 Oct 29. PMID: 26515819; PMCID: PMC6402319.
+
+- [NetMHCpan-4.0](https://pubmed.ncbi.nlm.nih.gov/28978689/)
+
+  > Jurtz V, Paul S, Andreatta M, Marcatili P, Peters B, Nielsen M. NetMHCpan-4.0: Improved Peptide-MHC Class I Interaction Predictions Integrating Eluted Ligand and Peptide Binding Affinity Data. J Immunol. 2017 Nov 1;199(9):3360-3368. doi: 10.4049/jimmunol.1700893. Epub 2017 Oct 4. PMID: 28978689; PMCID: PMC5679736.
+
+- [NetMHCpan-4.1](https://pubmed.ncbi.nlm.nih.gov/32406916/)
+
+  > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
+
+- [NetMHCII-2.3](https://pubmed.ncbi.nlm.nih.gov/29315598/)
+
+  > Jensen KK, Andreatta M, Marcatili P, Buus S, Greenbaum JA, Yan Z, Sette A, Peters B, Nielsen M. Improved methods for predicting peptide binding affinity to MHC class II molecules. Immunology. 2018 Jul;154(3):394-406. doi: 10.1111/imm.12889. Epub 2018 Feb 6. PMID: 29315598; PMCID: PMC6002223.
+
+- [NetMHCII-2.3](https://pubmed.ncbi.nlm.nih.gov/29315598/)
+
+  > Jensen KK, Andreatta M, Marcatili P, Buus S, Greenbaum JA, Yan Z, Sette A, Peters B, Nielsen M. Improved methods for predicting peptide binding affinity to MHC class II molecules. Immunology. 2018 Jul;154(3):394-406. doi: 10.1111/imm.12889. Epub 2018 Feb 6. PMID: 29315598; PMCID: PMC6002223.
+
+- [NetMHCIIpan-4.0](https://pubmed.ncbi.nlm.nih.gov/32406916/)
+
+  > Reynisson B, Alvarez B, Paul S, Peters B, Nielsen M. NetMHCpan-4.1 and NetMHCIIpan-4.0: improved predictions of MHC antigen presentation by concurrent motif deconvolution and integration of MS MHC eluted ligand data. Nucleic Acids Res. 2020 Jul 2;48(W1):W449-W454. doi: 10.1093/nar/gkaa379. PMID: 32406916; PMCID: PMC7319546.
+
+- [MixMHCpred-3.0](https://pubmed.ncbi.nlm.nih.gov/40114147/)
+
+  > Tadros DM, Racle J, Gfeller D. Predicting MHC-I ligands across alleles and species: how far can we go? Genome Med. 2025 Mar 20;17(1):25. doi: 10.1186/s13073-025-01450-8. PMID: 40114147; PMCID: PMC11927126.
+
+- [MixMHC2pred-2.0](https://pubmed.ncbi.nlm.nih.gov/37023751/)
+
+  > Racle J, Guillaume P, Schmidt J, Michaux J, Larabi A, Lau K, Perez MAS, Croce G, Genolet R, Coukos G, Zoete V, Pojer F, Bassani-Sternberg M, Harari A, Gfeller D. Machine learning predictions of MHC-II specificities reveal alternative binding mode of class II epitopes. Immunity. 2023 Jun 13;56(6):1359-1375.e13. doi: 10.1016/j.immuni.2023.03.009. PMID: 37023751.
+
+  > Racle J, Michaux J, Rockinger GA, Arnaud M, Bobisse S, Chong C, Guillaume P, Coukos G, Harari A, Jandus C, Bassani-Sternberg M, Gfeller D. Robust prediction of HLA class II epitopes by deep motif deconvolution of immunopeptidomes. Nat Biotechnol. 2019 Nov;37(11):1283-1286. doi: 10.1038/s41587-019-0289-6. PMID: 31611696.
 
 ## Software packaging/containerisation tools
 
