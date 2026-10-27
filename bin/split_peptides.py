@@ -18,11 +18,6 @@ def split_peptides(input_file, prefix, min_size, max_chunks):
     input_path = Path(input_file)
     prefix = prefix.replace(".", "_")  # chunk name becomes the file_id downstream, so no extension-like dots
 
-    if min_size <= 0:
-        raise ValueError("Minimum chunk size must be greater than zero.")
-    if max_chunks <= 0:
-        raise ValueError("Maximum number of chunks must be greater than zero.")
-
     with input_path.open("r") as infile:
         header = infile.readline()
         if not header:

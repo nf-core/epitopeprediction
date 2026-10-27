@@ -177,12 +177,14 @@
                 "peptides_split_maxchunks": {
                     "type": "integer",
                     "default": 100,
+                    "minimum": 1,
                     "help_text": "Maximum number of peptide chunks that the pipeline creates to run the predictions in parallel.",
                     "description": "Specifies the maximum number of peptide chunks."
                 },
                 "peptides_split_minchunksize": {
                     "type": "integer",
                     "default": 5000,
+                    "minimum": 1,
                     "help_text": "Minimum number of peptides that the pipeline writes into one chunk.",
                     "description": "Specifies the minimum number of peptides that should be written into one chunk."
                 }
