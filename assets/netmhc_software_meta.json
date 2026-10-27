@@ -1,0 +1,10 @@
+{
+    "netmhcpan": {
+        "version": "4.2",
+        "binary_name": "netMHCpan"
+    },
+    "netmhciipan": {
+        "version": "4.3",
+        "binary_name": "netMHCIIpan"
+    }
+}

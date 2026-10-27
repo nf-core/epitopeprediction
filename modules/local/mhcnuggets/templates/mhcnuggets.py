@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+"""
+Runs MHCnuggets predictions for specified alleles and merges results.
+
+Author: Jonas Scheid
+License: MIT
+"""
+import argparse
+import pkg_resources
+import shlex
+import logging
+from pathlib import Path
+
+import numpy as np
+import pandas as pd
+from mhcnuggets.src.predict import predict
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+
+class Arguments:
+    """
+    Parses the arguments, including the ones coming from $task.ext.args.
+    """
+
+    def __init__(self) -> None:
+        self.input = "$tsv"
+        self.prefix = "$task.ext.prefix" if "$task.ext.prefix" != "null" else "$meta.id"
+        self.mhc_class = "$meta.mhc_class"
+        self.alleles = "$meta.alleles_supported".split(";")
+        self.alleles_input = "$alleles_input".split(";")
+        self.parse_ext_args("$task.ext.args")
+
+    def parse_ext_args(self, args_string: str) -> None:
+        """
+        Parse the extended arguments.
+        """
+        # skip when there are no extended arguments
+        if args_string == "null":
+            args_string = ""
+
+        # Parse the extended arguments
+        args_list = shlex.split(args_string)  # Split the string into a list of arguments
+        parser = argparse.ArgumentParser()
+        # input parameters
+        args = parser.parse_args(args_list)
+
+        # Assign args attributes to self attributes
+        for attr in vars(args):
+            setattr(self, attr, getattr(args, attr))
+
+
+
+def main():
+    args = Arguments()
+
+    # Predict and load written tsv file
+    predicted_df = []
+    for allele, mhcnuggets_allele in zip(args.alleles, args.alleles_input):
+        safe_allele = allele.replace('/', '_').replace('*', '')
+        # MHCnuggets cannot compute ranks for mouse alleles
+        compute_rank = 'H-2' not in mhcnuggets_allele
+        predict(class_=args.mhc_class, peptides_path = args.input, mhc=mhcnuggets_allele,
+                output=f'{args.prefix}_{safe_allele}.csv', rank_output=compute_rank)
+        if compute_rank:
+            tmp_df = pd.read_csv(f'{args.prefix}_{safe_allele}_ranks.csv')
+        else:
+            tmp_df = pd.read_csv(f'{args.prefix}_{safe_allele}.csv')
+            # Mock rank column
+            tmp_df['rank'] = np.nan
+        tmp_df['allele'] = allele
+        predicted_df.append(tmp_df)
+
+    # Append dataframe per allele and write file
+    predicted_df = pd.concat(predicted_df)
+    filename_out = f'{args.prefix}_predicted_mhcnuggets.csv' if args.mhc_class == 'I' else f'{args.prefix}_predicted_mhcnuggetsii.csv'
+    predicted_df.to_csv(filename_out, index=False)
+    with open("versions.yml", "w") as f:
+        f.write(f'"${task.process}":\\n    mhcnuggets: {pkg_resources.get_distribution("mhcnuggets").version}\\n    pandas: {pd.__version__}\\n')
+
+if __name__ == "__main__":
+    main()
