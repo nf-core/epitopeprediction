@@ -9,5 +9,7 @@ testing*
 *.pyc
 null/
 .lineage/
+.nf-test/
+.nf-test.log
 CLAUDE.md
 .claude/
