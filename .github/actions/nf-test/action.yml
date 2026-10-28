@@ -31,6 +31,14 @@ runs:
       with:
         tool-cache: false
 
+    - name: Start disk usage monitor
+      shell: bash
+      run: |
+        docker info | grep -E 'Server Version|Storage Driver|driver-type|Docker Root Dir'
+        df -h /
+        echo "time_utc used_mb avail_mb" > "$RUNNER_TEMP/disk_usage.log"
+        nohup bash -c 'while true; do echo "$(date -u +%H:%M:%S) $(df -BM --output=used,avail / | tail -1)"; sleep 5; done' >> "$RUNNER_TEMP/disk_usage.log" 2>&1 &
+
     - name: Setup Nextflow
       uses: nf-core/setup-nextflow@893c28b667aedeba26e37f296d260ccc5bc4d914 # v3
       with:
@@ -84,6 +92,16 @@ runs:
 
           # Save the absolute path of the test.tap file to the output
           echo "tap_file_path=$(realpath test.tap)" >> $GITHUB_OUTPUT
+
+    - name: Report disk usage
+      if: always()
+      shell: bash
+      run: |
+        df -h /
+        docker system df -v
+        sudo du -xsh /var/lib/docker /var/lib/containerd 2>/dev/null || true
+        sudo du -xsh "$GITHUB_WORKSPACE"/* "$GITHUB_WORKSPACE"/.[!.]* 2>/dev/null | sort -h | tail -n 10
+        cat "$RUNNER_TEMP/disk_usage.log"
 
     - name: Generate test summary
       if: always()
