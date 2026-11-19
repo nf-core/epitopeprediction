@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - [#389](https://github.com/nf-core/epitopeprediction/issues/389) Stream peptide chunking so peak memory no longer scales with the complete input file ([@simplyshree](https://github.com/simplyshree/)).
 
+### `Dependencies`
+
+| Dependency | Old version | New version |
+| ---------- | ----------- | ----------- |
+| `nf-core`  | 4.1.0       | 4.2.2       |
+
 ## 3.2.0 - Bebenhausen - 2026-10-15
 
 ### `Added`

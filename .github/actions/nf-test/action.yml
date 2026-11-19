@@ -27,9 +27,10 @@ runs:
   using: "composite"
   steps:
     - name: Free runner disk space # the variant-path tests pull ~11 GB of images
-      uses: jlumbroso/free-disk-space@54081f138730dfa15788a46383842cd2f914a1be # v1.3.1
+      uses: jlumbroso/free-disk-space@ceedf095f4ec1a097402bc6bd80831f2e1a6fde6 # v2.0.0
       with:
-        tool-cache: false
+        preinstalled-runtimes: false
+        swap-storage: true
 
     - name: Setup Nextflow
       uses: nf-core/setup-nextflow@v3
@@ -49,7 +50,7 @@ runs:
 
     - name: Setup apptainer
       if: contains(inputs.profile, 'singularity')
-      uses: eWaterCycle/setup-apptainer@3f706d898c9db585b1d741b4692e66755f3a1b40 # v2
+      uses: eWaterCycle/setup-apptainer@95b5c781df5f72fd2271cc3cff06904a09d2a087 # v3
 
     - name: Set up Singularity
       if: contains(inputs.profile, 'singularity')
