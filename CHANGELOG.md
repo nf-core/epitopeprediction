@@ -5,10 +5,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-### `Changed`
-
-- [#397](https://github.com/nf-core/epitopeprediction/pull/397) Merge nf-core template updates up to `4.2.2` ([@jonasscheid](https://github.com/jonasscheid/)).
-
 ### `Fixed`
 
 - [#389](https://github.com/nf-core/epitopeprediction/issues/389) Stream peptide chunking so peak memory no longer scales with the complete input file ([@simplyshree](https://github.com/simplyshree/)).
